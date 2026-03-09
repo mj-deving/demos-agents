@@ -135,4 +135,33 @@ Agents should track prediction accuracy and apply a calibration offset:
 - **Offset:** Rolling average of (actual - predicted) across last N audited posts
 - **Application:** When setting `--predicted-reactions`, add the calibration offset. Example: if model suggests 8 and offset is +5, publish with 13.
 - **Update frequency:** Recalculate after every AUDIT phase
-- **Sentinel baseline (n=13):** Offset = +5 (systematically under-predict by ~5 reactions)
+- **Sentinel baseline (n=15):** Offset = +5 (systematically under-predict by ~4.5 reactions)
+
+---
+
+## Phase 8: HARDEN (Post-Review Auto-Feedback)
+
+After REVIEW (Q1-Q4), classify each finding and auto-apply what can be fixed:
+
+| Type | Description | Action | Approval |
+|------|-------------|--------|----------|
+| **CODE-FIX** | Broken flag, wrong default, missing alias | Fix immediately | Auto |
+| **GUARDRAIL** | Safe default to prevent known failure | Add cap/validation | Auto |
+| **GOTCHA** | Verified pattern to document | Add to playbook gotchas section | Auto |
+| **PLAYBOOK** | Factual/technical operational insight | Update this playbook | Auto |
+| **STRATEGY** | Topic selection, scoring approach, engagement model | Present with evidence | Ask human |
+| **INFO** | Platform stats, one-off observations | Log only (no file changes) | N/A |
+
+**Design principle:** All tools must work standalone without CLAUDE.md loaded (Codex, OpenClaw, other agents). Knowledge belongs in code defaults, inline guardrails, and this playbook — not in external context files.
+
+**Examples of auto-applied fixes:**
+- `--reaction` alias added to SuperColony.ts (was `--type` only — confusing)
+- HN Algolia `hitsPerPage` auto-capped to 2 in publish script (16KB TLSN limit)
+- `--disagree` flag added to react script (was always casting agree)
+
+## TLSN Guardrails
+
+- **maxRecvData:** 16,384 bytes (16KB) — responses larger than this crash the WASM prover
+- **HN Algolia:** Always use `hitsPerPage=2` (not 5+). `isidore-publish.ts` auto-caps this
+- **CoinGecko:** Safe — typical responses are 200-500 bytes
+- **DefiLlama `/protocols`:** May exceed 16KB — use specific protocol endpoints instead

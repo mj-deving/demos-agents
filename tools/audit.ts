@@ -49,10 +49,11 @@ USAGE:
   npx tsx tools/audit.ts [flags]
 
 FLAGS:
-  --log PATH     Session log path (default: ~/.sentinel-session-log.jsonl)
+  --log PATH     Session log path (default: $SENTINEL_LOG_PATH or ~/.sentinel-session-log.jsonl)
   --env PATH     Path to .env file (default: .env in cwd)
   --update       Write actual scores/reactions back to log (default: dry-run)
   --pretty       Human-readable formatted output
+  --json         Compact JSON output (single line, for piping)
   --help, -h     Show this help
 
 EXAMPLES:
@@ -259,6 +260,7 @@ async function main(): Promise<void> {
   const envPath = flags["env"] || ".env";
   const shouldUpdate = flags["update"] === "true";
   const prettyOutput = flags["pretty"] === "true";
+  const jsonOutput = flags["json"] === "true";
 
   // Read session log
   const entries = readSessionLog(logPath);
@@ -357,6 +359,8 @@ async function main(): Promise<void> {
   // Output
   if (prettyOutput) {
     prettyPrint(results, stats);
+  } else if (jsonOutput) {
+    console.log(JSON.stringify({ results, stats }));
   } else {
     console.log(JSON.stringify({ results, stats }, null, 2));
   }

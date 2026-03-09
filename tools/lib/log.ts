@@ -11,7 +11,7 @@ import { homedir } from "node:os";
 
 // ── Constants ──────────────────────────────────────
 
-const DEFAULT_LOG_PATH = resolve(homedir(), ".sentinel-session-log.jsonl");
+const FALLBACK_LOG_NAME = ".sentinel-session-log.jsonl";
 const MAX_ENTRIES = 50;
 
 // ── Types ──────────────────────────────────────────
@@ -44,7 +44,7 @@ export interface SessionLogEntry {
  * Returns empty array if file doesn't exist.
  */
 export function readSessionLog(logPath?: string): SessionLogEntry[] {
-  const path = logPath || DEFAULT_LOG_PATH;
+  const path = logPath || resolveLogPath();
   if (!existsSync(path)) return [];
 
   const content = readFileSync(path, "utf-8").trim();
@@ -65,7 +65,7 @@ export function readSessionLog(logPath?: string): SessionLogEntry[] {
  * Append a single entry to the session log.
  */
 export function appendSessionLog(entry: SessionLogEntry, logPath?: string): void {
-  const path = logPath || DEFAULT_LOG_PATH;
+  const path = logPath || resolveLogPath();
   appendFileSync(path, JSON.stringify(entry) + "\n");
 }
 
@@ -73,7 +73,7 @@ export function appendSessionLog(entry: SessionLogEntry, logPath?: string): void
  * Rewrite the entire session log (used by audit --update).
  */
 export function writeSessionLog(entries: SessionLogEntry[], logPath?: string): void {
-  const path = logPath || DEFAULT_LOG_PATH;
+  const path = logPath || resolveLogPath();
   const content = entries.map(e => JSON.stringify(e)).join("\n") + "\n";
   writeFileSync(path, content);
 }
@@ -85,7 +85,7 @@ export function writeSessionLog(entries: SessionLogEntry[], logPath?: string): v
  * Moves oldest entries to archive file, keeps newest MAX_ENTRIES.
  */
 export function rotateSessionLog(logPath?: string): { rotated: boolean; archived: number } {
-  const path = logPath || DEFAULT_LOG_PATH;
+  const path = logPath || resolveLogPath();
   const entries = readSessionLog(path);
 
   if (entries.length <= MAX_ENTRIES) {
@@ -112,11 +112,16 @@ export function rotateSessionLog(logPath?: string): { rotated: boolean; archived
 }
 
 /**
- * Resolve log path from flag or default.
+ * Resolve log path from flag, env var, or default.
+ * Checked lazily so SENTINEL_LOG_PATH can be set after module load (e.g. via dotenv).
  */
 export function resolveLogPath(flagValue?: string): string {
   if (flagValue) {
     return resolve(flagValue.replace(/^~/, homedir()));
   }
-  return DEFAULT_LOG_PATH;
+  const envPath = process.env.SENTINEL_LOG_PATH;
+  if (envPath) {
+    return resolve(envPath.replace(/^~/, homedir()));
+  }
+  return resolve(homedir(), FALLBACK_LOG_NAME);
 }

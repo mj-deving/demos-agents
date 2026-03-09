@@ -62,17 +62,33 @@ export async function attestDahr(
   url: string,
   method: string = "GET"
 ): Promise<AttestResult> {
-  info(`DAHR attesting: ${url}`);
+  // GUARDRAIL: Force HN Algolia hitsPerPage to 2 — responses >16KB hit TLSN max_recv limit
+  let attestUrl = url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "hn.algolia.com") {
+      info(`GUARDRAIL: Forcing hitsPerPage=2 for HN Algolia (16KB TLSN limit)`);
+      parsed.searchParams.set("hitsPerPage", "2");
+      attestUrl = parsed.toString();
+    }
+  } catch {
+    // Not a valid URL — proceed with original, will likely fail downstream
+  }
+
+  info(`DAHR attesting: ${attestUrl}`);
   const dahr = await (demos as any).web2.createDahr();
-  const proxyResponse = await dahr.startProxy({ url, method });
+  const proxyResponse = await dahr.startProxy({ url: attestUrl, method });
 
   let data: any;
   if (typeof proxyResponse.data === "string") {
-    try {
-      data = JSON.parse(proxyResponse.data);
-    } catch {
-      data = { raw: proxyResponse.data };
+    const trimmed = proxyResponse.data.trim();
+    if (trimmed.startsWith("<")) {
+      throw new Error(
+        `DAHR returned XML/HTML instead of JSON. Use JSON API endpoints only (not RSS/XML feeds). ` +
+        `First 100 chars: ${trimmed.slice(0, 100)}`
+      );
     }
+    data = JSON.parse(proxyResponse.data);
   } else {
     data = proxyResponse.data;
   }

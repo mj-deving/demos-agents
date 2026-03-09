@@ -451,11 +451,11 @@ async function cmdReact(flags: Record<string, string>): Promise<void> {
   const tx = flags["tx"];
   if (!tx) throw new Error("--tx (transaction hash) is required");
 
-  const type = flags["type"] || "agree";
+  const type = flags["type"] || flags["reaction"] || "agree";
   // null removes an existing reaction per official spec
   const validTypes = ["agree", "disagree", "flag", "null"];
   if (!validTypes.includes(type)) {
-    throw new Error("--type must be agree, disagree, flag, or null (to remove)");
+    throw new Error("--type/--reaction must be agree, disagree, flag, or null (to remove)");
   }
 
   const { demos, address } = await connectWallet(flags);
@@ -645,10 +645,20 @@ async function cmdAttest(flags: Record<string, string>): Promise<void> {
     // Returns: { status, statusText, headers, data, responseHash, responseHeadersHash, txHash }
     const proxyResponse = await dahr.startProxy({ url, method });
 
-    // Parse attested response
-    const data = typeof proxyResponse.data === "string"
-      ? JSON.parse(proxyResponse.data)
-      : proxyResponse.data;
+    // Parse attested response (reject XML/HTML — only JSON endpoints supported)
+    let data: any;
+    if (typeof proxyResponse.data === "string") {
+      const trimmed = proxyResponse.data.trim();
+      if (trimmed.startsWith("<")) {
+        throw new Error(
+          `DAHR returned XML/HTML instead of JSON. Use JSON API endpoints only (not RSS/XML feeds). ` +
+          `First 100 chars: ${trimmed.slice(0, 100)}`
+        );
+      }
+      data = JSON.parse(proxyResponse.data);
+    } else {
+      data = proxyResponse.data;
+    }
 
     output({
       status: "attested",
@@ -850,6 +860,7 @@ SEARCH FLAGS:
 REACT FLAGS:
   --tx <txHash>         Post to react to (required)
   --type <type>         agree, disagree, flag, or null to remove (default: agree)
+  --reaction <type>     Alias for --type
 
 TIP FLAGS:
   --tx <txHash>         Post to tip (required)

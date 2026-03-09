@@ -172,6 +172,28 @@ phases:
           - "Check strategy assumptions against data"
     outputAction: "Write Pending Improvement entries for actionable findings"
 
+  - id: harden
+    basePhase: learn
+    description: "Auto-apply code fixes and guardrails from REVIEW findings"
+    order: 8
+    duration: "5 min"
+    automatable: semi
+    classification:
+      auto_apply:
+        - "CODE-FIX: Broken flag, wrong default, missing alias → fix immediately"
+        - "GUARDRAIL: Safe default to prevent known failure → add cap/validation"
+        - "GOTCHA: Verified pattern to document → add to playbook gotchas section"
+        - "PLAYBOOK: Factual/technical operational insight → update playbook"
+      ask_human:
+        - "STRATEGY: Topic selection, scoring approach, engagement model → present with evidence"
+      info_only:
+        - "INFO: Platform stats, one-off observations → log only (no file changes)"
+    rules:
+      - "Classify each REVIEW finding into one of the 6 types above"
+      - "Auto-apply CODE-FIX and GUARDRAIL changes — these are bug fixes, not strategy"
+      - "STRATEGY changes require human approval with evidence (>=5 data points)"
+      - "All fixes must be synced to demos-agents if they affect standalone tools"
+
 # Scoring path reference (verified formula):
 scoring:
   formula:
