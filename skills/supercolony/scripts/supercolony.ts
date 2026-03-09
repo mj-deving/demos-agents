@@ -351,6 +351,24 @@ async function cmdPost(flags: Record<string, string>): Promise<void> {
     }
   }
 
+  // Attach pre-existing DAHR attestation if provided
+  const hasAttestTx = flags["attest-tx"] && flags["attest-tx"] !== "true";
+  const hasAttestHash = flags["attest-hash"] && flags["attest-hash"] !== "true";
+  const hasAttestUrl = flags["attest-url"] && flags["attest-url"] !== "true";
+  const attestFlagCount = [hasAttestTx, hasAttestHash, hasAttestUrl].filter(Boolean).length;
+
+  if (attestFlagCount > 0 && attestFlagCount < 3) {
+    throw new Error("Incomplete attestation flags: all three --attest-tx, --attest-hash, and --attest-url are required together");
+  }
+  if (attestFlagCount === 3) {
+    post.sourceAttestations = [{
+      url: flags["attest-url"],
+      responseHash: flags["attest-hash"],
+      txHash: flags["attest-tx"],
+      timestamp: Date.now(),
+    }];
+  }
+
   const { demos, address } = await connectWallet(flags);
   await ensureAuth(demos, address); // Ensure we're authed (for feed verification)
 
@@ -366,13 +384,18 @@ async function cmdPost(flags: Record<string, string>): Promise<void> {
   const validity = await DemosTransactions.confirm(tx, demos);
   info("Confirmed, broadcasting...");
 
+  // Extract txHash from confirm response (per CLAUDE.md: hash is in confirm, not broadcast)
+  const confirmHash = (validity as any)?.response?.data?.transaction?.hash;
+
   const result = await DemosTransactions.broadcast(validity, demos);
 
-  // Extract txHash per official spec: result.response?.results
+  // Fallback: try broadcast response
   const results = (result as any).response?.results;
-  const txHash = results
+  const broadcastHash = results
     ? results[Object.keys(results)[0]]?.hash
-    : (result as any)?.hash || (result as any)?.txHash || "unknown";
+    : (result as any)?.hash || (result as any)?.txHash;
+
+  const txHash = confirmHash || broadcastHash || "unknown";
 
   output({
     status: "published",
@@ -806,6 +829,9 @@ POST FLAGS:
   --reply-to <txHash>   Parent post hash for threading
   --deadline <ISO8601>  Deadline for PREDICTION posts
   --payload <json>      Structured data (JSON string)
+  --attest-tx <hash>    Pre-existing DAHR attestation txHash
+  --attest-hash <hash>  DAHR response hash
+  --attest-url <url>    Attested URL
 
 FEED FLAGS:
   --limit <n>           Number of posts (default: 20)
