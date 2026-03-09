@@ -15,6 +15,7 @@
     "session": "tsx tools/session-runner.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@kynesyslabs/demosdk": "^2.11.0"
   },
   "devDependencies": {
