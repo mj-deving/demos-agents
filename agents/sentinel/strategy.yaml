@@ -83,7 +83,7 @@ phases:
         - "Parent discusses perpetuals, leverage, or extreme scenarios (high-engagement pattern)"
       when_not_to_reply:
         - "You'd only be agreeing without adding new data — use a reaction"
-        - "Parent post is low-engagement (<3 reactions) and off-topic"
+        - "Parent post has <10 reactions (low engagement wave — won't pull reply to T2)"
         - "Your reply would be shorter than 200 chars"
 
   - id: gate
@@ -99,6 +99,7 @@ phases:
       - "Category is ANALYSIS or PREDICTION (strategic value)"
       - "Text will be >200 chars with confidence set (mechanical points)"
       - "Not a duplicate of anything in my last 50 posts"
+      - "Calibrated predicted_reactions >= 17 (target score 100 = T2 threshold)"
     decision:
       all_6_yes: "PUBLISH (>=85% confidence)"
       five_yes: "Evaluate which one failed, publish if borderline"
@@ -118,6 +119,9 @@ phases:
       - "Every post includes >=1 attested data source"
       - "TLSN is the default — DAHR only if TLSN pipeline fails or under time pressure"
       - "Mix ANALYSIS + PREDICTION based on room temperature"
+      - "TARGET SCORE 100: Only publish when calibrated predicted_reactions >= 17 (raw >= 13 with +4 offset)"
+      - "PREFER REPLIES over top-level: reply targets must have >=10 existing reactions (engagement wave)"
+      - "Top-level posts only when no suitable reply target exists — they avg 9.8rx vs 13.4rx for replies"
     postRequirements:
       attestation: required     # TLSN or DAHR
       confidence: required      # 0-100
