@@ -16,7 +16,7 @@
  */
 
 import { execSync, spawn } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 
@@ -54,40 +54,35 @@ export class CLIProvider implements LLMProvider {
       ? `${options.system}\n\n${prompt}`
       : prompt;
 
-    // Write prompt to temp file, pass path as last arg via shell
-    // This avoids: (1) shell escaping issues with special chars in prompt,
-    // (2) ARG_MAX limits for large prompts, (3) split-on-whitespace for quoted CLI flags
-    const tmpFile = resolve(process.env.TMPDIR || "/tmp", `.llm-prompt-${process.pid}-${Date.now()}.txt`);
-    writeFileSync(tmpFile, fullPrompt);
-
-    try {
-      return await new Promise<string>((resolvePromise, reject) => {
-        const child = spawn("sh", ["-c", `${this.command} "$(cat '${tmpFile}')" 2>&1`], {
-          stdio: ["pipe", "pipe", "pipe"],
-          timeout: 120_000,
-        });
-
-        let stdout = "";
-        let stderr = "";
-
-        child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
-        child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
-
-        child.on("close", (code) => {
-          if (code !== 0) {
-            reject(new Error(`CLI provider "${this.name}" exited with code ${code}: ${(stderr || stdout).slice(0, 500)}`));
-          } else {
-            resolvePromise(stdout.trim());
-          }
-        });
-
-        child.on("error", (err) => {
-          reject(new Error(`CLI provider "${this.name}" failed to spawn: ${err.message}`));
-        });
+    // Pass prompt via stdin to avoid ARG_MAX limits.
+    // stderr is kept separate so CLI warnings don't corrupt model output.
+    return await new Promise<string>((resolvePromise, reject) => {
+      const child = spawn("sh", ["-c", this.command], {
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 120_000,
       });
-    } finally {
-      try { if (existsSync(tmpFile)) unlinkSync(tmpFile); } catch { /* cleanup */ }
-    }
+
+      let stdout = "";
+      let stderr = "";
+
+      child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+      child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+
+      child.stdin.write(fullPrompt);
+      child.stdin.end();
+
+      child.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`CLI provider "${this.name}" exited with code ${code}: ${(stderr || stdout).slice(0, 500)}`));
+        } else {
+          resolvePromise(stdout.trim());
+        }
+      });
+
+      child.on("error", (err) => {
+        reject(new Error(`CLI provider "${this.name}" failed to spawn: ${err.message}`));
+      });
+    });
   }
 }
 
@@ -205,8 +200,8 @@ function loadKeyFromEnv(key: string, envPath?: string): string | undefined {
  * Returns null if no LLM is available (callers must handle gracefully).
  */
 export function resolveProvider(envPath?: string): LLMProvider | null {
-  // Step 1: Explicit LLM_PROVIDER env var
-  const explicitProvider = process.env.LLM_PROVIDER;
+  // Step 1: Explicit LLM_PROVIDER (process.env or .env file)
+  const explicitProvider = loadKeyFromEnv("LLM_PROVIDER", envPath);
   if (explicitProvider) {
     switch (explicitProvider.toLowerCase()) {
       case "anthropic": {
@@ -220,7 +215,7 @@ export function resolveProvider(envPath?: string): LLMProvider | null {
         return new OpenAIProvider(key);
       }
       case "cli": {
-        const cmd = process.env.LLM_CLI_COMMAND;
+        const cmd = loadKeyFromEnv("LLM_CLI_COMMAND", envPath);
         if (!cmd) throw new Error("LLM_PROVIDER=cli but LLM_CLI_COMMAND not set");
         return new CLIProvider(cmd);
       }
@@ -229,8 +224,8 @@ export function resolveProvider(envPath?: string): LLMProvider | null {
     }
   }
 
-  // Step 2: LLM_CLI_COMMAND env var
-  const cliCommand = process.env.LLM_CLI_COMMAND;
+  // Step 2: LLM_CLI_COMMAND (process.env or .env file)
+  const cliCommand = loadKeyFromEnv("LLM_CLI_COMMAND", envPath);
   if (cliCommand) {
     return new CLIProvider(cliCommand);
   }

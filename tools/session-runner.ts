@@ -1074,7 +1074,12 @@ Respond with ONLY a JSON array of types, one per finding. Example: ["CODE-FIX","
   return findings;
 }
 
-/** Propose an improvement via the improvements.ts subprocess */
+/**
+ * Propose an improvement via the improvements.ts subprocess.
+ * NOTE: improvements.ts is a TRACKER, not an executor. "propose" records
+ * the finding for human review and future application. Actual file edits
+ * are not performed here — that requires LLM-generated diffs (future work).
+ */
 async function proposeImprovement(
   description: string,
   evidence: string,
@@ -1103,7 +1108,7 @@ async function runHardenFull(
 
   if (findings.length === 0) {
     phaseSkipped("No findings to harden");
-    completePhase(state, "harden", { findings: 0, classified: 0, applied: 0, proposed: 0, skipped: 0 });
+    completePhase(state, "harden", { findings: 0, classified: 0, actionable: 0, proposed: 0, skipped: 0 });
     return;
   }
 
@@ -1114,8 +1119,8 @@ async function runHardenFull(
     findings = await llmClassify(findings, provider);
   }
 
-  let applied = 0;
-  let proposed = 0;
+  let actionable = 0; // CODE-FIX/GUARDRAIL/GOTCHA/PLAYBOOK proposed for action
+  let proposed = 0;   // STRATEGY proposed for human review
   let skipped = 0;
 
   for (const f of findings) {
@@ -1133,7 +1138,7 @@ async function runHardenFull(
         try {
           await proposeImprovement(f.text, `HARDEN finding from session ${state.sessionNumber}`, "strategy.yaml", f.source);
           proposed++;
-          phaseResult(`Proposed: ${f.text.slice(0, 60)}...`);
+          phaseResult(`Proposed (STRATEGY): ${f.text.slice(0, 60)}...`);
         } catch (e: any) {
           info(`Warning: could not propose: ${e.message}`);
           skipped++;
@@ -1144,15 +1149,15 @@ async function runHardenFull(
       continue;
     }
 
-    // CODE-FIX, GUARDRAIL, GOTCHA, PLAYBOOK
-    const proceed = await ask(rl, "    Apply? (y/n): ");
+    // CODE-FIX, GUARDRAIL, GOTCHA, PLAYBOOK — propose as actionable
+    const proceed = await ask(rl, "    Propose as actionable? (y/n): ");
     if (proceed.toLowerCase() === "y") {
       try {
-        await proposeImprovement(f.text, `HARDEN auto-applied, session ${state.sessionNumber}`, "workflow", f.source);
-        applied++;
-        phaseResult(`Applied: ${f.text.slice(0, 60)}...`);
+        await proposeImprovement(f.text, `HARDEN actionable, session ${state.sessionNumber}`, "workflow", f.source);
+        actionable++;
+        phaseResult(`Proposed (${f.type}): ${f.text.slice(0, 60)}...`);
       } catch (e: any) {
-        info(`Warning: could not apply: ${e.message}`);
+        info(`Warning: could not propose: ${e.message}`);
         skipped++;
       }
     } else {
@@ -1160,17 +1165,17 @@ async function runHardenFull(
     }
   }
 
-  phaseResult(`${findings.length} findings: ${applied} applied, ${proposed} proposed, ${skipped} skipped`);
+  phaseResult(`${findings.length} findings: ${actionable} actionable, ${proposed} strategy, ${skipped} skipped`);
   completePhase(state, "harden", {
     findings: findings.length,
     classified: findings.length,
-    applied,
+    actionable,
     proposed,
     skipped,
   });
 }
 
-/** HARDEN: approve oversight — auto-apply non-STRATEGY, ask for STRATEGY */
+/** HARDEN: approve oversight — auto-propose non-STRATEGY, ask for STRATEGY */
 async function runHardenApprove(
   state: SessionState,
   flags: RunnerFlags,
@@ -1180,7 +1185,7 @@ async function runHardenApprove(
 
   if (findings.length === 0) {
     phaseSkipped("No findings to harden");
-    completePhase(state, "harden", { findings: 0, classified: 0, applied: 0, proposed: 0, skipped: 0 });
+    completePhase(state, "harden", { findings: 0, classified: 0, actionable: 0, proposed: 0, skipped: 0 });
     return;
   }
 
@@ -1190,7 +1195,7 @@ async function runHardenApprove(
     findings = await llmClassify(findings, provider);
   }
 
-  let applied = 0;
+  let actionable = 0;
   let proposed = 0;
   let skipped = 0;
 
@@ -1218,21 +1223,21 @@ async function runHardenApprove(
       continue;
     }
 
-    // Auto-apply CODE-FIX, GUARDRAIL, GOTCHA, PLAYBOOK
+    // Auto-propose CODE-FIX, GUARDRAIL, GOTCHA, PLAYBOOK as actionable
     try {
-      await proposeImprovement(f.text, `HARDEN auto-applied, session ${state.sessionNumber}`, "workflow", f.source);
-      applied++;
+      await proposeImprovement(f.text, `HARDEN actionable, session ${state.sessionNumber}`, "workflow", f.source);
+      actionable++;
     } catch (e: any) {
-      info(`Warning: could not apply "${f.text.slice(0, 40)}": ${e.message}`);
+      info(`Warning: could not propose "${f.text.slice(0, 40)}": ${e.message}`);
       skipped++;
     }
   }
 
-  phaseResult(`${findings.length} findings: ${applied} applied, ${proposed} proposed, ${skipped} skipped`);
+  phaseResult(`${findings.length} findings: ${actionable} actionable, ${proposed} strategy, ${skipped} skipped`);
   completePhase(state, "harden", {
     findings: findings.length,
     classified: findings.length,
-    applied,
+    actionable,
     proposed,
     skipped,
   });
@@ -1247,7 +1252,7 @@ async function runHardenAutonomous(
 
   if (findings.length === 0) {
     phaseSkipped("No findings to harden");
-    completePhase(state, "harden", { findings: 0, classified: 0, applied: 0, proposed: 0, skipped: 0 });
+    completePhase(state, "harden", { findings: 0, classified: 0, actionable: 0, proposed: 0, skipped: 0 });
     return;
   }
 
@@ -1257,7 +1262,7 @@ async function runHardenAutonomous(
     findings = await llmClassify(findings, provider);
   }
 
-  let applied = 0;
+  let actionable = 0;
   let proposed = 0;
   let skipped = 0;
 
@@ -1280,21 +1285,23 @@ async function runHardenAutonomous(
       continue;
     }
 
-    // Auto-apply CODE-FIX, GUARDRAIL, GOTCHA, PLAYBOOK silently
+    // CODE-FIX, GUARDRAIL, GOTCHA, PLAYBOOK — propose as actionable
+    // Note: proposeImprovement() records the finding in the tracker;
+    // it does not auto-edit files. "Actionable" means tracked for action.
     try {
-      await proposeImprovement(f.text, `HARDEN auto-applied, session ${state.sessionNumber}`, "workflow", f.source);
-      applied++;
+      await proposeImprovement(f.text, `HARDEN actionable, session ${state.sessionNumber}`, "workflow", f.source);
+      actionable++;
     } catch (e: any) {
-      info(`Warning: could not apply: ${e.message}`);
+      info(`Warning: could not propose: ${e.message}`);
       skipped++;
     }
   }
 
-  phaseResult(`${findings.length} findings: ${applied} applied, ${proposed} proposed, ${skipped} skipped`);
+  phaseResult(`${findings.length} findings: ${actionable} actionable, ${proposed} strategy, ${skipped} skipped`);
   completePhase(state, "harden", {
     findings: findings.length,
     classified: findings.length,
-    applied,
+    actionable,
     proposed,
     skipped,
   });
@@ -1428,7 +1435,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel): voi
   lines.push(`## 8. HARDEN${phaseDuration(state, "harden")}`);
   if (harden.findings !== undefined) {
     lines.push(`- ${harden.findings} findings classified`);
-    lines.push(`- Applied: ${harden.applied || 0} | Proposed: ${harden.proposed || 0} | Skipped: ${harden.skipped || 0}`);
+    lines.push(`- Actionable: ${harden.actionable || 0} | Proposed: ${harden.proposed || 0} | Skipped: ${harden.skipped || 0}`);
   } else {
     lines.push("- Skipped");
   }
