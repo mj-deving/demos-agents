@@ -3,12 +3,13 @@
  * Room Temperature Assessment — Sentinel Phase 2 tool
  *
  * Maps to strategy.yaml SCAN phase, roomTemperature.questions.
- * Fetches feed data and answers the 5 room temperature questions:
+ * Fetches feed data and answers the 6 room temperature questions:
  *   1. Activity level (posts in last N hours)
  *   2. Convergence (3+ agents on same topic)
  *   3. Gaps (unattested numeric claims)
  *   4. Heat (topic with most reactions)
  *   5. Twitter delta (placeholder — requires bird CLI)
+ *   6. Meta saturation (50%+ posts are generic meta-analysis)
  *
  * Usage:
  *   npx tsx tools/room-temp.ts [--env PATH] [--limit N] [--hours N] [--json] [--pretty]
@@ -122,6 +123,12 @@ interface RoomTempResult {
     top_post_tx: string | null;
   };
   twitter_delta: null;
+  meta_saturation: {
+    ratio: number;
+    level: string;
+    meta_count: number;
+    total_count: number;
+  };
   recommendation: string;
 }
 
@@ -196,7 +203,9 @@ function analyzeGaps(posts: FeedPost[]): RoomTempResult["gaps"] {
   for (const post of posts) {
     const text = post.payload?.text || "";
     const hasNumericClaim = numericPattern.test(text);
-    const hasAttestation = post.payload?.sourceAttestations && post.payload.sourceAttestations.length > 0;
+    const hasAttestation =
+      (post.payload?.sourceAttestations && post.payload.sourceAttestations.length > 0) ||
+      (post.payload?.tlsnAttestations && (post.payload.tlsnAttestations as any[]).length > 0);
     if (hasNumericClaim && !hasAttestation) {
       gapPosts.push(post);
     }
@@ -246,13 +255,41 @@ function analyzeHeat(posts: FeedPost[]): RoomTempResult["heat"] {
 }
 
 /**
+ * Detect meta-saturation: when 50%+ of posts are generic meta-analysis
+ * (analyzing "the feed" itself rather than external data).
+ * Heuristic: posts with NO attestation AND text matches feed-referencing patterns.
+ */
+function analyzeMetaSaturation(posts: FeedPost[]): RoomTempResult["meta_saturation"] {
+  const metaPattern = /\b(agents?\s+(are|have|keep|seem|appear)|the feed|consensus\s+(is|has|shows)|meta[\s-]?analysis|leaderboard|hive\s*mind|collective\s+intelligence|shared\s+nervous)\b/i;
+
+  let metaCount = 0;
+  for (const post of posts) {
+    const text = post.payload?.text || "";
+    const hasAttestation =
+      (post.payload?.sourceAttestations && post.payload.sourceAttestations.length > 0) ||
+      (post.payload?.tlsnAttestations && (post.payload.tlsnAttestations as any[]).length > 0);
+
+    if (!hasAttestation && metaPattern.test(text)) {
+      metaCount++;
+    }
+  }
+
+  const total = posts.length;
+  const ratio = total > 0 ? +(metaCount / total).toFixed(2) : 0;
+  const level = ratio >= 0.5 ? "HIGH" : ratio >= 0.3 ? "MODERATE" : "LOW";
+
+  return { ratio, level, meta_count: metaCount, total_count: total };
+}
+
+/**
  * Generate recommendation text from analysis.
  */
 function generateRecommendation(
   activity: RoomTempResult["activity"],
   convergence: RoomTempResult["convergence"],
   gaps: RoomTempResult["gaps"],
-  heat: RoomTempResult["heat"]
+  heat: RoomTempResult["heat"],
+  metaSaturation?: RoomTempResult["meta_saturation"]
 ): string {
   const parts: string[] = [];
 
@@ -268,6 +305,12 @@ function generateRecommendation(
 
   if (heat.topic && heat.reactions > 5) {
     parts.push(`Hot topic: "${heat.topic}" (${heat.reactions} reactions).`);
+  }
+
+  if (metaSaturation && metaSaturation.level === "HIGH") {
+    parts.push(`META SATURATION: ${metaSaturation.meta_count}/${metaSaturation.total_count} posts are generic meta — opportunity for data-backed counter-posts.`);
+  } else if (metaSaturation && metaSaturation.level === "MODERATE") {
+    parts.push(`Meta trending: ${metaSaturation.meta_count}/${metaSaturation.total_count} generic meta posts — consider data-backed content.`);
   }
 
   return parts.join(" ");
@@ -310,6 +353,10 @@ function prettyPrint(result: RoomTempResult): void {
     console.log(`  🔥 Heat: no standout topic`);
   }
 
+  // Meta saturation
+  const metaIcon = result.meta_saturation.level === "HIGH" ? "🟠" : result.meta_saturation.level === "MODERATE" ? "🟡" : "🟢";
+  console.log(`  ${metaIcon} Meta saturation: ${result.meta_saturation.level} — ${result.meta_saturation.meta_count}/${result.meta_saturation.total_count} posts are generic meta (${(result.meta_saturation.ratio * 100).toFixed(0)}%)`);
+
   // Twitter
   console.log(`  🐦 Twitter delta: not available (requires bird CLI)`);
 
@@ -350,7 +397,8 @@ async function main(): Promise<void> {
   const convergence = analyzeConvergence(posts);
   const gaps = analyzeGaps(posts);
   const heat = analyzeHeat(posts);
-  const recommendation = generateRecommendation(activity, convergence, gaps, heat);
+  const metaSaturation = analyzeMetaSaturation(posts);
+  const recommendation = generateRecommendation(activity, convergence, gaps, heat, metaSaturation);
 
   const result: RoomTempResult = {
     timestamp: new Date().toISOString(),
@@ -359,6 +407,7 @@ async function main(): Promise<void> {
     gaps,
     heat,
     twitter_delta: null,
+    meta_saturation: metaSaturation,
     recommendation,
   };
 

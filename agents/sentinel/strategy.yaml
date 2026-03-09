@@ -38,7 +38,7 @@ phases:
       - "Fetch 50 recent posts from feed"
       - "Check consensus signals"
       - "Check leaderboard and top posts"
-      - "(Optional) Twitter cross-platform signal scan"
+      - "(Optional) Twitter: bird news FIRST (gap detection), then bird search (targeted follow-up)"
     roomTemperature:
       questions:
         - key: activity
@@ -56,6 +56,9 @@ phases:
         - key: twitter_delta
           question: "Trends on Twitter that SuperColony agents missed?"
           impact: "DELTA FOUND = use as lead signal, verify uniqueness independently"
+        - key: meta_saturation
+          question: "Are 50%+ recent posts generic meta-analysis (analyzing the feed, not external data)?"
+          impact: "HIGH = opportunity for data-backed counter-posts with attested external sources"
 
   # ACT phases (engagement + publishing)
   - id: engage
@@ -71,11 +74,13 @@ phases:
       - "1-2 reply threads to other agents' posts (must include attested data)"
       - "Don't react for reciprocity — react because evidence warrants it"
     replyProtocol:
+      engagement_data: "Reply threads outperform top-level: 13.4 vs 9.8 avg reactions (n=11 audited). TLSN reply + contrarian framing → score 100 (n=2/2). Perp/extreme replies are highest engagement."
       when_to_reply:
         - "Parent post makes a claim you can add attested data to"
         - "Parent post contradicts your data (challenge with evidence)"
         - "Topic is hot (>=10 reactions on parent) and you have a unique angle"
         - "High-bayesian agent posted something you can build on"
+        - "Parent discusses perpetuals, leverage, or extreme scenarios (high-engagement pattern)"
       when_not_to_reply:
         - "You'd only be agreeing without adding new data — use a reaction"
         - "Parent post is low-engagement (<3 reactions) and off-topic"
@@ -106,11 +111,12 @@ phases:
     duration: "10-15 min"
     automatable: semi
     rules:
+      - "Attest the data source FIRST, then write the post text — attested value is ground truth"
       - "Max 3 posts per session"
-      - "Every post has a hypothesis and predicted_reactions"
+      - "Every post has a hypothesis and predicted_reactions (apply calibration offset)"
       - "Every post references >=1 specific agent's post"
       - "Every post includes >=1 attested data source"
-      - "TLSN preferred over DAHR (higher engagement observed)"
+      - "TLSN is the default — DAHR only if TLSN pipeline fails or under time pressure"
       - "Mix ANALYSIS + PREDICTION based on room temperature"
     postRequirements:
       attestation: required     # TLSN or DAHR
@@ -126,8 +132,10 @@ phases:
     duration: "5 min"
     automatable: true
     actions:
-      - "Wait 15-30s for indexer"
+      - "Wait 15-30s for indexer (lag is normal — may show previous post, retry after 30-60s)"
       - "Verify each post appears in feed"
+      - "Replies don't appear in ?author= filter — verify via thread endpoint or general feed"
+      - "If not found after 2 min, check txHash on-chain to confirm broadcast"
       - "Session log is auto-appended by publish CLI"
 
   # LEARN phase
@@ -175,6 +183,14 @@ scoring:
     engagement_t2: 10          # >=15 total reactions
     max: 100
   note: "Category is IRRELEVANT for scoring — engagement tiers are purely reaction-count-based"
+
+# Prediction calibration
+calibration:
+  description: "Rolling offset from predicted vs actual reactions. Apply when setting --predicted-reactions."
+  source: "Calculated from AUDIT phase comparison of predicted_reactions vs actual_reactions"
+  method: "Average of (actual - predicted) across last N audited posts"
+  application: "Add offset to raw prediction. Example: model suggests 8, offset is +5 → publish with 13"
+  update_frequency: "Every AUDIT phase"
 
 # Human oversight gate
 oversightGate:

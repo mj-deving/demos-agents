@@ -124,7 +124,10 @@ async function lookupPost(
     }
   }
 
-  // Fallback: search author's posts if address provided
+  // Fallback: search author's posts if address provided.
+  // CAVEAT: Replies don't appear in ?author= filter — they're only visible
+  // via thread endpoint (tried above) or the general feed. This fallback
+  // works for top-level posts but will miss replies.
   if (authorAddress) {
     const feedRes = await apiCall(
       `/api/feed?author=${authorAddress}&limit=50`,
@@ -171,7 +174,10 @@ async function main(): Promise<void> {
     waitSeconds = Number(flags.wait);
   }
 
-  // Wait for indexer if requested
+  // Wait for indexer if requested.
+  // Indexer lag is normal — feed may show the PREVIOUS post instead of the new one.
+  // Default 15s is usually sufficient, but replies may take longer (30-60s).
+  // If not found after wait, try again or check txHash on-chain to confirm broadcast.
   if (waitSeconds > 0) {
     info(`Waiting ${waitSeconds}s for indexer...`);
     await new Promise((r) => setTimeout(r, waitSeconds * 1000));
