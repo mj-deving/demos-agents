@@ -18,8 +18,9 @@
  *   npx tsx tools/session-runner.ts --skip-to scan --force-skip-audit --pretty
  */
 
-import { resolve } from "node:path";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
@@ -215,7 +216,7 @@ async function ask(
   prompt: string
 ): Promise<string> {
   try {
-    const answer = await ask(rl,prompt);
+    const answer = await rl.question(prompt);
     return answer ?? "";
   } catch {
     // EOF (Ctrl+D) — treat as empty input
@@ -236,7 +237,7 @@ async function runToolAndParse(
 ): Promise<any> {
   info(`Running ${label}...`);
   const result = await runTool(toolPath, args, {
-    cwd: resolve(import.meta.dirname, ".."),
+    cwd: resolve(dirname(fileURLToPath(import.meta.url)), ".."),
     timeout: 180_000, // 3 min for slow tools
   });
 
@@ -280,9 +281,10 @@ async function runScan(state: SessionState, flags: RunnerFlags): Promise<void> {
   const args = ["--json", "--env", flags.env];
   const result = await runToolAndParse("tools/room-temp.ts", args, "room-temp.ts");
 
-  const activity = result.activity_level || result.heat || "unknown";
-  const gaps = result.gaps?.length || 0;
-  phaseResult(`${activity} activity | ${gaps} gaps found`);
+  const level = result.activity?.level || "unknown";
+  const pph = result.activity?.posts_per_hour ?? "?";
+  const gapCount = result.gaps?.topics?.length || 0;
+  phaseResult(`${level} activity (${pph} posts/hr) | ${gapCount} gap topics found`);
 
   completePhase(state, "scan", result);
 }
@@ -524,6 +526,134 @@ async function runReview(
   completePhase(state, "review", result);
 }
 
+// ── Session Report ─────────────────────────────────
+
+function phaseDuration(state: SessionState, phase: PhaseName): string {
+  const p = state.phases[phase];
+  if (!p.startedAt || !p.completedAt) return "";
+  const ms = new Date(p.completedAt).getTime() - new Date(p.startedAt).getTime();
+  return ` (${(ms / 60000).toFixed(1)} min)`;
+}
+
+function writeSessionReport(state: SessionState): void {
+  const sessDir = resolve(homedir(), ".sentinel", "sessions");
+  mkdirSync(sessDir, { recursive: true });
+  const reportPath = resolve(sessDir, `session-${state.sessionNumber}-report.md`);
+
+  const duration = ((Date.now() - new Date(state.startedAt).getTime()) / 60000).toFixed(1);
+  const date = new Date(state.startedAt).toISOString().slice(0, 10);
+  const engage = state.phases.engage.result || {};
+  const lines: string[] = [];
+
+  lines.push(`# Sentinel Session ${state.sessionNumber} — ${date}`);
+  lines.push("");
+  lines.push(`**Duration:** ${duration} min | **Posts:** ${state.posts.length} | **Reactions:** ${engage.reactions_cast || 0} (${engage.agrees || 0} agree, ${engage.disagrees || 0} disagree)`);
+  lines.push("");
+
+  // AUDIT
+  const audit = state.phases.audit.result || {};
+  lines.push(`## 1. AUDIT${phaseDuration(state, "audit")}`);
+  if (audit.stats) {
+    const s = audit.stats;
+    lines.push(`- ${s.total_entries || 0} entries audited`);
+    const errVal = s.avg_prediction_error;
+    const errStr = errVal !== undefined ? `${errVal >= 0 ? "+" : ""}${errVal.toFixed(1)}` : "N/A";
+    lines.push(`- Avg prediction error: ${errStr}`);
+    lines.push(`- Scores: ${s.score_distribution ? Object.entries(s.score_distribution).map(([k, v]) => `${k}x${v}`).join(", ") : "N/A"}`);
+  } else {
+    lines.push("- Skipped");
+  }
+  lines.push("");
+
+  // SCAN
+  const scan = state.phases.scan.result || {};
+  lines.push(`## 2. SCAN${phaseDuration(state, "scan")}`);
+  if (scan.activity) {
+    lines.push(`- ${scan.activity.level || "?"} activity (${scan.activity.posts_per_hour ?? "?"} posts/hr)`);
+    if (scan.heat?.topic) lines.push(`- Hot topic: ${scan.heat.topic} (${scan.heat.reactions || 0} reactions)`);
+    if (scan.gaps?.topics?.length) lines.push(`- ${scan.gaps.topics.length} gap topics: ${scan.gaps.topics.slice(0, 6).join(", ")}${scan.gaps.topics.length > 6 ? "..." : ""}`);
+  } else {
+    lines.push("- Skipped");
+  }
+  lines.push("");
+
+  // ENGAGE
+  lines.push(`## 3. ENGAGE${phaseDuration(state, "engage")}`);
+  if (engage.reactions_cast !== undefined) {
+    lines.push(`- ${engage.reactions_cast} reactions: ${engage.agrees || 0} agree, ${engage.disagrees || 0} disagree`);
+    const targets = engage.targets || [];
+    for (const t of targets.slice(0, 8)) {
+      lines.push(`  - ${t.reaction} ${(t.txHash || "").slice(0, 12)}... (${t.author || "?"}, ${t.topic || "?"})`);
+    }
+  } else {
+    lines.push("- Skipped");
+  }
+  lines.push("");
+
+  // GATE
+  const gate = state.phases.gate.result || {};
+  const gatePosts = gate.posts || [];
+  lines.push(`## 4. GATE${phaseDuration(state, "gate")}`);
+  if (gatePosts.length > 0) {
+    lines.push(`- ${gatePosts.length} post(s) gated`);
+    for (let i = 0; i < gatePosts.length; i++) {
+      const gp = gatePosts[i];
+      const items = gp.gateResult?.items || [];
+      const passed = items.filter((c: any) => c.status === "pass").length;
+      lines.push(`- Post ${i + 1}: ${gp.topic} (${gp.category}, confidence ${gp.confidence}) — ${passed}/${items.length} checks`);
+    }
+  } else {
+    lines.push("- No posts gated");
+  }
+  lines.push("");
+
+  // PUBLISH
+  const publish = state.phases.publish.result || {};
+  const txHashes = publish.txHashes || [];
+  lines.push(`## 5. PUBLISH${phaseDuration(state, "publish")}`);
+  if (txHashes.length > 0) {
+    for (let i = 0; i < txHashes.length; i++) {
+      const tx = txHashes[i];
+      const gp = gatePosts[i] || {};
+      lines.push(`- ${tx.slice(0, 16)}... (${gp.category || "?"}, predicted: ${gp.confidence || "?"} reactions)`);
+    }
+  } else {
+    lines.push("- No posts published");
+  }
+  lines.push("");
+
+  // VERIFY
+  const verify = state.phases.verify.result || {};
+  lines.push(`## 6. VERIFY${phaseDuration(state, "verify")}`);
+  if (verify.skipped) {
+    lines.push("- Skipped (no posts)");
+  } else if (verify.summary) {
+    lines.push(`- ${verify.summary.verified || 0}/${verify.summary.total || 0} verified in feed`);
+  } else {
+    lines.push("- Skipped");
+  }
+  lines.push("");
+
+  // REVIEW
+  const review = state.phases.review.result || {};
+  lines.push(`## 7. REVIEW${phaseDuration(state, "review")}`);
+  const reviewStats = review.session_stats || review.stats;
+  if (reviewStats) {
+    const rs = reviewStats;
+    lines.push(`- ${rs.total_posts || 0} posts reviewed | Avg score: ${rs.avg_score || "N/A"} | Avg reactions: ${rs.avg_reactions || "N/A"}`);
+  }
+  if (review.q2_suggestions?.length) {
+    lines.push(`- Suggestions: ${review.q2_suggestions.join("; ")}`);
+  }
+  if (!reviewStats && !review.q2_suggestions?.length) {
+    lines.push("- No improvements proposed");
+  }
+  lines.push("");
+
+  writeFileSync(reportPath, lines.join("\n"));
+  info(`Session report written to ${reportPath}`);
+}
+
 // ── Dry Run ────────────────────────────────────────
 
 function dryRun(sessionNumber: number, flags: RunnerFlags, startPhase: PhaseName | null): void {
@@ -728,6 +858,13 @@ async function main(): Promise<void> {
       console.log(`  Verified: ${verifyResult.summary?.verified || 0}/${verifyResult.summary?.total || 0}`);
     }
     console.log("═".repeat(50) + "\n");
+
+    // Write persistent session report (non-fatal)
+    try {
+      writeSessionReport(state);
+    } catch (e: any) {
+      info(`Warning: could not write session report: ${e.message}`);
+    }
 
     // Increment session number and clear state
     incrementSessionNumber();
