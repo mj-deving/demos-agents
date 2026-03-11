@@ -445,7 +445,7 @@ async function runGateFull(
     const text = await ask(rl, "  Draft text (or 'skip'): ");
     const confStr = await ask(rl, "  Confidence (60-100): ");
 
-    const gateArgs = ["--topic", topic, "--json", "--env", flags.env];
+    const gateArgs = ["--agent", flags.agent, "--topic", topic, "--json", "--env", flags.env];
     if (category && category.toLowerCase() !== "skip") gateArgs.push("--category", category.toUpperCase());
     if (text && text.toLowerCase() !== "skip") gateArgs.push("--text", text);
     if (confStr && /^\d+$/.test(confStr)) gateArgs.push("--confidence", confStr);
@@ -501,7 +501,7 @@ async function runGateApprove(
   }
 
   for (const suggestion of suggestions) {
-    const gateArgs = ["--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env];
+    const gateArgs = ["--agent", flags.agent, "--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env];
     const result = await runToolAndParse("tools/gate.ts", gateArgs, "gate.ts");
 
     const checks = Array.isArray(result.checks) ? result.checks : [];
@@ -539,7 +539,7 @@ async function runGateAutonomous(
   }
 
   for (const suggestion of suggestions) {
-    const gateArgs = ["--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env];
+    const gateArgs = ["--agent", flags.agent, "--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env];
     const result = await runToolAndParse("tools/gate.ts", gateArgs, "gate.ts");
 
     const checks = Array.isArray(result.checks) ? result.checks : [];

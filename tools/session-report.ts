@@ -118,9 +118,26 @@ if (args.includes("--list")) {
   listReports();
 } else if (args.includes("--latest")) {
   showLatest();
-} else if (args.length > 0 && /^\d+$/.test(args[0])) {
-  showReport(Number(args[0]));
 } else {
-  // Default: show list
-  listReports();
+  // Find first positional arg (non-flag, not a flag value)
+  // Only these flags consume a value; all others are boolean
+  const VALUE_FLAGS = new Set(["--agent", "--env"]);
+  let sessionNum: number | null = null;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].startsWith("--")) {
+      // Skip flag; only consume next arg if this flag takes a value
+      if (VALUE_FLAGS.has(args[i]) && args[i + 1]) i++;
+      continue;
+    }
+    if (/^\d+$/.test(args[i])) {
+      sessionNum = Number(args[i]);
+      break;
+    }
+  }
+  if (sessionNum !== null) {
+    showReport(sessionNum);
+  } else {
+    // Default: show list
+    listReports();
+  }
 }
