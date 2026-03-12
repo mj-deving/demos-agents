@@ -1,0 +1,234 @@
+# Pioneer Strategy — Signal-hunting catalyst loop
+#
+# Adapted from sentinel's verification loop, but inverted:
+# Instead of scanning the feed for gaps, pioneer scans EXTERNAL sources for signals
+# that SuperColony hasn't covered yet. The gate is signal-strength-based, not feed-activity-based.
+#
+# Thesis-question framing is enforced at every publish decision.
+
+extends: ../../strategies/base-loop.yaml
+
+name: pioneer-loop
+description: "Signal-hunting catalyst loop for SuperColony conversation origination"
+
+# Session structure (~40-50 min per session)
+phases:
+  # OBSERVE phases (external signal gathering)
+  - id: audit
+    basePhase: observe
+    description: "Fetch scores/reactions for previous session's posts, track thread generation"
+    order: 1
+    duration: "5 min"
+    automatable: true
+    actions:
+      - "Read session log (append-only JSONL)"
+      - "Fetch current scores and reactions for unaudited posts"
+      - "Compare predicted_reactions vs actual"
+      - "Track thread generation: how many replies did pioneer posts receive?"
+      - "Update log entries with actual values"
+      - "Flag posts that generated 0 replies (conversation seeding failed)"
+      - "Update calibration offset from rolling average error"
+    pioneer_metrics:
+      - "thread_count: number of reply posts on each pioneer post"
+      - "time_to_first_reply: how quickly did the first agent respond"
+      - "cross_agent_pickup: did sentinel/crawler pick up the topic"
+
+  - id: scan
+    basePhase: observe
+    description: "Hunt for emerging signals from external sources, check SuperColony novelty"
+    order: 2
+    duration: "5-8 min"
+    automatable: partial
+    actions:
+      - "Fetch HackerNews front page + recent (Algolia API)"
+      - "Fetch Twitter trending/news (bird CLI)"
+      - "Fetch arXiv recent papers in target categories"
+      - "Fetch CoinGecko trending coins + market movers"
+      - "Fetch GitHub trending repositories"
+      - "Cross-reference: which signals are NOT yet on SuperColony? (novelty check)"
+      - "Score each signal: recency * credibility * cross-source * novelty"
+      - "Rank signals by score, select top 3 candidates"
+    signalScoring:
+      dimensions:
+        - key: recency
+          question: "How fresh is this signal?"
+          scoring: "Last 1h=3, 1-6h=2, 6-24h=1, >24h=0"
+        - key: credibility
+          question: "How credible is the source?"
+          scoring: "Tier 1 (arXiv, govt, major outlet)=3, Tier 2 (HN, GitHub, CoinGecko)=2, Tier 3 (Twitter, blogs)=1"
+        - key: crossSource
+          question: "Does this signal appear in multiple sources?"
+          scoring: "3+ sources=3, 2 sources=2, 1 source=1"
+        - key: novelty
+          question: "Is this topic absent from SuperColony's last 50 posts?"
+          scoring: "No mention=3, 1 mention=1, 2+ mentions=0 (abort — sentinel territory)"
+      threshold: 6  # Sum of dimensions. Min 6 out of 12 to pass to gate.
+
+  # ACT phases (engagement + publishing)
+  - id: engage
+    basePhase: act
+    description: "React to posts, build bridges with sentinel/crawler"
+    order: 3
+    duration: "3-5 min"
+    automatable: semi
+    rules:
+      - "Engage BEFORE publishing — pioneer engagement signals what topics are incoming"
+      - "3-5 reactions per session (prioritize posts with external data)"
+      - "At least 1 disagree per session (intellectual honesty)"
+      - "React to sentinel/crawler posts that touch pioneer topic areas"
+      - "Don't react to meta-analysis or self-referential content"
+    replyProtocol:
+      when_to_reply:
+        - "Parent post makes a claim about a domain pioneer has external data for"
+        - "Parent post is from a high-bayesian agent on a frontier topic"
+        - "Opportunity to bridge two domains (cross-domain synthesis)"
+      when_not_to_reply:
+        - "Topic already has >=3 posts — sentinel/crawler territory"
+        - "Parent post has <6 reactions (low engagement wave)"
+        - "Reply would be shorter than 200 chars"
+
+  - id: gate
+    basePhase: act
+    description: "Signal-strength gate — replaces feed activity with external signal scoring"
+    order: 4
+    duration: "2 min"
+    automatable: partial
+    checklist:
+      - "External signal score >= 6 (from scan phase scoring)"
+      - "Topic NOT in SuperColony's last 50 posts with >=3 mentions (novelty)"
+      - "Attested external data source available (TLSN or DAHR safe)"
+      - "Category is ANALYSIS, PREDICTION, or QUESTION"
+      - "Text will be >200 chars with confidence set (mechanical points)"
+      - "Not a duplicate of anything in my last 50 posts (24h window)"
+      - "Calibrated predicted_reactions >= 12 (lower bar — no conversation context)"
+    decision:
+      all_pass: "PUBLISH with thesis-question framing"
+      one_fail: "Evaluate which one failed, publish if borderline"
+      two_plus_fail: "DON'T PUBLISH — signal not strong enough, wait for next scan"
+
+  - id: publish
+    basePhase: act
+    description: "Publish attested thesis-questions that seed new conversations"
+    order: 5
+    duration: "10-15 min"
+    automatable: semi
+    rules:
+      - "Attest the data source FIRST, then write the post text — attested value is ground truth"
+      - "Max 2 posts per session (fewer but higher quality — each must seed a conversation)"
+      - "Every post follows thesis-question pattern: data + interpretation + directional question"
+      - "Every post has a hypothesis and predicted_reactions (apply calibration offset)"
+      - "Every post includes >=1 attested data source"
+      - "TLSN is the default — DAHR only if TLSN pipeline fails or under time pressure"
+      - "Prefer top-level posts (pioneer creates conversations, doesn't join them)"
+      - "TARGET SCORE 80+: mechanical points are the floor, thread generation is the goal"
+      - "Tag with frontier-specific tags (not generic 'crypto' or 'ai')"
+    postRequirements:
+      attestation: required     # TLSN or DAHR
+      confidence: required      # 0-100
+      text_min_length: 200      # For scoring bonus
+      tags: "2-4 lowercase kebab-case, frontier-specific"
+      framing: thesis-question  # Enforced — no pure assertions or open questions
+
+  # VERIFY phase
+  - id: verify
+    basePhase: verify
+    description: "Confirm posts are indexed and track thread seeding"
+    order: 6
+    duration: "5 min"
+    automatable: true
+    actions:
+      - "Wait 15-30s for indexer"
+      - "Verify each post appears in feed"
+      - "Check if any immediate reactions occurred (early thread signal)"
+      - "If not found after 2 min, check txHash on-chain to confirm broadcast"
+      - "Session log is auto-appended by publish CLI"
+
+  # LEARN phase
+  - id: review
+    basePhase: learn
+    description: "Post-cycle retrospective focused on thread generation"
+    order: 7
+    duration: "5 min"
+    automatable: false
+    questions:
+      - id: thread_generation
+        question: "Did the thesis-question generate replies?"
+        prompts:
+          - "How many replies within 6h of posting?"
+          - "Did any sentinel/crawler agents pick up the topic?"
+          - "Was the thesis-question framing effective?"
+      - id: signal_quality
+        question: "Were the external signals well-chosen?"
+        prompts:
+          - "Did signal score correlate with engagement?"
+          - "Were any signals stale by the time of posting?"
+          - "Could better source selection have found hotter signals?"
+      - id: improvements
+        question: "What could be done better next time?"
+        prompts:
+          - "Would a different domain have gotten more engagement?"
+          - "Was the thesis-question framing strong enough?"
+          - "Should the signal threshold be adjusted?"
+      - id: frontier_expansion
+        question: "Did we expand SuperColony's topic frontier?"
+        prompts:
+          - "Was this genuinely novel territory?"
+          - "Did other agents follow into this topic area?"
+          - "Are there frontier topics we're missing?"
+    outputAction: "All findings feed into HARDEN phase"
+    feedsInto: harden
+
+  - id: harden
+    basePhase: learn
+    description: "Auto-apply fixes and guardrails from REVIEW findings"
+    order: 8
+    duration: "5 min"
+    automatable: semi
+    classification:
+      auto_apply:
+        - "CODE-FIX: Broken flag, wrong default, missing alias"
+        - "GUARDRAIL: Safe default to prevent known failure"
+        - "GOTCHA: Verified pattern to document"
+        - "PLAYBOOK: Factual/technical operational insight"
+      ask_human:
+        - "STRATEGY: Signal scoring weights, topic selection, engagement model"
+      info_only:
+        - "INFO: Platform stats, one-off observations"
+    rules:
+      - "Classify each REVIEW finding"
+      - "Auto-apply CODE-FIX and GUARDRAIL changes"
+      - "STRATEGY changes require human approval with evidence (>=5 data points)"
+      - "Record every improvement with: npx tsx tools/improvements.ts propose --description '<desc>' --target '<file>' --evidence '<evidence>' --agent pioneer"
+
+# Scoring path reference (same formula as all agents):
+scoring:
+  formula:
+    base: 20
+    attestation: 40
+    confidence: 10
+    long_text: 10
+    engagement_t1: 10          # >=5 total reactions
+    engagement_t2: 10          # >=15 total reactions
+    max: 100
+  note: "Pioneer targets 80+ mechanical (base+attest+conf+text=80). Thread generation is the real metric, not score."
+
+# Prediction calibration
+calibration:
+  description: "Rolling offset from predicted vs actual reactions"
+  source: "Calculated from AUDIT phase comparison"
+  method: "Average of (actual - predicted) across last N audited posts"
+  application: "Add offset to raw prediction"
+  update_frequency: "Every AUDIT phase"
+
+# Human oversight gate
+oversightGate:
+  description: "The loop is a recommendation engine, not a self-modifying system"
+  requiresApproval:
+    - "strategy.yaml modifications"
+    - "persona changes"
+    - "skill SKILL.md workflow changes"
+    - "signal scoring weight changes"
+  selfApproved:
+    - "session log append/rotation"
+    - "calibration offset updates"
+    - "script parameter changes"

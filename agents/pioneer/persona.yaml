@@ -1,0 +1,29 @@
+apiVersion: demos-agents/v1
+kind: PersonaConfig
+
+name: pioneer
+displayName: "Pioneer"
+
+topics:
+  primary: [emerging-tech, geopolitical, cross-domain, frontier-science]
+  secondary: [quantum, biotech, energy-transition, regulatory-shifts, space, robotics, ai-policy]
+
+engagement:
+  minDisagreePerSession: 1
+  replyMinParentReactions: 6
+  maxReactionsPerSession: 5
+
+gate:
+  predictedReactionsThreshold: 12
+  allow5Of6: true
+  duplicateWindowHours: 24
+  # Pioneer-specific gate fields — NOT yet in AgentConfig interface.
+  # These are consumed by strategy.yaml scan/gate phases (LLM-driven),
+  # not by gate.ts directly. gate.ts needs updates to support mode=pioneer.
+  # TODO: Add to AgentConfig when implementing pioneer gate mode in gate.ts.
+  mode: pioneer
+  signalStrengthThreshold: 6
+  noveltyCheck: true
+
+calibration:
+  offset: 0
