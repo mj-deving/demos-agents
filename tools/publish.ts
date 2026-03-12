@@ -16,7 +16,7 @@ import { parse as parseYaml } from "yaml";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 import { resolveProvider } from "./lib/llm-provider.js";
 import { generatePost, type PostDraft } from "./lib/llm.js";
-import { connectWallet, apiCall, info } from "./lib/sdk.js";
+import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
 import { attestDahr, publishPost, type AttestResult, type PublishResult } from "./lib/publish-pipeline.js";
 import { readSessionLog, appendSessionLog, resolveLogPath, type SessionLogEntry } from "./lib/log.js";
@@ -38,7 +38,9 @@ interface SourceRegistry {
 
 interface PublishCandidate {
   topic: string;
-  category: "ANALYSIS" | "PREDICTION";
+  category: "ANALYSIS" | "PREDICTION" | "QUESTION";
+  text?: string;
+  predicted_reactions?: number;
 }
 
 interface CandidateResult {
@@ -114,9 +116,12 @@ USAGE:
 FLAGS:
   --agent NAME         Agent name (default: sentinel)
   --topic TEXT         Single topic to publish
+  --category TYPE      Category for --topic (ANALYSIS/PREDICTION/QUESTION, default ANALYSIS)
   --gated-file PATH    JSON file with gated topics/posts
   --scan-file PATH     Scan output JSON (room-temp) for context
   --scan-context PATH  Alias of --scan-file
+  --text TEXT          Use provided post text verbatim (skip LLM text generation)
+  --predicted-reactions N  Override predicted reactions in session log
   --env PATH           Path to .env file (default: .env)
   --log PATH           Session log path (default: ~/.{agent}-session-log.jsonl)
   --dry-run            Generate + validate only, no chain publish
@@ -126,8 +131,17 @@ FLAGS:
 
 EXAMPLES:
   npx tsx tools/publish.ts --agent sentinel --topic "ETH" --dry-run
+  npx tsx tools/publish.ts --agent pioneer --topic "quantum" --category QUESTION --text "..." --predicted-reactions 14
   npx tsx tools/publish.ts --agent crawler --gated-file /tmp/gated.json --scan-file /tmp/scan.json --json
 `);
+}
+
+function parsePredictedOverride(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`--predicted-reactions must be a non-negative integer, got "${raw}"`);
+  }
+  return Number(raw);
 }
 
 // ── Candidate & Source Helpers ─────────────────────
@@ -135,8 +149,16 @@ EXAMPLES:
 function loadCandidates(flags: Record<string, string>): PublishCandidate[] {
   const out: PublishCandidate[] = [];
 
+  const flagCategoryRaw = String(flags["category"] || "").toUpperCase();
+  const flagCategory: PublishCandidate["category"] =
+    flagCategoryRaw === "PREDICTION"
+      ? "PREDICTION"
+      : flagCategoryRaw === "QUESTION"
+        ? "QUESTION"
+        : "ANALYSIS";
+
   if (flags["topic"]) {
-    out.push({ topic: flags["topic"], category: "ANALYSIS" });
+    out.push({ topic: flags["topic"], category: flagCategory });
   }
 
   if (flags["gated-file"]) {
@@ -152,10 +174,24 @@ function loadCandidates(flags: Record<string, string>): PublishCandidate[] {
     for (const item of arr) {
       const topic = String(item?.topic || "").trim();
       if (!topic) continue;
-      const category = String(item?.category || "ANALYSIS").toUpperCase() === "PREDICTION"
-        ? "PREDICTION"
-        : "ANALYSIS";
-      out.push({ topic, category });
+      const rawCategory = String(item?.category || "ANALYSIS").toUpperCase();
+      const category: PublishCandidate["category"] =
+        rawCategory === "PREDICTION"
+          ? "PREDICTION"
+          : rawCategory === "QUESTION"
+            ? "QUESTION"
+            : "ANALYSIS";
+
+      const text = typeof item?.text === "string" && item.text.trim()
+        ? item.text.trim()
+        : undefined;
+
+      const rawPred = item?.predicted_reactions;
+      const predicted_reactions = typeof rawPred === "number" && Number.isFinite(rawPred) && rawPred >= 0
+        ? Math.round(rawPred)
+        : undefined;
+
+      out.push({ topic, category, text, predicted_reactions });
     }
   }
 
@@ -438,7 +474,7 @@ async function retry502<T>(name: string, fn: () => Promise<T>): Promise<T> {
   throw new Error(`${name} failed after retries`);
 }
 
-function fallbackDraft(topic: string, category: "ANALYSIS" | "PREDICTION"): PostDraft {
+function fallbackDraft(topic: string, category: "ANALYSIS" | "PREDICTION" | "QUESTION"): PostDraft {
   const text = `${topic}: Attested market snapshot indicates measurable signal divergence across major participants. Current observation includes at least 3 comparable data points and a confidence-backed stance. If engagement exceeds 5 reactions, this topic likely remains actionable in the next session window.`;
   return {
     text,
@@ -456,12 +492,15 @@ async function main(): Promise<void> {
   const { flags } = parseArgs();
 
   const agentName = resolveAgentName(flags);
+  setLogAgent(agentName);
   const config = loadAgentConfig(agentName);
   const envPath = flags["env"] || resolve(process.cwd(), ".env");
   const dryRun = flags["dry-run"] === "true";
   const pretty = flags["pretty"] === "true";
   const jsonMode = flags["json"] === "true";
   const logPath = resolveLogPath(flags["log"], agentName);
+  const operatorText = flags["text"]?.trim() || undefined;
+  const operatorPredicted = parsePredictedOverride(flags["predicted-reactions"]);
 
   const candidates = loadCandidates(flags);
   const scanContext = loadScanContext(flags);
@@ -512,7 +551,25 @@ async function main(): Promise<void> {
       }
 
       let draft: PostDraft;
-      if (provider) {
+      const candidateText = candidate.text?.trim() || undefined;
+      const forcedText = operatorText || candidateText;
+      const forcedPredicted = operatorPredicted ?? candidate.predicted_reactions;
+
+      if (forcedText) {
+        if (forcedText.length < 200) {
+          row.status = "rejected";
+          row.warnings.push(`Operator text too short (${forcedText.length} chars, need ≥200)`);
+          results.push(row);
+          continue;
+        }
+        draft = fallbackDraft(candidate.topic, candidate.category);
+        draft.text = forcedText;
+        draft.category = candidate.category;
+        if (forcedPredicted !== undefined) {
+          draft.predicted_reactions = forcedPredicted;
+        }
+        row.warnings.push("Operator-provided text used verbatim; skipped LLM generation");
+      } else if (provider) {
         draft = await generatePost(
           {
             topic: candidate.topic,
@@ -546,6 +603,11 @@ async function main(): Promise<void> {
         // Dry-run fallback when no provider is configured.
         draft = fallbackDraft(candidate.topic, candidate.category);
         row.warnings.push("LLM provider unavailable; used deterministic dry-run fallback draft");
+      }
+
+      if (!forcedText && forcedPredicted !== undefined) {
+        draft.predicted_reactions = forcedPredicted;
+        row.warnings.push("Operator-provided predicted reactions override applied");
       }
 
       row.text_preview = draft.text.slice(0, 140);
@@ -583,6 +645,12 @@ async function main(): Promise<void> {
           tags: draft.tags,
           confidence: draft.confidence,
           replyTo: draft.replyTo,
+          sourceAttestations: attested ? [{
+            url: attested.url,
+            responseHash: attested.responseHash,
+            txHash: attested.txHash,
+            timestamp: Date.now(),
+          }] : undefined,
         })
       );
 

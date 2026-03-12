@@ -23,6 +23,12 @@ export interface PublishInput {
   confidence: number;
   replyTo?: string;
   assets?: string[];
+  sourceAttestations?: Array<{
+    url: string;
+    responseHash: string;
+    txHash: string;
+    timestamp?: number;
+  }>;
 }
 
 export interface AttestResult {
@@ -127,6 +133,14 @@ export async function publishPost(
   if (input.confidence !== undefined) post.confidence = input.confidence;
   if (input.replyTo) post.replyTo = input.replyTo;
   if (input.assets && input.assets.length > 0) post.assets = input.assets;
+  if (input.sourceAttestations && input.sourceAttestations.length > 0) {
+    post.sourceAttestations = input.sourceAttestations.map((a) => ({
+      url: a.url,
+      responseHash: a.responseHash,
+      txHash: a.txHash,
+      timestamp: typeof a.timestamp === "number" ? a.timestamp : Date.now(),
+    }));
+  }
 
   info(`Publishing ${input.category} post (${input.text.length} chars)...`);
 
@@ -182,7 +196,15 @@ export async function attestAndPublish(
   }
 
   // Step 2: Publish
-  const result = await publishPost(demos, input);
+  const result = await publishPost(demos, {
+    ...input,
+    sourceAttestations: attestation ? [{
+      url: attestation.url,
+      responseHash: attestation.responseHash,
+      txHash: attestation.txHash,
+      timestamp: Date.now(),
+    }] : input.sourceAttestations,
+  });
   result.attestation = attestation;
 
   return result;

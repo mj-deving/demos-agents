@@ -23,6 +23,7 @@ import { Demos } from "@kynesyslabs/demosdk/websdk";
 
 export const RPC_URL = "https://demosnode.discus.sh/";
 export const SUPERCOLONY_API = "https://www.supercolony.ai";
+let logAgentName = process.env.AGENT_NAME || "sentinel";
 
 // ── Wallet ─────────────────────────────────────────
 
@@ -173,6 +174,15 @@ export async function apiCall(
 /**
  * Log info to stderr (keeps stdout clean for JSON output).
  */
-export function info(msg: string, agentName: string = "sentinel"): void {
+export function setLogAgent(agentName: string): void {
+  const trimmed = agentName.trim();
+  if (!trimmed) return;
+  logAgentName = trimmed;
+}
+
+/**
+ * Log info to stderr (keeps stdout clean for JSON output).
+ */
+export function info(msg: string, agentName: string = logAgentName): void {
   console.error(`[${agentName}] ${msg}`);
 }

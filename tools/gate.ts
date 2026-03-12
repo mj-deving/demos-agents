@@ -12,7 +12,7 @@
 
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
-import { connectWallet, apiCall, info } from "./lib/sdk.js";
+import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 
@@ -561,6 +561,7 @@ async function main(): Promise<void> {
   const { flags } = parseArgs();
 
   const agentName = resolveAgentName(flags);
+  setLogAgent(agentName);
   const config = loadAgentConfig(agentName);
   const topic = flags["topic"];
   if (!topic) {
