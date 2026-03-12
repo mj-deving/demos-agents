@@ -28,29 +28,26 @@
  * SDK: @kynesyslabs/demosdk/websdk
  */
 
-import { webcrypto } from "node:crypto";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-// Node 18 polyfill
-if (!globalThis.crypto) {
-  (globalThis as any).crypto = webcrypto;
-}
-
-import { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
+import { DemosTransactions } from "@kynesyslabs/demosdk/websdk";
+import {
+  apiCall,
+  connectWallet as connectSharedWallet,
+  ensureAuth,
+  loadAuthCache,
+  resolveCredentialPath,
+} from "./lib/shared.js";
 
 // ──────────────────────────────────────────
 // Constants
 // ──────────────────────────────────────────
 
-const RPC_URL = "https://demosnode.discus.sh/";
-const SUPERCOLONY_API = "https://www.supercolony.ai";
 const FAUCET_URL = "https://faucetbackend.demos.sh/api/request";
 const HIVE_PREFIX = new Uint8Array([0x48, 0x49, 0x56, 0x45]); // "HIVE"
-
-const AUTH_CACHE_PATH = resolve(homedir(), ".supercolony-auth.json");
 
 // ──────────────────────────────────────────
 // Agent Config
@@ -85,8 +82,6 @@ function loadAgentConfig(): AgentConfig | null {
   }
 }
 
-const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
-
 function resolveEnvPath(flags: Record<string, string>): string {
   // Priority: --env-path flag > agent config > XDG credentials > legacy fallback
   if (flags["env-path"]) {
@@ -97,11 +92,11 @@ function resolveEnvPath(flags: Record<string, string>): string {
   if (config?.envPath) {
     return resolve(config.envPath.replace(/^~/, homedir()));
   }
-  // XDG path takes priority over legacy hardcoded path
-  if (existsSync(XDG_CREDENTIALS)) {
-    return XDG_CREDENTIALS;
-  }
-  return resolve(homedir(), "projects/DEMOS-Work/.env");
+  const legacyDefault = resolve(homedir(), "projects/DEMOS-Work/.env");
+  return resolveCredentialPath(
+    legacyDefault,
+    legacyDefault
+  );
 }
 
 // Stored after first resolution so all commands in a run use the same path
@@ -119,7 +114,8 @@ function getEnvPath(flags: Record<string, string> = {}): string {
 
 function parseArgs(argv: string[]): { command: string; flags: Record<string, string>; positional: string[] } {
   const args = argv.slice(2);
-  const command = args[0] || "help";
+  const commandToken = args[0] || "help";
+  const command = (commandToken === "--help" || commandToken === "-h") ? "help" : commandToken;
   const flags: Record<string, string> = {};
   const positional: string[] = [];
 
@@ -145,88 +141,8 @@ function parseArgs(argv: string[]): { command: string; flags: Record<string, str
 // Mnemonic & Wallet
 // ──────────────────────────────────────────
 
-function loadMnemonic(flags: Record<string, string> = {}): string {
-  const envPath = getEnvPath(flags);
-  if (!existsSync(envPath)) {
-    throw new Error(`No .env file at ${envPath}. Set up agent wallet (see agent-config.json).`);
-  }
-  const envContent = readFileSync(envPath, "utf-8");
-  const match = envContent.match(/DEMOS_MNEMONIC="(.+?)"/);
-  if (!match) {
-    throw new Error("No DEMOS_MNEMONIC found in .env");
-  }
-  return match[1];
-}
-
-async function connectWallet(flags: Record<string, string> = {}): Promise<{ demos: Demos; address: string }> {
-  const mnemonic = loadMnemonic(flags);
-  const demos = new Demos();
-  await demos.connect(RPC_URL);
-  const address = await demos.connectWallet(mnemonic);
-  return { demos, address };
-}
-
-// ──────────────────────────────────────────
-// Auth Token Cache
-// ──────────────────────────────────────────
-
-interface AuthCache {
-  token: string;
-  expiresAt: string;
-  address: string;
-}
-
-function loadAuthCache(): AuthCache | null {
-  if (!existsSync(AUTH_CACHE_PATH)) return null;
-  try {
-    const data = JSON.parse(readFileSync(AUTH_CACHE_PATH, "utf-8"));
-    // Check if expired (with 5-min buffer)
-    const expiry = new Date(data.expiresAt).getTime();
-    if (Date.now() > expiry - 5 * 60 * 1000) {
-      return null; // Expired or about to expire
-    }
-    return data;
-  } catch {
-    return null;
-  }
-}
-
-function saveAuthCache(cache: AuthCache): void {
-  writeFileSync(AUTH_CACHE_PATH, JSON.stringify(cache, null, 2));
-}
-
-// ──────────────────────────────────────────
-// API Helpers
-// ──────────────────────────────────────────
-
-async function apiCall(
-  path: string,
-  token: string | null,
-  options: RequestInit = {}
-): Promise<{ ok: boolean; status: number; data: any }> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string> || {}),
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const url = path.startsWith("http") ? path : `${SUPERCOLONY_API}${path}`;
-
-  try {
-    const res = await fetch(url, { ...options, headers });
-    const text = await res.text();
-    let data: any;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
-    return { ok: res.ok, status: res.status, data };
-  } catch (err: any) {
-    return { ok: false, status: 0, data: err.message };
-  }
+async function connectWallet(flags: Record<string, string> = {}) {
+  return connectSharedWallet(getEnvPath(flags));
 }
 
 // ──────────────────────────────────────────
@@ -259,58 +175,6 @@ function info(msg: string): void {
 }
 
 // ──────────────────────────────────────────
-// Authentication
-// ──────────────────────────────────────────
-
-async function ensureAuth(demos: Demos, address: string, forceRefresh = false): Promise<string> {
-  // Check cache first
-  if (!forceRefresh) {
-    const cached = loadAuthCache();
-    if (cached && cached.address === address) {
-      info(`Using cached token (expires: ${cached.expiresAt})`);
-      return cached.token;
-    }
-  }
-
-  info("Authenticating...");
-
-  // Get challenge
-  const challengeRes = await apiCall(`/api/auth/challenge?address=${address}`, null);
-  if (!challengeRes.ok) {
-    throw new Error(`Auth challenge failed (${challengeRes.status}): ${JSON.stringify(challengeRes.data)}`);
-  }
-
-  const { challenge, message } = challengeRes.data;
-
-  // Sign
-  const signature = await demos.signMessage(message);
-
-  // Verify
-  const verifyRes = await apiCall("/api/auth/verify", null, {
-    method: "POST",
-    body: JSON.stringify({
-      address,
-      challenge,
-      signature: signature.data,
-      algorithm: signature.type,
-    }),
-  });
-
-  if (!verifyRes.ok || !verifyRes.data.token) {
-    throw new Error(`Auth verify failed (${verifyRes.status}): ${JSON.stringify(verifyRes.data)}`);
-  }
-
-  const token = verifyRes.data.token;
-  const expiresAt = verifyRes.data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-  // Cache
-  saveAuthCache({ token, expiresAt, address });
-  info(`Authenticated. Token expires: ${expiresAt}`);
-
-  return token;
-}
-
-// ──────────────────────────────────────────
 // Commands
 // ──────────────────────────────────────────
 
@@ -318,7 +182,7 @@ async function cmdAuth(flags: Record<string, string>): Promise<void> {
   const { demos, address } = await connectWallet(flags);
   const forceRefresh = flags["force"] === "true";
   const token = await ensureAuth(demos, address, forceRefresh);
-  const cached = loadAuthCache();
+  const cached = loadAuthCache(address);
   output({
     status: "authenticated",
     address,

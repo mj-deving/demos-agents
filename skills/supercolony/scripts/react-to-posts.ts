@@ -10,17 +10,13 @@
  *   --address ADDR Agent's own address to skip (auto-detected from wallet if omitted)
  */
 
-import { webcrypto } from "node:crypto";
-import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { homedir } from "node:os";
-if (!globalThis.crypto) { (globalThis as any).crypto = webcrypto; }
-
-import { Demos } from "@kynesyslabs/demosdk/websdk";
-
-const RPC_URL = "https://demosnode.discus.sh/";
-const SUPERCOLONY_API = "https://www.supercolony.ai";
-const AUTH_CACHE_PATH = resolve(homedir(), ".supercolony-auth.json");
+import {
+  apiCall,
+  connectWallet,
+  ensureAuth,
+  resolveCredentialPath,
+} from "./lib/shared.js";
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`);
@@ -37,77 +33,43 @@ function parseMaxFlag(): number {
   return isNaN(val) || val <= 0 ? 8 : val;
 }
 
-function loadMnemonic(envPath: string): string {
-  const content = readFileSync(envPath, "utf-8");
-  const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
-  if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${envPath}`);
-  return match[1];
-}
+function printHelp(): void {
+  console.log(`
+react-to-posts.ts — React (agree/disagree) to other agents' posts
 
-async function apiCall(path: string, token: string, options: RequestInit = {}): Promise<{ ok: boolean; status: number; data: any }> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
-    ...(options.headers as Record<string, string> || {}),
-  };
-  try {
-    const res = await fetch(`${SUPERCOLONY_API}${path}`, { ...options, headers });
-    const text = await res.text();
-    let data: any;
-    try { data = JSON.parse(text); } catch { data = text; }
-    return { ok: res.ok, status: res.status, data };
-  } catch (err: any) {
-    return { ok: false, status: 0, data: err.message };
-  }
-}
+Usage:
+  npx tsx react-to-posts.ts [--max N] [--env PATH] [--address ADDR]
 
-async function authenticate(demos: Demos, address: string): Promise<string> {
-  if (existsSync(AUTH_CACHE_PATH)) {
-    const cache = JSON.parse(readFileSync(AUTH_CACHE_PATH, "utf-8"));
-    if (cache.expiresAt > Date.now()) {
-      log("Using cached auth token");
-      return cache.token;
-    }
-  }
-  log("Authenticating fresh...");
-  const challengeRes = await fetch(`${SUPERCOLONY_API}/api/auth/challenge?address=${address}`);
-  const challengeData = await challengeRes.json() as any;
-  const { challenge, message } = challengeData;
-  const signature = await demos.signMessage(message);
-  const verifyRes = await fetch(`${SUPERCOLONY_API}/api/auth/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ address, challenge, signature: signature.data, algorithm: signature.type }),
-  });
-  const verifyData = await verifyRes.json() as any;
-  if (!verifyData.token) throw new Error(`Auth failed: ${JSON.stringify(verifyData)}`);
-  writeFileSync(AUTH_CACHE_PATH, JSON.stringify({ token: verifyData.token, expiresAt: Date.now() + 23 * 60 * 60 * 1000 }));
-  return verifyData.token;
-}
-
-const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
-
-function resolveCredentialPath(explicitPath: string): string {
-  if (explicitPath !== resolve(process.cwd(), ".env")) return explicitPath; // explicit --env flag
-  if (existsSync(XDG_CREDENTIALS)) return XDG_CREDENTIALS;
-  return explicitPath;
+Flags:
+  --max N        Maximum reactions to cast (default: 8)
+  --env PATH     Path to credentials file (default: .env, with XDG fallback)
+  --address ADDR Agent address to skip (auto-detected from wallet if omitted)
+  --help, -h     Show this help
+`);
 }
 
 async function main() {
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+    printHelp();
+    return;
+  }
+
   const maxReactions = parseMaxFlag();
-  const envPath = resolveCredentialPath(resolve(parseArg("--env", resolve(process.cwd(), ".env"))));
+  const defaultEnvPath = resolve(process.cwd(), ".env");
+  const envPath = resolveCredentialPath(
+    resolve(parseArg("--env", defaultEnvPath)),
+    defaultEnvPath
+  );
   const explicitAddress = parseArg("--address", "");
 
   console.log("\n" + "═".repeat(60));
   console.log(`  SENTINEL — React to other agents' posts (max: ${maxReactions})`);
   console.log("═".repeat(60));
 
-  const demos = new Demos();
-  await demos.connect(RPC_URL);
-  const address = await demos.connectWallet(loadMnemonic(envPath));
+  const { demos, address } = await connectWallet(envPath);
   const ourAddress = explicitAddress || address;
   log(`Wallet: ${address.slice(0, 20)}...`);
-  const token = await authenticate(demos, address);
+  const token = await ensureAuth(demos, address);
 
   // Fetch a good chunk of the feed
   const feedRes = await apiCall("/api/feed?limit=50", token);
