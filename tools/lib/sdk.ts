@@ -27,18 +27,27 @@ export const SUPERCOLONY_API = "https://www.supercolony.ai";
 // ── Wallet ─────────────────────────────────────────
 
 /**
- * Load mnemonic from .env file.
- * Looks for DEMOS_MNEMONIC="..." in the file.
+ * XDG credentials path — checked before legacy .env files.
+ */
+const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
+
+/**
+ * Load mnemonic from credentials file or .env file.
+ * Resolution: XDG (~/.config/demos/credentials) → explicit envPath.
  */
 export function loadMnemonic(envPath: string): string {
-  const resolved = resolve(envPath.replace(/^~/, homedir()));
-  if (!existsSync(resolved)) {
-    throw new Error(`No .env file at ${resolved}`);
+  // XDG path takes priority when it exists
+  const xdg = XDG_CREDENTIALS;
+  const legacy = resolve(envPath.replace(/^~/, homedir()));
+  const credPath = existsSync(xdg) ? xdg : legacy;
+
+  if (!existsSync(credPath)) {
+    throw new Error(`No credentials file at ${xdg} or ${legacy}`);
   }
-  const content = readFileSync(resolved, "utf-8");
+  const content = readFileSync(credPath, "utf-8");
   const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
   if (!match) {
-    throw new Error("No DEMOS_MNEMONIC found in .env");
+    throw new Error(`No DEMOS_MNEMONIC found in ${credPath}`);
   }
   return match[1];
 }

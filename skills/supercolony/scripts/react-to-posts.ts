@@ -85,9 +85,17 @@ async function authenticate(demos: Demos, address: string): Promise<string> {
   return verifyData.token;
 }
 
+const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
+
+function resolveCredentialPath(explicitPath: string): string {
+  if (explicitPath !== resolve(process.cwd(), ".env")) return explicitPath; // explicit --env flag
+  if (existsSync(XDG_CREDENTIALS)) return XDG_CREDENTIALS;
+  return explicitPath;
+}
+
 async function main() {
   const maxReactions = parseMaxFlag();
-  const envPath = resolve(parseArg("--env", resolve(process.cwd(), ".env")));
+  const envPath = resolveCredentialPath(resolve(parseArg("--env", resolve(process.cwd(), ".env"))));
   const explicitAddress = parseArg("--address", "");
 
   console.log("\n" + "═".repeat(60));

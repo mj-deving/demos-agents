@@ -85,8 +85,10 @@ function loadAgentConfig(): AgentConfig | null {
   }
 }
 
+const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
+
 function resolveEnvPath(flags: Record<string, string>): string {
-  // Priority: --env-path flag > agent config > fallback
+  // Priority: --env-path flag > agent config > XDG credentials > legacy fallback
   if (flags["env-path"]) {
     const p = flags["env-path"].replace(/^~/, homedir());
     return resolve(p);
@@ -95,7 +97,10 @@ function resolveEnvPath(flags: Record<string, string>): string {
   if (config?.envPath) {
     return resolve(config.envPath.replace(/^~/, homedir()));
   }
-  // Fallback to original hardcoded path
+  // XDG path takes priority over legacy hardcoded path
+  if (existsSync(XDG_CREDENTIALS)) {
+    return XDG_CREDENTIALS;
+  }
   return resolve(homedir(), "projects/DEMOS-Work/.env");
 }
 

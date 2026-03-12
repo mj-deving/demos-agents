@@ -1,8 +1,11 @@
 node_modules/
 .env
+*.env
+credentials
 *.log
 .supercolony-auth.json
 .*-session-log.jsonl
 .session-log*.jsonl
 .session-summary.json
 dist/
+Plans/
