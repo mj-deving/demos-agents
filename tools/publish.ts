@@ -603,6 +603,10 @@ async function main(): Promise<void> {
             agentName,
           }
         );
+        if (draft.category !== candidate.category) {
+          row.warnings.push(`Category override applied: LLM=${draft.category} -> requested=${candidate.category}`);
+          draft.category = candidate.category;
+        }
       } else {
         // Dry-run fallback when no provider is configured.
         draft = fallbackDraft(candidate.topic, candidate.category);

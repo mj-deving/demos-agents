@@ -668,7 +668,6 @@ function extractTopicsFromScan(
   const addCandidate = (rawTopic: string, baseScore: number, reason: string): void => {
     const topic = String(rawTopic || "").trim().toLowerCase();
     if (!topic) return;
-    if (recentSelfTopics.has(topic)) return;
 
     const topicTokens = tokenizeTopicText(topic);
     if (topicTokens.length === 0) return;
@@ -679,6 +678,11 @@ function extractTopicsFromScan(
     if (genericLowSignal.has(topic)) {
       score -= 5;
       reasons.push("generic");
+    }
+    if (recentSelfTopics.has(topic)) {
+      // Penalize recent self-topics instead of hard-excluding them so gate doesn't starve.
+      score -= 4;
+      reasons.push("recent-self");
     }
     if (/^[a-z]{1,3}$/i.test(topic)) {
       score -= 3;
@@ -734,7 +738,7 @@ function extractTopicsFromScan(
 
   const ranked = [...candidateMap.entries()]
     .map(([topic, meta]) => ({ topic, ...meta }))
-    .filter((c) => c.score >= 4)
+    .filter((c) => c.score >= 3)
     .sort((a, b) => b.score - a.score);
 
   for (const c of ranked.slice(0, 3)) {
@@ -749,11 +753,12 @@ function extractTopicsFromScan(
   if (topics.length === 0) {
     for (const ft of agentConfig.topics.secondary.slice(0, 3)) {
       const lowered = String(ft).toLowerCase();
-      if (recentSelfTopics.has(lowered)) continue;
       topics.push({
         topic: lowered,
         category: "QUESTION",
-        reason: "pioneer fallback focus topic",
+        reason: recentSelfTopics.has(lowered)
+          ? "pioneer fallback focus topic (recent-self)"
+          : "pioneer fallback focus topic",
       });
       if (topics.length >= 3) break;
     }
@@ -1057,6 +1062,25 @@ async function runPublishAutonomous(
           agentName: agentConfig.name,
         }
       );
+
+      const targetCategory = (gp.category || (agentConfig.gate.mode === "pioneer" ? "QUESTION" : "ANALYSIS")).toUpperCase();
+      if (draft.category.toUpperCase() !== targetCategory) {
+        info(`Category override: LLM=${draft.category} -> gate=${targetCategory} for topic "${gp.topic}"`);
+        draft.category = targetCategory as PostDraft["category"];
+      }
+
+      // Hard quality checks before any publish attempt.
+      if (draft.text.length < 200) {
+        throw new Error(`Rejected draft: text too short (${draft.text.length} chars, need >=200)`);
+      }
+      if (draft.predicted_reactions < (agentConfig.gate.predictedReactionsThreshold || 0)) {
+        throw new Error(
+          `Rejected draft: predicted reactions ${draft.predicted_reactions} below threshold ${agentConfig.gate.predictedReactionsThreshold}`
+        );
+      }
+      if (agentConfig.gate.mode === "pioneer" && draft.category === "QUESTION" && !/\?/.test(draft.text)) {
+        throw new Error(`Rejected draft: QUESTION category requires at least one question mark`);
+      }
 
       console.log(`\n  LLM draft for "${gp.topic}":`);
       console.log(`    Category: ${draft.category}`);
