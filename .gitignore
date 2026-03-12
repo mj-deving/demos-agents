@@ -9,3 +9,9 @@ credentials
 .session-summary.json
 dist/
 Plans/
+claude-codex-coop/
+.githooks/
+tools/check-coop.mjs
+tools/coop-handoff.mjs
+tools/coop-status.mjs
+tools/install-git-hooks.mjs
