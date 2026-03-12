@@ -16,7 +16,7 @@
  */
 
 import { execSync, spawn } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 
@@ -40,17 +40,26 @@ export interface LLMProvider {
  * Covers: codex exec, claude --print, ollama run, or any custom LLM_CLI_COMMAND.
  * Handles its own auth (OAuth, local, whatever).
  *
- * Contract: prompt is delivered via stdin (shell redirect from temp file).
- * The command string is the full shell command WITHOUT a prompt argument.
+ * Contract: prompt is delivered via stdin pipe (no shell, no temp files).
+ * The command string is the full command WITHOUT a prompt argument.
  * Example: "claude --print", "ollama run llama3", "codex exec --full-auto -q"
+ *
+ * Security: command is split into executable + args and spawned directly
+ * via spawn() without a shell, preventing shell injection from env vars.
  */
 export class CLIProvider implements LLMProvider {
   readonly name: string;
-  private command: string;
+  private executable: string;
+  private args: string[];
 
   constructor(command: string, name?: string) {
-    this.command = command;
-    this.name = name || `cli:${command.split(/\s+/)[0]}`;
+    const parts = command.trim().split(/\s+/);
+    if (parts.length === 0 || !parts[0]) {
+      throw new Error("CLIProvider: command string cannot be empty");
+    }
+    this.executable = parts[0];
+    this.args = parts.slice(1);
+    this.name = name || `cli:${this.executable}`;
   }
 
   async complete(prompt: string, options?: { system?: string; maxTokens?: number }): Promise<string> {
@@ -58,45 +67,41 @@ export class CLIProvider implements LLMProvider {
       ? `${options.system}\n\n${prompt}`
       : prompt;
 
-    // Write prompt to temp file, then use shell stdin redirect (< file).
-    // This avoids ARG_MAX (only the short file path is in the command),
-    // keeps stderr separate, and works with any CLI that reads stdin.
-    const tmpFile = resolve(process.env.TMPDIR || "/tmp", `.llm-prompt-${process.pid}-${Date.now()}.txt`);
-    writeFileSync(tmpFile, fullPrompt);
-
-    try {
-      return await new Promise<string>((resolvePromise, reject) => {
-        const child = spawn("sh", ["-c", `${this.command} < '${tmpFile}'`], {
-          stdio: ["ignore", "pipe", "pipe"],
-          timeout: 120_000,
-        });
-
-        let stdout = "";
-        let stderr = "";
-
-        child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
-        child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
-
-        child.on("close", (code) => {
-          if (code !== 0) {
-            reject(new Error(`CLI provider "${this.name}" exited with code ${code}: ${(stderr || stdout).slice(0, 500)}`));
-          } else {
-            const result = stdout.trim();
-            if (!result) {
-              reject(new Error(`CLI provider "${this.name}" returned empty output. Does the command read from stdin?`));
-            } else {
-              resolvePromise(result);
-            }
-          }
-        });
-
-        child.on("error", (err) => {
-          reject(new Error(`CLI provider "${this.name}" failed to spawn: ${err.message}`));
-        });
+    // Pipe prompt directly via stdin — no shell, no temp files.
+    // spawn() without shell prevents command injection from env vars.
+    return new Promise<string>((resolvePromise, reject) => {
+      const child = spawn(this.executable, this.args, {
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 120_000,
       });
-    } finally {
-      try { unlinkSync(tmpFile); } catch { /* cleanup best-effort */ }
-    }
+
+      let stdout = "";
+      let stderr = "";
+
+      child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+      child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+
+      // Write prompt to stdin and close it so the CLI knows input is complete
+      child.stdin.write(fullPrompt);
+      child.stdin.end();
+
+      child.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`CLI provider "${this.name}" exited with code ${code}: ${(stderr || stdout).slice(0, 500)}`));
+        } else {
+          const result = stdout.trim();
+          if (!result) {
+            reject(new Error(`CLI provider "${this.name}" returned empty output. Does the command read from stdin?`));
+          } else {
+            resolvePromise(result);
+          }
+        }
+      });
+
+      child.on("error", (err) => {
+        reject(new Error(`CLI provider "${this.name}" failed to spawn: ${err.message}`));
+      });
+    });
   }
 }
 

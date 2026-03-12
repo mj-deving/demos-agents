@@ -46,7 +46,6 @@ import { saveReviewFindings, loadLatestFindings } from "./lib/review-findings.js
 import { generatePost, type PostDraft } from "./lib/llm.js";
 import { resolveProvider, type LLMProvider } from "./lib/llm-provider.js";
 import { connectWallet } from "./lib/sdk.js";
-import { ensureAuth } from "./lib/auth.js";
 import { attestAndPublish, type PublishResult } from "./lib/publish-pipeline.js";
 import { resolveAgentName, loadAgentConfig, type AgentConfig } from "./lib/agent-config.js";
 
@@ -673,9 +672,8 @@ async function runPublishAutonomous(
     } catch { /* use default */ }
   }
 
-  // Connect wallet for publishing
-  const { demos, address } = await connectWallet(flags.env);
-  const token = await ensureAuth(demos, address);
+  // Connect wallet for publishing (no auth needed — publish uses on-chain TX, not API)
+  const { demos } = await connectWallet(flags.env);
 
   let existingLog: any[] = [];
   try {

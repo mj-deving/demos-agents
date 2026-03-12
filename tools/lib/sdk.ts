@@ -32,6 +32,27 @@ export const SUPERCOLONY_API = "https://www.supercolony.ai";
 const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
 
 /**
+ * Parse DEMOS_MNEMONIC from file content.
+ * Handles double-quoted, single-quoted, and unquoted values.
+ * Trims whitespace from the result.
+ */
+function parseMnemonic(content: string, filePath: string): string {
+  // Try double-quoted: DEMOS_MNEMONIC="value"
+  const dq = content.match(/DEMOS_MNEMONIC="(.+?)"/);
+  if (dq) return dq[1].trim();
+
+  // Try single-quoted: DEMOS_MNEMONIC='value'
+  const sq = content.match(/DEMOS_MNEMONIC='(.+?)'/);
+  if (sq) return sq[1].trim();
+
+  // Try unquoted: DEMOS_MNEMONIC=value (everything to end of line)
+  const uq = content.match(/DEMOS_MNEMONIC=(.+)/);
+  if (uq) return uq[1].trim();
+
+  throw new Error(`No DEMOS_MNEMONIC found in ${filePath}`);
+}
+
+/**
  * Load mnemonic from credentials file or .env file.
  * Resolution: explicit envPath (if non-default) → XDG → legacy envPath.
  * Explicit --env flag always wins; XDG is fallback for default paths.
@@ -42,28 +63,19 @@ export function loadMnemonic(envPath: string): string {
 
   // Explicit --env flag always wins
   if (isExplicit) {
-    const content = readFileSync(legacy, "utf-8");
-    const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
-    if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${legacy}`);
-    return match[1];
+    return parseMnemonic(readFileSync(legacy, "utf-8"), legacy);
   }
 
   // XDG path is preferred default
   if (existsSync(XDG_CREDENTIALS)) {
-    const content = readFileSync(XDG_CREDENTIALS, "utf-8");
-    const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
-    if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${XDG_CREDENTIALS}`);
-    return match[1];
+    return parseMnemonic(readFileSync(XDG_CREDENTIALS, "utf-8"), XDG_CREDENTIALS);
   }
 
   // Legacy fallback
   if (!existsSync(legacy)) {
     throw new Error(`No credentials file at ${XDG_CREDENTIALS} or ${legacy}`);
   }
-  const content = readFileSync(legacy, "utf-8");
-  const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
-  if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${legacy}`);
-  return match[1];
+  return parseMnemonic(readFileSync(legacy, "utf-8"), legacy);
 }
 
 /**
@@ -89,15 +101,23 @@ export async function apiCall(
   token: string | null,
   options: RequestInit = {}
 ): Promise<{ ok: boolean; status: number; data: any }> {
+  const url = path.startsWith("http") ? path : `${SUPERCOLONY_API}${path}`;
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> || {}),
   };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
-  const url = path.startsWith("http") ? path : `${SUPERCOLONY_API}${path}`;
+  // Only attach bearer token to SuperColony API requests — prevents
+  // accidental token exfiltration to arbitrary URLs passed via path param.
+  // Fast path: relative paths (start with /) always resolve to SUPERCOLONY_API.
+  // Absolute URLs: check scheme + hostname before attaching token.
+  if (token) {
+    const isSuperColony = !path.startsWith("http") || url.startsWith(SUPERCOLONY_API);
+    if (isSuperColony) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
 
   const MAX_RETRIES = 3;
   const BASE_DELAY_MS = 3000; // 3s, 6s, 12s exponential backoff

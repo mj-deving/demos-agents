@@ -27,7 +27,10 @@ export interface PublishInput {
 
 export interface AttestResult {
   type: "dahr";
+  /** The URL that was actually attested (may differ from requested due to guardrails) */
   url: string;
+  /** The original URL requested before any guardrail rewrites */
+  requestedUrl: string;
   responseHash: string;
   txHash: string;
   data: any;
@@ -97,7 +100,8 @@ export async function attestDahr(
 
   return {
     type: "dahr",
-    url,
+    url: attestUrl,
+    requestedUrl: url,
     responseHash: proxyResponse.responseHash,
     txHash: proxyResponse.txHash,
     data,

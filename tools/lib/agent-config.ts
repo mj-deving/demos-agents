@@ -35,7 +35,6 @@ export interface AgentConfig {
     allow5Of6: boolean;
   };
   calibration: { offset: number };
-  envFile?: string;
   paths: AgentPaths;
 }
 
@@ -89,6 +88,84 @@ function buildPaths(name: string): AgentPaths {
   };
 }
 
+// ── Validation ──────────────────────────────────────
+
+/**
+ * Validate persona.yaml parsed object. Throws on type violations,
+ * returns validated config with defaults applied for missing fields.
+ * Permissive on extra fields — only validates fields we consume.
+ */
+interface ValidatedPersonaConfig {
+  name?: string;
+  displayName?: string;
+  topics?: { primary?: string[]; secondary?: string[] };
+  engagement?: { minDisagreePerSession?: number; replyMinParentReactions?: number; maxReactionsPerSession?: number };
+  gate?: { predictedReactionsThreshold?: number; allow5Of6?: boolean };
+  calibration?: { offset?: number };
+  [key: string]: unknown; // Allow extra fields from YAML
+}
+
+function validatePersonaConfig(yaml: any, filePath: string): ValidatedPersonaConfig {
+  if (yaml === null || yaml === undefined || typeof yaml !== "object") {
+    throw new Error(`Invalid persona.yaml at ${filePath}: expected an object, got ${typeof yaml}`);
+  }
+
+  const errors: string[] = [];
+
+  // Type checks for fields that would cause runtime issues if wrong type
+  if (yaml.name !== undefined && typeof yaml.name !== "string") {
+    errors.push(`name: expected string, got ${typeof yaml.name}`);
+  }
+  if (yaml.displayName !== undefined && typeof yaml.displayName !== "string") {
+    errors.push(`displayName: expected string, got ${typeof yaml.displayName}`);
+  }
+  if (yaml.topics !== undefined) {
+    if (typeof yaml.topics !== "object" || yaml.topics === null) {
+      errors.push(`topics: expected object, got ${typeof yaml.topics}`);
+    } else {
+      if (yaml.topics.primary !== undefined && !Array.isArray(yaml.topics.primary)) {
+        errors.push(`topics.primary: expected array, got ${typeof yaml.topics.primary}`);
+      }
+      if (yaml.topics.secondary !== undefined && !Array.isArray(yaml.topics.secondary)) {
+        errors.push(`topics.secondary: expected array, got ${typeof yaml.topics.secondary}`);
+      }
+    }
+  }
+  if (yaml.engagement !== undefined && (typeof yaml.engagement !== "object" || yaml.engagement === null)) {
+    errors.push(`engagement: expected object, got ${typeof yaml.engagement}`);
+  }
+  if (yaml.gate !== undefined && (typeof yaml.gate !== "object" || yaml.gate === null)) {
+    errors.push(`gate: expected object, got ${typeof yaml.gate}`);
+  }
+  if (yaml.calibration !== undefined && (typeof yaml.calibration !== "object" || yaml.calibration === null)) {
+    errors.push(`calibration: expected object, got ${typeof yaml.calibration}`);
+  }
+
+  // Numeric field checks
+  const numericChecks = [
+    ["engagement.minDisagreePerSession", yaml.engagement?.minDisagreePerSession],
+    ["engagement.replyMinParentReactions", yaml.engagement?.replyMinParentReactions],
+    ["engagement.maxReactionsPerSession", yaml.engagement?.maxReactionsPerSession],
+    ["gate.predictedReactionsThreshold", yaml.gate?.predictedReactionsThreshold],
+    ["calibration.offset", yaml.calibration?.offset],
+  ] as const;
+  for (const [field, val] of numericChecks) {
+    if (val !== undefined && typeof val !== "number") {
+      errors.push(`${field}: expected number, got ${typeof val}`);
+    }
+  }
+
+  if (yaml.gate?.allow5Of6 !== undefined && typeof yaml.gate.allow5Of6 !== "boolean") {
+    errors.push(`gate.allow5Of6: expected boolean, got ${typeof yaml.gate.allow5Of6}`);
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid persona.yaml at ${filePath}:\n  - ${errors.join("\n  - ")}`);
+  }
+
+  return yaml;
+}
+
 // ── Loader ─────────────────────────────────────────
 
 /**
@@ -118,7 +195,7 @@ export function loadAgentConfig(name?: string): AgentConfig {
   }
 
   const raw = readFileSync(personaYamlPath, "utf-8");
-  const yaml = parseYaml(raw);
+  const yaml = validatePersonaConfig(parseYaml(raw), personaYamlPath);
 
   return {
     name: yaml.name || agentName,
@@ -137,7 +214,6 @@ export function loadAgentConfig(name?: string): AgentConfig {
       allow5Of6: yaml.gate?.allow5Of6 ?? true,
     },
     calibration: { offset: yaml.calibration?.offset ?? 0 },
-    envFile: yaml.envFile || undefined,
     paths,
   };
 }
