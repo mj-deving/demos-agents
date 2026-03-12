@@ -34,6 +34,10 @@ export interface AgentConfig {
     predictedReactionsThreshold: number;
     allow5Of6: boolean;
     duplicateWindowHours: number;
+    mode?: "standard" | "pioneer";
+    signalStrengthThreshold?: number;
+    noveltyCheck?: boolean;
+    noveltyMentionThreshold?: number;
   };
   calibration: { offset: number };
   paths: AgentPaths;
@@ -101,7 +105,15 @@ interface ValidatedPersonaConfig {
   displayName?: string;
   topics?: { primary?: string[]; secondary?: string[] };
   engagement?: { minDisagreePerSession?: number; replyMinParentReactions?: number; maxReactionsPerSession?: number };
-  gate?: { predictedReactionsThreshold?: number; allow5Of6?: boolean; duplicateWindowHours?: number };
+  gate?: {
+    predictedReactionsThreshold?: number;
+    allow5Of6?: boolean;
+    duplicateWindowHours?: number;
+    mode?: "standard" | "pioneer";
+    signalStrengthThreshold?: number;
+    noveltyCheck?: boolean;
+    noveltyMentionThreshold?: number;
+  };
   calibration?: { offset?: number };
   [key: string]: unknown; // Allow extra fields from YAML
 }
@@ -157,6 +169,8 @@ function validatePersonaConfig(yaml: any, filePath: string): ValidatedPersonaCon
     ["engagement.maxReactionsPerSession", yaml.engagement?.maxReactionsPerSession],
     ["gate.predictedReactionsThreshold", yaml.gate?.predictedReactionsThreshold],
     ["gate.duplicateWindowHours", yaml.gate?.duplicateWindowHours],
+    ["gate.signalStrengthThreshold", yaml.gate?.signalStrengthThreshold],
+    ["gate.noveltyMentionThreshold", yaml.gate?.noveltyMentionThreshold],
     ["calibration.offset", yaml.calibration?.offset],
   ] as const;
   for (const [field, val] of numericChecks) {
@@ -172,6 +186,28 @@ function validatePersonaConfig(yaml: any, filePath: string): ValidatedPersonaCon
     const hours = yaml.gate.duplicateWindowHours;
     if (!Number.isFinite(hours) || hours <= 0 || hours > 720) {
       errors.push(`gate.duplicateWindowHours: expected number in range (0, 720], got ${hours}`);
+    }
+  }
+  if (yaml.gate?.mode !== undefined) {
+    if (typeof yaml.gate.mode !== "string") {
+      errors.push(`gate.mode: expected string, got ${typeof yaml.gate.mode}`);
+    } else if (yaml.gate.mode !== "standard" && yaml.gate.mode !== "pioneer") {
+      errors.push(`gate.mode: expected "standard" or "pioneer", got "${yaml.gate.mode}"`);
+    }
+  }
+  if (yaml.gate?.signalStrengthThreshold !== undefined) {
+    const threshold = yaml.gate.signalStrengthThreshold;
+    if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+      errors.push(`gate.signalStrengthThreshold: expected number in range [0, 100], got ${threshold}`);
+    }
+  }
+  if (yaml.gate?.noveltyCheck !== undefined && typeof yaml.gate.noveltyCheck !== "boolean") {
+    errors.push(`gate.noveltyCheck: expected boolean, got ${typeof yaml.gate.noveltyCheck}`);
+  }
+  if (yaml.gate?.noveltyMentionThreshold !== undefined) {
+    const threshold = yaml.gate.noveltyMentionThreshold;
+    if (!Number.isFinite(threshold) || threshold < 1 || threshold > 50) {
+      errors.push(`gate.noveltyMentionThreshold: expected number in range [1, 50], got ${threshold}`);
     }
   }
 
@@ -229,6 +265,10 @@ export function loadAgentConfig(name?: string): AgentConfig {
       predictedReactionsThreshold: yaml.gate?.predictedReactionsThreshold ?? 17,
       allow5Of6: yaml.gate?.allow5Of6 ?? true,
       duplicateWindowHours: yaml.gate?.duplicateWindowHours ?? 24,
+      mode: yaml.gate?.mode,
+      signalStrengthThreshold: yaml.gate?.signalStrengthThreshold,
+      noveltyCheck: yaml.gate?.noveltyCheck,
+      noveltyMentionThreshold: yaml.gate?.noveltyMentionThreshold,
     },
     calibration: { offset: yaml.calibration?.offset ?? 0 },
     paths,

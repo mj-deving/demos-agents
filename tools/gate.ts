@@ -44,7 +44,7 @@ function parseArgs(): { flags: Record<string, string> } {
 
 function printHelp(): void {
   console.log(`
-Confidence Gate Checker — Sentinel GATE phase tool
+Confidence Gate Checker — Agent GATE phase tool
 
 USAGE:
   npx tsx tools/gate.ts --topic TEXT [flags]
@@ -53,7 +53,7 @@ FLAGS:
   --agent NAME       Agent name (default: sentinel)
   --topic TEXT        Topic to check (required)
   --text TEXT         Post text to check length (optional)
-  --category TEXT     Post category: ANALYSIS or PREDICTION (optional)
+  --category TEXT     Post category (ANALYSIS/PREDICTION; pioneer also allows QUESTION)
   --confidence N      Confidence value 0-100 (optional)
   --reply-to TX_HASH  Parent post txHash (checks reply target reactions)
   --scan-cache PATH   Path to session state JSON with scan rawPosts cache
@@ -63,10 +63,10 @@ FLAGS:
   --help, -h          Show this help
 
 GATE ITEMS (from strategy.yaml):
-  1. Topic activity ≥3 posts         [AUTO — search API, feed fallback]
+  1. Topic activity / signal strength [AUTO — mode-dependent (standard/pioneer)]
   2. Unique data                     [MANUAL — operator confirms]
-  3. Agent reference                 [MANUAL — operator confirms]
-  4. ANALYSIS or PREDICTION category [AUTO — checks --category]
+  3. Agent reference / novelty       [MANUAL or AUTO — mode-dependent]
+  4. Category policy                 [AUTO — checks --category]
   5. >200 chars + confidence set     [AUTO — checks --text + --confidence]
   6. Not duplicate                   [AUTO — searches own posts; window from gate.duplicateWindowHours]
   7. Reply target reactions           [AUTO — checks --reply-to parent, if provided]
@@ -103,6 +103,17 @@ interface GateResult {
   };
 }
 
+type GateMode = "standard" | "pioneer";
+
+function matchTopic(posts: any[], topicLower: string): any[] {
+  return posts.filter((p: any) => {
+    const tags = (p.payload?.tags || []).map((t: string) => t.toLowerCase());
+    const assets = (p.payload?.assets || []).map((a: string) => a.toLowerCase());
+    const text = (p.payload?.text || "").toLowerCase();
+    return tags.includes(topicLower) || assets.includes(topicLower) || text.includes(topicLower);
+  });
+}
+
 // ── Gate Checks ────────────────────────────────────
 
 /**
@@ -116,14 +127,6 @@ async function checkTopicActivity(
 ): Promise<GateItem> {
   const topicLower = topic.toLowerCase();
   const validCache = Array.isArray(cachedPosts) ? cachedPosts : undefined;
-
-  // Helper: client-side topic matching (tags, assets, text)
-  const matchTopic = (posts: any[]) => posts.filter((p: any) => {
-    const tags = (p.payload?.tags || []).map((t: string) => t.toLowerCase());
-    const assets = (p.payload?.assets || []).map((a: string) => a.toLowerCase());
-    const text = (p.payload?.text || "").toLowerCase();
-    return tags.includes(topicLower) || assets.includes(topicLower) || text.includes(topicLower);
-  });
 
   // Primary: search API — server-side text+asset filtering
   // Note: search `text` param may not match tags/assets. If search passes (≥3), trust it.
@@ -144,7 +147,7 @@ async function checkTopicActivity(
     const searchNote = searchRes.ok ? "search found < 3" : `search failed (${searchRes.status})`;
     // If we had cached scan data, use that instead of warning
     if (validCache) {
-      const matching = matchTopic(validCache);
+      const matching = matchTopic(validCache, topicLower);
       return { number: 1, name: "Topic activity", status: matching.length >= 3 ? "pass" : "fail", detail: `${matching.length} posts via scan cache (API unavailable)` };
     }
     return { number: 1, name: "Topic activity", status: "warning", detail: `${searchNote}, feed failed (${feedRes.status}) — cannot verify` };
@@ -152,13 +155,152 @@ async function checkTopicActivity(
 
   const rawPosts = feedRes.data?.posts ?? feedRes.data;
   const posts = Array.isArray(rawPosts) ? rawPosts : [];
-  const matching = matchTopic(posts);
+  const matching = matchTopic(posts, topicLower);
 
   const count = matching.length;
   if (count >= 3) {
     return { number: 1, name: "Topic activity", status: "pass", detail: `${count} posts found via feed fallback (threshold: 3)` };
   }
   return { number: 1, name: "Topic activity", status: "fail", detail: `${count} posts found via feed fallback (need ≥3)` };
+}
+
+/**
+ * Pioneer Gate 1: signal strength threshold from scan phase output.
+ * Uses explicit scan.signal.score when present, otherwise heuristic fallback.
+ */
+function checkSignalStrength(
+  topic: string,
+  scanResult: any | undefined,
+  signalStrengthThreshold: number
+): GateItem {
+  const threshold = Number.isFinite(signalStrengthThreshold) ? signalStrengthThreshold : 6;
+
+  if (!scanResult || typeof scanResult !== "object") {
+    return {
+      number: 1,
+      name: "Signal strength",
+      status: "fail",
+      detail: "No scan context provided — cannot compute pioneer signal score",
+    };
+  }
+
+  const explicitScoreCandidates = [
+    scanResult?.signal?.score,
+    scanResult?.signals?.score,
+    scanResult?.signalScore,
+  ];
+  for (const raw of explicitScoreCandidates) {
+    const score = typeof raw === "number" ? raw : Number(raw);
+    if (Number.isFinite(score)) {
+      return {
+        number: 1,
+        name: "Signal strength",
+        status: score >= threshold ? "pass" : "fail",
+        detail: `Signal score ${score}/${threshold} from scan output`,
+      };
+    }
+  }
+
+  // Heuristic fallback for current room-temp output shape.
+  let score = 0;
+  const reasons: string[] = [];
+  const topicLower = topic.toLowerCase();
+
+  const postsPerHour = Number(scanResult?.activity?.posts_per_hour || 0);
+  if (postsPerHour >= 6) {
+    score += 3;
+    reasons.push("recency=3");
+  } else if (postsPerHour >= 3) {
+    score += 2;
+    reasons.push("recency=2");
+  } else if (postsPerHour > 0) {
+    score += 1;
+    reasons.push("recency=1");
+  }
+
+  const convergenceAgents = Number(scanResult?.convergence?.agent_count || 0);
+  if (convergenceAgents >= 4) {
+    score += 2;
+    reasons.push("cross-source=2");
+  } else if (convergenceAgents >= 3) {
+    score += 1;
+    reasons.push("cross-source=1");
+  }
+
+  const gapTopics: string[] = Array.isArray(scanResult?.gaps?.topics)
+    ? scanResult.gaps.topics.map((t: string) => String(t).toLowerCase())
+    : [];
+  if (gapTopics.includes(topicLower)) {
+    score += 2;
+    reasons.push("topic-gap=2");
+  }
+
+  const heatTopic = String(scanResult?.heat?.topic || "").toLowerCase();
+  const heatReactions = Number(scanResult?.heat?.reactions || 0);
+  if (heatTopic && heatTopic === topicLower) {
+    const heatPoints = heatReactions >= 10 ? 2 : 1;
+    score += heatPoints;
+    reasons.push(`topic-heat=${heatPoints}`);
+  }
+
+  const detail = reasons.length > 0
+    ? `Heuristic signal score ${score}/${threshold} (${reasons.join(", ")})`
+    : `Heuristic signal score ${score}/${threshold} (no signal components found)`;
+
+  return {
+    number: 1,
+    name: "Signal strength",
+    status: score >= threshold ? "pass" : "fail",
+    detail,
+  };
+}
+
+/**
+ * Pioneer Gate 3: novelty check (topic mentions in last 50 feed posts).
+ * Passes when mentions are below threshold (default: <3).
+ */
+async function checkTopicNovelty(
+  topic: string,
+  token: string,
+  cachedPosts?: any[],
+  mentionFailThreshold: number = 3
+): Promise<GateItem> {
+  const topicLower = topic.toLowerCase();
+  const threshold = Number.isFinite(mentionFailThreshold) ? mentionFailThreshold : 3;
+
+  const feedRes = await apiCall("/api/feed?limit=50", token);
+  if (feedRes.ok) {
+    const rawPosts = feedRes.data?.posts ?? feedRes.data;
+    const posts = Array.isArray(rawPosts) ? rawPosts : [];
+    const mentions = matchTopic(posts, topicLower).length;
+    return {
+      number: 3,
+      name: "Novelty",
+      status: mentions >= threshold ? "fail" : "pass",
+      detail: mentions >= threshold
+        ? `${mentions} feed mention(s) in last 50 posts (need <${threshold} for pioneer novelty)`
+        : `${mentions} feed mention(s) in last 50 posts (novel enough for pioneer)`,
+    };
+  }
+
+  if (Array.isArray(cachedPosts)) {
+    const mentions = matchTopic(cachedPosts, topicLower).length;
+    return {
+      number: 3,
+      name: "Novelty",
+      status: mentions >= threshold ? "fail" : "pass",
+      detail: mentions >= threshold
+        ? `${mentions} mention(s) via scan cache (need <${threshold} for pioneer novelty; feed unavailable)`
+        : `${mentions} mention(s) via scan cache (feed unavailable)`,
+    };
+  }
+
+  return {
+    number: 3,
+    name: "Novelty",
+    status: "fail",
+    detail: `Feed unavailable (${feedRes.status}) and no scan cache — cannot verify novelty`,
+  };
 }
 
 /**
@@ -186,19 +328,25 @@ function checkAgentReference(): GateItem {
 }
 
 /**
- * Gate 4: Category is ANALYSIS or PREDICTION.
+ * Gate 4: Category policy.
+ * Standard mode: ANALYSIS or PREDICTION.
+ * Pioneer mode: ANALYSIS, PREDICTION, or QUESTION.
  */
-function checkCategory(category?: string): GateItem {
+function checkCategory(category: string | undefined, mode: GateMode): GateItem {
+  const allowed = mode === "pioneer"
+    ? ["ANALYSIS", "PREDICTION", "QUESTION"]
+    : ["ANALYSIS", "PREDICTION"];
+
   if (!category) {
     return {
       number: 4,
       name: "Category",
       status: "warning",
-      detail: "Not provided (use --category ANALYSIS or PREDICTION)",
+      detail: `Not provided (use --category ${allowed.join(" or ")})`,
     };
   }
   const upper = category.toUpperCase();
-  if (upper === "ANALYSIS" || upper === "PREDICTION") {
+  if (allowed.includes(upper)) {
     return {
       number: 4,
       name: "Category",
@@ -210,7 +358,7 @@ function checkCategory(category?: string): GateItem {
     number: 4,
     name: "Category",
     status: "fail",
-    detail: `"${category}" is not ANALYSIS or PREDICTION`,
+    detail: `"${category}" is not one of ${allowed.join(", ")}`,
   };
 }
 
@@ -426,13 +574,16 @@ async function main(): Promise<void> {
   const confidence = flags["confidence"];
   const replyTo = flags["reply-to"];
   const scanCachePath = flags["scan-cache"];
+  const mode: GateMode = config.gate.mode === "pioneer" ? "pioneer" : "standard";
 
-  // Load cached scan posts if available
+  // Load cached scan payload/posts if available
+  let scanResult: any | undefined;
   let cachedPosts: any[] | undefined;
   if (scanCachePath) {
     try {
       const stateData = JSON.parse(readFileSync(resolve(scanCachePath), "utf-8"));
-      cachedPosts = stateData?.phases?.scan?.result?.rawPosts;
+      scanResult = stateData?.phases?.scan?.result || stateData?.scan || stateData;
+      cachedPosts = Array.isArray(scanResult?.rawPosts) ? scanResult.rawPosts : undefined;
       if (cachedPosts) {
         info(`Loaded ${cachedPosts.length} cached posts from scan phase`);
       }
@@ -449,25 +600,40 @@ async function main(): Promise<void> {
   info("Running gate checks...");
   const items: GateItem[] = [];
 
-  // Parallel API checks + sync checks
-  const apiChecks: Promise<GateItem>[] = [
-    checkTopicActivity(topic, token, cachedPosts),
-    checkDuplicate(topic, token, address, config.gate.duplicateWindowHours),
-  ];
-  if (replyTo) {
-    apiChecks.push(checkReplyTarget(replyTo, token, config.engagement.replyMinParentReactions));
-  }
-  const [topicActivity, duplicate, replyTarget] = await Promise.all(apiChecks);
+  const gate1Promise = mode === "pioneer"
+    ? Promise.resolve(checkSignalStrength(topic, scanResult, config.gate.signalStrengthThreshold ?? 6))
+    : checkTopicActivity(topic, token, cachedPosts);
 
-  items.push(topicActivity);
+  const gate3Promise = mode === "pioneer"
+    ? (config.gate.noveltyCheck === false
+      ? Promise.resolve<GateItem>({
+          number: 3,
+          name: "Novelty",
+          status: "manual",
+          detail: "MANUAL — noveltyCheck disabled in gate config",
+        })
+      : checkTopicNovelty(topic, token, cachedPosts, config.gate.noveltyMentionThreshold ?? 3))
+    : Promise.resolve(checkAgentReference());
+
+  const duplicatePromise = checkDuplicate(topic, token, address, config.gate.duplicateWindowHours);
+  const replyPromise = replyTo
+    ? checkReplyTarget(replyTo, token, config.engagement.replyMinParentReactions)
+    : Promise.resolve<GateItem | null>(null);
+
+  const [gate1, gate3, duplicate, replyTarget] = await Promise.all([
+    gate1Promise,
+    gate3Promise,
+    duplicatePromise,
+    replyPromise,
+  ]);
+
+  items.push(gate1);
   items.push(checkUniqueData());
-  items.push(checkAgentReference());
-  items.push(checkCategory(category));
+  items.push(gate3);
+  items.push(checkCategory(category, mode));
   items.push(checkTextAndConfidence(text, confidence));
   items.push(duplicate);
-  if (replyTarget) {
-    items.push(replyTarget);
-  }
+  if (replyTarget) items.push(replyTarget);
 
   // Summary
   const pass = items.filter(i => i.status === "pass").length;
