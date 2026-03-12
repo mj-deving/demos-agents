@@ -155,18 +155,35 @@ async function runJson(toolPath: string, args: string[]): Promise<any> {
 function extractTopics(scan: any, fallbackTopics: string[]): string[] {
   const topics: string[] = [];
 
+  const safe = (raw: string): string | null => {
+    const t = raw.trim();
+    if (!t) return null;
+    // Guard subprocess arg parsing: "--help" as a topic would be parsed as a flag.
+    if (t.startsWith("-")) return null;
+    if (/[\r\n\0]/.test(t)) return null;
+    if (t.length > 160) return null;
+    return t;
+  };
+
   const heatTopic = scan?.heat?.topic;
   if (typeof heatTopic === "string" && heatTopic.trim()) {
-    topics.push(heatTopic.trim());
+    const t = safe(heatTopic);
+    if (t) topics.push(t);
   }
 
   const gaps = Array.isArray(scan?.gaps?.topics) ? scan.gaps.topics : [];
   for (const g of gaps) {
-    if (typeof g === "string" && g.trim()) topics.push(g.trim());
+    if (typeof g === "string" && g.trim()) {
+      const t = safe(g);
+      if (t) topics.push(t);
+    }
   }
 
   if (topics.length === 0) {
-    topics.push(...fallbackTopics.slice(0, 3));
+    for (const ft of fallbackTopics.slice(0, 3)) {
+      const t = safe(ft);
+      if (t) topics.push(t);
+    }
   }
 
   const dedup: string[] = [];
@@ -209,7 +226,7 @@ async function main(): Promise<void> {
 
       if (dryRun) {
         const cfg = loadAgentConfig(item.agent);
-        run.topics = cfg.topics.primary.slice(0, 3);
+        run.topics = extractTopics({}, cfg.topics.primary);
         run.phases.audit = "planned";
         run.phases.scan = "planned";
         run.phases.engage = "planned";
@@ -234,37 +251,40 @@ async function main(): Promise<void> {
         const topics = extractTopics(scan, cfg.topics.primary);
         run.topics = topics;
 
-        const gated: Array<{ topic: string; category: "ANALYSIS"; gateSummary: any }> = [];
-        for (const topic of topics) {
-          const gate = await runJson("tools/gate.ts", [
-            "--agent", item.agent,
-            "--topic", topic,
-            "--category", "ANALYSIS",
-            "--env", envPath,
-            "--json",
-          ]);
-
-          const fail = Number(gate?.summary?.fail || 0);
-          if (fail === 0) {
-            gated.push({ topic, category: "ANALYSIS", gateSummary: gate?.summary || {} });
-          }
-        }
-
-        run.phases.gate = `ok (${gated.length}/${topics.length} passed)`;
-
-        if (gated.length === 0) {
-          run.phases.publish = "skipped (no gated topics)";
-          run.phases.verify = "skipped (no tx)";
-          continue;
-        }
-
         const tempDir = mkdtempSync(resolve(tmpdir(), "run-loop-"));
         const scanPath = resolve(tempDir, "scan.json");
+        const scanCachePath = resolve(tempDir, "scan-cache.json");
         const gatedPath = resolve(tempDir, "gated.json");
 
         try {
           writeFileSync(scanPath, JSON.stringify(scan));
-          writeFileSync(gatedPath, JSON.stringify({ gated }));
+          writeFileSync(scanCachePath, JSON.stringify({ phases: { scan: { result: scan } } }));
+          writeFileSync(gatedPath, JSON.stringify({ gated: [] }));
+
+          // Re-run gate from JSON cache to preserve scan->gate->publish handoff explicitly.
+          const gatedFinal: Array<{ topic: string; category: "ANALYSIS"; gateSummary: any }> = [];
+          for (const topic of topics) {
+            const gate = await runJson("tools/gate.ts", [
+              "--agent", item.agent,
+              "--topic", topic,
+              "--category", "ANALYSIS",
+              "--scan-cache", scanCachePath,
+              "--env", envPath,
+              "--json",
+            ]);
+            const fail = Number(gate?.summary?.fail || 0);
+            if (fail === 0) {
+              gatedFinal.push({ topic, category: "ANALYSIS", gateSummary: gate?.summary || {} });
+            }
+          }
+          writeFileSync(gatedPath, JSON.stringify({ gated: gatedFinal }));
+          run.phases.gate = `ok (${gatedFinal.length}/${topics.length} passed)`;
+
+          if (gatedFinal.length === 0) {
+            run.phases.publish = "skipped (no gated topics)";
+            run.phases.verify = "skipped (no tx)";
+            continue;
+          }
 
           const publish = await runJson("tools/publish.ts", [
             "--agent", item.agent,
