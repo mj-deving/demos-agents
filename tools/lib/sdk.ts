@@ -33,22 +33,36 @@ const XDG_CREDENTIALS = resolve(homedir(), ".config/demos/credentials");
 
 /**
  * Load mnemonic from credentials file or .env file.
- * Resolution: XDG (~/.config/demos/credentials) → explicit envPath.
+ * Resolution: explicit envPath (if non-default) → XDG → legacy envPath.
+ * Explicit --env flag always wins; XDG is fallback for default paths.
  */
 export function loadMnemonic(envPath: string): string {
-  // XDG path takes priority when it exists
-  const xdg = XDG_CREDENTIALS;
   const legacy = resolve(envPath.replace(/^~/, homedir()));
-  const credPath = existsSync(xdg) ? xdg : legacy;
+  const isExplicit = envPath !== ".env" && existsSync(legacy);
 
-  if (!existsSync(credPath)) {
-    throw new Error(`No credentials file at ${xdg} or ${legacy}`);
+  // Explicit --env flag always wins
+  if (isExplicit) {
+    const content = readFileSync(legacy, "utf-8");
+    const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
+    if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${legacy}`);
+    return match[1];
   }
-  const content = readFileSync(credPath, "utf-8");
+
+  // XDG path is preferred default
+  if (existsSync(XDG_CREDENTIALS)) {
+    const content = readFileSync(XDG_CREDENTIALS, "utf-8");
+    const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
+    if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${XDG_CREDENTIALS}`);
+    return match[1];
+  }
+
+  // Legacy fallback
+  if (!existsSync(legacy)) {
+    throw new Error(`No credentials file at ${XDG_CREDENTIALS} or ${legacy}`);
+  }
+  const content = readFileSync(legacy, "utf-8");
   const match = content.match(/DEMOS_MNEMONIC="(.+?)"/);
-  if (!match) {
-    throw new Error(`No DEMOS_MNEMONIC found in ${credPath}`);
-  }
+  if (!match) throw new Error(`No DEMOS_MNEMONIC found in ${legacy}`);
   return match[1];
 }
 

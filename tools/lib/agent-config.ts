@@ -52,14 +52,19 @@ export interface AgentPaths {
 
 // ── Resolution ─────────────────────────────────────
 
+const VALID_AGENT_NAME = /^[a-z0-9-]+$/;
+
 /**
  * Resolve agent name from CLI flags, env, or default.
  * Priority: --agent flag → AGENT_NAME env → "sentinel"
+ * Validates against strict pattern to prevent path traversal.
  */
 export function resolveAgentName(flags?: Record<string, string>): string {
-  if (flags?.["agent"]) return flags["agent"];
-  if (process.env.AGENT_NAME) return process.env.AGENT_NAME;
-  return "sentinel";
+  const name = flags?.["agent"] || process.env.AGENT_NAME || "sentinel";
+  if (!VALID_AGENT_NAME.test(name)) {
+    throw new Error(`Invalid agent name "${name}" — must match ${VALID_AGENT_NAME}`);
+  }
+  return name;
 }
 
 // ── Path Resolution ────────────────────────────────

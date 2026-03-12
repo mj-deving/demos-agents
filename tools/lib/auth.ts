@@ -88,7 +88,7 @@ function saveAuthCache(address: string, token: string, expiresAt: string): void 
     // Namespaced entries — consumed by tools/lib/auth.ts loadAuthCache
     ...data,
   };
-  writeFileSync(AUTH_CACHE_PATH, JSON.stringify(output, null, 2));
+  writeFileSync(AUTH_CACHE_PATH, JSON.stringify(output, null, 2), { mode: 0o600 });
 }
 
 // ── Auth Flow ──────────────────────────────────────
