@@ -273,6 +273,7 @@ async function checkDuplicate(
   const rawPosts = feedRes.data?.posts ?? feedRes.data;
   const posts = Array.isArray(rawPosts) ? rawPosts : [];
   const topicLower = topic.toLowerCase();
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
   const duplicates = posts.filter((p: any) => {
     const tags = (p.payload?.tags || []).map((t: string) => t.toLowerCase());
@@ -281,11 +282,22 @@ async function checkDuplicate(
     return tags.includes(topicLower) || assets.includes(topicLower) || text.includes(topicLower);
   });
 
+  // Only recent duplicates (last 24h) are hard failures — older matches are informational
+  const recentDuplicates = duplicates.filter((p: any) => {
+    const ts = Number(p.timestamp || p.createdAt || 0);
+    // SuperColony timestamps are Unix ms
+    return ts > oneDayAgo;
+  });
+
   if (duplicates.length === 0) {
     return { number: 6, name: "Not duplicate", status: "pass", detail: "No matching posts found in your history" };
   }
 
-  return { number: 6, name: "Not duplicate", status: "fail", detail: `${duplicates.length} existing post(s) match topic "${topic}" — check for overlap` };
+  if (recentDuplicates.length === 0) {
+    return { number: 6, name: "Not duplicate", status: "pass", detail: `${duplicates.length} older post(s) match topic "${topic}" but none in last 24h` };
+  }
+
+  return { number: 6, name: "Not duplicate", status: "fail", detail: `${recentDuplicates.length} post(s) in last 24h match topic "${topic}" — too recent to repeat` };
 }
 
 /**
