@@ -22,14 +22,18 @@ import type { AgentSourceView, SourceRecordV2 } from "./sources/catalog.js";
 export interface BeforeSenseContext {
   state: V2SessionState;
   config: AgentConfig;
-  flags: {
-    agent: string;
-    env: string;
-    log: string;
-    dryRun: boolean;
-    pretty: boolean;
-  };
+  // Keep this subset local: session-runner owns RunnerFlags and imports this
+  // module, so importing RunnerFlags here would introduce a circular dependency.
+  flags: BeforeSenseFlags;
 }
+
+type BeforeSenseFlags = {
+  agent: string;
+  env: string;
+  log: string;
+  dryRun: boolean;
+  pretty: boolean;
+};
 
 export interface BeforePublishDraftContext {
   topic: string;

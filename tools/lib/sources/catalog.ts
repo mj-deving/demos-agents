@@ -147,6 +147,34 @@ export interface AgentSourceView {
 
 export type SourceRegistryMode = "catalog-preferred" | "catalog-only" | "yaml-only";
 
+const SOURCE_STATUSES: SourceStatus[] = [
+  "quarantined",
+  "active",
+  "degraded",
+  "stale",
+  "deprecated",
+  "archived",
+];
+
+const RESPONSE_FORMATS: SourceRecordV2["responseFormat"][] = ["json", "xml", "rss", "html"];
+const SOURCE_VISIBILITIES: Array<SourceRecordV2["scope"]["visibility"]> = ["global", "scoped"];
+const TRUST_TIERS: SourceRecordV2["trustTier"][] = [
+  "official",
+  "established",
+  "community",
+  "experimental",
+];
+const RETRY_ON_VALUES: Array<SourceRecordV2["runtime"]["retry"]["retryOn"][number]> = [
+  "timeout",
+  "5xx",
+  "429",
+];
+const DISCOVERED_BY_VALUES: Array<SourceRecordV2["lifecycle"]["discoveredBy"]> = [
+  "manual",
+  "import",
+  "auto-discovery",
+];
+
 // ── V1 Compat Types ────────────────────────────────
 
 /** V1 source record from YAML registry (backward compat) */
@@ -202,7 +230,7 @@ export function sourceTopicTokens(source: SourceRecordV2 | SourceRecordV1): Set<
  * Normalize a URL template for deduplication.
  * Strips protocol, trailing slashes, and sorts query params.
  */
-function normalizeUrlPattern(url: string): string {
+export function normalizeUrlPattern(url: string): string {
   try {
     // Remove template variables for normalization
     const cleaned = url.replace(/\{[^}]+\}/g, "{VAR}");
@@ -228,7 +256,7 @@ const PROVIDER_RESPONSE_FORMATS: Record<string, "json" | "xml" | "rss" | "html">
 /**
  * Infer provider from URL.
  */
-function inferProvider(url: string): string {
+export function inferProvider(url: string): string {
   const lower = url.toLowerCase();
   if (lower.includes("coingecko.com")) return "coingecko";
   if (lower.includes("hn.algolia.com")) return "hn-algolia";
@@ -401,6 +429,110 @@ export function buildSourceIndex(sources: SourceRecordV2[]): SourceIndex {
   return index;
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isAgentName(value: unknown): value is AgentName {
+  return value === "sentinel" || value === "crawler" || value === "pioneer";
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === "string";
+}
+
+function isOptionalNumber(value: unknown): value is number | undefined {
+  return value === undefined || typeof value === "number";
+}
+
+function isOptionalStringArray(value: unknown): value is string[] | undefined {
+  return value === undefined || isStringArray(value);
+}
+
+function hasValidScope(scope: unknown): scope is SourceRecordV2["scope"] {
+  if (!isObjectRecord(scope)) return false;
+  if (!SOURCE_VISIBILITIES.includes(scope.visibility as SourceRecordV2["scope"]["visibility"])) {
+    return false;
+  }
+  if (!isStringArray(scope.importedFrom) || !scope.importedFrom.every(isAgentName)) return false;
+  if (scope.visibility === "scoped") {
+    return isStringArray(scope.agents) && scope.agents.every(isAgentName);
+  }
+  return scope.agents === undefined || (isStringArray(scope.agents) && scope.agents.every(isAgentName));
+}
+
+function hasValidRuntime(runtime: unknown): runtime is SourceRecordV2["runtime"] {
+  if (!isObjectRecord(runtime) || typeof runtime.timeoutMs !== "number") return false;
+  if (!isObjectRecord(runtime.retry)) return false;
+  return (
+    typeof runtime.retry.maxAttempts === "number" &&
+    typeof runtime.retry.backoffMs === "number" &&
+    Array.isArray(runtime.retry.retryOn) &&
+    runtime.retry.retryOn.every((value) => RETRY_ON_VALUES.includes(value))
+  );
+}
+
+function hasValidRating(rating: unknown): rating is SourceRecordV2["rating"] {
+  if (!isObjectRecord(rating)) return false;
+  return (
+    typeof rating.overall === "number" &&
+    typeof rating.uptime === "number" &&
+    typeof rating.relevance === "number" &&
+    typeof rating.freshness === "number" &&
+    typeof rating.sizeStability === "number" &&
+    typeof rating.engagement === "number" &&
+    typeof rating.trust === "number" &&
+    isOptionalString(rating.lastTestedAt) &&
+    typeof rating.testCount === "number" &&
+    typeof rating.successCount === "number" &&
+    typeof rating.consecutiveFailures === "number"
+  );
+}
+
+function hasValidLifecycle(lifecycle: unknown): lifecycle is SourceRecordV2["lifecycle"] {
+  if (!isObjectRecord(lifecycle)) return false;
+  return (
+    typeof lifecycle.discoveredAt === "string" &&
+    DISCOVERED_BY_VALUES.includes(lifecycle.discoveredBy as SourceRecordV2["lifecycle"]["discoveredBy"]) &&
+    isOptionalString(lifecycle.promotedAt) &&
+    isOptionalString(lifecycle.deprecatedAt) &&
+    isOptionalString(lifecycle.archivedAt) &&
+    isOptionalString(lifecycle.lastUsedAt) &&
+    isOptionalString(lifecycle.lastFailedAt) &&
+    isOptionalString(lifecycle.failureReason)
+  );
+}
+
+export function isValidSourceRecord(record: unknown): record is SourceRecordV2 {
+  if (!isObjectRecord(record)) return false;
+
+  return (
+    typeof record.id === "string" &&
+    typeof record.name === "string" &&
+    typeof record.provider === "string" &&
+    typeof record.url === "string" &&
+    typeof record.urlPattern === "string" &&
+    isOptionalStringArray(record.topics) &&
+    (record.tlsn_safe === undefined || typeof record.tlsn_safe === "boolean") &&
+    (record.dahr_safe === undefined || typeof record.dahr_safe === "boolean") &&
+    isOptionalNumber(record.max_response_kb) &&
+    isOptionalString(record.note) &&
+    isOptionalStringArray(record.topicAliases) &&
+    isStringArray(record.domainTags) &&
+    RESPONSE_FORMATS.includes(record.responseFormat as SourceRecordV2["responseFormat"]) &&
+    hasValidScope(record.scope) &&
+    hasValidRuntime(record.runtime) &&
+    TRUST_TIERS.includes(record.trustTier as SourceRecordV2["trustTier"]) &&
+    SOURCE_STATUSES.includes(record.status as SourceStatus) &&
+    hasValidRating(record.rating) &&
+    hasValidLifecycle(record.lifecycle)
+  );
+}
+
 // ── Catalog Loading ─────────────────────────────────
 
 /**
@@ -411,7 +543,15 @@ export function loadCatalog(catalogPath: string): SourceCatalogFileV2 | null {
     const raw = readFileSync(catalogPath, "utf-8");
     const parsed = JSON.parse(raw);
     if (parsed?.version !== 2 || !Array.isArray(parsed?.sources)) return null;
-    return parsed as SourceCatalogFileV2;
+    const validSources = parsed.sources.filter((record: unknown, index: number) => {
+      if (isValidSourceRecord(record)) return true;
+      console.error(`Invalid catalog source record rejected at index ${index} in ${catalogPath}`);
+      return false;
+    });
+    return {
+      ...parsed,
+      sources: validSources,
+    } as SourceCatalogFileV2;
   } catch {
     return null;
   }
@@ -435,13 +575,17 @@ export function loadYamlRegistry(registryPath: string): SourceRecordV1[] {
  * In the future, reads from agents/{name}/source-config.yaml.
  * For now, returns sensible defaults.
  */
-function loadAgentSourceConfig(agent: AgentName): AgentSourceConfig {
-  return {
+function loadAgentSourceConfig(
+  agent: AgentName,
+  overrides?: Partial<AgentSourceConfig>
+): AgentSourceConfig {
+  const defaults: AgentSourceConfig = {
     agent,
     minRating: 0,
     allowStatuses: ["active", "degraded"],
     maxCandidatesPerTopic: 5,
   };
+  return { ...defaults, ...overrides };
 }
 
 /**
@@ -456,14 +600,16 @@ function loadAgentSourceConfig(agent: AgentName): AgentSourceConfig {
  * @param catalogPath - Path to catalog.json
  * @param yamlRegistryPath - Path to agent's sources-registry.yaml (for fallback)
  * @param mode - Registry mode
+ * @param configOverrides - Optional runtime overrides for agent source config
  */
 export function loadAgentSourceView(
   agent: AgentName,
   catalogPath: string,
   yamlRegistryPath: string,
-  mode: SourceRegistryMode = "yaml-only"
+  mode: SourceRegistryMode = "yaml-only",
+  configOverrides?: Partial<AgentSourceConfig>
 ): AgentSourceView {
-  const config = loadAgentSourceConfig(agent);
+  const config = loadAgentSourceConfig(agent, configOverrides);
 
   // Try catalog first
   if (mode === "catalog-preferred" || mode === "catalog-only") {
