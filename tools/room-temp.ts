@@ -608,32 +608,27 @@ async function main(): Promise<void> {
         info(`Mode topic-search: ${topic}`);
         let topicPosts: FilteredPost[] = [];
 
-        try {
-          // Try asset= first (reliable for token/asset symbols)
-          const assetRaw = await budget.get(
+        // Run asset + text search in parallel — independent calls, no data dependency.
+        const searchResults = await Promise.allSettled([
+          budget.get(
             `/api/feed/search?asset=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
             `topic-search asset="${topic}"`
-          );
-          allRawFetched.push(...assetRaw);
-          const assetFiltered = filterPosts(assetRaw, qualityFilter);
-          updateCounters(counters, assetRaw.length, assetFiltered);
-          topicPosts.push(...assetFiltered);
-        } catch (err: any) {
-          info(`topic-search asset="${topic}" failed (${err?.message || err}), continuing`);
-        }
-
-        try {
-          // Try text= search (body text match)
-          const textRaw = await budget.get(
+          ),
+          budget.get(
             `/api/feed/search?text=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
             `topic-search text="${topic}"`
-          );
-          allRawFetched.push(...textRaw);
-          const textFiltered = filterPosts(textRaw, qualityFilter);
-          updateCounters(counters, textRaw.length, textFiltered);
-          topicPosts.push(...textFiltered);
-        } catch (err: any) {
-          info(`topic-search text="${topic}" failed (${err?.message || err}), continuing`);
+          ),
+        ]);
+        for (const [i, result] of searchResults.entries()) {
+          const label = i === 0 ? "asset" : "text";
+          if (result.status === "fulfilled") {
+            allRawFetched.push(...result.value);
+            const filtered = filterPosts(result.value, qualityFilter);
+            updateCounters(counters, result.value.length, filtered);
+            topicPosts.push(...filtered);
+          } else {
+            info(`topic-search ${label}="${topic}" failed (${result.reason?.message || result.reason}), continuing`);
+          }
         }
 
         // If both returned empty, scan broad feed for tag matches
