@@ -10,7 +10,7 @@
  *   npx tsx tools/audit.ts [--log PATH] [--env PATH] [--update] [--pretty]
  */
 
-import { connectWallet, apiCall, info } from "./lib/sdk.js";
+import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
 import { readSessionLog, writeSessionLog, rotateSessionLog, resolveLogPath } from "./lib/log.js";
 import type { SessionLogEntry } from "./lib/log.js";
@@ -261,6 +261,7 @@ async function main(): Promise<void> {
   const { flags } = parseArgs();
 
   const agentName = resolveAgentName(flags);
+  setLogAgent(agentName);
   const config = loadAgentConfig(agentName);
   const logPath = resolveLogPath(flags["log"], agentName);
   const envPath = flags["env"] || ".env";

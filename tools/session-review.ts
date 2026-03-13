@@ -14,7 +14,7 @@
 
 import { readSessionLog, resolveLogPath } from "./lib/log.js";
 import type { SessionLogEntry } from "./lib/log.js";
-import { info } from "./lib/sdk.js";
+import { info, setLogAgent } from "./lib/sdk.js";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 
 // ── Arg Parsing ────────────────────────────────────
@@ -383,6 +383,7 @@ function main(): void {
   const { flags } = parseArgs();
 
   const agentName = resolveAgentName(flags);
+  setLogAgent(agentName);
   const config = loadAgentConfig(agentName);
   const logPath = resolveLogPath(flags["log"], agentName);
   const lastN = flags["last"] ? parseInt(flags["last"], 10) : 0;

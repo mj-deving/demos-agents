@@ -23,7 +23,7 @@ import { Demos } from "@kynesyslabs/demosdk/websdk";
 
 export const RPC_URL = "https://demosnode.discus.sh/";
 export const SUPERCOLONY_API = "https://www.supercolony.ai";
-let logAgentName = process.env.AGENT_NAME || "sentinel";
+let logAgentName = process.env.AGENT_NAME || "agent";
 
 // ── Wallet ─────────────────────────────────────────
 

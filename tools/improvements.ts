@@ -25,7 +25,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
-import { info } from "./lib/sdk.js";
+import { info, setLogAgent } from "./lib/sdk.js";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 
 // ── Constants ──────────────────────────────────────
@@ -365,6 +365,7 @@ function prettyPrint(data: any): void {
 function main(): void {
   const { command, positional, flags } = parseArgs();
   const agentName = resolveAgentName(flags);
+  setLogAgent(agentName);
   const config = loadAgentConfig(agentName);
   const filePath = flags["file"]
     ? resolve(flags["file"].replace(/^~/, homedir()))

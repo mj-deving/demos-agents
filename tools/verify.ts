@@ -15,7 +15,7 @@
  */
 
 import { resolve } from "node:path";
-import { connectWallet, apiCall, info } from "./lib/sdk.js";
+import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
 import { readSessionLog, resolveLogPath } from "./lib/log.js";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
@@ -162,6 +162,7 @@ async function main(): Promise<void> {
   }
 
   const agentName = resolveAgentName(flags);
+  setLogAgent(agentName);
   const config = loadAgentConfig(agentName);
   const envPath = resolve(flags.env || ".env");
   const logPath = resolveLogPath(flags.log, agentName);
