@@ -528,7 +528,7 @@ async function main(): Promise<void> {
 
   const { demos, address } = await connectWallet(envPath);
   const token = await ensureAuth(demos, address);
-  const budget = new ApiBudget(token, 10, 10_000);
+  const budget = new ApiBudget(token, 10, 20_000);
 
   const counters: QualityCounters = { totalFetched: 0, passedFilter: 0, totalPassedScore: 0 };
   const allFiltered: FilteredPost[] = [];
@@ -608,44 +608,56 @@ async function main(): Promise<void> {
         info(`Mode topic-search: ${topic}`);
         let topicPosts: FilteredPost[] = [];
 
-        // Try asset= first (reliable for token/asset symbols)
-        const assetRaw = await budget.get(
-          `/api/feed/search?asset=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
-          `topic-search asset="${topic}"`
-        );
-        allRawFetched.push(...assetRaw);
-        const assetFiltered = filterPosts(assetRaw, qualityFilter);
-        updateCounters(counters, assetRaw.length, assetFiltered);
-        topicPosts.push(...assetFiltered);
+        try {
+          // Try asset= first (reliable for token/asset symbols)
+          const assetRaw = await budget.get(
+            `/api/feed/search?asset=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
+            `topic-search asset="${topic}"`
+          );
+          allRawFetched.push(...assetRaw);
+          const assetFiltered = filterPosts(assetRaw, qualityFilter);
+          updateCounters(counters, assetRaw.length, assetFiltered);
+          topicPosts.push(...assetFiltered);
+        } catch (err: any) {
+          info(`topic-search asset="${topic}" failed (${err?.message || err}), continuing`);
+        }
 
-        // Try text= search (body text match)
-        const textRaw = await budget.get(
-          `/api/feed/search?text=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
-          `topic-search text="${topic}"`
-        );
-        allRawFetched.push(...textRaw);
-        const textFiltered = filterPosts(textRaw, qualityFilter);
-        updateCounters(counters, textRaw.length, textFiltered);
-        topicPosts.push(...textFiltered);
+        try {
+          // Try text= search (body text match)
+          const textRaw = await budget.get(
+            `/api/feed/search?text=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
+            `topic-search text="${topic}"`
+          );
+          allRawFetched.push(...textRaw);
+          const textFiltered = filterPosts(textRaw, qualityFilter);
+          updateCounters(counters, textRaw.length, textFiltered);
+          topicPosts.push(...textFiltered);
+        } catch (err: any) {
+          info(`topic-search text="${topic}" failed (${err?.message || err}), continuing`);
+        }
 
         // If both returned empty, scan broad feed for tag matches
         if (topicPosts.length === 0) {
-          if (broadPool === null) {
-            info("Topic-search: fetching broad feed for tag matching");
-            broadPool = await budget.get(`/api/feed?limit=${depth}`, "topic-search broad pool");
-            allRawFetched.push(...broadPool);
-            counters.totalFetched += broadPool.length;
+          try {
+            if (broadPool === null) {
+              info("Topic-search: fetching broad feed for tag matching");
+              broadPool = await budget.get(`/api/feed?limit=${depth}`, "topic-search broad pool");
+              allRawFetched.push(...broadPool);
+              counters.totalFetched += broadPool.length;
+            }
+            const topicLower = topic.toLowerCase();
+            const tagMatches = broadPool.filter((p: any) => {
+              const tags = (p.payload?.tags || []).map((t: string) => String(t).toLowerCase());
+              const assets = (p.payload?.assets || []).map((a: string) => String(a).toLowerCase());
+              return tags.some((t: string) => t.includes(topicLower) || topicLower.includes(t))
+                || assets.some((a: string) => a.includes(topicLower) || topicLower.includes(a));
+            });
+            const tagFiltered = filterPosts(tagMatches, qualityFilter);
+            updateCounters(counters, 0, tagFiltered); // already counted in broad fetch
+            topicPosts.push(...tagFiltered);
+          } catch (err: any) {
+            info(`topic-search broad="${topic}" failed (${err?.message || err}), continuing`);
           }
-          const topicLower = topic.toLowerCase();
-          const tagMatches = broadPool.filter((p: any) => {
-            const tags = (p.payload?.tags || []).map((t: string) => String(t).toLowerCase());
-            const assets = (p.payload?.assets || []).map((a: string) => String(a).toLowerCase());
-            return tags.some((t: string) => t.includes(topicLower) || topicLower.includes(t))
-              || assets.some((a: string) => a.includes(topicLower) || topicLower.includes(a));
-          });
-          const tagFiltered = filterPosts(tagMatches, qualityFilter);
-          updateCounters(counters, 0, tagFiltered); // already counted in broad fetch
-          topicPosts.push(...tagFiltered);
         }
 
         // Dedupe by txHash within this topic
