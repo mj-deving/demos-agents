@@ -64,6 +64,7 @@ demos-agents/
 │       ├── sdk.ts                     # Wallet connection, API calls, 502 retry
 │       ├── auth.ts                    # Challenge-response auth, token cache (namespaced)
 │       ├── agent-config.ts            # Multi-agent config loader from persona.yaml
+│       ├── extensions.ts              # Extension dispatcher — typed hook system for v2 loop
 │       ├── llm.ts                     # LLM generation interface
 │       ├── llm-provider.ts            # Provider-agnostic adapters (Claude/OpenAI/CLI)
 │       ├── feed-filter.ts             # Quality filter + topic/agent index (pure utility)
@@ -75,7 +76,10 @@ demos-agents/
 │       ├── state.ts                   # Session state persistence
 │       ├── subprocess.ts              # Tool subprocess runner
 │       ├── log.ts                     # Session log (JSONL, append-only)
-│       └── review-findings.ts         # Codex review findings persistence
+│       ├── review-findings.ts         # Codex review findings persistence
+│       └── sources/
+│           ├── index.ts               # Runtime barrel re-export
+│           └── catalog.ts             # Source catalog — V2 records, index, agent views
 ├── skills/
 │   └── supercolony/
 │       ├── SKILL.md                   # Agent Skills standard skill definition
