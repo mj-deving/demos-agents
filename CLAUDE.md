@@ -60,6 +60,7 @@ demos-agents/
 │   ├── improvements.ts                # Improvement tracker (CRUD lifecycle)
 │   ├── improve.ts                     # On-demand observation processor (Phase 1)
 │   ├── generate-profile.ts            # Agent profile generator
+│   ├── source-migrate.ts              # YAML→catalog.json migration CLI
 │   └── lib/
 │       ├── sdk.ts                     # Wallet connection, API calls, 502 retry
 │       ├── auth.ts                    # Challenge-response auth, token cache (namespaced)
@@ -78,8 +79,12 @@ demos-agents/
 │       ├── log.ts                     # Session log (JSONL, append-only)
 │       ├── review-findings.ts         # Codex review findings persistence
 │       └── sources/
-│           ├── index.ts               # Runtime barrel re-export
-│           └── catalog.ts             # Source catalog — V2 records, index, agent views
+│           ├── index.ts               # Runtime barrel re-export (preflight, match, catalog ops)
+│           ├── catalog.ts             # Source catalog — V2 records, index, agent views
+│           ├── policy.ts              # Source policy — preflight(), selectSourceForTopicV2()
+│           └── matcher.ts             # Source matcher — match(), extractClaims(), scoreMatch()
+├── sources/
+│   └── catalog.json                   # Unified source catalog (138 V2 records from YAML migration)
 ├── skills/
 │   └── supercolony/
 │       ├── SKILL.md                   # Agent Skills standard skill definition
@@ -117,6 +122,13 @@ npx tsx tools/improvements.ts list --agent sentinel
 # Improve skill (on-demand observation processor)
 npx tsx tools/improve.ts --agent sentinel --pretty
 # Flags: --since N, --unresolved, --trace OBS_ID, --auto-apply, --dry-run
+
+# Source migration (YAML registries → unified catalog.json)
+npx tsx tools/source-migrate.ts \
+  --sentinel agents/sentinel/sources-registry.yaml \
+  --crawler agents/crawler/sources-registry.yaml \
+  --pioneer agents/pioneer/sources-registry.yaml \
+  --out sources/catalog.json --emit-agent-configs
 
 # SuperColony CLI
 npx tsx skills/supercolony/scripts/supercolony.ts auth
@@ -192,13 +204,15 @@ npx tsx skills/supercolony/scripts/supercolony.ts leaderboard --limit 10 --prett
 ## Current State
 
 - **Three agents:** sentinel (verification, 50+ sources) + crawler (deep research, 100+ sources) + pioneer (novel content, signal-gated, 17 sources)
+- **Unified source catalog:** `sources/catalog.json` — 138 V2 records migrated from 3 YAML registries (196 total, 58 dupes removed). Mode: `catalog-preferred` with YAML fallback.
+- **Source modules:** `tools/lib/sources/` — policy.ts (preflight + selectSourceForTopicV2), matcher.ts (match + extractClaims + scoreMatch), catalog.ts (V2 records + index), index.ts (barrel)
 - **45+ on-chain posts** across all agents. PQC identity bound (tx: `5bbdab08...`)
 - **TLSN pipeline:** operational (Playwright bridge, 180s timeout). Attestation quality guard rejects non-2xx/auth errors.
 - **Scan architecture:** multi-mode (lightweight, since-last, topic-search, category-filtered, quality-indexed). Quality floor 70, attestation-aware. Feed rate ~182 posts/hr.
 - **Feed search limitation:** `/api/feed/search?text=` only searches post body text, not tags. Topic-search uses triple strategy: asset search + text search + broad feed tag matching.
 - **Session counter:** `~/.sentinel-improvements.json` / `~/.pioneer-improvements.json` `nextSession` field
 - **Observation logging:** `tools/lib/observe.ts` — append-only JSONL to `~/.{agent}/observations.jsonl`. Typed failure codes (EngageFailureCode, GateFailureCode, PublishFailureCode). Zero-overhead, sync append, silent-fail.
-- **Publish preflight:** `preflight()` in `attestation-policy.ts` — checks source availability before LLM generation. Wired into both `runPublishAutonomous()` and `runGateAutonomous()`.
+- **Publish preflight:** V2 `preflight()` in `sources/policy.ts` — uses catalog index for O(1) topic lookup, returns PreflightCandidate[] for downstream match(). Runtime discovery removed from session loop.
 - **Phase budgets:** Warn-only phase deadlines in session-runner.ts. Defaults: audit 2m, scan 3m, engage/gate 5m, publish 15m, verify 2m, review/harden 2-3m. Configurable via `phaseBudgets` in strategy.yaml.
 
 ## Session Workflow
