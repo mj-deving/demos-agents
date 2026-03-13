@@ -9,4 +9,5 @@ credentials
 .session-summary.json
 dist/
 Plans/
+claude-codex-coop/
 .sessions/
