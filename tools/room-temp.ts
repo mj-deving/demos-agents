@@ -11,6 +11,7 @@ import { homedir } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
+import { observe } from "./lib/observe.js";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 import {
   NUMERIC_CLAIM_PATTERN,
@@ -203,6 +204,11 @@ class ApiBudget {
 
     const res = await withTimeout(apiCall(path, this.token), this.timeoutMs, label);
     if (!res.ok) {
+      observe("error", `Scan API call failed: ${label} (${res.status})`, {
+        phase: "scan",
+        source: "room-temp.ts:ScanBudget.get",
+        data: { path, status: res.status },
+      });
       throw new Error(`${label} failed (${res.status}): ${JSON.stringify(res.data)}`);
     }
     return normalizeFeedPosts(res.data);
@@ -627,6 +633,11 @@ async function main(): Promise<void> {
             updateCounters(counters, result.value.length, filtered);
             topicPosts.push(...filtered);
           } else {
+            observe("inefficiency", `topic-search ${label}="${topic}" failed`, {
+              phase: "scan",
+              source: "room-temp.ts:topic-search",
+              data: { topic, label, error: result.reason?.message || String(result.reason) },
+            });
             info(`topic-search ${label}="${topic}" failed (${result.reason?.message || result.reason}), continuing`);
           }
         }
@@ -651,6 +662,11 @@ async function main(): Promise<void> {
             updateCounters(counters, 0, tagFiltered); // already counted in broad fetch
             topicPosts.push(...tagFiltered);
           } catch (err: any) {
+            observe("inefficiency", `topic-search broad feed failed for "${topic}"`, {
+              phase: "scan",
+              source: "room-temp.ts:topic-search-broad",
+              data: { topic, error: err?.message || String(err) },
+            });
             info(`topic-search broad="${topic}" failed (${err?.message || err}), continuing`);
           }
         }

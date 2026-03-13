@@ -53,6 +53,7 @@ export interface AgentConfig {
     noveltyMentionThreshold?: number;
   };
   calibration: { offset: number };
+  phaseBudgets?: Partial<Record<string, number>>;
   paths: AgentPaths;
 }
 

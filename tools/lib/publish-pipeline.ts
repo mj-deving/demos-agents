@@ -9,6 +9,7 @@
 
 import { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
 import { info } from "./sdk.js";
+import { observe } from "./observe.js";
 import { attestTlsnViaNodeBridge } from "./tlsn-node-bridge.js";
 import { attestTlsnViaPlaywrightBridge } from "./tlsn-playwright-bridge.js";
 
@@ -100,6 +101,11 @@ export async function attestDahr(
   // but garbage evidence. Fail closed so callers can fall back or abort.
   const httpStatus = proxyResponse.status ?? proxyResponse.statusCode ?? proxyResponse.httpStatus;
   if (typeof httpStatus === "number" && (httpStatus < 200 || httpStatus >= 300)) {
+    observe("error", `DAHR source returned HTTP ${httpStatus}`, {
+      substage: "publish",
+      source: "publish-pipeline.ts:attestDahr",
+      data: { url: attestUrl, httpStatus },
+    });
     throw new Error(
       `DAHR source returned HTTP ${httpStatus} — refusing to attest error response. ` +
       `URL: ${attestUrl}`
@@ -148,6 +154,11 @@ export async function attestDahr(
   }
 
   info(`DAHR attested: hash=${proxyResponse.responseHash}, tx=${proxyResponse.txHash}`);
+  observe("pattern", `DAHR attestation succeeded`, {
+    substage: "publish",
+    source: "publish-pipeline.ts:attestDahr",
+    data: { url: attestUrl, txHash: proxyResponse.txHash },
+  });
 
   return {
     type: "dahr",
@@ -174,9 +185,16 @@ export async function attestTlsn(
 ): Promise<AttestResult> {
   try {
     info(`TLSN attesting: ${url}`);
+    const tlsnStart = Date.now();
     const result = process.env.TLSN_NODE_BRIDGE_EXPERIMENTAL === "1"
       ? await attestTlsnViaNodeBridge(demos, url, method)
       : await attestTlsnViaPlaywrightBridge(demos, url, method);
+    const tlsnDurationMs = Date.now() - tlsnStart;
+    observe("pattern", `TLSN attestation succeeded in ${tlsnDurationMs}ms`, {
+      substage: "publish",
+      source: "publish-pipeline.ts:attestTlsn",
+      data: { url, durationMs: tlsnDurationMs, txHash: result.proofTxHash },
+    });
     return {
       type: "tlsn",
       url: result.attestedUrl,
@@ -189,6 +207,11 @@ export async function attestTlsn(
       },
     };
   } catch (err: any) {
+    observe("error", `TLSN failed: ${String(err?.message || err)}`, {
+      substage: "publish",
+      source: "publish-pipeline.ts:attestTlsn",
+      data: { url },
+    });
     throw new Error(`TLSN unavailable: ${String(err?.message || err)}`);
   }
 }
@@ -274,10 +297,19 @@ export async function publishPost(
       (result as any)?.txHash);
 
   if (!txHash) {
+    observe("error", "Broadcast succeeded but txHash not found in response", {
+      substage: "publish",
+      source: "publish-pipeline.ts:publishPost",
+    });
     throw new Error("Broadcast succeeded but txHash not found in response");
   }
 
   info(`Published: txHash=${String(txHash).slice(0, 16)}...`);
+  observe("pattern", `Post published: ${String(txHash).slice(0, 16)}...`, {
+    substage: "publish",
+    source: "publish-pipeline.ts:publishPost",
+    data: { txHash: String(txHash), category: input.category, textLength: input.text.length },
+  });
 
   return {
     txHash: String(txHash),

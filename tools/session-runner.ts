@@ -51,6 +51,7 @@ import { attestDahr, attestTlsn, publishPost, type PublishResult, type AttestRes
 import { loadSourceRegistry, resolveAttestationPlan, selectSourceForTopic, type AttestationType } from "./lib/attestation-policy.js";
 import { discoverSourceForTopic, persistSourceToRegistry } from "./lib/source-discovery.js";
 import { resolveAgentName, loadAgentConfig, type AgentConfig } from "./lib/agent-config.js";
+import { initObserver, setObserverPhase, observe, type SubstageResult, type SubstageFailureCode } from "./lib/observe.js";
 
 // ── Constants ──────────────────────────────────────
 
@@ -336,6 +337,34 @@ function resolveTmuxAdapter(): TmuxAdapter {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+}
+
+// ── Phase Budget Defaults ─────────────────────────
+
+/** Default phase budgets in seconds. Configurable via strategy.yaml phaseBudgets. */
+const DEFAULT_PHASE_BUDGETS: Record<PhaseName, number> = {
+  audit: 120,     // 2 min
+  scan: 180,      // 3 min
+  engage: 300,    // 5 min
+  gate: 300,      // 5 min
+  publish: 900,   // 15 min (TLSN can take 3+ min per attestation)
+  verify: 120,    // 2 min
+  review: 180,    // 3 min
+  harden: 120,    // 2 min
+};
+
+/**
+ * Get the budget for a phase in milliseconds.
+ * Uses strategy.yaml phaseBudgets if available, otherwise defaults.
+ * Returns 0 if no budget should be enforced.
+ */
+function getPhaseBudgetMs(phase: PhaseName, config: AgentConfig): number {
+  const configBudgets = config.phaseBudgets;
+  if (configBudgets && typeof configBudgets[phase] === "number") {
+    return configBudgets[phase] * 1000;
+  }
+  const defaultSec = DEFAULT_PHASE_BUDGETS[phase];
+  return defaultSec ? defaultSec * 1000 : 0;
 }
 
 async function runCommand(
@@ -1202,6 +1231,10 @@ async function runGateAutonomous(
   const suggestions = extractTopicsFromScan(state, flags.log);
 
   if (suggestions.length === 0) {
+    observe("insight", "No topics found in scan — gate skipped", {
+      phase: "gate", substage: "gate",
+      source: "session-runner.ts:runGateAutonomous",
+    });
     phaseSkipped("No topics found in scan — skipping gate");
     completePhase(state, "gate", { posts: [] });
     return;
@@ -1541,6 +1574,20 @@ async function runPublishAutonomous(
       state.posts.push(pubResult.txHash);
       saveState(state);
     } catch (e: any) {
+      // Classify the publish failure for observability
+      const msg = e.message || "";
+      let failureCode: SubstageFailureCode = "PUBLISH_BROADCAST_FAIL";
+      if (msg.includes("TLSN") || msg.includes("timeout")) failureCode = "PUBLISH_TLSN_TIMEOUT";
+      else if (msg.includes("DAHR") || msg.includes("HTTP")) failureCode = "PUBLISH_DAHR_REJECT";
+      else if (msg.includes("No matching") || msg.includes("no attestable")) failureCode = "PUBLISH_NO_MATCHING_SOURCE";
+      else if (msg.includes("LLM") || msg.includes("provider")) failureCode = "PUBLISH_LLM_FAIL";
+
+      observe("error", `Publish failed for "${gp.topic}": ${msg}`, {
+        phase: "publish",
+        substage: "publish",
+        source: "session-runner.ts:runPublishAutonomous",
+        data: { topic: gp.topic, failureCode },
+      });
       phaseError(`Failed to auto-publish "${gp.topic}": ${e.message}`);
       // Continue with next post — don't fail entire phase
     }
@@ -2103,7 +2150,10 @@ function phaseDuration(state: SessionState, phase: PhaseName): string {
   const p = state.phases[phase];
   if (!p.startedAt || !p.completedAt) return "";
   const ms = new Date(p.completedAt).getTime() - new Date(p.startedAt).getTime();
-  return ` (${(ms / 60000).toFixed(1)} min)`;
+  const budgetMs = getPhaseBudgetMs(phase, agentConfig);
+  const overBudget = budgetMs > 0 && ms > budgetMs;
+  const suffix = overBudget ? ` ⚠️ +${Math.round(((ms - budgetMs) / budgetMs) * 100)}% over budget` : "";
+  return ` (${(ms / 60000).toFixed(1)} min${suffix})`;
 }
 
 function writeSessionReport(state: SessionState, oversight: OversightLevel, sessionsDir?: string): void {
@@ -2341,6 +2391,9 @@ async function main(): Promise<void> {
     }
   }
 
+  // Initialize observation logging for this session
+  initObserver(flags.agent, sessionNumber);
+
   banner(sessionNumber, flags.oversight, flags.agent);
 
   let shuttingDown = false;
@@ -2369,7 +2422,9 @@ async function main(): Promise<void> {
       if (state.phases[phase].status === "completed") continue;
 
       phaseHeader(phase, flags.oversight);
+      setObserverPhase(phase);
       beginPhase(state, phase, sessionsDir);
+      const phaseStartMs = Date.now();
 
       try {
         switch (phase) {
@@ -2404,7 +2459,26 @@ async function main(): Promise<void> {
             else await runHardenAutonomous(state, flags);
             break;
         }
+
+        // Phase deadline check — warn (don't kill) if phase exceeded its budget
+        const phaseDurationMs = Date.now() - phaseStartMs;
+        const budgetMs = getPhaseBudgetMs(phase, agentConfig);
+        if (budgetMs > 0 && phaseDurationMs > budgetMs) {
+          const overagePercent = Math.round(((phaseDurationMs - budgetMs) / budgetMs) * 100);
+          observe("inefficiency", `Phase ${phase} exceeded budget: ${Math.round(phaseDurationMs / 1000)}s vs ${Math.round(budgetMs / 1000)}s budget (+${overagePercent}%)`, {
+            phase,
+            source: "session-runner.ts:phase-budget",
+            data: { phase, durationMs: phaseDurationMs, budgetMs, overagePercent },
+          });
+          info(`⚠️ Phase ${phase} exceeded budget: ${Math.round(phaseDurationMs / 1000)}s (budget: ${Math.round(budgetMs / 1000)}s, +${overagePercent}%)`);
+        }
       } catch (e: any) {
+        // Observe phase failure before exiting
+        observe("error", `Phase ${phase} failed: ${e.message}`, {
+          phase,
+          source: "session-runner.ts:main-loop",
+          data: { phase, durationMs: Date.now() - phaseStartMs },
+        });
         failPhase(state, phase, e.message, sessionsDir);
         phaseError(e.message);
         console.error(`\n  Session state saved. Resume with: npx tsx tools/session-runner.ts --agent ${flags.agent} --resume --pretty`);
