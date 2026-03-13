@@ -254,6 +254,19 @@ const PROVIDER_RESPONSE_FORMATS: Record<string, "json" | "xml" | "rss" | "html">
 };
 
 /**
+ * Infer response format from URL path/extension when provider map doesn't cover it.
+ * Catches RSS/XML feeds that live under JSON-default providers (e.g., pypi.org/rss/).
+ */
+function inferResponseFormat(url: string, provider: string): "json" | "xml" | "rss" | "html" {
+  if (PROVIDER_RESPONSE_FORMATS[provider]) return PROVIDER_RESPONSE_FORMATS[provider];
+  const lower = url.toLowerCase();
+  if (lower.includes("/rss") || lower.endsWith(".rss")) return "rss";
+  if (lower.endsWith(".xml") || lower.includes("/atom") || lower.includes("/feed.xml")) return "xml";
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "html";
+  return "json";
+}
+
+/**
  * Infer provider from URL.
  */
 export function inferProvider(url: string): string {
@@ -307,8 +320,8 @@ export function normalizeSourceRecord(
   // Infer domain tags from topics (deduplicated via Set)
   const domainTags = [...new Set((v1.topics || []).map((t) => t.toLowerCase()))];
 
-  // Infer response format from provider
-  const responseFormat = PROVIDER_RESPONSE_FORMATS[provider] || "json";
+  // Infer response format from provider + URL path
+  const responseFormat = inferResponseFormat(v1.url, provider);
 
   return {
     id,
@@ -543,11 +556,18 @@ export function loadCatalog(catalogPath: string): SourceCatalogFileV2 | null {
     const raw = readFileSync(catalogPath, "utf-8");
     const parsed = JSON.parse(raw);
     if (parsed?.version !== 2 || !Array.isArray(parsed?.sources)) return null;
+    const totalCount = parsed.sources.length;
     const validSources = parsed.sources.filter((record: unknown, index: number) => {
       if (isValidSourceRecord(record)) return true;
       console.error(`Invalid catalog source record rejected at index ${index} in ${catalogPath}`);
       return false;
     });
+    // If >50% of records were rejected, treat catalog as corrupt — return null
+    // so catalog-preferred mode can fall back to YAML
+    if (totalCount > 0 && validSources.length < totalCount * 0.5) {
+      console.error(`Catalog ${catalogPath} rejected ${totalCount - validSources.length}/${totalCount} records — treating as invalid`);
+      return null;
+    }
     return {
       ...parsed,
       sources: validSources,
@@ -606,7 +626,7 @@ export function loadAgentSourceView(
   agent: AgentName,
   catalogPath: string,
   yamlRegistryPath: string,
-  mode: SourceRegistryMode = "yaml-only",
+  mode: SourceRegistryMode = "catalog-preferred",
   configOverrides?: Partial<AgentSourceConfig>
 ): AgentSourceView {
   const config = loadAgentSourceConfig(agent, configOverrides);

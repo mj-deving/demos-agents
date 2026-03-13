@@ -142,36 +142,47 @@ export async function runBeforeSense(
 
 /**
  * Run all beforePublishDraft hooks for the agent's enabled extensions.
- * Returns the first non-void decision (short-circuits on gate rejection).
+ * Short-circuits on rejection (pass=false). Accumulates last passing decision
+ * so later extensions can observe/augment the result.
  */
 export async function runBeforePublishDraft(
   enabledExtensions: string[],
   ctx: BeforePublishDraftContext
 ): Promise<PublishGateDecision | void> {
+  let lastDecision: PublishGateDecision | undefined;
   for (const ext of enabledExtensions) {
     const hooks = EXTENSION_REGISTRY[ext as KnownExtension];
     if (hooks?.beforePublishDraft) {
       const decision = await hooks.beforePublishDraft(ctx);
-      if (decision) return decision;
+      if (decision) {
+        if (!decision.pass) return decision; // short-circuit on rejection
+        lastDecision = decision;
+      }
     }
   }
+  return lastDecision;
 }
 
 /**
  * Run all afterPublishDraft hooks for the agent's enabled extensions.
- * Returns the first non-void decision.
+ * Short-circuits on rejection (pass=false). Accumulates last passing decision.
  */
 export async function runAfterPublishDraft(
   enabledExtensions: string[],
   ctx: AfterPublishDraftContext
 ): Promise<SourceMatchDecision | void> {
+  let lastDecision: SourceMatchDecision | undefined;
   for (const ext of enabledExtensions) {
     const hooks = EXTENSION_REGISTRY[ext as KnownExtension];
     if (hooks?.afterPublishDraft) {
       const decision = await hooks.afterPublishDraft(ctx);
-      if (decision) return decision;
+      if (decision) {
+        if (!decision.pass) return decision; // short-circuit on rejection
+        lastDecision = decision;
+      }
     }
   }
+  return lastDecision;
 }
 
 /**
