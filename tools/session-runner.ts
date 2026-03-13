@@ -60,6 +60,11 @@ import { loadSourceRegistry, resolveAttestationPlan, selectSourceForTopic, prefl
 import { discoverSourceForTopic, persistSourceToRegistry } from "./lib/source-discovery.js";
 import { resolveAgentName, loadAgentConfig, type AgentConfig } from "./lib/agent-config.js";
 import { initObserver, setObserverPhase, observe, type SubstageResult, type SubstageFailureCode } from "./lib/observe.js";
+import {
+  runBeforeSense,
+  registerHook,
+  type BeforeSenseContext,
+} from "./lib/extensions.js";
 
 // ── Constants ──────────────────────────────────────
 
@@ -2475,18 +2480,16 @@ async function runV2Loop(
   const senseCompleted = state.phases.sense?.status === "completed";
   const actCompleted = state.phases.act?.status === "completed";
 
-  // Extension: calibrate — run audit tool directly without writing v1 phase keys
-  if (agentConfig.loopExtensions.includes("calibrate") && !senseCompleted) {
-    info("Extension: calibrate (running audit)...");
+  // Extension hooks: beforeSense (e.g., calibrate runs audit)
+  if (!senseCompleted) {
     try {
-      const auditArgs = ["--agent", flags.agent, "--update", "--log", flags.log, "--env", flags.env];
-      const auditResult = await runToolAndParse("tools/audit.ts", auditArgs, "audit.ts (calibrate)");
-      const stats = auditResult.stats || {};
-      phaseResult(
-        `Calibrate: ${stats.total_entries || 0} entries | avg error: ${stats.avg_prediction_error !== undefined ? stats.avg_prediction_error.toFixed(1) : "N/A"}`
-      );
+      await runBeforeSense(agentConfig.loopExtensions, {
+        state,
+        config: agentConfig,
+        flags: { agent: flags.agent, env: flags.env, log: flags.log, dryRun: flags.dryRun, pretty: flags.pretty },
+      });
     } catch (e: any) {
-      phaseError(`Calibrate failed (non-critical): ${e.message}`);
+      phaseError(`beforeSense hook failed (non-critical): ${e.message}`);
     }
   }
 
@@ -2931,6 +2934,19 @@ async function main(): Promise<void> {
 
   // Initialize observation logging for this session
   initObserver(flags.agent, sessionNumber);
+
+  // Register extension hooks that depend on session-runner internals.
+  // This avoids circular imports: extensions.ts stays pure, session-runner
+  // provides implementations that use runToolAndParse() etc.
+  registerHook("calibrate", "beforeSense", async (ctx: BeforeSenseContext) => {
+    info("Extension: calibrate (running audit)...");
+    const auditArgs = ["--agent", ctx.flags.agent, "--update", "--log", ctx.flags.log, "--env", ctx.flags.env];
+    const auditResult = await runToolAndParse("tools/audit.ts", auditArgs, "audit.ts (calibrate)");
+    const stats = auditResult.stats || {};
+    phaseResult(
+      `Calibrate: ${stats.total_entries || 0} entries | avg error: ${stats.avg_prediction_error !== undefined ? stats.avg_prediction_error.toFixed(1) : "N/A"}`
+    );
+  });
 
   banner(sessionNumber, flags.oversight, flags.agent);
   if (isV2(state)) {
