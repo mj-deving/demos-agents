@@ -48,7 +48,7 @@ import { generatePost, type PostDraft } from "./lib/llm.js";
 import { resolveProvider, type LLMProvider } from "./lib/llm-provider.js";
 import { connectWallet, setLogAgent } from "./lib/sdk.js";
 import { attestDahr, attestTlsn, publishPost, type PublishResult, type AttestResult } from "./lib/publish-pipeline.js";
-import { loadSourceRegistry, resolveAttestationPlan, selectSourceForTopic, type AttestationType } from "./lib/attestation-policy.js";
+import { loadSourceRegistry, resolveAttestationPlan, selectSourceForTopic, preflight, type AttestationType } from "./lib/attestation-policy.js";
 import { discoverSourceForTopic, persistSourceToRegistry } from "./lib/source-discovery.js";
 import { resolveAgentName, loadAgentConfig, type AgentConfig } from "./lib/agent-config.js";
 import { initObserver, setObserverPhase, observe, type SubstageResult, type SubstageFailureCode } from "./lib/observe.js";
@@ -1244,13 +1244,11 @@ async function runGateAutonomous(
   const sources = loadSourceRegistry(agentConfig.paths.sourcesRegistry);
 
   for (const suggestion of suggestions) {
-    // Source-availability pre-check: skip topics that have no matching source for attestation.
-    // Try static registry first, then dynamic discovery if needed.
-    const plan = resolveAttestationPlan(suggestion.topic, agentConfig);
-    const hasRequired = selectSourceForTopic(suggestion.topic, sources, plan.required) !== null;
-    const hasFallback = plan.fallback ? selectSourceForTopic(suggestion.topic, sources, plan.fallback) !== null : false;
-    if (!hasRequired && !hasFallback) {
+    // Source-availability pre-check via preflight
+    const preflightResult = preflight(suggestion.topic, sources, agentConfig);
+    if (!preflightResult.pass) {
       // Try dynamic discovery before rejecting
+      const plan = resolveAttestationPlan(suggestion.topic, agentConfig);
       const discovered = await discoverSourceForTopic(suggestion.topic, plan.required);
       const discoveredFallback = !discovered && plan.fallback
         ? await discoverSourceForTopic(suggestion.topic, plan.fallback)
@@ -1258,13 +1256,13 @@ async function runGateAutonomous(
       if (discovered) {
         persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discovered.source);
         sources.push(discovered.source);
-        info(`Gate: discovered source "${discovered.source.name}" for "${suggestion.topic}" (relevance ${discovered.relevanceScore})`);
+        info(`Gate preflight: discovered source "${discovered.source.name}" for "${suggestion.topic}" (relevance ${discovered.relevanceScore})`);
       } else if (discoveredFallback) {
         persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discoveredFallback.source);
         sources.push(discoveredFallback.source);
-        info(`Gate: discovered fallback source "${discoveredFallback.source.name}" for "${suggestion.topic}" (relevance ${discoveredFallback.relevanceScore})`);
+        info(`Gate preflight: discovered fallback source "${discoveredFallback.source.name}" for "${suggestion.topic}" (relevance ${discoveredFallback.relevanceScore})`);
       } else {
-        info(`Gate SKIP: ${suggestion.topic} — no attestable source found (static or dynamic)`);
+        info(`Gate SKIP: ${suggestion.topic} — ${preflightResult.reason} (${preflightResult.reasonCode})`);
         continue;
       }
     }
@@ -1413,6 +1411,36 @@ async function runPublishAutonomous(
 
   for (const gp of gatePosts) {
     try {
+      // Step 0: Preflight — check source availability before spending LLM time
+      const preflightResult = preflight(gp.topic, sources, agentConfig);
+      if (!preflightResult.pass) {
+        // Try dynamic discovery before giving up
+        const plan = resolveAttestationPlan(gp.topic, agentConfig);
+        const discovered = await discoverSourceForTopic(gp.topic, plan.required);
+        const discoveredFallback = !discovered && plan.fallback
+          ? await discoverSourceForTopic(gp.topic, plan.fallback)
+          : null;
+
+        if (discovered) {
+          persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discovered.source);
+          sources.push(discovered.source);
+          info(`Preflight: discovered source "${discovered.source.name}" for "${gp.topic}"`);
+        } else if (discoveredFallback) {
+          persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discoveredFallback.source);
+          sources.push(discoveredFallback.source);
+          info(`Preflight: discovered fallback source "${discoveredFallback.source.name}" for "${gp.topic}"`);
+        } else {
+          observe("insight", `Preflight rejected topic "${gp.topic}": ${preflightResult.reason}`, {
+            phase: "publish",
+            substage: "publish",
+            source: "session-runner.ts:runPublishAutonomous",
+            data: { topic: gp.topic, reasonCode: preflightResult.reasonCode },
+          });
+          info(`Preflight SKIP: ${gp.topic} — ${preflightResult.reason} (${preflightResult.reasonCode})`);
+          continue; // Skip to next topic without LLM call
+        }
+      }
+
       // Step 1: Generate post text via LLM
       const provider = resolveProvider(flags.env);
       if (!provider) {

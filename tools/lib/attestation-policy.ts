@@ -172,6 +172,55 @@ export function isHighSensitivityTopic(topic: string, keywords: string[]): boole
   return false;
 }
 
+// ── Preflight ─────────────────────────────────────
+
+export interface PreflightResult {
+  pass: boolean;
+  reason: string;
+  reasonCode: "PASS" | "NO_MATCHING_SOURCE" | "TLSN_REQUIRED_NO_TLSN_SOURCE" | "SOURCE_PRECHECK_HTTP_ERROR";
+}
+
+/**
+ * Quick check: can we attest a source for this topic?
+ * Uses existing selectSourceForTopic + resolveAttestationPlan.
+ * Does NOT do network calls — just checks registry availability.
+ */
+export function preflight(
+  topic: string,
+  sources: SourceRecord[],
+  config: AgentConfig
+): PreflightResult {
+  const plan = resolveAttestationPlan(topic, config);
+
+  const hasRequired = selectSourceForTopic(topic, sources, plan.required) !== null;
+  const hasFallback = plan.fallback
+    ? selectSourceForTopic(topic, sources, plan.fallback) !== null
+    : false;
+
+  if (hasRequired) {
+    return { pass: true, reason: `${plan.required} source available`, reasonCode: "PASS" };
+  }
+  if (hasFallback) {
+    return { pass: true, reason: `Fallback ${plan.fallback} source available`, reasonCode: "PASS" };
+  }
+
+  if (plan.required === "TLSN" && !plan.fallback) {
+    return {
+      pass: false,
+      reason: `Topic "${topic}" requires TLSN but no TLSN-safe source found`,
+      reasonCode: "TLSN_REQUIRED_NO_TLSN_SOURCE",
+    };
+  }
+
+  return {
+    pass: false,
+    reason: `No matching ${plan.required}${plan.fallback ? `/${plan.fallback}` : ""} source for topic "${topic}"`,
+    reasonCode: "NO_MATCHING_SOURCE",
+  };
+}
+
+// ── Attestation Plan ──────────────────────────────
+
 export function resolveAttestationPlan(topic: string, config: AgentConfig): AttestationPlan {
   const sensitive = isHighSensitivityTopic(topic, config.attestation.highSensitivityKeywords);
 
