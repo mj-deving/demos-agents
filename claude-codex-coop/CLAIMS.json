@@ -21,6 +21,25 @@
       "shared": false,
       "updatedAt": "2026-03-13T05:40:31.729Z",
       "expiresAt": "2026-03-14T05:40:31.729Z"
+    },
+    {
+      "agent": "codex",
+      "lane": "scan-overhaul",
+      "task": "scan modes + quality filters + pioneer topic extraction",
+      "files": [
+        "tools/lib/feed-filter.ts",
+        "tools/room-temp.ts",
+        "tools/engage.ts",
+        "tools/session-runner.ts",
+        "tools/lib/agent-config.ts",
+        "tools/publish.ts",
+        "agents/sentinel/persona.yaml",
+        "agents/pioneer/persona.yaml",
+        "agents/crawler/persona.yaml"
+      ],
+      "shared": false,
+      "updatedAt": "2026-03-13T06:23:51.373Z",
+      "expiresAt": "2026-03-14T06:23:51.373Z"
     }
   ]
 }

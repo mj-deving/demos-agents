@@ -39,6 +39,18 @@ Goal: both agents can work at the same time on the same objective without confli
 
 ## Commands
 
+Show only current coop context (status + latest handoff):
+
+```bash
+npm run coop:latest
+```
+
+JSON output:
+
+```bash
+npm run coop:latest -- --json
+```
+
 Append handoff entry:
 
 ```bash

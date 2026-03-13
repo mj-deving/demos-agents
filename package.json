@@ -16,6 +16,7 @@
     "verify": "tsx tools/verify.ts",
     "session": "tsx tools/session-runner.ts",
     "coop:status": "node tools/coop-status.mjs",
+    "coop:latest": "node tools/coop-latest.mjs",
     "coop:handoff": "node tools/coop-handoff.mjs",
     "coop:claim": "node tools/coop-claim.mjs",
     "coop:release": "node tools/coop-claim.mjs --release true",
