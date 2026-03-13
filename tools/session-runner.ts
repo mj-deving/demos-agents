@@ -49,6 +49,7 @@ import { resolveProvider, type LLMProvider } from "./lib/llm-provider.js";
 import { connectWallet, setLogAgent } from "./lib/sdk.js";
 import { attestDahr, attestTlsn, publishPost, type PublishResult, type AttestResult } from "./lib/publish-pipeline.js";
 import { loadSourceRegistry, resolveAttestationPlan, selectSourceForTopic, type AttestationType } from "./lib/attestation-policy.js";
+import { discoverSourceForTopic, persistSourceToRegistry } from "./lib/source-discovery.js";
 import { resolveAgentName, loadAgentConfig, type AgentConfig } from "./lib/agent-config.js";
 
 // ── Constants ──────────────────────────────────────
@@ -1211,12 +1212,28 @@ async function runGateAutonomous(
 
   for (const suggestion of suggestions) {
     // Source-availability pre-check: skip topics that have no matching source for attestation.
+    // Try static registry first, then dynamic discovery if needed.
     const plan = resolveAttestationPlan(suggestion.topic, agentConfig);
     const hasRequired = selectSourceForTopic(suggestion.topic, sources, plan.required) !== null;
     const hasFallback = plan.fallback ? selectSourceForTopic(suggestion.topic, sources, plan.fallback) !== null : false;
     if (!hasRequired && !hasFallback) {
-      info(`Gate SKIP: ${suggestion.topic} — no attestable source (${plan.reason})`);
-      continue;
+      // Try dynamic discovery before rejecting
+      const discovered = await discoverSourceForTopic(suggestion.topic, plan.required);
+      const discoveredFallback = !discovered && plan.fallback
+        ? await discoverSourceForTopic(suggestion.topic, plan.fallback)
+        : null;
+      if (discovered) {
+        persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discovered.source);
+        sources.push(discovered.source);
+        info(`Gate: discovered source "${discovered.source.name}" for "${suggestion.topic}" (relevance ${discovered.relevanceScore})`);
+      } else if (discoveredFallback) {
+        persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discoveredFallback.source);
+        sources.push(discoveredFallback.source);
+        info(`Gate: discovered fallback source "${discoveredFallback.source.name}" for "${suggestion.topic}" (relevance ${discoveredFallback.relevanceScore})`);
+      } else {
+        info(`Gate SKIP: ${suggestion.topic} — no attestable source found (static or dynamic)`);
+        continue;
+      }
     }
 
     const gateArgs = ["--agent", flags.agent, "--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env, "--scan-cache", getStateFilePath(state)];
@@ -1419,14 +1436,32 @@ async function runPublishAutonomous(
 
       // Step 2: Attestation policy + source selection (hard requirement)
       const plan = resolveAttestationPlan(gp.topic, agentConfig);
-      const requiredSelection = selectSourceForTopic(gp.topic, sources, plan.required);
-      const fallbackSelection = plan.fallback ? selectSourceForTopic(gp.topic, sources, plan.fallback) : null;
+      let requiredSelection = selectSourceForTopic(gp.topic, sources, plan.required);
+      let fallbackSelection = plan.fallback ? selectSourceForTopic(gp.topic, sources, plan.fallback) : null;
       let sourceSelection = requiredSelection;
       let selectedMethod: AttestationType = plan.required;
       if (!sourceSelection && fallbackSelection && plan.fallback) {
         sourceSelection = fallbackSelection;
         selectedMethod = plan.fallback;
         info(`Attestation fallback: required ${plan.required} source unavailable, using ${plan.fallback}`);
+      }
+      // Dynamic source discovery: if no static source matches, try to find one on-demand
+      if (!sourceSelection) {
+        info(`No static source for "${gp.topic}" — attempting dynamic discovery...`);
+        const discovered = await discoverSourceForTopic(gp.topic, plan.required);
+        if (!discovered && plan.fallback) {
+          const discoveredFallback = await discoverSourceForTopic(gp.topic, plan.fallback);
+          if (discoveredFallback) {
+            sourceSelection = { source: discoveredFallback.source, url: discoveredFallback.url };
+            selectedMethod = plan.fallback;
+            info(`Dynamic discovery: found ${plan.fallback} source "${discoveredFallback.source.name}" (relevance ${discoveredFallback.relevanceScore})`);
+            persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discoveredFallback.source);
+          }
+        } else if (discovered) {
+          sourceSelection = { source: discovered.source, url: discovered.url };
+          info(`Dynamic discovery: found ${plan.required} source "${discovered.source.name}" (relevance ${discovered.relevanceScore})`);
+          persistSourceToRegistry(agentConfig.paths.sourcesRegistry, discovered.source);
+        }
       }
       if (!sourceSelection) {
         throw new Error(`No matching ${plan.required} source for topic "${gp.topic}" (${plan.reason})`);
