@@ -7,18 +7,21 @@
  * and optionally confirms matching entries in the session log.
  *
  * Usage:
- *   npx tsx tools/verify.ts <txHash...> [--log PATH] [--env PATH] [--wait N] [--pretty] [--json]
+ *   npx tsx tools/verify.ts [txHash...] [--log PATH] [--env PATH] [--wait N] [--pretty] [--json]
  *
  * Examples:
  *   npx tsx tools/verify.ts abc123 def456 --pretty
  *   npx tsx tools/verify.ts abc123 --wait 30 --json
+ *   npx tsx tools/verify.ts --agent sentinel --pretty
  */
 
 import { resolve } from "node:path";
 import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
 import { readSessionLog, resolveLogPath } from "./lib/log.js";
-import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
+import { resolveAgentName } from "./lib/agent-config.js";
+
+const VERIFY_RETRY_DELAYS_MS = [5000, 10000, 15000] as const;
 
 // ── Arg Parsing ────────────────────────────────────
 
@@ -54,16 +57,17 @@ function printHelp(): void {
 Post Verification — Sentinel VERIFY phase tool
 
 USAGE:
-  npx tsx tools/verify.ts <txHash...> [flags]
+  npx tsx tools/verify.ts [txHash...] [flags]
 
 ARGS:
-  <txHash...>       One or more txHashes to verify (positional)
+  [txHash...]       One or more txHashes to verify (positional)
+                    If omitted, verifies the latest txHash from the session log
 
 FLAGS:
   --agent NAME      Agent name (default: sentinel)
   --log PATH        Session log path (default: ~/.{agent}-session-log.jsonl)
   --env PATH        Path to .env file (default: .env in cwd)
-  --wait N          Seconds to wait before checking (default: 15, for indexer lag)
+  --wait N          Extra seconds to wait before retry polling starts (default: 0)
   --pretty          Human-readable formatted output
   --json            Compact single-line JSON output
   --help, -h        Show this help
@@ -71,6 +75,7 @@ FLAGS:
 EXAMPLES:
   npx tsx tools/verify.ts abc123 --pretty
   npx tsx tools/verify.ts abc123 def456 --wait 30 --json
+  npx tsx tools/verify.ts --agent sentinel --pretty
   npx tsx tools/verify.ts abc123 --log ~/.sentinel-session-log.jsonl --pretty
 `);
 }
@@ -93,6 +98,26 @@ interface VerifyOutput {
   summary: { total: number; verified: number; failed: number };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+}
+
+function buildVerifyRetrySchedule(initialExtraDelayMs: number): number[] {
+  const schedule = [...VERIFY_RETRY_DELAYS_MS];
+  if (initialExtraDelayMs > 0) {
+    schedule[0] += initialExtraDelayMs;
+  }
+  return schedule;
+}
+
+function inferLatestTxHashes(logEntries: Array<{ txHash?: string }>): string[] {
+  for (let i = logEntries.length - 1; i >= 0; i--) {
+    const txHash = String(logEntries[i]?.txHash || "").trim();
+    if (txHash) return [txHash];
+  }
+  return [];
+}
+
 // ── Feed Lookup ────────────────────────────────────
 
 /**
@@ -105,7 +130,6 @@ async function lookupPost(
   token: string,
   authorAddress?: string
 ): Promise<{ score: number; reactions: number } | null> {
-  // Try direct thread lookup
   const threadRes = await apiCall(`/api/feed/thread/${encodeURIComponent(txHash)}`, token);
   if (threadRes.ok && threadRes.data) {
     const post = threadRes.data.post || threadRes.data;
@@ -114,7 +138,7 @@ async function lookupPost(
         (post.reactions?.agree || 0) + (post.reactions?.disagree || 0);
       return { reactions, score: post.score ?? 0 };
     }
-    // Check posts array
+
     const threadPosts = threadRes.data?.posts;
     if (Array.isArray(threadPosts)) {
       const found = threadPosts.find((p: any) => p.txHash === txHash);
@@ -126,10 +150,6 @@ async function lookupPost(
     }
   }
 
-  // Fallback: search author's posts if address provided.
-  // CAVEAT: Replies don't appear in ?author= filter — they're only visible
-  // via thread endpoint (tried above) or the general feed. This fallback
-  // works for top-level posts but will miss replies.
   if (authorAddress) {
     const feedRes = await apiCall(
       `/api/feed?author=${authorAddress}&limit=50`,
@@ -150,27 +170,38 @@ async function lookupPost(
   return null;
 }
 
+async function lookupPostWithRetries(
+  txHash: string,
+  token: string,
+  authorAddress?: string,
+  initialDelayMs: number = 0
+): Promise<{ score: number; reactions: number } | null> {
+  let found = await lookupPost(txHash, token, authorAddress);
+  if (found) return found;
+
+  for (const delayMs of buildVerifyRetrySchedule(initialDelayMs)) {
+    info(`Verifier retry in ${Math.floor(delayMs / 1000)}s for ${txHash.slice(0, 16)}...`);
+    await sleep(delayMs);
+    found = await lookupPost(txHash, token, authorAddress);
+    if (found) return found;
+  }
+
+  return null;
+}
+
 // ── Main ───────────────────────────────────────────
 
 async function main(): Promise<void> {
   const { txHashes, flags } = parseArgs();
 
-  if (txHashes.length === 0) {
-    console.error("Error: at least one txHash is required.\n");
-    printHelp();
-    process.exit(1);
-  }
-
   const agentName = resolveAgentName(flags);
   setLogAgent(agentName);
-  const config = loadAgentConfig(agentName);
   const envPath = resolve(flags.env || ".env");
   const logPath = resolveLogPath(flags.log, agentName);
   const pretty = flags.pretty === "true";
   const jsonMode = flags.json === "true";
 
-  // Parse --wait with strict validation
-  let waitSeconds = 15;
+  let waitSeconds = 0;
   if (flags.wait !== undefined) {
     if (!/^\d+$/.test(flags.wait)) {
       console.error(`Error: --wait must be a non-negative integer, got "${flags.wait}"`);
@@ -179,31 +210,30 @@ async function main(): Promise<void> {
     waitSeconds = Number(flags.wait);
   }
 
-  // Wait for indexer if requested.
-  // Indexer lag is normal — feed may show the PREVIOUS post instead of the new one.
-  // Default 15s is usually sufficient, but replies may take longer (30-60s).
-  // If not found after wait, try again or check txHash on-chain to confirm broadcast.
-  if (waitSeconds > 0) {
-    info(`Waiting ${waitSeconds}s for indexer...`);
-    await new Promise((r) => setTimeout(r, waitSeconds * 1000));
-  }
-
-  // Connect and authenticate
   info("Connecting wallet...");
   const { demos, address } = await connectWallet(envPath);
   const token = await ensureAuth(demos, address);
 
-  // Read session log for cross-reference
   const logEntries = readSessionLog(logPath);
   const logTxSet = new Set(logEntries.map((e) => e.txHash));
+  const targets = txHashes.length > 0 ? txHashes : inferLatestTxHashes(logEntries);
 
-  // Verify each txHash
+  if (targets.length === 0) {
+    console.error("Error: no txHashes provided and no txHash found in the session log.\n");
+    printHelp();
+    process.exit(1);
+  }
+
+  if (txHashes.length === 0) {
+    info(`No txHash provided — verifying latest session log entry ${targets[0].slice(0, 16)}...`);
+  }
+
   const verified: VerifyResult[] = [];
   const failed: VerifyResult[] = [];
 
-  for (const txHash of txHashes) {
+  for (const txHash of targets) {
     info(`Checking ${txHash.slice(0, 16)}...`);
-    const feedData = await lookupPost(txHash, token, address);
+    const feedData = await lookupPostWithRetries(txHash, token, address, waitSeconds * 1000);
 
     const result: VerifyResult = {
       txHash,
@@ -221,38 +251,34 @@ async function main(): Promise<void> {
     }
   }
 
-  // Build output
   const output: VerifyOutput = {
     timestamp: new Date().toISOString(),
     verified,
     failed,
     summary: {
-      total: txHashes.length,
+      total: targets.length,
       verified: verified.length,
       failed: failed.length,
     },
   };
 
-  // Format output
   if (pretty) {
     console.log("\n" + "═".repeat(60));
     console.log(`  ${agentName.toUpperCase()} — Post Verification`);
     console.log("═".repeat(60));
 
-    for (const r of verified) {
+    for (const result of verified) {
       console.log(
-        `  ✓ ${r.txHash.slice(0, 16)}... | score: ${r.feed_score} | reactions: ${r.feed_reactions} | log: ${r.in_log ? "yes" : "no"}`
+        `  ✓ ${result.txHash.slice(0, 16)}... | score: ${result.feed_score} | reactions: ${result.feed_reactions} | log: ${result.in_log ? "yes" : "no"}`
       );
     }
-    for (const r of failed) {
+    for (const result of failed) {
       console.log(
-        `  ✗ ${r.txHash.slice(0, 16)}... | NOT FOUND in feed | log: ${r.in_log ? "yes" : "no"}`
+        `  ✗ ${result.txHash.slice(0, 16)}... | NOT FOUND in feed | log: ${result.in_log ? "yes" : "no"}`
       );
     }
 
-    console.log(
-      `\n  Summary: ${output.summary.verified}/${output.summary.total} verified`
-    );
+    console.log(`\n  Summary: ${output.summary.verified}/${output.summary.total} verified`);
     console.log("═".repeat(60));
   } else if (jsonMode) {
     console.log(JSON.stringify(output));
@@ -260,10 +286,10 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(output, null, 2));
   }
 
-  process.exit(failed.length > 0 ? 1 : 0);
+  if (failed.length > 0) process.exit(1);
 }
 
-main().catch((e) => {
-  console.error(`FATAL: ${e.message}`);
+main().catch((err) => {
+  console.error("Error:", err instanceof Error ? err.message : String(err));
   process.exit(1);
 });

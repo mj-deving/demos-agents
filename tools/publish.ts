@@ -750,11 +750,16 @@ async function main(): Promise<void> {
             txHash: attested.txHash,
             timestamp: Date.now(),
           }] : undefined,
+        }, {
+          feedToken: token || undefined,
         })
       );
 
       row.status = "published";
       row.txHash = publish.txHash;
+      if (publish.warnings?.length) {
+        row.warnings.push(...publish.warnings);
+      }
 
       appendSessionLog(
         {

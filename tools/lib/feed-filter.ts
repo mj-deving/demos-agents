@@ -1,8 +1,12 @@
 /**
  * Feed filtering + indexing utilities.
  *
- * Pure data transforms only (no SDK/auth/network dependencies).
+ * Mostly lightweight data transforms, plus a small reusable topic-search helper
+ * for SuperColony feed limitations around tag search.
  */
+
+import { apiCall } from "./sdk.js";
+import { observe } from "./observe.js";
 
 export interface QualityFilter {
   minScore: number;
@@ -38,6 +42,15 @@ export interface AgentStats {
   postCount: number;
   avgScore: number;
   attestationRate: number;
+}
+
+export type TopicSearchSource = "asset" | "text";
+
+export interface CombinedTopicSearchOptions {
+  searchLimit?: number;
+  fetchFeed?: (path: string, label: string) => Promise<any[]>;
+  onRawResults?: (source: TopicSearchSource, rawPosts: any[]) => void;
+  onFallbackFiltered?: (filteredPosts: FilteredPost[]) => void;
 }
 
 export const NUMERIC_CLAIM_PATTERN = /\d+(\.\d+)?%|\$\d+|\d+\.\d+\s*(bbl|usd|btc|eth)/i;
@@ -83,6 +96,45 @@ function getCategory(raw: any): string {
   return String(raw?.payload?.cat || raw?.cat || "UNKNOWN").toUpperCase();
 }
 
+function normalizeFeedPosts(payload: any): any[] {
+  const posts =
+    payload?.posts ??
+    payload?.results ??
+    payload?.items ??
+    payload?.data?.posts ??
+    payload?.data ??
+    payload ??
+    [];
+  if (!Array.isArray(posts)) return [];
+  return posts;
+}
+
+function dedupeFilteredPosts(posts: FilteredPost[]): FilteredPost[] {
+  const byTxHash = new Map<string, FilteredPost>();
+  for (const post of posts) {
+    const existing = byTxHash.get(post.txHash);
+    if (!existing || post.timestamp > existing.timestamp) {
+      byTxHash.set(post.txHash, post);
+    }
+  }
+  return [...byTxHash.values()];
+}
+
+function matchesTopicTagOrAsset(raw: any, topicLower: string): boolean {
+  const tags = toArray(raw?.payload?.tags).map((tag) => tag.toLowerCase());
+  const assets = toArray(raw?.payload?.assets).map((asset) => asset.toLowerCase());
+  return tags.some((tag) => tag.includes(topicLower) || topicLower.includes(tag)) ||
+    assets.some((asset) => asset.includes(topicLower) || topicLower.includes(asset));
+}
+
+async function defaultFeedFetch(path: string, token: string): Promise<any[]> {
+  const res = await apiCall(path, token);
+  if (!res.ok) {
+    throw new Error(`${path} failed (${res.status}): ${JSON.stringify(res.data)}`);
+  }
+  return normalizeFeedPosts(res.data);
+}
+
 /**
  * Filter raw feed posts and extract lightweight fields.
  */
@@ -125,6 +177,90 @@ export function filterPosts(rawPosts: any[], filter: QualityFilter): FilteredPos
   }
 
   return out;
+}
+
+/**
+ * Combined topic search for SuperColony feed quirks.
+ *
+ * The search endpoint only indexes post body text for `text=` lookups, so
+ * topic discovery needs:
+ * 1. asset search
+ * 2. text search
+ * 3. local tag/asset matching against a caller-provided broad pool if both are empty
+ *
+ * The helper accepts an optional broad-pool getter so callers can memoize the
+ * broad feed fetch once and reuse it across multiple topic queries.
+ */
+export async function combinedTopicSearch(
+  topic: string,
+  authToken: string,
+  qualityFilter: QualityFilter,
+  broadPool?: any[] | (() => Promise<any[]>),
+  options: CombinedTopicSearchOptions = {}
+): Promise<FilteredPost[]> {
+  const searchLimit = Number.isFinite(options.searchLimit) ? Number(options.searchLimit) : 30;
+  const fetchFeed = options.fetchFeed || ((path: string) => defaultFeedFetch(path, authToken));
+  const normalizedTopic = String(topic || "").trim();
+
+  if (!normalizedTopic) return [];
+
+  const searchResults = await Promise.allSettled([
+    fetchFeed(
+      `/api/feed/search?asset=${encodeURIComponent(normalizedTopic)}&limit=${searchLimit}`,
+      `topic-search asset="${normalizedTopic}"`
+    ),
+    fetchFeed(
+      `/api/feed/search?text=${encodeURIComponent(normalizedTopic)}&limit=${searchLimit}`,
+      `topic-search text="${normalizedTopic}"`
+    ),
+  ]);
+
+  const filteredMatches: FilteredPost[] = [];
+  for (const [index, result] of searchResults.entries()) {
+    const source: TopicSearchSource = index === 0 ? "asset" : "text";
+    if (result.status === "fulfilled") {
+      options.onRawResults?.(source, result.value);
+      filteredMatches.push(...filterPosts(result.value, qualityFilter));
+      continue;
+    }
+
+    observe("inefficiency", `topic-search ${source}="${normalizedTopic}" failed`, {
+      phase: "scan",
+      source: "feed-filter.ts:combinedTopicSearch",
+      data: {
+        topic: normalizedTopic,
+        source,
+        error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      },
+    });
+  }
+
+  if (filteredMatches.length > 0) {
+    return dedupeFilteredPosts(filteredMatches);
+  }
+
+  if (!broadPool) {
+    return [];
+  }
+
+  try {
+    const pool = typeof broadPool === "function" ? await broadPool() : broadPool;
+    const topicLower = normalizedTopic.toLowerCase();
+    const tagMatches = (pool || []).filter((post: any) => matchesTopicTagOrAsset(post, topicLower));
+    const filteredFallback = filterPosts(tagMatches, qualityFilter);
+    options.onFallbackFiltered?.(filteredFallback);
+    return dedupeFilteredPosts(filteredFallback);
+  } catch (err) {
+    observe("inefficiency", `topic-search broad feed failed for "${normalizedTopic}"`, {
+      phase: "scan",
+      source: "feed-filter.ts:combinedTopicSearch",
+      data: {
+        topic: normalizedTopic,
+        error: err instanceof Error ? err.message : String(err),
+      },
+    });
+    return [];
+  }
 }
 
 /**

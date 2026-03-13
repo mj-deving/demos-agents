@@ -8,7 +8,7 @@
  */
 
 import { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
-import { info } from "./sdk.js";
+import { apiCall, info } from "./sdk.js";
 import { observe } from "./observe.js";
 import { attestTlsnViaNodeBridge } from "./tlsn-node-bridge.js";
 import { attestTlsnViaPlaywrightBridge } from "./tlsn-playwright-bridge.js";
@@ -16,6 +16,9 @@ import { attestTlsnViaPlaywrightBridge } from "./tlsn-playwright-bridge.js";
 // ── Constants ──────────────────────────────────────
 
 const HIVE_PREFIX = new Uint8Array([0x48, 0x49, 0x56, 0x45]); // "HIVE"
+const INDEXER_CHECK_DELAYS_MS = [5000, 10000, 15000] as const;
+
+let sessionIndexerLagDetected = false;
 
 // ── Types ──────────────────────────────────────────
 
@@ -55,6 +58,11 @@ export interface PublishResult {
   category: string;
   textLength: number;
   attestation?: AttestResult;
+  warnings?: string[];
+}
+
+export interface PublishOptions {
+  feedToken?: string | null;
 }
 
 // ── HIVE Encoding ──────────────────────────────────
@@ -66,6 +74,44 @@ function encodeHivePost(post: object): Uint8Array {
   combined.set(HIVE_PREFIX, 0);
   combined.set(jsonBytes, HIVE_PREFIX.length);
   return combined;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+}
+
+function normalizeFeedPosts(payload: any): any[] {
+  const posts =
+    payload?.posts ??
+    payload?.results ??
+    payload?.items ??
+    payload?.data?.posts ??
+    payload?.data ??
+    payload ??
+    [];
+  if (!Array.isArray(posts)) return [];
+  return posts;
+}
+
+async function checkIndexerHealth(txHash: string, feedToken: string): Promise<boolean> {
+  for (const delayMs of INDEXER_CHECK_DELAYS_MS) {
+    info(`Indexer check in ${Math.floor(delayMs / 1000)}s for ${txHash.slice(0, 16)}...`);
+    await sleep(delayMs);
+
+    const feedRes = await apiCall("/api/feed?limit=5", feedToken);
+    if (!feedRes.ok) {
+      info(`Indexer check feed read failed (${feedRes.status}) for ${txHash.slice(0, 16)}...`);
+      continue;
+    }
+
+    const posts = normalizeFeedPosts(feedRes.data);
+    if (posts.some((post: any) => String(post?.txHash || "") === txHash)) {
+      info(`Indexer confirmed ${txHash.slice(0, 16)}... in recent feed`);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // ── DAHR Attestation ───────────────────────────────
@@ -224,8 +270,16 @@ export async function attestTlsn(
  */
 export async function publishPost(
   demos: Demos,
-  input: PublishInput
+  input: PublishInput,
+  options: PublishOptions = {}
 ): Promise<PublishResult> {
+  const warnings: string[] = [];
+  if (sessionIndexerLagDetected) {
+    const warning = "Previous publish did not appear in feed during indexer check; SuperColony indexer may still be behind.";
+    warnings.push(warning);
+    info(`Publish warning: ${warning}`);
+  }
+
   const hasDahr = Array.isArray(input.sourceAttestations) && input.sourceAttestations.length > 0;
   const hasTlsn = Array.isArray(input.tlsnAttestations) && input.tlsnAttestations.length > 0;
   if (!hasDahr && !hasTlsn) {
@@ -311,10 +365,25 @@ export async function publishPost(
     data: { txHash: String(txHash), category: input.category, textLength: input.text.length },
   });
 
+  if (options.feedToken) {
+    const indexed = await checkIndexerHealth(String(txHash), options.feedToken);
+    if (!indexed) {
+      sessionIndexerLagDetected = true;
+      const warning = `Indexer lag detected: published tx ${String(txHash).slice(0, 16)}... did not appear in /api/feed?limit=5 after 3 checks.`;
+      warnings.push(warning);
+      observe("inefficiency", warning, {
+        substage: "publish",
+        source: "publish-pipeline.ts:checkIndexerHealth",
+        data: { txHash: String(txHash) },
+      });
+    }
+  }
+
   return {
     txHash: String(txHash),
     category: input.category,
     textLength: input.text.length,
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 
@@ -325,7 +394,8 @@ export async function publishPost(
 export async function attestAndPublish(
   demos: Demos,
   input: PublishInput,
-  attestUrl?: string
+  attestUrl?: string,
+  options: PublishOptions = {}
 ): Promise<PublishResult> {
   let attestation: AttestResult | undefined;
 
@@ -359,7 +429,7 @@ export async function attestAndPublish(
     ...input,
     sourceAttestations,
     tlsnAttestations,
-  });
+  }, options);
   result.attestation = attestation;
 
   return result;

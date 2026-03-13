@@ -1709,6 +1709,9 @@ async function runPublishAutonomous(
         }
       );
       const pubResult: PublishResult = { ...published, attestation: attested };
+      for (const warning of pubResult.warnings || []) {
+        info(`Publish warning: ${warning}`);
+      }
 
       phaseResult(`Published: ${pubResult.txHash.slice(0, 16)}... (${pubResult.category}, ${pubResult.textLength} chars)`);
 

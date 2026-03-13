@@ -17,6 +17,7 @@ import {
   NUMERIC_CLAIM_PATTERN,
   buildAgentIndex,
   buildTopicIndex,
+  combinedTopicSearch,
   filterPosts,
   type AgentStats,
   type FilteredPost,
@@ -597,90 +598,43 @@ async function main(): Promise<void> {
       const topics = parseCsv(flags["topics"]);
       const topicQueries = topics.length > 0 ? topics : config.topics.secondary.slice(0, 3);
       const out: Record<string, TopicStatsJson> = {};
-
-      // Strategy: /api/feed/search?text= only searches post body text, not tags.
-      // Asset search works reliably. For tag-based topics, we fetch a broad page
-      // and filter locally by tag/asset match.
-      //
-      // 1. Try asset= search (works for token symbols)
-      // 2. Try text= search (works for words in post body)
-      // 3. Fall back to broad feed scan with local tag matching
-      //
-      // We fetch one broad page up front (shared across all topic queries) to
-      // amortize the API call cost for tag-based matching.
-
-      let broadPool: any[] | null = null;
+      let broadPoolPromise: Promise<any[]> | null = null;
+      const getBroadPool = async (): Promise<any[]> => {
+        if (!broadPoolPromise) {
+          info("Topic-search: fetching broad feed for tag matching");
+          broadPoolPromise = budget.get(`/api/feed?limit=${depth}`, "topic-search broad pool")
+            .then((raw) => {
+              allRawFetched.push(...raw);
+              counters.totalFetched += raw.length;
+              return raw;
+            })
+            .catch((err) => {
+              broadPoolPromise = null;
+              throw err;
+            });
+        }
+        return broadPoolPromise;
+      };
 
       for (const topic of topicQueries) {
         info(`Mode topic-search: ${topic}`);
-        let topicPosts: FilteredPost[] = [];
-
-        // Run asset + text search in parallel — independent calls, no data dependency.
-        const searchResults = await Promise.allSettled([
-          budget.get(
-            `/api/feed/search?asset=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
-            `topic-search asset="${topic}"`
-          ),
-          budget.get(
-            `/api/feed/search?text=${encodeURIComponent(topic)}&limit=${topicSearchLimit}`,
-            `topic-search text="${topic}"`
-          ),
-        ]);
-        for (const [i, result] of searchResults.entries()) {
-          const label = i === 0 ? "asset" : "text";
-          if (result.status === "fulfilled") {
-            allRawFetched.push(...result.value);
-            const filtered = filterPosts(result.value, qualityFilter);
-            updateCounters(counters, result.value.length, filtered);
-            topicPosts.push(...filtered);
-          } else {
-            observe("inefficiency", `topic-search ${label}="${topic}" failed`, {
-              phase: "scan",
-              source: "room-temp.ts:topic-search",
-              data: { topic, label, error: result.reason?.message || String(result.reason) },
-            });
-            info(`topic-search ${label}="${topic}" failed (${result.reason?.message || result.reason}), continuing`);
+        const deduped = await combinedTopicSearch(
+          topic,
+          token,
+          qualityFilter,
+          getBroadPool,
+          {
+            searchLimit: topicSearchLimit,
+            fetchFeed: (path, label) => budget.get(path, label),
+            onRawResults: (_source, raw) => {
+              allRawFetched.push(...raw);
+              updateCounters(counters, raw.length, filterPosts(raw, qualityFilter));
+            },
+            onFallbackFiltered: (filtered) => {
+              updateCounters(counters, 0, filtered);
+            },
           }
-        }
-
-        // If both returned empty, scan broad feed for tag matches
-        if (topicPosts.length === 0) {
-          try {
-            if (broadPool === null) {
-              info("Topic-search: fetching broad feed for tag matching");
-              broadPool = await budget.get(`/api/feed?limit=${depth}`, "topic-search broad pool");
-              allRawFetched.push(...broadPool);
-              counters.totalFetched += broadPool.length;
-            }
-            const topicLower = topic.toLowerCase();
-            const tagMatches = broadPool.filter((p: any) => {
-              const tags = (p.payload?.tags || []).map((t: string) => String(t).toLowerCase());
-              const assets = (p.payload?.assets || []).map((a: string) => String(a).toLowerCase());
-              return tags.some((t: string) => t.includes(topicLower) || topicLower.includes(t))
-                || assets.some((a: string) => a.includes(topicLower) || topicLower.includes(a));
-            });
-            const tagFiltered = filterPosts(tagMatches, qualityFilter);
-            updateCounters(counters, 0, tagFiltered); // already counted in broad fetch
-            topicPosts.push(...tagFiltered);
-          } catch (err: any) {
-            observe("inefficiency", `topic-search broad feed failed for "${topic}"`, {
-              phase: "scan",
-              source: "room-temp.ts:topic-search-broad",
-              data: { topic, error: err?.message || String(err) },
-            });
-            info(`topic-search broad="${topic}" failed (${err?.message || err}), continuing`);
-          }
-        }
-
-        // Dedupe by txHash within this topic
-        const seen = new Set<string>();
-        const deduped: FilteredPost[] = [];
-        for (const p of topicPosts) {
-          if (!seen.has(p.txHash)) {
-            seen.add(p.txHash);
-            deduped.push(p);
-          }
-        }
+        );
 
         allFiltered.push(...deduped);
         out[topic.toLowerCase()] = topicStatsFromPosts(deduped);
