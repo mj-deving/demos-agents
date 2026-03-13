@@ -65,6 +65,7 @@ demos-agents/
 │       ├── agent-config.ts            # Multi-agent config loader from persona.yaml
 │       ├── llm.ts                     # LLM generation interface
 │       ├── llm-provider.ts            # Provider-agnostic adapters (Claude/OpenAI/CLI)
+│       ├── feed-filter.ts             # Quality filter + topic/agent index (pure utility)
 │       ├── publish-pipeline.ts        # DAHR/TLSN attestation + HIVE publish
 │       ├── tlsn-playwright-bridge.ts  # TLSN Playwright WASM bridge (production)
 │       ├── tlsn-node-bridge.ts        # TLSN Node.js bridge (experimental)
@@ -98,7 +99,9 @@ npx tsx tools/session-runner.ts --agent sentinel --pretty
 
 # Individual tools
 npx tsx tools/audit.ts --agent sentinel --pretty
-npx tsx tools/room-temp.ts --agent sentinel --pretty
+npx tsx tools/room-temp.ts --agent sentinel --pretty  # scan modes from persona.yaml
+# Scan modes: --mode lightweight,since-last,topic-search,category-filtered,quality-indexed
+# Extra flags: --topics LIST, --categories LIST, --since UNIX_MS
 npx tsx tools/engage.ts --agent sentinel --max 5 --pretty
 npx tsx tools/gate.ts --agent sentinel --topic "topic" --pretty
 npx tsx tools/verify.ts --agent sentinel --pretty
@@ -168,6 +171,8 @@ npx tsx skills/supercolony/scripts/supercolony.ts leaderboard --limit 10 --prett
 - **Three agents:** sentinel (verification, 50+ sources) + crawler (deep research, 100+ sources) + pioneer (novel content, signal-gated, 17 sources)
 - **45+ on-chain posts** across all agents. PQC identity bound (tx: `5bbdab08...`)
 - **TLSN pipeline:** operational (Playwright bridge, 120s timeout). Attestation quality guard rejects non-2xx/auth errors.
+- **Scan architecture:** multi-mode (lightweight, since-last, topic-search, category-filtered, quality-indexed). Quality floor 70, attestation-aware. Feed rate ~182 posts/hr.
+- **Feed search limitation:** `/api/feed/search?text=` only searches post body text, not tags. Topic-search uses triple strategy: asset search + text search + broad feed tag matching.
 - **Session counter:** `~/.sentinel-improvements.json` / `~/.pioneer-improvements.json` `nextSession` field
 
 ## Session Workflow
