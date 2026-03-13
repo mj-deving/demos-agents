@@ -385,6 +385,7 @@ export function loadAgentConfig(name?: string): AgentConfig {
       noveltyMentionThreshold: yaml.gate?.noveltyMentionThreshold,
     },
     calibration: { offset: yaml.calibration?.offset ?? 0 },
+    phaseBudgets: yaml.phaseBudgets,
     paths,
   };
 }

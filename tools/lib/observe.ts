@@ -95,9 +95,15 @@ export function initObserver(agentName: string, sessionNumber: number): void {
   _agentName = agentName;
   _sessionNumber = sessionNumber;
 
-  const dir = resolve(homedir(), `.${agentName}`);
-  mkdirSync(dir, { recursive: true }); // idempotent — no existsSync needed
-  _logPath = resolve(dir, "observations.jsonl");
+  try {
+    const dir = resolve(homedir(), `.${agentName}`);
+    mkdirSync(dir, { recursive: true });
+    _logPath = resolve(dir, "observations.jsonl");
+  } catch {
+    // Best-effort — observation logging is non-critical.
+    // If $HOME is not writable (CI/sandbox), skip silently.
+    _logPath = null;
+  }
 }
 
 /**

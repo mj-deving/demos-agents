@@ -11,7 +11,7 @@ import { homedir } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
-import { observe } from "./lib/observe.js";
+import { observe, initObserver } from "./lib/observe.js";
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 import {
   NUMERIC_CLAIM_PATTERN,
@@ -505,6 +505,7 @@ async function main(): Promise<void> {
 
   const agentName = resolveAgentName(flags);
   setLogAgent(agentName);
+  initObserver(agentName, 0); // session 0 = subprocess context (actual session# set by runner)
   const config = loadAgentConfig(agentName);
   const envPath = flags["env"] || resolve(process.cwd(), ".env");
   const hours = parseInt(flags["hours"] || "6", 10) || 6;
