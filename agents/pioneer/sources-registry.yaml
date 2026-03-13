@@ -112,6 +112,24 @@ sources:
     max_response_kb: 40
     note: "Categories sorted by 24h market cap change. Detects sector rotation. DAHR only."
 
+  # ─── Financial / Derivatives ──────────────────────────────────
+
+  - name: hn-recent-derivatives
+    url: "https://hn.algolia.com/api/v1/search?query=derivatives+futures+options&tags=story&hitsPerPage=2"
+    topics: [derivatives, derivatives-expert, derivatives-market, financial-markets, futures]
+    tlsn_safe: true
+    dahr_safe: true
+    max_response_kb: 4
+    note: "Derivatives/futures/options stories. hitsPerPage=2 for TLSN."
+
+  - name: hn-recent-finance
+    url: "https://hn.algolia.com/api/v1/search?query=financial+markets+risk&tags=story&hitsPerPage=2"
+    topics: [financial-markets, risk, cross-domain, macro]
+    tlsn_safe: true
+    dahr_safe: true
+    max_response_kb: 4
+    note: "Financial markets / risk stories."
+
   # ─── Regulatory / Geopolitical ─────────────────────────────────
 
   - name: pypi-recent

@@ -1206,7 +1206,19 @@ async function runGateAutonomous(
     return;
   }
 
+  // Pre-load sources so we can reject topics with no attestable source before wasting LLM calls.
+  const sources = loadSourceRegistry(agentConfig.paths.sourcesRegistry);
+
   for (const suggestion of suggestions) {
+    // Source-availability pre-check: skip topics that have no matching source for attestation.
+    const plan = resolveAttestationPlan(suggestion.topic, agentConfig);
+    const hasRequired = selectSourceForTopic(suggestion.topic, sources, plan.required) !== null;
+    const hasFallback = plan.fallback ? selectSourceForTopic(suggestion.topic, sources, plan.fallback) !== null : false;
+    if (!hasRequired && !hasFallback) {
+      info(`Gate SKIP: ${suggestion.topic} — no attestable source (${plan.reason})`);
+      continue;
+    }
+
     const gateArgs = ["--agent", flags.agent, "--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env, "--scan-cache", getStateFilePath(state)];
     const result = await runToolAndParse("tools/gate.ts", gateArgs, "gate.ts");
 
