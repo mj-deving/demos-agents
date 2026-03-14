@@ -107,6 +107,8 @@ export interface SourceRecordV2 {
     promotedAt?: string;
     deprecatedAt?: string;
     archivedAt?: string;
+    /** ISO timestamp of the most recent status change (for time-based transitions) */
+    statusChangedAt?: string;
     lastUsedAt?: string;
     lastFailedAt?: string;
     failureReason?: string;

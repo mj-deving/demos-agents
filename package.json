@@ -36,6 +36,7 @@
     "score:skill": "node tools/score-skill.mjs",
     "release:plugin:snapshot": "node tools/release-plugin-snapshot.mjs",
     "source-test": "tsx tools/source-test.ts",
+    "source-lifecycle": "tsx tools/source-lifecycle.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
