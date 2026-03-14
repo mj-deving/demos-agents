@@ -44,7 +44,7 @@ tipping:
   requireAttestation: true
 
 gate:
-  predictedReactionsThreshold: 17
+  predictedReactionsThreshold: 10
   allow5Of6: true
   duplicateWindowHours: 24
 
