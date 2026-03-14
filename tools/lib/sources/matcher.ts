@@ -118,6 +118,25 @@ export function extractClaims(postText: string, postTags: string[]): string[] {
 
 // ── LLM-Assisted Claim Extraction (PR6) ─────────────
 
+/** Max input text length for LLM prompt (prevents token budget overflow) */
+const LLM_MAX_TEXT_LENGTH = 1500;
+
+/** Timeout for LLM claim extraction call (ms) */
+const LLM_CLAIM_TIMEOUT_MS = 10_000;
+
+const CLAIMS_EXTRACTION_PROMPT = `Extract the key factual claims from this text. Return ONLY a JSON array of strings — each string is one claim term or phrase (entity, number, relationship).
+
+Categories to extract:
+- Named entities (people, organizations, protocols, tokens)
+- Numeric facts (prices, percentages, dates, amounts)
+- Causal claims (X causes Y, X leads to Y)
+- Temporal claims (timeframes, deadlines, predictions)
+
+Text: "{TEXT}"
+Tags: {TAGS}
+
+Return ONLY the JSON array, no other text. Example: ["bitcoin", "$64000", "45% increase", "2026", "Federal Reserve"]`;
+
 /**
  * Extract structured claims using an LLM provider.
  * Returns a flat string[] of claim terms compatible with the regex-based format.
@@ -128,27 +147,25 @@ export async function extractClaimsLLM(
   postTags: string[],
   llm: LLMProvider,
 ): Promise<string[]> {
-  const prompt = `Extract the key factual claims from this text. Return ONLY a JSON array of strings — each string is one claim term or phrase (entity, number, relationship).
+  const truncatedText = postText.length > LLM_MAX_TEXT_LENGTH
+    ? postText.slice(0, LLM_MAX_TEXT_LENGTH) + "…"
+    : postText;
 
-Categories to extract:
-- Named entities (people, organizations, protocols, tokens)
-- Numeric facts (prices, percentages, dates, amounts)
-- Causal claims (X causes Y, X leads to Y)
-- Temporal claims (timeframes, deadlines, predictions)
-
-Text: "${postText}"
-Tags: ${postTags.join(", ")}
-
-Return ONLY the JSON array, no other text. Example: ["bitcoin", "$64000", "45% increase", "2026", "Federal Reserve"]`;
+  const prompt = CLAIMS_EXTRACTION_PROMPT
+    .replace("{TEXT}", truncatedText)
+    .replace("{TAGS}", postTags.join(", "));
 
   try {
-    const response = await llm.complete(prompt, {
-      maxTokens: 512,
-      modelTier: "fast",
-    });
+    // Race LLM call against timeout to prevent pipeline stalls
+    const response = await Promise.race([
+      llm.complete(prompt, { maxTokens: 512, modelTier: "fast" }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("LLM claim extraction timeout")), LLM_CLAIM_TIMEOUT_MS),
+      ),
+    ]);
 
-    // Parse JSON array from response — handle markdown code fences
-    const cleaned = response.trim().replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "").trim();
+    // Parse JSON array from response — handle markdown code fences (case-insensitive)
+    const cleaned = response.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     const parsed = JSON.parse(cleaned);
 
     if (!Array.isArray(parsed)) return [];
@@ -161,9 +178,9 @@ Return ONLY the JSON array, no other text. Example: ["bitcoin", "$64000", "45% i
 }
 
 /**
- * Async claim extraction — tries LLM first, merges with regex fallback.
- * When LLM succeeds, returns union of LLM claims + regex claims (deduped).
- * When LLM fails or is unavailable, returns regex-only claims.
+ * Async claim extraction — always extracts regex claims for baseline,
+ * then optionally enhances with LLM claims when available.
+ * Returns union of regex claims + LLM claims (deduped).
  */
 export async function extractClaimsAsync(
   postText: string,
@@ -206,17 +223,17 @@ function calculateDiversityBonus(
 ): number {
   if (scoredCandidates.length < 2) return 0;
 
-  // Count how many sources matched each claim
-  const claimSourceCount = new Map<string, number>();
+  // Track how many sources matched each claim (e.g., "bitcoin" → 2 sources)
+  const sourceCountPerClaim = new Map<string, number>();
   for (const candidate of scoredCandidates) {
     for (const claim of candidate.matchedClaims) {
-      claimSourceCount.set(claim, (claimSourceCount.get(claim) ?? 0) + 1);
+      sourceCountPerClaim.set(claim, (sourceCountPerClaim.get(claim) ?? 0) + 1);
     }
   }
 
-  // Count claims corroborated by 2+ sources
+  // A claim with count >= 2 means multiple sources corroborate it
   let corroboratedCount = 0;
-  for (const count of claimSourceCount.values()) {
+  for (const count of sourceCountPerClaim.values()) {
     if (count >= 2) corroboratedCount++;
   }
 
