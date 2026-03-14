@@ -163,8 +163,8 @@ async function main(): Promise<void> {
     }, null, 2));
   }
 
-  // Apply transitions if command is "apply" and there are changes
-  if (command === "apply" && changes.length > 0) {
+  // Apply mode: always persist rating updates + any status transitions
+  if (command === "apply") {
     // Apply to full catalog (not just filtered sources)
     const fullSources = catalog!.sources as SourceRecordV2[];
 
@@ -174,8 +174,10 @@ async function main(): Promise<void> {
 
     const withRatings = fullSources.map((s) => ratingMap.get(s.id) || s);
 
-    // Then apply status transitions
-    const withTransitions = applyTransitions(withRatings, changes);
+    // Then apply status transitions (if any)
+    const withTransitions = changes.length > 0
+      ? applyTransitions(withRatings, changes)
+      : withRatings;
 
     // Atomic write: temp file + rename
     const tmpPath = catalogPath + ".tmp";
@@ -188,7 +190,9 @@ async function main(): Promise<void> {
     renameSync(tmpPath, catalogPath);
 
     if (pretty) {
-      console.log(`\nApplied ${changes.length} transitions to ${catalogPath}`);
+      const ratingMsg = `${updatedSources.length} rating updates`;
+      const transitionMsg = changes.length > 0 ? `, ${changes.length} transitions` : "";
+      console.log(`\nApplied ${ratingMsg}${transitionMsg} to ${catalogPath}`);
     }
   }
 }

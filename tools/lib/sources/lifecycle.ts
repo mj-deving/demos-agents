@@ -57,11 +57,11 @@ export interface LifecycleReport {
 // ── Valid Transitions (state machine enforcement) ────
 
 const VALID_TRANSITIONS: Record<SourceStatus, SourceStatus[]> = {
-  quarantined: ["active"],
-  active: ["degraded"],
-  degraded: ["active", "stale"],
-  stale: ["deprecated"],
-  deprecated: [],
+  quarantined: ["active", "archived"],
+  active: ["degraded", "archived"],
+  degraded: ["active", "stale", "archived"],
+  stale: ["deprecated", "archived"],
+  deprecated: ["archived"],
   archived: ["quarantined"],
 };
 
