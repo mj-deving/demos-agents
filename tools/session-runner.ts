@@ -1663,6 +1663,41 @@ async function runPublishAutonomous(
         }
       }
 
+      // Pre-fetch source data for LLM context (before generation, not after)
+      let attestedData: { source: string; url: string; summary: string } | undefined;
+      if (preflightDecision?.candidates && preflightDecision.candidates.length > 0) {
+        const topCandidate = preflightDecision.candidates[0];
+        try {
+          const { fetchSource } = await import("./lib/sources/fetch.js");
+          const { getProviderAdapter } = await import("./lib/sources/providers/index.js");
+          const adapter = getProviderAdapter(topCandidate.source.provider);
+          const fetchResult = await fetchSource(topCandidate.url, topCandidate.source, {
+            rateLimitBucket: adapter?.rateLimit.bucket,
+            rateLimitRpm: adapter?.rateLimit.maxPerMinute,
+            rateLimitRpd: adapter?.rateLimit.maxPerDay,
+          });
+          if (fetchResult.ok && fetchResult.response) {
+            // Extract a text summary from the response (first 800 chars of body)
+            const body = fetchResult.response.bodyText;
+            let summary: string;
+            try {
+              const parsed = JSON.parse(body);
+              summary = JSON.stringify(parsed, null, 0).slice(0, 800);
+            } catch {
+              summary = body.slice(0, 800);
+            }
+            attestedData = {
+              source: topCandidate.source.name || topCandidate.sourceId,
+              url: topCandidate.url,
+              summary,
+            };
+            info(`Source data fetched for LLM: ${attestedData.source} (${summary.length} chars)`);
+          }
+        } catch (e: any) {
+          info(`Source pre-fetch failed (non-fatal): ${e.message}`);
+        }
+      }
+
       const draft: PostDraft = await generatePost(
         {
           topic: gp.topic,
@@ -1678,6 +1713,7 @@ async function runPublishAutonomous(
           calibrationOffset,
           signalContext,
           briefingContext: (state as any).briefingContext as string | undefined,
+          attestedData,
         },
         provider,
         {
