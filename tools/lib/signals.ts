@@ -120,7 +120,11 @@ export async function fetchLatestBriefing(token: string): Promise<string | null>
       phase: "scan", source: "signals.ts",
     });
     return summary;
-  } catch (err: unknown) {
+  } catch (err: any) {
+    observe("error", `Briefing fetch exception: ${err?.message || String(err)}`, {
+      phase: "scan",
+      source: "signals.ts",
+    });
     return null;
   }
 }

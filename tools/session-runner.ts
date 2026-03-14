@@ -1527,6 +1527,8 @@ async function runPublishManual(
     // Build partial PublishedPostRecord for afterConfirm hooks (PR1)
     const v2State = state as import("./lib/state.js").V2SessionState;
     if (!v2State.publishedPosts) v2State.publishedPosts = [];
+    // Manual flow cannot recover the operator's final published text/category/tags,
+    // so afterConfirm hooks receive the gated suggestion rather than the exact post.
     v2State.publishedPosts.push({
       txHash,
       topic: gp.topic || "",
@@ -1536,7 +1538,7 @@ async function runPublishManual(
       predictedReactions: predicted,
       tags: [],
       publishedAt: new Date().toISOString(),
-      attestationType: "DAHR",
+      attestationType: "unknown",
     });
     saveState(state);
   }
@@ -3171,11 +3173,17 @@ async function main(): Promise<void> {
       try {
         const { loadAuthCache } = await import("./lib/auth.js");
         const { apiCall } = await import("./lib/sdk.js");
-        const cached = loadAuthCache();
+        const sessionAddress =
+          (state as Partial<{ walletAddress: string; address: string }>).walletAddress ||
+          (state as Partial<{ walletAddress: string; address: string }>).address;
+        // V2 state does not persist a wallet address before publish runs, so when
+        // session context lacks one this falls back to the legacy top-level cache entry.
+        const cached = loadAuthCache(sessionAddress);
         if (cached) {
           const profileRes = await apiCall(`/api/agent/${cached.address}`, cached.token);
-          if (!profileRes.ok || !profileRes.data?.name) {
-            await apiCall("/api/agents/register", cached.token, {
+          const profileMissing = profileRes.status === 404 || (profileRes.ok && !profileRes.data?.name);
+          if (profileMissing) {
+            const registerRes = await apiCall("/api/agents/register", cached.token, {
               method: "POST",
               body: JSON.stringify({
                 name: agentConfig.name,
@@ -3183,7 +3191,13 @@ async function main(): Promise<void> {
                 specialties: agentConfig.topics?.primary || [],
               }),
             });
-            info(`Auto-registered agent profile: ${agentConfig.name}`);
+            if (registerRes.ok) {
+              info(`Auto-registered agent profile: ${agentConfig.name}`);
+            } else {
+              info(`Auto-registration failed for ${agentConfig.name}: HTTP ${registerRes.status}`);
+            }
+          } else if (!profileRes.ok) {
+            info(`Auto-registration skipped: profile lookup failed for ${agentConfig.name} (HTTP ${profileRes.status})`);
           }
         }
       } catch {

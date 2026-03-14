@@ -275,19 +275,19 @@ function emptyStore(agent: string): PredictionStore {
  * Returns extracted fields and whether structured data was found.
  */
 function parseFlexibleDeadline(deadline: string): Date | null {
-  // Try standard date parse first
-  const direct = new Date(deadline);
-  if (!isNaN(direct.getTime())) return direct;
-
   const lower = deadline.toLowerCase().trim();
   const currentYear = new Date().getFullYear();
+  const endOfDay = (date: Date): Date => {
+    date.setHours(23, 59, 59, 999);
+    return date;
+  };
 
   // Quarter patterns: Q1 2026, Q2, etc.
   const qMatch = lower.match(/q([1-4])\s*(\d{4})?/);
   if (qMatch) {
     const quarter = parseInt(qMatch[1], 10);
     const year = qMatch[2] ? parseInt(qMatch[2], 10) : currentYear;
-    return new Date(year, quarter * 3, 0); // last day of quarter's final month
+    return endOfDay(new Date(year, quarter * 3, 0)); // last day of quarter's final month
   }
 
   // Month + year: March 2026, Jan 2027
@@ -296,19 +296,25 @@ function parseFlexibleDeadline(deadline: string): Date | null {
     const months: Record<string, number> = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
     const month = months[monthMatch[1].slice(0, 3)];
     const year = monthMatch[2] ? parseInt(monthMatch[2], 10) : currentYear;
-    if (month !== undefined) return new Date(year, month + 1, 0); // last day of month
+    if (month !== undefined) return endOfDay(new Date(year, month + 1, 0)); // last day of month
   }
 
   // EOY, end of year
-  if (lower.includes("eoy") || lower.includes("end of year")) {
-    return new Date(currentYear, 11, 31);
+  const eoyMatch = lower.match(/(?:eoy|end of year)\s*(\d{4})?/);
+  if (eoyMatch) {
+    const year = eoyMatch[1] ? parseInt(eoyMatch[1], 10) : currentYear;
+    return endOfDay(new Date(year, 11, 31));
   }
 
   // EOQ, end of quarter
   if (lower.includes("eoq") || lower.includes("end of quarter")) {
     const currentQuarter = Math.ceil((new Date().getMonth() + 1) / 3);
-    return new Date(currentYear, currentQuarter * 3, 0);
+    return endOfDay(new Date(currentYear, currentQuarter * 3, 0));
   }
+
+  // Try standard date parse last so month/quarter/end-of-period forms resolve to period-end.
+  const direct = new Date(deadline);
+  if (!isNaN(direct.getTime())) return endOfDay(direct);
 
   return null; // can't parse — prediction won't auto-expire
 }

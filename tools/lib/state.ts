@@ -108,7 +108,7 @@ export interface PublishedPostRecord {
   replyTo?: string;
   deadline?: string;
   publishedAt: string;
-  attestationType: "DAHR" | "TLSN" | "none";
+  attestationType: "DAHR" | "TLSN" | "none" | "unknown";
   verified?: boolean;
 }
 
@@ -128,6 +128,8 @@ export interface V2SessionState {
   publishedPosts?: PublishedPostRecord[];
   /** Consensus signal snapshot from /api/signals — consumed by gate/LLM (PR1) */
   signalSnapshot?: unknown;
+  /** Colony briefing summary from /api/report — consumed by LLM prompt assembly (PR2) */
+  briefingContext?: string;
 }
 
 export type AnySessionState = SessionState | V2SessionState;
