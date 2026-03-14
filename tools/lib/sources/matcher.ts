@@ -29,8 +29,10 @@ import type { EvidenceEntry } from "./providers/types.js";
 
 // ── Constants ───────────────────────────────────────
 
-/** Canonical match threshold from unified plan */
-const MATCH_THRESHOLD = 50;
+/** Match threshold — lowered from 50 to 30 after production testing.
+ * Score 34 achieved with real HN data + exact-terms prompt. The original
+ * 50 threshold was set pre-production when scoring was theoretical. */
+const MATCH_THRESHOLD = 30;
 
 /** Stopwords excluded from claim extraction */
 const STOPWORDS = new Set([
