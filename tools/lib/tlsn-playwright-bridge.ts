@@ -279,6 +279,13 @@ async function runBrowserTlsnAttestation(
     });
     const page = await browser.newPage();
     page.setDefaultTimeout(300_000); // 5 min — MPC-TLS steps can take 190-290s total
+
+    // Capture browser console for per-step timing visibility
+    page.on("console", (msg: any) => {
+      const text = msg.text?.() ?? String(msg);
+      if (text.startsWith("[tlsn]")) console.log(text);
+    });
+
     await page.goto(`${server.baseUrl}/bridge.html`, { waitUntil: "domcontentloaded" });
 
     const result = await withTimeout(
@@ -313,7 +320,15 @@ async function runBrowserTlsnAttestation(
             const notary = w.NotaryServer.from(args.notaryUrl);
             const sessionUrl = await notary.sessionUrl(args.maxBytes, args.maxBytes);
             await prover.setup(sessionUrl);
-            await prover.sendRequest(args.proxyUrl, {
+
+            // Append ?token=<hostname> — the proxy expects this for MPC-TLS routing.
+            // tlsn-js static Prover.notarize() does this internally, but the instance
+            // sendRequest() path does not. Without it, the proxy accepts the WebSocket
+            // upgrade but never routes TLS frames, causing an indefinite hang.
+            const hostname = new URL(args.targetUrl).hostname;
+            const proxyUrlWithToken = args.proxyUrl + (args.proxyUrl.includes("?") ? "&" : "?") + "token=" + hostname;
+
+            await prover.sendRequest(proxyUrlWithToken, {
               url: args.targetUrl,
               method: args.method,
               headers: { Accept: "application/json" },
