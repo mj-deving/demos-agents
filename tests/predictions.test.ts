@@ -1,56 +1,226 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import type { PublishedPostRecord } from "../tools/lib/state.js";
 
-// We need to test parseFlexibleDeadline — it's not exported, so we test via
-// the module's public API or extract it. For now, test the public functions.
-// TODO: export parseFlexibleDeadline for direct testing or refactor.
+const { apiCallMock } = vi.hoisted(() => ({
+  apiCallMock: vi.fn(),
+}));
 
-// Direct import of the module to test internal logic via its effects
-import { loadPredictions, getCalibrationAdjustment } from "../tools/lib/predictions.js";
+vi.mock("node:os", () => ({
+  homedir: () => "/tmp/demos-agents-tests-predictions",
+}));
+
+vi.mock("../tools/lib/sdk.js", () => ({
+  apiCall: apiCallMock,
+  info: vi.fn(),
+}));
+
+import {
+  getCalibrationAdjustment,
+  loadPredictions,
+  registerPrediction,
+  resolvePendingPredictions,
+  type PredictionStore,
+} from "../tools/lib/predictions.js";
+
+function makePost(overrides: Partial<PublishedPostRecord> = {}): PublishedPostRecord {
+  return {
+    txHash: "tx-1",
+    topic: "bitcoin",
+    category: "PREDICTION",
+    text: "Bitcoin could rise above $50K by March 2026.",
+    confidence: 82,
+    predictedReactions: 7,
+    tags: ["bitcoin"],
+    publishedAt: "2026-03-01T00:00:00.000Z",
+    attestationType: "DAHR",
+    ...overrides,
+  };
+}
+
+function makeStore(overrides: Partial<PredictionStore> = {}): PredictionStore {
+  return {
+    version: 1,
+    agent: "oracle",
+    updatedAt: new Date().toISOString(),
+    predictions: {},
+    ...overrides,
+  };
+}
 
 describe("loadPredictions", () => {
-  it("returns empty store for non-existent agent", () => {
-    const store = loadPredictions("test-nonexistent-agent-xxx");
-    expect(store.version).toBe(1);
-    expect(store.agent).toBe("test-nonexistent-agent-xxx");
-    expect(Object.keys(store.predictions)).toHaveLength(0);
+  beforeEach(() => {
+    apiCallMock.mockReset();
+    rmSync("/tmp/demos-agents-tests-predictions", { recursive: true, force: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns an empty store when the file is missing", () => {
+    const store = loadPredictions("oracle");
+
+    expect(store).toMatchObject({
+      version: 1,
+      agent: "oracle",
+      predictions: {},
+    });
+  });
+
+  it("returns an empty store when the file is corrupt", () => {
+    const dir = resolve("/tmp/demos-agents-tests-predictions", ".oracle");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(resolve(dir, "predictions.json"), "{not-json");
+
+    const store = loadPredictions("oracle");
+
+    expect(store).toMatchObject({
+      version: 1,
+      agent: "oracle",
+      predictions: {},
+    });
+  });
+});
+
+describe("registerPrediction", () => {
+  beforeEach(() => {
+    apiCallMock.mockReset();
+  });
+
+  it("registers only PREDICTION posts", () => {
+    const store = registerPrediction(makeStore(), makePost());
+
+    expect(Object.keys(store.predictions)).toEqual(["tx-1"]);
+    expect(store.predictions["tx-1"]).toMatchObject({
+      predictedValue: "$50K",
+      predictedDirection: "up",
+      deadline: "March 2026",
+      manualReviewRequired: false,
+      status: "pending",
+    });
+  });
+
+  it("is idempotent for duplicate tx hashes", () => {
+    const store = makeStore();
+
+    registerPrediction(store, makePost());
+    registerPrediction(store, makePost());
+
+    expect(Object.keys(store.predictions)).toHaveLength(1);
+  });
+
+  it("skips non-PREDICTION posts", () => {
+    const store = registerPrediction(
+      makeStore(),
+      makePost({ txHash: "tx-2", category: "ANALYSIS", text: "Observation only." })
+    );
+
+    expect(store.predictions).toEqual({});
   });
 });
 
 describe("getCalibrationAdjustment", () => {
-  it("returns 0 with insufficient data", () => {
-    const store = loadPredictions("test-nonexistent-agent-xxx");
+  it("returns 0 when there is insufficient resolved data", () => {
+    const store = makeStore({
+      predictions: {
+        a: { ...makePost({ txHash: "a" }), status: "correct", agent: "oracle", manualReviewRequired: false },
+        b: { ...makePost({ txHash: "b" }), status: "incorrect", agent: "oracle", manualReviewRequired: false },
+      },
+    });
+
     expect(getCalibrationAdjustment(store)).toBe(0);
   });
 
-  it("returns +1 when mostly correct (>60%)", () => {
-    const store = {
-      version: 1 as const,
-      agent: "test",
-      updatedAt: new Date().toISOString(),
+  it("returns +1 when accuracy is mostly correct", () => {
+    const store = makeStore({
       predictions: {
-        tx1: { txHash: "tx1", topic: "a", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "correct" as const, agent: "test", manualReviewRequired: false },
-        tx2: { txHash: "tx2", topic: "b", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "correct" as const, agent: "test", manualReviewRequired: false },
-        tx3: { txHash: "tx3", topic: "c", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "correct" as const, agent: "test", manualReviewRequired: false },
-        tx4: { txHash: "tx4", topic: "d", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "correct" as const, agent: "test", manualReviewRequired: false },
-        tx5: { txHash: "tx5", topic: "e", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "incorrect" as const, agent: "test", manualReviewRequired: false },
+        a: { ...makePost({ txHash: "a" }), status: "correct", agent: "oracle", manualReviewRequired: false },
+        b: { ...makePost({ txHash: "b" }), status: "correct", agent: "oracle", manualReviewRequired: false },
+        c: { ...makePost({ txHash: "c" }), status: "correct", agent: "oracle", manualReviewRequired: false },
+        d: { ...makePost({ txHash: "d" }), status: "correct", agent: "oracle", manualReviewRequired: false },
+        e: { ...makePost({ txHash: "e" }), status: "incorrect", agent: "oracle", manualReviewRequired: false },
       },
-    };
+    });
+
     expect(getCalibrationAdjustment(store)).toBe(1);
   });
 
-  it("returns -1 when mostly incorrect (<40%)", () => {
-    const store = {
-      version: 1 as const,
-      agent: "test",
-      updatedAt: new Date().toISOString(),
+  it("returns -1 when accuracy is mostly incorrect", () => {
+    const store = makeStore({
       predictions: {
-        tx1: { txHash: "tx1", topic: "a", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "incorrect" as const, agent: "test", manualReviewRequired: false },
-        tx2: { txHash: "tx2", topic: "b", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "incorrect" as const, agent: "test", manualReviewRequired: false },
-        tx3: { txHash: "tx3", topic: "c", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "incorrect" as const, agent: "test", manualReviewRequired: false },
-        tx4: { txHash: "tx4", topic: "d", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "incorrect" as const, agent: "test", manualReviewRequired: false },
-        tx5: { txHash: "tx5", topic: "e", category: "PREDICTION" as const, text: "", confidence: 80, publishedAt: "", status: "correct" as const, agent: "test", manualReviewRequired: false },
+        a: { ...makePost({ txHash: "a" }), status: "incorrect", agent: "oracle", manualReviewRequired: false },
+        b: { ...makePost({ txHash: "b" }), status: "incorrect", agent: "oracle", manualReviewRequired: false },
+        c: { ...makePost({ txHash: "c" }), status: "incorrect", agent: "oracle", manualReviewRequired: false },
+        d: { ...makePost({ txHash: "d" }), status: "incorrect", agent: "oracle", manualReviewRequired: false },
+        e: { ...makePost({ txHash: "e" }), status: "correct", agent: "oracle", manualReviewRequired: false },
       },
-    };
+    });
+
     expect(getCalibrationAdjustment(store)).toBe(-1);
+  });
+});
+
+describe("resolvePendingPredictions", () => {
+  beforeEach(() => {
+    apiCallMock.mockReset();
+    apiCallMock.mockResolvedValue({ ok: true, status: 200, data: {} });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("expires quarter and month deadlines while leaving future and invalid ones pending", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-15T12:00:00.000Z"));
+
+    const store = makeStore({
+      predictions: {
+        q1: {
+          ...makePost({ txHash: "q1" }),
+          status: "pending",
+          agent: "oracle",
+          deadline: "Q1 2026",
+          manualReviewRequired: false,
+        },
+        march: {
+          ...makePost({ txHash: "march" }),
+          status: "pending",
+          agent: "oracle",
+          deadline: "March 2026",
+          manualReviewRequired: false,
+        },
+        eoy: {
+          ...makePost({ txHash: "eoy" }),
+          status: "pending",
+          agent: "oracle",
+          deadline: "EOY 2026",
+          manualReviewRequired: false,
+        },
+        unknown: {
+          ...makePost({ txHash: "unknown" }),
+          status: "pending",
+          agent: "oracle",
+          deadline: "sometime later",
+          manualReviewRequired: false,
+        },
+      },
+    });
+
+    const updated = await resolvePendingPredictions(store, "token");
+
+    expect(updated.predictions.q1.status).toBe("expired");
+    expect(updated.predictions.march.status).toBe("expired");
+    expect(updated.predictions.eoy.status).toBe("pending");
+    expect(updated.predictions.unknown.status).toBe("pending");
+    expect(apiCallMock).toHaveBeenCalledTimes(2);
+    expect(apiCallMock).toHaveBeenNthCalledWith(
+      1,
+      "/api/predictions/q1/resolve",
+      "token",
+      expect.objectContaining({ method: "POST" })
+    );
   });
 });
