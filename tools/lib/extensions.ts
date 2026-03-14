@@ -16,6 +16,7 @@ import type { KNOWN_EXTENSIONS } from "./state.js";
 import type { AgentConfig } from "./agent-config.js";
 import type { AnySessionState, V2SessionState, PublishedPostRecord } from "./state.js";
 import type { AttestationType } from "./attestation-policy.js";
+import type { LLMProvider } from "./llm-provider.js";
 import type { AgentSourceView, SourceRecordV2 } from "./sources/catalog.js";
 import { preflight as sourcesPreflight, type PreflightCandidate } from "./sources/policy.js";
 import { match as sourcesMatch } from "./sources/matcher.js";
@@ -58,6 +59,8 @@ export interface AfterPublishDraftContext {
   preflightCandidates?: PreflightCandidate[];
   /** Source view for the current agent */
   sourceView?: AgentSourceView;
+  /** Optional LLM provider for enhanced claim extraction (PR6 wiring) */
+  llm?: LLMProvider | null;
 }
 
 export interface AfterConfirmContext {
@@ -159,6 +162,7 @@ async function runSourcesMatchHook(
     postTags: ctx.postTags,
     candidates: ctx.preflightCandidates,
     sourceView: ctx.sourceView,
+    llm: ctx.llm,
   });
 
   return {

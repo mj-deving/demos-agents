@@ -1723,6 +1723,7 @@ async function runPublishAutonomous(
         state,
         preflightCandidates: preflightDecision?.candidates,
         sourceView,
+        llm: provider,
       });
 
       // Resolve source selection from match/preflight/legacy
