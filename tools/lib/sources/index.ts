@@ -52,3 +52,25 @@ export { preflight, selectSourceForTopicV2 } from "./policy.js";
 
 // ── Source Matcher ─────────────────────────────────
 export { match, extractClaims, scoreMatch } from "./matcher.js";
+
+// ── Provider Adapters ─────────────────────────────
+export type {
+  ProviderAdapter,
+  CandidateRequest,
+  EvidenceEntry,
+  ParsedAdapterResponse,
+  CandidateValidation,
+  BuildCandidatesContext,
+  FetchedResponse,
+  AttestationMethod,
+} from "./providers/types.js";
+
+export {
+  getProviderAdapter,
+  requireProviderAdapter,
+  listProviderAdapters,
+} from "./providers/index.js";
+
+// ── Source Fetch ──────────────────────────────────
+export { fetchSource } from "./fetch.js";
+export type { FetchSourceResult, FetchSourceOptions } from "./fetch.js";

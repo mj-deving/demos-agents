@@ -125,19 +125,8 @@ export async function attestDahr(
   url: string,
   method: string = "GET"
 ): Promise<AttestResult> {
-  // GUARDRAIL: Force HN Algolia hitsPerPage to 2 — responses >16KB hit TLSN max_recv limit
-  let attestUrl = url;
-  try {
-    const parsed = new URL(url);
-    if (parsed.hostname === "hn.algolia.com") {
-      info(`GUARDRAIL: Forcing hitsPerPage=2 for HN Algolia (16KB TLSN limit)`);
-      parsed.searchParams.set("hitsPerPage", "2");
-      attestUrl = parsed.toString();
-    }
-  } catch {
-    // Not a valid URL — proceed with original, will likely fail downstream
-  }
-
+  // HN Algolia hitsPerPage guardrail moved to hn-algolia adapter (Phase 4).
+  const attestUrl = url;
   info(`DAHR attesting: ${attestUrl}`);
   const dahr = await (demos as any).web2.createDahr();
   const proxyResponse = await dahr.startProxy({ url: attestUrl, method });

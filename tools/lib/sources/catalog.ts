@@ -79,6 +79,12 @@ export interface SourceRecordV2 {
     };
   };
 
+  // Adapter metadata (Phase 4)
+  adapter?: {
+    /** Operation discriminator within the provider (e.g., "search", "trending", "summary") */
+    operation: string;
+  };
+
   // Quality and lifecycle
   trustTier: "official" | "established" | "community" | "experimental";
   status: SourceStatus;
@@ -281,6 +287,7 @@ export function inferProvider(url: string): string {
   if (lower.includes("wikipedia.org")) return "wikipedia";
   if (lower.includes("worldbank.org")) return "worldbank";
   if (lower.includes("pypi.org")) return "pypi";
+  if (lower.includes("ncbi.nlm.nih.gov") || lower.includes("pubmed")) return "pubmed";
   return "generic";
 }
 
@@ -520,6 +527,12 @@ function hasValidLifecycle(lifecycle: unknown): lifecycle is SourceRecordV2["lif
   );
 }
 
+function hasValidAdapter(adapter: unknown): adapter is SourceRecordV2["adapter"] {
+  if (adapter === undefined) return true; // optional field
+  if (!isObjectRecord(adapter)) return false;
+  return typeof adapter.operation === "string";
+}
+
 export function isValidSourceRecord(record: unknown): record is SourceRecordV2 {
   if (!isObjectRecord(record)) return false;
 
@@ -539,6 +552,7 @@ export function isValidSourceRecord(record: unknown): record is SourceRecordV2 {
     RESPONSE_FORMATS.includes(record.responseFormat as SourceRecordV2["responseFormat"]) &&
     hasValidScope(record.scope) &&
     hasValidRuntime(record.runtime) &&
+    hasValidAdapter(record.adapter) &&
     TRUST_TIERS.includes(record.trustTier as SourceRecordV2["trustTier"]) &&
     SOURCE_STATUSES.includes(record.status as SourceStatus) &&
     hasValidRating(record.rating) &&

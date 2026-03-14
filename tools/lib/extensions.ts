@@ -134,7 +134,7 @@ async function runSourcesMatchHook(
 ): Promise<SourceMatchDecision | void> {
   if (!ctx.sourceView || !ctx.preflightCandidates) return;
 
-  const result = sourcesMatch({
+  const result = await sourcesMatch({
     topic: ctx.topic,
     postText: ctx.postText,
     postTags: ctx.postTags,

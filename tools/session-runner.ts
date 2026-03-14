@@ -1565,19 +1565,28 @@ async function runPublishAutonomous(
   const existingTxHashes = new Set(existingLog.map((e: any) => e.txHash));
   const publishedHashes: string[] = [];
 
+  // Resolve enabled extensions for hook dispatch
+  const enabledExtensions = agentConfig.loopExtensions;
+
   for (const gp of gatePosts) {
     try {
-      // Step 0: Preflight — check source availability before spending LLM time (v2, no discovery)
-      const preflightResult = sourcesPreflight(gp.topic, sourceView, agentConfig);
-      if (!preflightResult.pass) {
-        observe("insight", `Preflight rejected topic "${gp.topic}": ${preflightResult.reason}`, {
+      // Step 0: Preflight via extension hooks (Phase 4 — adapter-based URL generation)
+      const preflightDecision = await runBeforePublishDraft(enabledExtensions, {
+        topic: gp.topic,
+        category: gp.category || "ANALYSIS",
+        config: agentConfig,
+        state,
+        sourceView,
+      });
+      if (preflightDecision && !preflightDecision.pass) {
+        observe("insight", `Preflight rejected topic "${gp.topic}": ${preflightDecision.reason}`, {
           phase: "publish",
           substage: "publish",
           source: "session-runner.ts:runPublishAutonomous",
-          data: { topic: gp.topic, reasonCode: preflightResult.reasonCode },
+          data: { topic: gp.topic, reasonCode: preflightDecision.reasonCode },
         });
-        info(`Preflight SKIP: ${gp.topic} — ${preflightResult.reason} (${preflightResult.reasonCode})`);
-        continue; // Skip to next topic without LLM call
+        info(`Preflight SKIP: ${gp.topic} — ${preflightDecision.reason} (${preflightDecision.reasonCode})`);
+        continue;
       }
 
       // Step 1: Generate post text via LLM
@@ -1634,44 +1643,79 @@ async function runPublishAutonomous(
       console.log(`    Confidence: ${draft.confidence}`);
       console.log(`    Predicted: ${draft.predicted_reactions} reactions`);
 
-      // Step 2: Source selection via V2 catalog (no runtime discovery)
-      const plan = resolveAttestationPlan(gp.topic, agentConfig);
-      let requiredSelection = selectSourceForTopicV2(gp.topic, sourceView, plan.required);
-      let fallbackSelection = plan.fallback ? selectSourceForTopicV2(gp.topic, sourceView, plan.fallback) : null;
-      let sourceSelection = requiredSelection;
-      let selectedMethod: AttestationType = plan.required;
-      if (!sourceSelection && fallbackSelection && plan.fallback) {
-        sourceSelection = fallbackSelection;
-        selectedMethod = plan.fallback;
-        info(`Attestation fallback: required ${plan.required} source unavailable, using ${plan.fallback}`);
+      // Step 2: Post-generation source matching via extension hooks (Phase 4)
+      const matchDecision = await runAfterPublishDraft(enabledExtensions, {
+        topic: gp.topic,
+        postText: draft.text,
+        postTags: draft.tags,
+        category: draft.category,
+        config: agentConfig,
+        state,
+        preflightCandidates: preflightDecision?.candidates,
+        sourceView,
+      });
+
+      // Resolve source selection: prefer match result, fall back to preflight
+      let selectedUrl: string;
+      let selectedMethod: AttestationType;
+      let selectedSourceName: string;
+
+      if (matchDecision?.pass && matchDecision.best) {
+        // Best match from evidence-based scoring
+        selectedUrl = matchDecision.best.url;
+        selectedMethod = matchDecision.best.method;
+        selectedSourceName = matchDecision.best.sourceId;
+        info(`Match PASS: source "${selectedSourceName}" score ${matchDecision.best.score} for "${gp.topic}"`);
+      } else if (preflightDecision?.candidates && preflightDecision.candidates.length > 0) {
+        // Fall back to preflight's best candidate
+        const best = preflightDecision.candidates[0];
+        selectedUrl = best.url;
+        selectedMethod = best.method;
+        selectedSourceName = best.source?.name || best.sourceId;
+        if (matchDecision && !matchDecision.pass) {
+          info(`Match FALLBACK: ${matchDecision.reason} — using preflight candidate "${selectedSourceName}"`);
+        }
+      } else {
+        // No source at all — use legacy direct lookup as last resort
+        const plan = resolveAttestationPlan(gp.topic, agentConfig);
+        const legacySelection = selectSourceForTopicV2(gp.topic, sourceView, plan.required);
+        if (!legacySelection) {
+          observe("insight", `No source for topic "${gp.topic}" after all lookups`, {
+            phase: "publish",
+            substage: "publish",
+            source: "session-runner.ts:runPublishAutonomous",
+            data: { topic: gp.topic, reasonCode: "PUBLISH_NO_MATCHING_SOURCE" },
+          });
+          throw new Error(`No matching source for topic "${gp.topic}"`);
+        }
+        selectedUrl = legacySelection.url;
+        selectedMethod = plan.required;
+        selectedSourceName = legacySelection.source.name;
       }
-      if (!sourceSelection) {
-        observe("insight", `No source for topic "${gp.topic}" after V2 catalog lookup`, {
-          phase: "publish",
-          substage: "publish",
-          source: "session-runner.ts:runPublishAutonomous",
-          data: { topic: gp.topic, reasonCode: "PUBLISH_NO_MATCHING_SOURCE" },
-        });
-        throw new Error(`No matching ${plan.required} source for topic "${gp.topic}" (${plan.reason})`);
-      }
-      info(`Attesting (${selectedMethod}) source "${sourceSelection.source.name}" for topic "${gp.topic}"`);
+
+      info(`Attesting (${selectedMethod}) source "${selectedSourceName}" for topic "${gp.topic}"`);
 
       let attested: AttestResult;
       if (selectedMethod === "TLSN") {
         try {
-          attested = await attestTlsn(demos, sourceSelection.url);
+          attested = await attestTlsn(demos, selectedUrl);
         } catch (err: any) {
-          if (plan.fallback === "DAHR" && fallbackSelection) {
+          // Try DAHR fallback if available
+          const plan = resolveAttestationPlan(gp.topic, agentConfig);
+          const fallbackCandidate = preflightDecision?.candidates?.find(
+            (c: any) => c.method === "DAHR"
+          );
+          if (plan.fallback === "DAHR" && fallbackCandidate) {
             info(`TLSN failed (${String(err?.message || err)}), falling back to DAHR`);
-            sourceSelection = fallbackSelection;
+            selectedUrl = fallbackCandidate.url;
             selectedMethod = "DAHR";
-            attested = await attestDahr(demos, sourceSelection.url);
+            attested = await attestDahr(demos, selectedUrl);
           } else {
             throw err;
           }
         }
       } else {
-        attested = await attestDahr(demos, sourceSelection.url);
+        attested = await attestDahr(demos, selectedUrl);
       }
 
       // Step 3: Publish (requires attestation proof in payload)

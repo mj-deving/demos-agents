@@ -1,13 +1,14 @@
 /**
  * Source policy — preflight check and source selection for the v2 loop.
  *
- * Provides `preflight()` which checks whether an attestable source exists for
- * a topic before spending LLM time on post generation. Uses the catalog index
- * for O(1) topic-token lookup instead of O(n) source scanning.
+ * Phase 4: Uses provider adapters for URL generation instead of fillUrlTemplate.
+ * Active/degraded sources without a registered non-generic adapter are rejected
+ * from runtime (Codex P0.2).
  *
  * Import graph:
  *   policy.ts → ../attestation-policy.ts (resolveAttestationPlan)
  *   policy.ts → ./catalog.ts (types, tokenizeTopic, sourceTopicTokens)
+ *   policy.ts → ./providers/index.ts (adapter registry)
  *   session-runner.ts → ./index.ts → policy.ts
  */
 
@@ -27,11 +28,23 @@ import {
   tokenizeTopic,
   sourceTopicTokens,
 } from "./catalog.js";
+import { getProviderAdapter } from "./providers/index.js";
+import type { CandidateRequest, AttestationMethod } from "./providers/types.js";
 
 // ── Source Compatibility ────────────────────────────
 
 function isSourceCompatible(source: SourceRecordV2, method: AttestationType): boolean {
   return method === "TLSN" ? source.tlsn_safe === true : source.dahr_safe === true;
+}
+
+/**
+ * Check if a source has a registered non-generic adapter.
+ * Active/degraded sources without one are rejected from runtime (Codex P0.2).
+ */
+function hasRegisteredAdapter(source: SourceRecordV2): boolean {
+  if (source.provider === "generic") return false;
+  const adapter = getProviderAdapter(source.provider);
+  return adapter !== null && adapter.supports(source);
 }
 
 // ── Source Selection (V2) ───────────────────────────
@@ -40,17 +53,23 @@ export interface SourceSelectionResult {
   source: SourceRecordV2;
   url: string;
   score: number;
+  /** Adapter-generated candidates (Phase 4) */
+  adapterCandidates?: CandidateRequest[];
 }
 
 /**
  * Select the best source for a topic from a V2 source view.
  * Uses the inverted index for fast candidate lookup, then scores by
  * topic overlap, name match, method compatibility, and response size.
+ *
+ * Phase 4: Uses adapter.buildCandidates for URL generation when available.
+ * Falls back to fillUrlTemplate for sources without adapters (quarantined).
  */
 export function selectSourceForTopicV2(
   topic: string,
   sourceView: AgentSourceView,
-  method: AttestationType
+  method: AttestationType,
+  maxCandidatesPerTopic: number = 5
 ): SourceSelectionResult | null {
   const vars = extractTopicVars(topic);
   const topicWords = tokenizeTopic(topic);
@@ -59,6 +78,7 @@ export function selectSourceForTopicV2(
     topicWords.add(alias.asset.toLowerCase());
     topicWords.add(alias.symbol.toLowerCase());
   }
+  const tokens = [...topicWords];
 
   // Use index for fast candidate retrieval: gather all source IDs that match any topic token
   const candidateIds = new Set<string>();
@@ -87,6 +107,11 @@ export function selectSourceForTopicV2(
     if (!source) continue;
     if (!isSourceCompatible(source, method)) continue;
 
+    // Phase 4: Reject active/degraded generic sources from runtime
+    if ((source.status === "active" || source.status === "degraded") && !hasRegisteredAdapter(source)) {
+      continue;
+    }
+
     let score = 0;
     const tags = sourceTopicTokens(source);
     let topicOverlap = 0;
@@ -95,16 +120,16 @@ export function selectSourceForTopicV2(
     }
     score += topicOverlap * 4;
 
-    // Alias token overlap (candidates retrieved by alias via index)
+    // Alias token overlap
     let aliasOverlap = 0;
-    for (const alias of source.topicAliases || []) {
-      for (const tok of alias.toLowerCase().split(/[^a-z0-9]+/)) {
+    for (const a of source.topicAliases || []) {
+      for (const tok of a.toLowerCase().split(/[^a-z0-9]+/)) {
         if (tok.length >= 2 && topicWords.has(tok)) aliasOverlap++;
       }
     }
     score += aliasOverlap * 3;
 
-    // Domain tag overlap (candidates retrieved by domain tag via index)
+    // Domain tag overlap
     let domainOverlap = 0;
     for (const tag of source.domainTags) {
       if (topicWords.has(tag.toLowerCase())) domainOverlap++;
@@ -125,11 +150,41 @@ export function selectSourceForTopicV2(
     // Small response bonus (TLSN-friendly)
     if ((source.max_response_kb || 999) <= 16) score += 1;
 
-    // Resolve URL template
-    const resolvedUrl = fillUrlTemplate(source.url, vars);
-    if (unresolvedPlaceholders(resolvedUrl).length > 0) continue;
+    // Phase 4: Use adapter for URL generation
+    const adapter = getProviderAdapter(source.provider);
+    let resolvedUrl: string;
+    let adapterCandidates: CandidateRequest[] | undefined;
 
-    ranked.push({ source, url: resolvedUrl, score });
+    if (adapter && adapter.supports(source)) {
+      const candidates = adapter.buildCandidates({
+        source,
+        topic,
+        tokens,
+        vars,
+        attestation: method as AttestationMethod,
+        maxCandidates: maxCandidatesPerTopic,
+      });
+
+      if (candidates.length === 0) continue; // adapter can't build URL for this method
+
+      // Validate all candidates once, apply URL rewrites
+      const validatedCandidates: CandidateRequest[] = [];
+      for (const c of candidates) {
+        const v = adapter.validateCandidate(c);
+        if (!v.ok) continue;
+        validatedCandidates.push({ ...c, url: v.rewrittenUrl || c.url });
+      }
+      if (validatedCandidates.length === 0) continue;
+
+      resolvedUrl = validatedCandidates[0].url;
+      adapterCandidates = validatedCandidates;
+    } else {
+      // Fallback: fillUrlTemplate (only for quarantined/generic sources)
+      resolvedUrl = fillUrlTemplate(source.url, vars);
+      if (unresolvedPlaceholders(resolvedUrl).length > 0) continue;
+    }
+
+    ranked.push({ source, url: resolvedUrl, score, adapterCandidates });
   }
 
   if (ranked.length === 0) return null;
@@ -152,6 +207,8 @@ export interface PreflightCandidate {
   method: AttestationType;
   url: string;
   score: number;
+  /** Adapter-generated candidates with validated URLs */
+  adapterCandidates?: CandidateRequest[];
 }
 
 export interface PreflightResult {
@@ -168,6 +225,7 @@ export interface PreflightResult {
  * Uses catalog index for fast lookup. Returns candidates for downstream
  * `match()` to verify post-generation source alignment.
  *
+ * Phase 4: Uses adapter.buildCandidates for URL generation.
  * No network calls — just checks registry availability.
  */
 export function preflight(
@@ -176,10 +234,11 @@ export function preflight(
   config: AgentConfig
 ): PreflightResult {
   const plan = resolveAttestationPlan(topic, config);
+  const maxCandidates = 5; // default, from AgentSourceConfig
   const candidates: PreflightCandidate[] = [];
 
   // Try required method first
-  const requiredSelection = selectSourceForTopicV2(topic, sourceView, plan.required);
+  const requiredSelection = selectSourceForTopicV2(topic, sourceView, plan.required, maxCandidates);
   if (requiredSelection) {
     candidates.push({
       sourceId: requiredSelection.source.id,
@@ -187,14 +246,15 @@ export function preflight(
       method: plan.required,
       url: requiredSelection.url,
       score: requiredSelection.score,
+      adapterCandidates: requiredSelection.adapterCandidates,
     });
   }
 
   // Try fallback method if available
   if (plan.fallback) {
-    const fallbackSelection = selectSourceForTopicV2(topic, sourceView, plan.fallback);
+    const fallbackSelection = selectSourceForTopicV2(topic, sourceView, plan.fallback, maxCandidates);
     if (fallbackSelection) {
-      // Only add if it's a different source+method combo (preserve both TLSN and DAHR for same source)
+      // Only add if it's a different source+method combo
       if (!candidates.some((c) => c.sourceId === fallbackSelection.source.id && c.method === plan.fallback)) {
         candidates.push({
           sourceId: fallbackSelection.source.id,
@@ -202,6 +262,7 @@ export function preflight(
           method: plan.fallback,
           url: fallbackSelection.url,
           score: fallbackSelection.score,
+          adapterCandidates: fallbackSelection.adapterCandidates,
         });
       }
     }
