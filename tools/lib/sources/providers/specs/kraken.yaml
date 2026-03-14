@@ -36,10 +36,10 @@ operations:
         - "{asset}"
     variables:
       asset:
-        sources: [vars.asset, vars.pair, tokens[0]]
+        sources: [vars.asset, vars.pair, "tokens[0]"]
         default: "BTC"
       pair:
-        sources: [vars.asset, vars.pair, tokens[0]]
+        sources: [vars.asset, vars.pair, "tokens[0]"]
         default: "BTC"
         transforms:
           - trim
@@ -185,10 +185,10 @@ operations:
         - "{interval}"
     variables:
       asset:
-        sources: [vars.asset, vars.pair, tokens[0]]
+        sources: [vars.asset, vars.pair, "tokens[0]"]
         default: "BTC"
       pair:
-        sources: [vars.asset, vars.pair, tokens[0]]
+        sources: [vars.asset, vars.pair, "tokens[0]"]
         default: "BTC"
         transforms:
           - trim

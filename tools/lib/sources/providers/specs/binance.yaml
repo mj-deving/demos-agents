@@ -36,10 +36,10 @@ operations:
         - "{asset}"
     variables:
       asset:
-        sources: [vars.asset, vars.symbol, tokens[0]]
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
         default: "BTC"
       symbol:
-        sources: [vars.asset, vars.symbol, tokens[0]]
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
         default: "BTC"
         transforms:
           - trim
@@ -109,10 +109,10 @@ operations:
         - "{asset}"
     variables:
       asset:
-        sources: [vars.asset, vars.symbol, tokens[0]]
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
         default: "BTC"
       symbol:
-        sources: [vars.asset, vars.symbol, tokens[0]]
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
         default: "BTC"
         transforms:
           - trim
@@ -199,10 +199,10 @@ operations:
         - "{interval}"
     variables:
       asset:
-        sources: [vars.asset, vars.symbol, tokens[0]]
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
         default: "BTC"
       symbol:
-        sources: [vars.asset, vars.symbol, tokens[0]]
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
         default: "BTC"
         transforms:
           - trim

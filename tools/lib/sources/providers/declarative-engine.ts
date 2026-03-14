@@ -585,6 +585,11 @@ function resolveTemplate(
       // Special key reference for object-entries mode
       if (trimmed === "key" && key != null) return key;
 
+      // Self-reference for primitive items (e.g., {.} when item is "38001")
+      if (trimmed === "." && item != null && typeof item !== "object") {
+        return String(item);
+      }
+
       // Variable lookup
       if (vars[trimmed] != null) return vars[trimmed];
 
