@@ -28,9 +28,20 @@ function main() {
   const agent = args.agent || process.env.AGENT_NAME || "unknown";
   const note = args.note || "takeover";
   const source = args.source || "takeover";
+  const skipDrift = args["skip-drift"] === "true";
+  const driftFile = args["drift-file"] || "";
 
   run("node", ["tools/coop-latest.mjs"]);
   run("node", ["tools/coop-ack.mjs", "--agent", agent, "--source", source, "--note", note]);
+  if (!skipDrift) {
+    const env = { ...process.env };
+    if (driftFile) env.DRIFT_STATE_FILE = driftFile;
+    const res = spawnSync("bash", ["tools/check-drift.sh", "snapshot"], {
+      stdio: "inherit",
+      env,
+    });
+    if (res.status !== 0) process.exit(res.status ?? 1);
+  }
 }
 
 main();

@@ -10,4 +10,5 @@ credentials
 dist/
 Plans/
 claude-codex-coop/
+MEMORY/WORK/
 .sessions/
