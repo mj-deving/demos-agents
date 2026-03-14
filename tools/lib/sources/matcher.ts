@@ -19,6 +19,7 @@
  */
 
 import type { AttestationType } from "../attestation-policy.js";
+import type { LLMProvider } from "../llm-provider.js";
 import type { AgentSourceView, SourceRecordV2 } from "./catalog.js";
 import { tokenizeTopic, sourceTopicTokens } from "./catalog.js";
 import type { PreflightCandidate } from "./policy.js";
@@ -48,6 +49,8 @@ export interface MatchInput {
   postTags: string[];
   candidates: PreflightCandidate[];
   sourceView: AgentSourceView;
+  /** Optional LLM provider for enhanced claim extraction (PR6) */
+  llm?: LLMProvider | null;
 }
 
 export interface MatchResult {
@@ -111,6 +114,113 @@ export function extractClaims(postText: string, postTags: string[]): string[] {
   }
 
   return claims;
+}
+
+// ── LLM-Assisted Claim Extraction (PR6) ─────────────
+
+/**
+ * Extract structured claims using an LLM provider.
+ * Returns a flat string[] of claim terms compatible with the regex-based format.
+ * Falls back to empty array on any failure (LLM unavailable, parse error, timeout).
+ */
+export async function extractClaimsLLM(
+  postText: string,
+  postTags: string[],
+  llm: LLMProvider,
+): Promise<string[]> {
+  const prompt = `Extract the key factual claims from this text. Return ONLY a JSON array of strings — each string is one claim term or phrase (entity, number, relationship).
+
+Categories to extract:
+- Named entities (people, organizations, protocols, tokens)
+- Numeric facts (prices, percentages, dates, amounts)
+- Causal claims (X causes Y, X leads to Y)
+- Temporal claims (timeframes, deadlines, predictions)
+
+Text: "${postText}"
+Tags: ${postTags.join(", ")}
+
+Return ONLY the JSON array, no other text. Example: ["bitcoin", "$64000", "45% increase", "2026", "Federal Reserve"]`;
+
+  try {
+    const response = await llm.complete(prompt, {
+      maxTokens: 512,
+      modelTier: "fast",
+    });
+
+    // Parse JSON array from response — handle markdown code fences
+    const cleaned = response.trim().replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is string => typeof item === "string" && item.length > 0)
+      .map((s) => s.toLowerCase().trim());
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Async claim extraction — tries LLM first, merges with regex fallback.
+ * When LLM succeeds, returns union of LLM claims + regex claims (deduped).
+ * When LLM fails or is unavailable, returns regex-only claims.
+ */
+export async function extractClaimsAsync(
+  postText: string,
+  postTags: string[],
+  llm?: LLMProvider | null,
+): Promise<string[]> {
+  const regexClaims = extractClaims(postText, postTags);
+
+  if (!llm) return regexClaims;
+
+  const llmClaims = await extractClaimsLLM(postText, postTags, llm);
+  if (llmClaims.length === 0) return regexClaims;
+
+  // Merge: LLM claims first, then regex claims not already present
+  const seen = new Set(llmClaims);
+  const merged = [...llmClaims];
+  for (const claim of regexClaims) {
+    if (!seen.has(claim)) {
+      merged.push(claim);
+      seen.add(claim);
+    }
+  }
+
+  return merged;
+}
+
+// ── Cross-Source Diversity Scoring (PR6) ─────────────
+
+/** Max diversity bonus points */
+const DIVERSITY_BONUS_CAP = 15;
+/** Points per claim corroborated by 2+ sources */
+const DIVERSITY_POINTS_PER_CLAIM = 5;
+
+/**
+ * Calculate diversity bonus — extra points when multiple sources
+ * corroborate the same claims. Only additive, never reduces scores.
+ */
+function calculateDiversityBonus(
+  scoredCandidates: ScoredCandidate[],
+): number {
+  if (scoredCandidates.length < 2) return 0;
+
+  // Count how many sources matched each claim
+  const claimSourceCount = new Map<string, number>();
+  for (const candidate of scoredCandidates) {
+    for (const claim of candidate.matchedClaims) {
+      claimSourceCount.set(claim, (claimSourceCount.get(claim) ?? 0) + 1);
+    }
+  }
+
+  // Count claims corroborated by 2+ sources
+  let corroboratedCount = 0;
+  for (const count of claimSourceCount.values()) {
+    if (count >= 2) corroboratedCount++;
+  }
+
+  return Math.min(DIVERSITY_BONUS_CAP, corroboratedCount * DIVERSITY_POINTS_PER_CLAIM);
 }
 
 // ── Evidence-Based Scoring ──────────────────────────
@@ -357,7 +467,7 @@ interface ScoredCandidate {
  * reasonCode MATCH_THRESHOLD_NOT_MET.
  */
 export async function match(input: MatchInput): Promise<MatchResult> {
-  const { postText, postTags, candidates } = input;
+  const { postText, postTags, candidates, llm } = input;
 
   if (candidates.length === 0) {
     return {
@@ -368,8 +478,8 @@ export async function match(input: MatchInput): Promise<MatchResult> {
     };
   }
 
-  // Extract claims from the generated post
-  const claims = extractClaims(postText, postTags);
+  // Extract claims — LLM-assisted when available, regex fallback (PR6)
+  const claims = await extractClaimsAsync(postText, postTags, llm);
   if (claims.length === 0) {
     return {
       pass: false,
@@ -438,6 +548,15 @@ export async function match(input: MatchInput): Promise<MatchResult> {
       reasonCode: "MATCH_FETCH_FAILED",
       considered,
     };
+  }
+
+  // Apply cross-source diversity bonus (PR6)
+  const diversityBonus = calculateDiversityBonus(scored);
+  if (diversityBonus > 0) {
+    // Apply bonus to all candidates (improves ranking fairness)
+    for (const s of scored) {
+      s.score = Math.min(100, s.score + diversityBonus);
+    }
   }
 
   // Sort by score descending

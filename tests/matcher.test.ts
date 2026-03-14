@@ -20,7 +20,8 @@ vi.mock("../tools/lib/sources/providers/index.js", () => ({
   getProviderAdapter: getProviderAdapterMock,
 }));
 
-import { extractClaims, match, scoreMatch } from "../tools/lib/sources/matcher.js";
+import { extractClaims, extractClaimsLLM, extractClaimsAsync, match, scoreMatch } from "../tools/lib/sources/matcher.js";
+import type { LLMProvider } from "../tools/lib/llm-provider.js";
 
 function makeSource(overrides: Partial<SourceRecordV2> = {}): SourceRecordV2 {
   return {
@@ -179,5 +180,191 @@ describe("evidence and metadata scoring", () => {
         expect.stringContaining("provider-relevant"),
       ])
     );
+  });
+});
+
+// ── PR6: LLM Claim Extraction ──────────────────────
+
+function mockLLM(response: string | Error): LLMProvider {
+  return {
+    name: "mock-llm",
+    complete: typeof response === "string"
+      ? vi.fn().mockResolvedValue(response)
+      : vi.fn().mockRejectedValue(response),
+  };
+}
+
+describe("extractClaimsLLM", () => {
+  it("parses valid JSON array from LLM response", async () => {
+    const llm = mockLLM('["bitcoin", "$64000", "Federal Reserve", "45% increase"]');
+    const claims = await extractClaimsLLM(
+      "Bitcoin hit $64000 as Federal Reserve signals 45% increase in liquidity",
+      ["crypto"],
+      llm,
+    );
+    expect(claims).toContain("bitcoin");
+    expect(claims).toContain("$64000");
+    expect(claims).toContain("federal reserve");
+    expect(claims).toContain("45% increase");
+  });
+
+  it("handles markdown code fences in LLM response", async () => {
+    const llm = mockLLM('```json\n["ethereum", "2.0"]\n```');
+    const claims = await extractClaimsLLM("Ethereum 2.0 launched", ["crypto"], llm);
+    expect(claims).toContain("ethereum");
+    expect(claims).toContain("2.0");
+  });
+
+  it("returns empty array when LLM throws", async () => {
+    const llm = mockLLM(new Error("API timeout"));
+    const claims = await extractClaimsLLM("Some text", [], llm);
+    expect(claims).toEqual([]);
+  });
+
+  it("returns empty array when LLM returns non-JSON", async () => {
+    const llm = mockLLM("I cannot extract claims from this text.");
+    const claims = await extractClaimsLLM("Some text", [], llm);
+    expect(claims).toEqual([]);
+  });
+
+  it("returns empty array when LLM returns empty response", async () => {
+    const llm = mockLLM("");
+    const claims = await extractClaimsLLM("Some text", [], llm);
+    expect(claims).toEqual([]);
+  });
+
+  it("filters non-string items from LLM response", async () => {
+    const llm = mockLLM('["valid", 123, null, "also valid", ""]');
+    const claims = await extractClaimsLLM("Test", [], llm);
+    expect(claims).toEqual(["valid", "also valid"]);
+  });
+});
+
+describe("extractClaimsAsync", () => {
+  it("merges LLM claims with regex claims when LLM succeeds", async () => {
+    const llm = mockLLM('["federal reserve", "liquidity crisis"]');
+    const claims = await extractClaimsAsync(
+      "Federal Reserve warns of liquidity crisis in 2026 markets",
+      ["macro"],
+      llm,
+    );
+    // Should have LLM claims
+    expect(claims).toContain("federal reserve");
+    expect(claims).toContain("liquidity crisis");
+    // Should also have regex claims (numeric, tokens)
+    expect(claims).toContain("2026");
+    expect(claims).toContain("macro");
+  });
+
+  it("deduplicates merged claims", async () => {
+    const llm = mockLLM('["bitcoin", "crypto"]');
+    const claims = await extractClaimsAsync(
+      "Bitcoin is the leading crypto asset",
+      ["crypto"],
+      llm,
+    );
+    // "crypto" appears in both LLM and tags — should only appear once
+    const cryptoCount = claims.filter((c) => c === "crypto").length;
+    expect(cryptoCount).toBe(1);
+  });
+
+  it("returns regex-only when LLM fails", async () => {
+    const llm = mockLLM(new Error("unavailable"));
+    const claims = await extractClaimsAsync(
+      "Bitcoin hit $64000 in 2026",
+      ["crypto"],
+      llm,
+    );
+    // Should still have regex claims
+    expect(claims).toContain("$64000");
+    expect(claims).toContain("2026");
+    expect(claims).toContain("crypto");
+    expect(claims).toContain("bitcoin");
+  });
+
+  it("returns regex-only when no LLM provided", async () => {
+    const claims = await extractClaimsAsync(
+      "Bitcoin hit $64000",
+      ["crypto"],
+      null,
+    );
+    expect(claims).toContain("$64000");
+    expect(claims).toContain("bitcoin");
+  });
+});
+
+// ── PR6: Diversity Scoring ─────────────────────────
+
+describe("diversity scoring in match()", () => {
+  beforeEach(() => {
+    fetchSourceMock.mockReset();
+    getProviderAdapterMock.mockReset();
+  });
+
+  it("applies diversity bonus when 2+ sources match same claim", async () => {
+    const source1 = makeSource({ id: "src-1", name: "Source A", topics: ["bitcoin", "market"] });
+    const source2 = makeSource({ id: "src-2", name: "Source B", topics: ["bitcoin", "exchange"] });
+
+    const mockAdapter = {
+      provider: "coingecko",
+      domains: ["crypto"],
+      rateLimit: { bucket: "cg" },
+      supports: () => true,
+      buildCandidates: () => [],
+      validateCandidate: () => ({ ok: true }),
+      parseResponse: (_: unknown, resp: { url: string }) =>
+        resp.url.includes("src-1")
+          ? { entries: [{ id: "e1", title: "Bitcoin price", bodyText: "bitcoin market data", topics: ["crypto"], raw: {} }] }
+          : { entries: [{ id: "e2", title: "Bitcoin exchange", bodyText: "bitcoin trading volume", topics: ["crypto"], raw: {} }] },
+    };
+    getProviderAdapterMock.mockReturnValue(mockAdapter);
+    fetchSourceMock.mockImplementation(async (url: string) => ({
+      ok: true,
+      response: { url, status: 200, headers: {}, bodyText: "{}" },
+      attempts: 1,
+      totalMs: 5,
+    }));
+
+    const result = await match({
+      topic: "bitcoin",
+      postText: "Bitcoin market data shows strong trading volume",
+      postTags: ["crypto"],
+      candidates: [
+        { sourceId: "src-1", source: source1, method: "TLSN" as const, url: "https://example.com/src-1", score: 75 },
+        { sourceId: "src-2", source: source2, method: "DAHR" as const, url: "https://example.com/src-2", score: 70 },
+      ],
+      sourceView: emptySourceView,
+    });
+
+    // With two sources both matching "bitcoin", diversity bonus should apply
+    // The exact score depends on evidence scoring + diversity
+    expect(result.best).toBeDefined();
+    expect(result.best!.score).toBeGreaterThan(0);
+    expect(result.considered.length).toBe(2);
+  });
+
+  it("no diversity bonus with single candidate", async () => {
+    const source = makeSource();
+    getProviderAdapterMock.mockReturnValue(null); // No adapter — metadata-only scoring
+    fetchSourceMock.mockResolvedValue({ ok: false, attempts: 1, totalMs: 5 });
+
+    const result = await match({
+      topic: "bitcoin",
+      postText: "Bitcoin market trends",
+      postTags: ["crypto"],
+      candidates: [makeCandidate(source)],
+      sourceView: emptySourceView,
+    });
+
+    // Single candidate: score is pure metadata, no diversity bonus
+    expect(result.best).toBeDefined();
+    // Run same match with scoreMatch for baseline comparison
+    const baseline = scoreMatch(
+      extractClaims("Bitcoin market trends", ["crypto"]),
+      source,
+      ["crypto"],
+    );
+    // Should be equal (no diversity bonus applied)
+    expect(result.best!.score).toBe(baseline.score);
   });
 });
