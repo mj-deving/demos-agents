@@ -453,10 +453,13 @@ export async function attestTlsnViaNodeBridge(
     info("TLSN setup: prover ready");
 
     info("TLSN request: sending target request");
+    // Append ?token=<hostname> — proxy expects this for MPC-TLS routing (see tlsn-js src/lib.ts:127)
+    const hostname = parsed.hostname;
+    const proxyUrlWithToken = token.proxyUrl + (token.proxyUrl.includes("?") ? "&" : "?") + "token=" + hostname;
     await withTimeout(
       "TLSN attested request",
       180_000, // 3 min — MPC-TLS empirically 50-120s, previous 90s cut off valid sessions
-      prover.sendRequest(token.proxyUrl, {
+      prover.sendRequest(proxyUrlWithToken, {
         url: parsed.toString(),
         method: httpMethod,
         headers: { Accept: "application/json" },

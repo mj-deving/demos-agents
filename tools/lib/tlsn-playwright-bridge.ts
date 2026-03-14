@@ -55,14 +55,13 @@ function normalizeNotaryUrl(url: string): string {
   return url;
 }
 
-function coerceTlsnMethod(method: string): "GET" | "POST" | "PUT" | "DELETE" | "PATCH" {
+function coerceTlsnMethod(method: string): "GET" | "POST" | "PUT" | "DELETE" {
   const upper = method.toUpperCase();
   switch (upper) {
     case "GET":
     case "POST":
     case "PUT":
     case "DELETE":
-    case "PATCH":
       return upper;
     default:
       throw new Error(`Unsupported TLSN HTTP method "${method}"`);
@@ -258,7 +257,7 @@ async function startTlsnStaticServer(buildDir: string): Promise<{ baseUrl: strin
 
 async function runBrowserTlsnAttestation(
   targetUrl: string,
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
+  method: "GET" | "POST" | "PUT" | "DELETE",
   proxyUrl: string,
   notaryUrl: string
 ): Promise<any> {
@@ -294,7 +293,7 @@ async function runBrowserTlsnAttestation(
       page.evaluate(
         async (args: {
           targetUrl: string;
-          method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+          method: "GET" | "POST" | "PUT" | "DELETE";
           proxyUrl: string;
           notaryUrl: string;
           maxBytes: number;
