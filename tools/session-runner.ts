@@ -1682,15 +1682,27 @@ async function runPublishAutonomous(
             // Cache for reuse by match() — eliminates double-fetch
             prefetchedResponses.set(topCandidate.url, fetchResult.response);
 
-            // Extract a text summary from the response (first 800 chars of body)
-            const body = fetchResult.response.bodyText;
+            // Parse through adapter for structured evidence, then build readable summary
             let summary: string;
             try {
-              const parsed = JSON.parse(body);
-              summary = JSON.stringify(parsed, null, 0).slice(0, 800);
+              const parsed = adapter?.parseResponse(topCandidate.source, fetchResult.response);
+              if (parsed && parsed.entries.length > 0) {
+                // Build human-readable summary from evidence entries
+                summary = parsed.entries.slice(0, 5).map((e: any) => {
+                  const parts: string[] = [];
+                  if (e.title) parts.push(e.title);
+                  if (e.bodyText && e.bodyText !== e.title) parts.push(e.bodyText.slice(0, 200));
+                  if (e.metrics) parts.push(`Metrics: ${JSON.stringify(e.metrics)}`);
+                  return parts.join(" — ");
+                }).join("\n");
+              } else {
+                // Fallback: raw body truncated
+                summary = fetchResult.response.bodyText.slice(0, 800);
+              }
             } catch {
-              summary = body.slice(0, 800);
+              summary = fetchResult.response.bodyText.slice(0, 800);
             }
+
             attestedData = {
               source: topCandidate.source.name || topCandidate.sourceId,
               url: topCandidate.url,
