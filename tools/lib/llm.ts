@@ -178,7 +178,9 @@ Room temperature:
   if (input.attestedData) {
     userPrompt += `\n\nAttested data source: ${input.attestedData.source}
 URL: ${input.attestedData.url}
-Data: ${input.attestedData.summary}`;
+Data: ${input.attestedData.summary}
+
+IMPORTANT: You MUST reference specific data points from this source using the exact terms, numbers, and names found in the data above. The post will be verified against this source — paraphrasing or generalizing will cause rejection. Use direct quotes and exact figures.`;
   }
 
   if (input.replyTo) {
