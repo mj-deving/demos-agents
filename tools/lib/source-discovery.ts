@@ -10,10 +10,12 @@
  * not a general search that might return unrelated results.
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, renameSync } from "node:fs";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { info } from "./sdk.js";
 import type { SourceRecord, AttestationType } from "./attestation-policy.js";
+import type { SourceRecordV2 } from "./sources/catalog.js";
+import { generateSourceId, normalizeUrlPattern, loadCatalog } from "./sources/catalog.js";
 
 // ── Content relevance scoring ─────────────────────────────
 
@@ -314,11 +316,12 @@ export async function discoverSourceForTopic(
   };
 }
 
-// ── Registry persistence ──────────────────────────────────
+// ── Registry persistence (V1 — legacy YAML) ─────────────
 
 /**
  * Append a discovered source to the YAML registry file so it persists
  * for future sessions. Deduplicates by name.
+ * @deprecated Use persistSourceToCatalog for V2 catalog persistence.
  */
 export function persistSourceToRegistry(registryPath: string, source: SourceRecord): boolean {
   try {
@@ -337,7 +340,6 @@ export function persistSourceToRegistry(registryPath: string, source: SourceReco
     sources.push(source);
     parsed.sources = sources;
 
-    // Write back with a separator comment
     const yaml = stringifyYaml(parsed, { lineWidth: 120 });
     writeFileSync(registryPath, yaml, "utf-8");
     info(`source-discovery: persisted "${source.name}" to registry`);
@@ -346,4 +348,132 @@ export function persistSourceToRegistry(registryPath: string, source: SourceReco
     info(`source-discovery: failed to persist source (${err?.message || err})`);
     return false;
   }
+}
+
+// ── V2 Catalog Persistence ───────────────────────────────
+
+/**
+ * Convert a discovered source to a SourceRecordV2 and add to catalog.json.
+ * Sources enter as quarantined — the lifecycle engine handles promotion.
+ * Deduplicates by URL pattern. Returns the new record or null if duplicate.
+ */
+export function persistSourceToCatalog(
+  catalogPath: string,
+  discovered: DiscoveredSource,
+): SourceRecordV2 | null {
+  const catalog = loadCatalog(catalogPath);
+  if (!catalog) {
+    info("source-discovery: catalog not found — cannot persist");
+    return null;
+  }
+
+  const sources = catalog.sources as SourceRecordV2[];
+  const urlPattern = normalizeUrlPattern(discovered.url);
+
+  // Deduplicate by URL pattern
+  if (sources.some((s) => s.urlPattern === urlPattern)) {
+    info(`source-discovery: duplicate URL pattern — skipping "${discovered.source.name}"`);
+    return null;
+  }
+
+  // Also deduplicate by name
+  if (sources.some((s) => s.name === discovered.source.name)) {
+    info(`source-discovery: duplicate name — skipping "${discovered.source.name}"`);
+    return null;
+  }
+
+  const provider = discovered.source.note?.match(/Provider: ([a-z0-9-]+)/i)?.[1] || "generic";
+  const id = generateSourceId(provider, urlPattern);
+
+  const v2Record: SourceRecordV2 = {
+    id,
+    name: discovered.source.name,
+    provider,
+    url: discovered.url,
+    urlPattern,
+    topics: discovered.source.topics,
+    tlsn_safe: discovered.source.tlsn_safe,
+    dahr_safe: discovered.source.dahr_safe,
+    max_response_kb: discovered.source.max_response_kb,
+    topicAliases: [],
+    domainTags: (discovered.source.topics || []).slice(0, 3),
+    responseFormat: "json",
+    scope: { visibility: "global", importedFrom: [] },
+    runtime: {
+      timeoutMs: 8000,
+      retry: { maxAttempts: 2, backoffMs: 500, retryOn: ["timeout"] },
+    },
+    trustTier: "experimental",
+    status: "quarantined",
+    rating: {
+      overall: 50,
+      uptime: 50,
+      relevance: discovered.relevanceScore,
+      freshness: 50,
+      sizeStability: 50,
+      engagement: 50,
+      trust: 50,
+      testCount: 1,
+      successCount: 1,
+      consecutiveFailures: 0,
+    },
+    lifecycle: {
+      discoveredAt: new Date().toISOString(),
+      discoveredBy: "auto-discovery",
+    },
+  };
+
+  // Add to catalog (atomic write)
+  sources.push(v2Record);
+  const tmpPath = catalogPath + ".tmp";
+  const updatedCatalog = {
+    ...catalog,
+    generatedAt: new Date().toISOString(),
+    sources,
+  };
+  writeFileSync(tmpPath, JSON.stringify(updatedCatalog, null, 2) + "\n");
+  renameSync(tmpPath, catalogPath);
+
+  info(`source-discovery: added "${v2Record.name}" (${v2Record.id}) to catalog as quarantined`);
+  return v2Record;
+}
+
+// ── Coverage Analysis ────────────────────────────────────
+
+export interface CoverageGap {
+  topic: string;
+  activeSourceCount: number;
+  totalSourceCount: number;
+}
+
+/**
+ * Analyze which topics lack sufficient source coverage.
+ * Returns topics with fewer than `minSources` active sources.
+ */
+export function analyzeCoverage(
+  sources: SourceRecordV2[],
+  topics: string[],
+  minSources: number = 2,
+): CoverageGap[] {
+  const gaps: CoverageGap[] = [];
+
+  for (const topic of topics) {
+    const topicLower = topic.toLowerCase();
+    const matching = sources.filter((s) =>
+      s.topics?.some((t) => t.toLowerCase().includes(topicLower) || topicLower.includes(t.toLowerCase()))
+    );
+    const activeCount = matching.filter((s) => s.status === "active").length;
+
+    if (activeCount < minSources) {
+      gaps.push({
+        topic,
+        activeSourceCount: activeCount,
+        totalSourceCount: matching.length,
+      });
+    }
+  }
+
+  // Sort by coverage (least covered first)
+  gaps.sort((a, b) => a.activeSourceCount - b.activeSourceCount);
+  return gaps;
 }

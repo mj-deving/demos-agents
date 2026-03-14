@@ -296,7 +296,7 @@ export function inferProvider(url: string): string {
 /**
  * Generate a deterministic source ID from provider and already-normalized URL pattern.
  */
-function generateSourceId(provider: string, normalizedUrlPattern: string): string {
+export function generateSourceId(provider: string, normalizedUrlPattern: string): string {
   let hash = 0;
   for (let i = 0; i < normalizedUrlPattern.length; i++) {
     const char = normalizedUrlPattern.charCodeAt(i);
