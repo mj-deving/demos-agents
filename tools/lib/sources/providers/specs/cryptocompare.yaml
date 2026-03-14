@@ -1,0 +1,103 @@
+schemaVersion: 1
+
+provider:
+  name: cryptocompare
+  displayName: CryptoCompare
+  matches:
+    providers: [cryptocompare]
+    hosts: [min-api.cryptocompare.com]
+  domains: [crypto, prices, market-data]
+  rateLimit:
+    bucket: cryptocompare
+    maxPerMinute: 30
+    maxPerDay: 500
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  price:
+    when:
+      sourceAdapterOperation: [price]
+      urlPatterns: ["/data/price"]
+      default: true
+    request:
+      method: GET
+      urlTemplate: "https://min-api.cryptocompare.com/data/price?fsym={symbol}&tsyms=USD,EUR,BTC"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "{symbol}"
+        - "price"
+    variables:
+      symbol:
+        source: topic
+        transform: uppercase
+        default: BTC
+    parse:
+      mode: json
+      rootPath: "$"
+      items:
+        jsonPath: "$"
+        fields:
+          id:
+            template: "cc-price-{symbol}"
+          title:
+            template: "{symbol} Price"
+          bodyText:
+            template: "{symbol} — USD: {USD}, EUR: {EUR}, BTC: {BTC}"
+          topics:
+            static: [crypto, price]
+          metrics:
+            jsonPath: "$"
+            fields:
+              USD: "$.USD"
+              EUR: "$.EUR"
+              BTC: "$.BTC"
+
+  histoday:
+    when:
+      sourceAdapterOperation: [histoday]
+      urlPatterns: ["/data/v2/histoday"]
+    request:
+      method: GET
+      urlTemplate: "https://min-api.cryptocompare.com/data/v2/histoday?fsym={symbol}&tsym=USD&limit=7"
+      estimatedSizeKb:
+        TLSN: 2
+        DAHR: 4
+      matchHints:
+        - "{symbol}"
+        - "history"
+        - "daily"
+    variables:
+      symbol:
+        source: topic
+        transform: uppercase
+        default: BTC
+    parse:
+      mode: json
+      rootPath: "$.Data.Data"
+      items:
+        jsonPath: "$[*]"
+        fields:
+          id:
+            jsonPath: "$.time"
+            transform: toString
+          title:
+            template: "{symbol} Daily OHLCV"
+          bodyText:
+            template: "Open: {open}, High: {high}, Low: {low}, Close: {close}, Volume: {volumeto}"
+          topics:
+            static: [crypto, price, historical]
+          metrics:
+            jsonPath: "$"
+            fields:
+              open: "$.open"
+              high: "$.high"
+              low: "$.low"
+              close: "$.close"
+              volumeto: "$.volumeto"

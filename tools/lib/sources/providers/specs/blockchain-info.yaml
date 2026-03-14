@@ -1,0 +1,93 @@
+schemaVersion: 1
+
+provider:
+  name: blockchain-info
+  displayName: Blockchain.info
+  matches:
+    providers: [blockchain-info]
+    hosts: [blockchain.info, api.blockchain.info]
+  domains: [crypto, bitcoin, blockchain]
+  rateLimit:
+    bucket: blockchain-info
+    maxPerMinute: 30
+    maxPerDay: 500
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  ticker:
+    when:
+      sourceAdapterOperation: [ticker]
+      urlPatterns: ["/ticker"]
+      default: true
+    request:
+      method: GET
+      urlTemplate: "https://blockchain.info/ticker"
+      estimatedSizeKb:
+        TLSN: 2
+        DAHR: 2
+      matchHints:
+        - "bitcoin"
+        - "price"
+    variables: {}
+    parse:
+      mode: object-entries
+      rootPath: "$"
+      items:
+        jsonPath: "$"
+        fields:
+          id:
+            template: "btc-{.key}"
+          title:
+            template: "BTC/{.key}"
+          bodyText:
+            template: "Last: {last}, Buy: {buy}, Sell: {sell}, Symbol: {symbol}"
+          topics:
+            static: [bitcoin, price, exchange-rate]
+          metrics:
+            jsonPath: "{.value}"
+            fields:
+              last: "$.last"
+              buy: "$.buy"
+              sell: "$.sell"
+
+  stats:
+    when:
+      sourceAdapterOperation: [stats]
+      urlPatterns: ["/stats"]
+    request:
+      method: GET
+      urlTemplate: "https://api.blockchain.info/stats"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "bitcoin"
+        - "blockchain"
+        - "stats"
+    variables: {}
+    parse:
+      mode: json
+      rootPath: "$"
+      items:
+        jsonPath: "$"
+        fields:
+          id:
+            template: "blockchain-stats"
+          title:
+            template: "Bitcoin Network Statistics"
+          bodyText:
+            template: "Market price: ${market_price_usd}, Hash rate: {hash_rate} GH/s, Transactions: {n_tx}, Difficulty: {difficulty}"
+          topics:
+            static: [bitcoin, blockchain, network, mining]
+          metrics:
+            jsonPath: "$"
+            fields:
+              market_price_usd: "$.market_price_usd"
+              hash_rate: "$.hash_rate"
+              n_tx: "$.n_tx"
+              difficulty: "$.difficulty"

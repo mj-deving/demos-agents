@@ -1,0 +1,92 @@
+schemaVersion: 1
+
+provider:
+  name: mempool
+  displayName: Mempool.space
+  matches:
+    providers: [mempool]
+    hosts: [mempool.space]
+  domains: [crypto, bitcoin, fees, mempool]
+  rateLimit:
+    bucket: mempool
+    maxPerMinute: 30
+    maxPerDay: 500
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  fees:
+    when:
+      sourceAdapterOperation: [fees]
+      urlPatterns: ["/api/v1/fees"]
+      default: true
+    request:
+      method: GET
+      urlTemplate: "https://mempool.space/api/v1/fees/recommended"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "bitcoin"
+        - "fees"
+    variables: {}
+    parse:
+      mode: json
+      rootPath: "$"
+      items:
+        jsonPath: "$"
+        fields:
+          id:
+            template: "mempool-fees"
+          title:
+            template: "Bitcoin Fee Estimates"
+          bodyText:
+            template: "Fastest: {fastestFee} sat/vB, Half-hour: {halfHourFee} sat/vB, Hour: {hourFee} sat/vB, Economy: {economyFee} sat/vB, Minimum: {minimumFee} sat/vB"
+          topics:
+            static: [bitcoin, fees, mempool]
+          metrics:
+            jsonPath: "$"
+            fields:
+              fastestFee: "$.fastestFee"
+              halfHourFee: "$.halfHourFee"
+              hourFee: "$.hourFee"
+              economyFee: "$.economyFee"
+
+  mempool-stats:
+    when:
+      sourceAdapterOperation: [mempool-stats, mempool]
+      urlPatterns: ["/api/mempool"]
+    request:
+      method: GET
+      urlTemplate: "https://mempool.space/api/mempool"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "bitcoin"
+        - "mempool"
+    variables: {}
+    parse:
+      mode: json
+      rootPath: "$"
+      items:
+        jsonPath: "$"
+        fields:
+          id:
+            template: "mempool-stats"
+          title:
+            template: "Bitcoin Mempool Statistics"
+          bodyText:
+            template: "Transactions: {count}, Size: {vsize} vBytes, Total fee: {total_fee} sat"
+          topics:
+            static: [bitcoin, mempool, transactions]
+          metrics:
+            jsonPath: "$"
+            fields:
+              count: "$.count"
+              vsize: "$.vsize"
+              total_fee: "$.total_fee"
