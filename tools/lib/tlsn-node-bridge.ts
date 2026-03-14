@@ -455,7 +455,7 @@ export async function attestTlsnViaNodeBridge(
     info("TLSN request: sending target request");
     await withTimeout(
       "TLSN attested request",
-      90_000,
+      180_000, // 3 min — MPC-TLS empirically 50-120s, previous 90s cut off valid sessions
       prover.sendRequest(token.proxyUrl, {
         url: parsed.toString(),
         method: httpMethod,
@@ -479,7 +479,7 @@ export async function attestTlsnViaNodeBridge(
     };
 
     info("TLSN notarize: generating proof");
-    const notarized = await withTimeout("TLSN notarize", 180_000, prover.notarize(commitRanges));
+    const notarized = await withTimeout("TLSN notarize", 240_000, prover.notarize(commitRanges)); // 4 min — proof generation 30-60s but can spike
     info("TLSN notarize: proof generated");
     const presentation = new tlsn.Presentation({
       attestationHex: notarized.attestation,

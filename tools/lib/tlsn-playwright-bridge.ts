@@ -278,12 +278,12 @@ async function runBrowserTlsnAttestation(
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
-    page.setDefaultTimeout(180_000);
+    page.setDefaultTimeout(300_000); // 5 min — MPC-TLS steps can take 190-290s total
     await page.goto(`${server.baseUrl}/bridge.html`, { waitUntil: "domcontentloaded" });
 
     const result = await withTimeout(
       "Playwright TLSN evaluate",
-      180_000,
+      300_000, // 5 min — previous 180s was insufficient (steps sum to 190-290s)
       page.evaluate(
         async (args: {
           targetUrl: string;
