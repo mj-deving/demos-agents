@@ -63,9 +63,14 @@ import {
   runBeforeSense,
   runBeforePublishDraft,
   runAfterPublishDraft,
+  runAfterConfirm,
   registerHook,
   type BeforeSenseContext,
 } from "./lib/extensions.js";
+import type { PublishedPostRecord } from "./lib/state.js";
+import { loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger } from "./lib/write-rate-limit.js";
+import { fetchSignals, scoreSignalAlignment, type SignalSnapshot } from "./lib/signals.js";
+import { loadPredictions, savePredictions, registerPrediction, resolvePendingPredictions, getCalibrationAdjustment } from "./lib/predictions.js";
 import {
   loadAgentSourceView,
   preflight as sourcesPreflight,
@@ -1568,8 +1573,24 @@ async function runPublishAutonomous(
   // Resolve enabled extensions for hook dispatch
   const enabledExtensions = agentConfig.loopExtensions;
 
+  // Load write-rate ledger for this wallet address (PR1 — persistent, address-scoped)
+  const walletAddress = (demos as any).address || "";
+  let writeRateLedger = loadWriteRateLedger(walletAddress);
+
   for (const gp of gatePosts) {
     try {
+      // Step -1: Write rate limit check (PR1 — before any work for this topic)
+      const rateCheck = canPublish(writeRateLedger);
+      if (!rateCheck.allowed) {
+        observe("insight", `Write rate limit reached for "${gp.topic}": ${rateCheck.reason}`, {
+          phase: "publish", substage: "publish",
+          source: "session-runner.ts:runPublishAutonomous",
+          data: { topic: gp.topic, dailyRemaining: rateCheck.dailyRemaining, hourlyRemaining: rateCheck.hourlyRemaining },
+        });
+        info(`Rate limit SKIP: ${gp.topic} — ${rateCheck.reason} (daily: ${rateCheck.dailyRemaining}, hourly: ${rateCheck.hourlyRemaining})`);
+        continue;
+      }
+
       // Step 0: Preflight via extension hooks (Phase 4 — adapter-based URL generation)
       const preflightDecision = await runBeforePublishDraft(enabledExtensions, {
         topic: gp.topic,
@@ -1595,6 +1616,24 @@ async function runPublishAutonomous(
         throw new Error("Autonomous publish requires an LLM provider. Set LLM_PROVIDER or ANTHROPIC_API_KEY.");
       }
       info(`Generating text for "${gp.topic}" via ${provider.name}...`);
+      // PR1: Build signal context for LLM from snapshot
+      const signalSnapshot = (state as any).signalSnapshot as SignalSnapshot | undefined;
+      let signalContext: { direction: string; confidence: number; agentCount: number; divergence: boolean } | undefined;
+      if (signalSnapshot) {
+        const topicLower = gp.topic.toLowerCase();
+        const matchedSignal = signalSnapshot.topics.find(s =>
+          topicLower.includes(s.topic.toLowerCase()) || s.topic.toLowerCase().includes(topicLower)
+        );
+        if (matchedSignal) {
+          signalContext = {
+            direction: matchedSignal.direction,
+            confidence: matchedSignal.confidence,
+            agentCount: matchedSignal.agentCount,
+            divergence: matchedSignal.divergence,
+          };
+        }
+      }
+
       const draft: PostDraft = await generatePost(
         {
           topic: gp.topic,
@@ -1608,6 +1647,7 @@ async function runPublishAutonomous(
             meta_saturation: scanResult.meta_saturation?.detected,
           },
           calibrationOffset,
+          signalContext,
         },
         provider,
         {
@@ -1784,8 +1824,29 @@ async function runPublishAutonomous(
         existingTxHashes.add(pubResult.txHash);
       }
 
+      // Record publish in write-rate ledger (PR1 — persistent tracking)
+      writeRateLedger = recordPublish(writeRateLedger, agentConfig.name, pubResult.txHash);
+      saveWriteRateLedger(writeRateLedger);
+
       publishedHashes.push(pubResult.txHash);
       state.posts.push(pubResult.txHash);
+
+      // Build full PublishedPostRecord for afterConfirm hooks (PR1)
+      const v2State = state as import("./lib/state.js").V2SessionState;
+      if (!v2State.publishedPosts) v2State.publishedPosts = [];
+      v2State.publishedPosts.push({
+        txHash: pubResult.txHash,
+        topic: gp.topic,
+        category: draft.category,
+        text: draft.text,
+        confidence: draft.confidence,
+        predictedReactions: draft.predicted_reactions,
+        hypothesis: draft.hypothesis,
+        tags: draft.tags,
+        replyTo: draft.replyTo,
+        publishedAt: new Date().toISOString(),
+        attestationType: selectedMethod,
+      });
       saveState(state);
     } catch (e: any) {
       // Classify the publish failure for observability
@@ -2741,6 +2802,23 @@ async function runV2Loop(
 
     checkV2PhaseBudget("confirm", Date.now() - confirmStartMs);
   }
+
+  // ── AFTER CONFIRM — extension hooks (PR1: prediction tracking) ──
+  if (state.publishedPosts && state.publishedPosts.length > 0) {
+    try {
+      await runAfterConfirm(agentConfig.loopExtensions, {
+        state,
+        config: agentConfig,
+        publishedPosts: state.publishedPosts,
+        confirmResult: state.phases.confirm?.result,
+      });
+    } catch (e: any) {
+      observe("error", `afterConfirm hooks failed: ${e.message}`, {
+        phase: "confirm", source: "session-runner.ts:runV2Loop",
+      });
+      // Non-fatal — don't throw, just log
+    }
+  }
 }
 
 // ── V2 Session Report ─────────────────────────────
@@ -2985,6 +3063,64 @@ async function main(): Promise<void> {
     phaseResult(
       `Calibrate: ${stats.total_entries || 0} entries | avg error: ${stats.avg_prediction_error !== undefined ? stats.avg_prediction_error.toFixed(1) : "N/A"}`
     );
+  });
+
+  // PR1: Register signals extension — fetch consensus signals before SENSE
+  registerHook("signals", "beforeSense", async (ctx: BeforeSenseContext) => {
+    info("Extension: signals (fetching consensus)...");
+    try {
+      const { loadAuthCache } = await import("./lib/auth.js");
+      const cached = loadAuthCache();
+      if (!cached) {
+        info("Signals: no auth token cached — skipping");
+        return;
+      }
+      const snapshot = await fetchSignals(cached.token);
+      if (snapshot && ctx.state.loopVersion === 2) {
+        (ctx.state as any).signalSnapshot = snapshot;
+        phaseResult(`Signals: ${snapshot.topics.length} topic(s), ${snapshot.alerts.length} alert(s)`);
+      }
+    } catch (e: any) {
+      observe("error", `Signals fetch failed: ${e.message}`, {
+        phase: "sense", source: "session-runner.ts:signals-hook",
+      });
+    }
+  });
+
+  // PR1: Register predictions extension — resolve pending predictions before SENSE
+  registerHook("predictions", "beforeSense", async (ctx: BeforeSenseContext) => {
+    info("Extension: predictions (checking pending resolutions)...");
+    try {
+      const { loadAuthCache } = await import("./lib/auth.js");
+      const cached = loadAuthCache();
+      const token = cached?.token || "";
+      let store = loadPredictions(ctx.flags.agent);
+      store = await resolvePendingPredictions(store, token);
+      savePredictions(store);
+      const pending = Object.values(store.predictions).filter(p => p.status === "pending").length;
+      const resolved = Object.values(store.predictions).filter(p => p.status === "correct" || p.status === "incorrect").length;
+      const adj = getCalibrationAdjustment(store);
+      phaseResult(`Predictions: ${pending} pending, ${resolved} resolved, calibration adj: ${adj > 0 ? "+" : ""}${adj}`);
+    } catch (e: any) {
+      observe("error", `Predictions resolution failed: ${e.message}`, {
+        phase: "sense", source: "session-runner.ts:predictions-hook",
+      });
+    }
+  });
+
+  // PR1: Register predictions afterConfirm — register new PREDICTION posts
+  registerHook("predictions", "afterConfirm", async (ctx) => {
+    if (!ctx.publishedPosts || ctx.publishedPosts.length === 0) return;
+    const predictionPosts = ctx.publishedPosts.filter(p => p.category.toUpperCase() === "PREDICTION");
+    if (predictionPosts.length === 0) return;
+
+    info(`Extension: predictions (registering ${predictionPosts.length} prediction(s))...`);
+    let store = loadPredictions(ctx.config.name);
+    for (const post of predictionPosts) {
+      store = registerPrediction(store, post);
+    }
+    savePredictions(store);
+    phaseResult(`Predictions registered: ${predictionPosts.length}`);
   });
 
   banner(sessionNumber, flags.oversight, flags.agent);

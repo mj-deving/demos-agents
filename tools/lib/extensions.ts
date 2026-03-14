@@ -13,7 +13,7 @@
 
 import type { KNOWN_EXTENSIONS } from "./state.js";
 import type { AgentConfig } from "./agent-config.js";
-import type { AnySessionState, V2SessionState } from "./state.js";
+import type { AnySessionState, V2SessionState, PublishedPostRecord } from "./state.js";
 import type { AttestationType } from "./attestation-policy.js";
 import type { AgentSourceView, SourceRecordV2 } from "./sources/catalog.js";
 import { preflight as sourcesPreflight, type PreflightCandidate } from "./sources/policy.js";
@@ -59,6 +59,15 @@ export interface AfterPublishDraftContext {
   sourceView?: AgentSourceView;
 }
 
+export interface AfterConfirmContext {
+  state: V2SessionState;
+  config: AgentConfig;
+  /** Full context for posts published this session — includes text, category, confidence */
+  publishedPosts: PublishedPostRecord[];
+  /** Confirm phase result (verify output) */
+  confirmResult?: unknown;
+}
+
 // ── Decision Types ────────────────────────────────
 
 export interface PublishGateDecision {
@@ -90,6 +99,7 @@ export interface LoopExtensionHooks {
   beforeSense?(ctx: BeforeSenseContext): Promise<void>;
   beforePublishDraft?(ctx: BeforePublishDraftContext): Promise<PublishGateDecision | void>;
   afterPublishDraft?(ctx: AfterPublishDraftContext): Promise<SourceMatchDecision | void>;
+  afterConfirm?(ctx: AfterConfirmContext): Promise<void>;
 }
 
 // ── Extension Type ────────────────────────────────
@@ -173,6 +183,14 @@ const EXTENSION_REGISTRY: Record<KnownExtension, LoopExtensionHooks> = {
     // Observe is inline (appendFileSync calls), not hook-driven.
     // Included in registry for validation only.
   },
+  signals: {
+    // beforeSense registered at runtime by session-runner via registerHook()
+    // because it needs auth token from the session context
+  },
+  predictions: {
+    // beforeSense (resolution) + afterConfirm (registration) registered at runtime
+    // because they need auth token and agent config from session context
+  },
 };
 
 // ── Dispatcher ────────────────────────────────────
@@ -236,6 +254,22 @@ export async function runAfterPublishDraft(
     }
   }
   return lastDecision;
+}
+
+/**
+ * Run all afterConfirm hooks for the agent's enabled extensions.
+ * Hooks run sequentially. No short-circuit — all hooks execute.
+ */
+export async function runAfterConfirm(
+  enabledExtensions: string[],
+  ctx: AfterConfirmContext
+): Promise<void> {
+  for (const ext of enabledExtensions) {
+    const hooks = EXTENSION_REGISTRY[ext as KnownExtension];
+    if (hooks?.afterConfirm) {
+      await hooks.afterConfirm(ctx);
+    }
+  }
 }
 
 /**

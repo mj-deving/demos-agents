@@ -81,7 +81,7 @@ const PHASE_ORDER: PhaseName[] = [
 export type CorePhase = "sense" | "act" | "confirm";
 export type LoopVersion = 1 | 2;
 export const CORE_PHASE_ORDER: CorePhase[] = ["sense", "act", "confirm"];
-export const KNOWN_EXTENSIONS = ["calibrate", "sources", "observe"] as const;
+export const KNOWN_EXTENSIONS = ["calibrate", "sources", "observe", "signals", "predictions"] as const;
 
 export type SubstageStatus = "pending" | "running" | "completed" | "failed" | "skipped";
 
@@ -93,6 +93,23 @@ export interface ActSubstageState {
   durationMs?: number;
   failureCode?: string;
   result?: any;
+}
+
+/** Full context for a published post — persisted in session state for afterConfirm hooks. */
+export interface PublishedPostRecord {
+  txHash: string;
+  topic: string;
+  category: string;
+  text: string;
+  confidence: number;
+  predictedReactions: number;
+  hypothesis?: string;
+  tags: string[];
+  replyTo?: string;
+  deadline?: string;
+  publishedAt: string;
+  attestationType: "DAHR" | "TLSN" | "none";
+  verified?: boolean;
 }
 
 export interface V2SessionState {
@@ -107,6 +124,10 @@ export interface V2SessionState {
   engagements: any[];
   /** Set when --shadow suppresses publish */
   publishSuppressed?: boolean;
+  /** Full context for published posts — consumed by afterConfirm hooks (PR1) */
+  publishedPosts?: PublishedPostRecord[];
+  /** Consensus signal snapshot from /api/signals — consumed by gate/LLM (PR1) */
+  signalSnapshot?: unknown;
 }
 
 export type AnySessionState = SessionState | V2SessionState;

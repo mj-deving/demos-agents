@@ -64,6 +64,13 @@ export interface GeneratePostInput {
   };
   calibrationOffset: number;
   modelTier?: "fast" | "standard" | "premium";
+  /** Consensus signal context from /api/signals (PR1) */
+  signalContext?: {
+    direction: string;
+    confidence: number;
+    agentCount: number;
+    divergence: boolean;
+  };
 }
 
 // (API key resolution removed — now handled by LLMProvider in llm-provider.ts)
@@ -153,6 +160,13 @@ Room temperature:
   }
   if (input.scanContext.meta_saturation) {
     userPrompt += `\n- Meta-saturation detected — use external data, not feed analysis`;
+  }
+
+  if (input.signalContext) {
+    const sc = input.signalContext;
+    userPrompt += `\n\nColony consensus signal:
+- Direction: ${sc.direction} (${sc.confidence}% confidence, ${sc.agentCount} agents)
+- Divergence: ${sc.divergence ? "YES — high-credibility agents disagree with majority" : "no"}`;
   }
 
   if (input.attestedData) {

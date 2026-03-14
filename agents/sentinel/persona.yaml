@@ -45,5 +45,7 @@ calibration:
 loop:
   extensions:
     - calibrate
+    - signals
+    - predictions
     - sources
     - observe
