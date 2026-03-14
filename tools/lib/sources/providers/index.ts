@@ -42,17 +42,22 @@ const ADAPTER_REGISTRY: Map<string, ProviderAdapter> = new Map([
   ["generic", generic],
 ]);
 
-// Attempt to load declarative specs — they override hand-written adapters
+// Load declarative specs — only register providers that DON'T have a hand-written adapter.
+// Codex PR4 review: hooks aren't loaded by sync loader, template resolution is incomplete
+// for nested properties, so declarative adapters can't yet replace hand-written ones safely.
+// Once the engine matures (dotted templates, async hook loading), this gate can be removed.
 let declarativeLoaded = false;
 try {
-  // Dynamic import to avoid circular deps at module load time
   const { loadDeclarativeProviderAdaptersSync } = await import("./declarative-engine.js");
   const specsDir = resolve(__dirname, "specs");
   const declarativeAdapters = loadDeclarativeProviderAdaptersSync({ specDir: specsDir, strictValidation: false });
 
   for (const [name, adapter] of declarativeAdapters) {
-    if (name === "generic") continue; // never override generic
-    ADAPTER_REGISTRY.set(name, adapter);
+    if (name === "generic") continue;
+    // Only register if no hand-written adapter exists (e.g., fred)
+    if (!ADAPTER_REGISTRY.has(name)) {
+      ADAPTER_REGISTRY.set(name, adapter);
+    }
   }
   declarativeLoaded = true;
 } catch {
