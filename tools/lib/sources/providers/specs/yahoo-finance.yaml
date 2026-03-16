@@ -26,7 +26,7 @@ operations:
       default: true
     request:
       method: GET
-      urlTemplate: "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1h"
+      urlTemplate: "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?range=5d&interval=1d"
       estimatedSizeKb:
         TLSN: 8
         DAHR: 8
