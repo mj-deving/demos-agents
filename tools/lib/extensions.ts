@@ -29,6 +29,8 @@ export interface BeforeSenseContext {
   // Keep this subset local: session-runner owns RunnerFlags and imports this
   // module, so importing RunnerFlags here would introduce a circular dependency.
   flags: BeforeSenseFlags;
+  /** Populated by runBeforeSense — tracks hook failures/timeouts for observability */
+  hookErrors?: Array<{ hook: string; error: string; elapsed: number; isTimeout: boolean }>;
 }
 
 type BeforeSenseFlags = {
@@ -219,9 +221,17 @@ const EXTENSION_REGISTRY: Record<KnownExtension, LoopExtensionHooks> = {
 
 // ── Dispatcher ────────────────────────────────────
 
+/** Per-hook timeout budgets (ms). Lifecycle tests 10 sources sequentially, needs more time. */
+const HOOK_TIMEOUT_MS: Partial<Record<KnownExtension, number>> = {
+  lifecycle: 90_000,
+  calibrate: 45_000,
+  signals: 30_000,
+};
+const DEFAULT_HOOK_TIMEOUT_MS = 30_000;
+
 /**
  * Run all beforeSense hooks for the agent's enabled extensions.
- * Hooks run sequentially in extension declaration order.
+ * Each hook is isolated: failure or timeout of one hook doesn't block others.
  */
 export async function runBeforeSense(
   enabledExtensions: string[],
@@ -229,8 +239,26 @@ export async function runBeforeSense(
 ): Promise<void> {
   for (const ext of enabledExtensions) {
     const hooks = EXTENSION_REGISTRY[ext as KnownExtension];
-    if (hooks?.beforeSense) {
-      await hooks.beforeSense(ctx);
+    if (!hooks?.beforeSense) continue;
+
+    const timeoutMs = HOOK_TIMEOUT_MS[ext as KnownExtension] ?? DEFAULT_HOOK_TIMEOUT_MS;
+    const startMs = Date.now();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        hooks.beforeSense(ctx),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error(`Hook "${ext}" timed out after ${timeoutMs}ms`)), timeoutMs);
+        }),
+      ]);
+    } catch (e: any) {
+      // Log hook failure/timeout but continue to next hook
+      const elapsed = Date.now() - startMs;
+      const isTimeout = e.message?.includes("timed out");
+      ctx.hookErrors = ctx.hookErrors || [];
+      ctx.hookErrors.push({ hook: ext, error: e.message, elapsed, isTimeout });
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 }

@@ -150,6 +150,12 @@ export function selectSourceForTopicV2(
     // Small response bonus (TLSN-friendly)
     if ((source.max_response_kb || 999) <= 16) score += 1;
 
+    // Source health penalty — prefer reliable sources over degraded/low-quality ones
+    // -5 for degraded status: unreliable responses, may fail attestation
+    if (source.status === "degraded") score -= 5;
+    // -3 for low rating (<50): consistently poor quality (lifecycle degrades at 40, recovers at 60)
+    if (source.rating?.overall != null && source.rating.overall < 50) score -= 3;
+
     // Phase 4: Use adapter for URL generation
     const adapter = getProviderAdapter(source.provider);
     let resolvedUrl: string;

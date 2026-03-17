@@ -1122,49 +1122,54 @@ function extractTopicsFromScan(
           b.stats.newestTimestamp - a.stats.newestTimestamp
         );
 
-      for (const entry of ranked.slice(0, 2)) {
+      // Bucket 1: max 1 from topicIndex (quota-based mixing)
+      if (ranked.length > 0) {
         topics.push({
-          topic: entry.topic,
+          topic: ranked[0].topic,
           category: "ANALYSIS",
-          reason: `topic-index (${entry.stats.totalReactions} reactions, ${entry.stats.attestedCount} attested)`,
+          reason: `topic-index (${ranked[0].stats.totalReactions} reactions, ${ranked[0].stats.attestedCount} attested)`,
         });
       }
-      // Reserve 1 slot for reply candidate (discovered below)
     }
   }
 
   if (mode === "standard") {
-    // Hot topic first (highest engagement potential)
-    if (scan.heat?.topic) {
+    const usedTopics = new Set(topics.map((t) => t.topic.toLowerCase()));
+
+    // Bucket 2: heat or gap/opinion (1 slot)
+    let bucket2Filled = false;
+    if (scan.heat?.topic && !usedTopics.has(scan.heat.topic.toLowerCase())) {
       topics.push({
         topic: scan.heat.topic,
         category: "ANALYSIS",
         reason: `hot topic (${scan.heat.reactions || 0} reactions)`,
       });
+      usedTopics.add(scan.heat.topic.toLowerCase());
+      bucket2Filled = true;
     }
 
-    // Gap topics (unique signal opportunities — OPINION for interpretive takes)
-    const gaps = scan.gaps?.topics || [];
-    for (const gap of gaps.slice(0, 3)) {
-      if (!topics.some((t) => t.topic === gap)) {
-        // First gap with no hot topic gets OPINION (fresh perspective on uncovered area)
-        const isFirstGapWithoutHeat = topics.length === 0 && !scan.heat?.topic;
-        const category = isFirstGapWithoutHeat ? "OPINION" : "ANALYSIS";
-        topics.push({
-          topic: gap,
-          category,
-          reason: category === "OPINION" ? "gap — opinion opportunity" : "gap in feed coverage",
-        });
+    if (!bucket2Filled) {
+      const gaps = scan.gaps?.topics || [];
+      for (const gap of gaps.slice(0, 1)) {
+        if (!usedTopics.has(gap.toLowerCase())) {
+          // Gap without heat gets OPINION (fresh perspective on uncovered area)
+          const category = !scan.heat?.topic ? "OPINION" : "ANALYSIS";
+          topics.push({
+            topic: gap,
+            category,
+            reason: category === "OPINION" ? "gap — opinion opportunity" : "gap in feed coverage",
+          });
+          usedTopics.add(gap.toLowerCase());
+        }
       }
     }
 
-    // Reply candidate discovery: find highest-reaction post from scan as reply target
+    // Bucket 3: reply candidate (1 slot)
     const minReplyReactions = agentConfig.engagement.replyMinParentReactions || 8;
     const rawPosts = Array.isArray(scan.rawPosts) ? scan.rawPosts : [];
-    if (rawPosts.length > 0 && topics.length < 3) {
+    if (rawPosts.length > 0) {
       const countRx = (p: any): number => (p.reactions?.agree || 0) + (p.reactions?.disagree || 0);
 
-      // Single-pass O(n) max scan instead of filter+sort+slice
       let best: { post: any; rx: number } | null = null;
       for (const p of rawPosts) {
         if (!p.txHash || !p.author) continue;
@@ -1178,16 +1183,19 @@ function extractTopicsFromScan(
         const candidate = best.post;
         const text = String(candidate.payload?.text || candidate.textPreview || "").slice(0, 300);
         const topicTag = candidate.payload?.tags?.[0] || candidate.tags?.[0] || "reply";
-        topics.push({
-          topic: String(topicTag).toLowerCase(),
-          category: "ANALYSIS",
-          reason: `reply target (${best.rx}rx)`,
-          replyTo: {
-            txHash: String(candidate.txHash),
-            author: String(candidate.author),
-            text,
-          },
-        });
+        const replyTopic = String(topicTag).toLowerCase();
+        if (!usedTopics.has(replyTopic)) {
+          topics.push({
+            topic: replyTopic,
+            category: "ANALYSIS",
+            reason: `reply target (${best.rx}rx)`,
+            replyTo: {
+              txHash: String(candidate.txHash),
+              author: String(candidate.author),
+              text,
+            },
+          });
+        }
       }
     }
 
@@ -1658,6 +1666,10 @@ async function runPublishAutonomous(
   const existingTxHashes = new Set(existingLog.map((e: any) => e.txHash));
   const publishedHashes: string[] = [];
 
+  // Per-topic publish ledger — tracks status for resume and reporting
+  type TopicLedgerEntry = { topic: string; category: string; status: "published" | "skipped" | "failed"; txHash?: string; error?: string };
+  const topicLedger: TopicLedgerEntry[] = [];
+
   // Resolve enabled extensions for hook dispatch
   const enabledExtensions = agentConfig.loopExtensions;
   let writeRateLedger = loadWriteRateLedger(walletAddress);
@@ -1673,6 +1685,7 @@ async function runPublishAutonomous(
           data: { topic: gp.topic, dailyRemaining: rateCheck.dailyRemaining, hourlyRemaining: rateCheck.hourlyRemaining },
         });
         info(`Rate limit SKIP: ${gp.topic} — ${rateCheck.reason} (daily: ${rateCheck.dailyRemaining}, hourly: ${rateCheck.hourlyRemaining})`);
+        topicLedger.push({ topic: gp.topic, category: gp.category, status: "skipped", error: rateCheck.reason });
         continue;
       }
 
@@ -1692,6 +1705,7 @@ async function runPublishAutonomous(
           data: { topic: gp.topic, reasonCode: preflightDecision.reasonCode },
         });
         info(`Preflight SKIP: ${gp.topic} — ${preflightDecision.reason} (${preflightDecision.reasonCode})`);
+        topicLedger.push({ topic: gp.topic, category: gp.category, status: "skipped", error: `preflight: ${preflightDecision.reason}` });
         continue;
       }
 
@@ -1721,29 +1735,33 @@ async function runPublishAutonomous(
 
       // Pre-fetch source data for LLM context (before generation, not after)
       // The response is cached in prefetchedResponses to avoid double-fetching in match()
+      // Falls back to next preflight candidate on failure (Improvement 5)
       let attestedData: { source: string; url: string; summary: string } | undefined;
       const prefetchedResponses = new Map<string, any>();
-      if (preflightDecision?.candidates && preflightDecision.candidates.length > 0) {
-        const topCandidate = preflightDecision.candidates[0];
+      const candidates = preflightDecision?.candidates || [];
+      // Import once before loop (not per-candidate)
+      let fetchSourceFn: typeof import("./lib/sources/fetch.js")["fetchSource"] | null = null;
+      let getAdapterFn: typeof import("./lib/sources/providers/index.js")["getProviderAdapter"] | null = null;
+      if (candidates.length > 0) {
+        fetchSourceFn = (await import("./lib/sources/fetch.js")).fetchSource;
+        getAdapterFn = (await import("./lib/sources/providers/index.js")).getProviderAdapter;
+      }
+      for (let ci = 0; ci < Math.min(candidates.length, 3) && !attestedData; ci++) {
+        const candidate = candidates[ci];
         try {
-          const { fetchSource } = await import("./lib/sources/fetch.js");
-          const { getProviderAdapter } = await import("./lib/sources/providers/index.js");
-          const adapter = getProviderAdapter(topCandidate.source.provider);
-          const fetchResult = await fetchSource(topCandidate.url, topCandidate.source, {
+          const adapter = getAdapterFn!(candidate.source.provider);
+          const fetchResult = await fetchSourceFn!(candidate.url, candidate.source, {
             rateLimitBucket: adapter?.rateLimit.bucket,
             rateLimitRpm: adapter?.rateLimit.maxPerMinute,
             rateLimitRpd: adapter?.rateLimit.maxPerDay,
           });
           if (fetchResult.ok && fetchResult.response) {
-            // Cache for reuse by match() — eliminates double-fetch
-            prefetchedResponses.set(topCandidate.url, fetchResult.response);
+            prefetchedResponses.set(candidate.url, fetchResult.response);
 
-            // Parse through adapter for structured evidence, then build readable summary
             let summary: string;
             try {
-              const parsed = adapter?.parseResponse(topCandidate.source, fetchResult.response);
+              const parsed = adapter?.parseResponse(candidate.source, fetchResult.response);
               if (parsed && parsed.entries.length > 0) {
-                // Build human-readable summary from evidence entries
                 summary = parsed.entries.slice(0, 5).map((e: any) => {
                   const parts: string[] = [];
                   if (e.title) parts.push(e.title);
@@ -1752,7 +1770,6 @@ async function runPublishAutonomous(
                   return parts.join(" — ");
                 }).join("\n");
               } else {
-                // Fallback: raw body truncated
                 summary = fetchResult.response.bodyText.slice(0, 800);
               }
             } catch {
@@ -1760,16 +1777,23 @@ async function runPublishAutonomous(
             }
 
             attestedData = {
-              source: topCandidate.source.name || topCandidate.sourceId,
-              url: topCandidate.url,
+              source: candidate.source.name || candidate.sourceId,
+              url: candidate.url,
               summary,
             };
-            info(`Source data fetched for LLM: ${attestedData.source} (${summary.length} chars)`);
+            info(`Source data fetched for LLM: ${attestedData.source} (${summary.length} chars)${ci > 0 ? ` [fallback #${ci}]` : ""}`);
           } else {
-            info(`Source pre-fetch returned ok=false for "${topCandidate.sourceId}": ${fetchResult.error || "unknown"}`);
+            info(`Source pre-fetch returned ok=false for "${candidate.sourceId}": ${fetchResult.error || "unknown"}${ci < candidates.length - 1 ? " — trying next candidate" : ""}`);
           }
         } catch (e: any) {
-          info(`Source pre-fetch failed (non-fatal): ${e.message}`);
+          info(`Source pre-fetch failed for "${candidate.sourceId}" (non-fatal): ${e.message}${ci < candidates.length - 1 ? " — trying next candidate" : ""}`);
+          if (ci > 0) {
+            observe("insight", `Pre-fetch fallback #${ci} for "${gp.topic}": ${e.message}`, {
+              phase: "publish", substage: "publish",
+              source: "session-runner.ts:runPublishAutonomous",
+              data: { topic: gp.topic, candidateIndex: ci, sourceId: candidate.sourceId },
+            });
+          }
         }
       }
 
@@ -1864,6 +1888,7 @@ async function runPublishAutonomous(
           data: { topic: gp.topic, reasonCode: matchDecision.reasonCode },
         });
         info(`Match SKIP: ${gp.topic} — ${matchDecision.reason}`);
+        topicLedger.push({ topic: gp.topic, category: gp.category, status: "skipped", error: `match: ${matchDecision.reason}` });
         continue;
       } else if (preflightDecision?.candidates && preflightDecision.candidates.length > 0) {
         // Case 3a: No match extension — use preflight's best candidate
@@ -1974,6 +1999,7 @@ async function runPublishAutonomous(
 
       publishedHashes.push(pubResult.txHash);
       state.posts.push(pubResult.txHash);
+      topicLedger.push({ topic: gp.topic, category: gp.category, status: "published", txHash: pubResult.txHash });
 
       // Build full PublishedPostRecord for afterConfirm hooks (PR1)
       const v2State = state as import("./lib/state.js").V2SessionState;
@@ -2008,6 +2034,7 @@ async function runPublishAutonomous(
         data: { topic: gp.topic, failureCode },
       });
       phaseError(`Failed to auto-publish "${gp.topic}": ${e.message}`);
+      topicLedger.push({ topic: gp.topic, category: gp.category, status: "failed", error: e.message });
       // Continue with next post — don't fail entire phase
     }
   }
@@ -2019,7 +2046,7 @@ async function runPublishAutonomous(
     throw new Error(`Autonomous publish failed: 0/${gatePosts.length} posts succeeded`);
   }
 
-  const result = { txHashes: publishedHashes };
+  const result = { txHashes: publishedHashes, topicLedger };
   if (!isV2(state)) completePhase(state, "publish", result);
   return result;
 }
@@ -2725,15 +2752,24 @@ async function runV2Loop(
   const actCompleted = state.phases.act?.status === "completed";
 
   // Extension hooks: beforeSense (e.g., calibrate runs audit)
+  // Each hook is isolated with its own try/catch and timeout (see extensions.ts)
   if (!senseCompleted) {
-    try {
-      await runBeforeSense(agentConfig.loopExtensions, {
-        state,
-        config: agentConfig,
-        flags: { agent: flags.agent, env: flags.env, log: flags.log, dryRun: flags.dryRun, pretty: flags.pretty },
+    const hookCtx = {
+      state,
+      config: agentConfig,
+      flags: { agent: flags.agent, env: flags.env, log: flags.log, dryRun: flags.dryRun, pretty: flags.pretty },
+    };
+    await runBeforeSense(agentConfig.loopExtensions, hookCtx);
+
+    // Log any hook failures/timeouts as observations
+    for (const err of hookCtx.hookErrors || []) {
+      const label = err.isTimeout ? "timeout" : "error";
+      observe(err.isTimeout ? "inefficiency" : "error", `beforeSense hook "${err.hook}" ${label}: ${err.error}`, {
+        phase: "sense", substage: "beforeSense",
+        source: "session-runner.ts:runV2Loop",
+        data: { hook: err.hook, elapsed: err.elapsed, isTimeout: err.isTimeout },
       });
-    } catch (e: any) {
-      phaseError(`beforeSense hook failed (non-critical): ${e.message}`);
+      phaseError(`beforeSense hook "${err.hook}" ${label} (${err.elapsed}ms, non-critical)`);
     }
   }
 
