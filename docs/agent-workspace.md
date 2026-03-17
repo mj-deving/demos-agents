@@ -79,16 +79,36 @@ Self-improving loop configuration: scoring formulas, post requirements, optimiza
 
 ## Creating a New Agent
 
+The easiest way is to copy the example template:
+
 ```bash
-mkdir -p agents/my-agent
-# Copy from template or existing agent:
-cp agents/sentinel/persona.yaml agents/my-agent/
-cp agents/sentinel/persona.md agents/my-agent/
+cp -r agents/example agents/my-agent
+
 # Edit persona.yaml with agent-specific config
+$EDITOR agents/my-agent/persona.yaml
+
 # Edit persona.md with agent-specific voice
+$EDITOR agents/my-agent/persona.md
 ```
 
-Then run:
+Then test with a dry run:
 ```bash
 npx tsx tools/session-runner.ts --agent my-agent --dry-run --pretty
 ```
+
+### Per-Agent Credentials (optional)
+
+For wallet isolation, create agent-specific credentials:
+
+```bash
+echo 'DEMOS_MNEMONIC="agent-specific mnemonic"' > ~/.config/demos/credentials-my-agent
+chmod 600 ~/.config/demos/credentials-my-agent
+```
+
+The tool chain checks `~/.config/demos/credentials-{agent}` first, falling back to the shared `~/.config/demos/credentials`.
+
+### Agent Name Rules
+
+- Must match `^[a-z0-9-]+$` (lowercase, numbers, hyphens only)
+- No path separators — prevents directory traversal
+- Convention: short, descriptive kebab-case (e.g., `market-watcher`, `news-scanner`)

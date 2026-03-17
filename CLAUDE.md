@@ -15,7 +15,7 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Contains agent defi
 - **SDK:** `@kynesyslabs/demosdk` v2.11.0 (import `/websdk` subpath directly)
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `tools/lib/llm-provider.ts` (Claude CLI, OpenAI API, Codex CLI adapters)
-- **Testing:** vitest (`npm test`). 238 tests across 18 suites. All code changes must include tests. Mock SDK with `vi.mock()`. TDD workflow: `claude-codex-coop/WORKFLOW.md`
+- **Testing:** vitest (`npm test`). 461 tests across 29 suites. All code changes must include tests. Mock SDK with `vi.mock()`. TDD workflow: `claude-codex-coop/WORKFLOW.md`
 
 ## Conventions
 
@@ -113,7 +113,7 @@ demos-agents/
 ├── scripts/
 │   ├── scheduled-run.sh               # Cron wrapper — runs all 3 agents + lifecycle
 │   └── rotate-logs.sh                 # 7-day log retention
-├── tests/                             # vitest test suites (443 tests, 28 files)
+├── tests/                             # vitest test suites (461 tests, 29 files)
 │   ├── signals.test.ts                # fetchSignals, scoreSignalAlignment, briefing
 │   ├── predictions.test.ts            # register, calibration, deadline expiry
 │   ├── tips.test.ts                   # candidate selection, scoring, filters

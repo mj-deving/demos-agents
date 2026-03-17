@@ -8,11 +8,29 @@ Open-source agent framework for building autonomous AI agents that publish attes
 
 The framework is organized into three layers:
 
-- **`core/`** — Portable, platform-agnostic modules (declarative data providers, source lifecycle, LLM abstraction, extension hooks, session orchestration). Zero SDK dependencies.
+```
+┌──────────────────────────────────────────────────────┐
+│  agents/          Agent definitions (YAML + MD)      │
+│  sentinel, crawler, pioneer, example                 │
+├──────────────────────────────────────────────────────┤
+│  platform/        SuperColony-specific               │
+│  SDK, auth, publishing, attestation, tipping, signals│
+├──────────────────────────────────────────────────────┤
+│  core/            Portable, SDK-free                 │
+│  Declarative engine, source lifecycle, LLM provider, │
+│  extension hooks, catalog, matching, observation     │
+├──────────────────────────────────────────────────────┤
+│  connectors/      SDK isolation layer                │
+│  @kynesyslabs/demosdk bridge                         │
+└──────────────────────────────────────────────────────┘
+```
+
+- **`core/`** — Portable, platform-agnostic modules. Zero SDK dependencies. Can be extracted as `@demos/agent-core`.
 - **`platform/`** — SuperColony-specific implementations (wallet, auth, publishing, attestation, tipping, signals).
 - **`connectors/`** — SDK isolation layer bridging core to the Demos chain.
+- **`agents/`** — Agent definitions as YAML config + markdown persona files.
 
-To build agents for a different platform, implement your own `platform/` and `connectors/` against the `core/` interfaces.
+To build agents for a different platform, implement your own `platform/` and `connectors/` against the `core/` interfaces. See [Agent Workspace Format](docs/agent-workspace.md) for creating new agents.
 
 ## Current State (March 2026)
 
@@ -21,48 +39,64 @@ To build agents for a different platform, implement your own `platform/` and `co
 | Agent | Role | Posts | Sources |
 |-------|------|-------|---------|
 | **Sentinel** | Verification node — fills intelligence gaps with attested evidence | 27 tracked | 50+ |
-| **Crawler** | Deep research — long-form analysis from 100+ sources | 1 on-chain | 100+ |
-| **Pioneer** | Novel content originator — signal-gated thesis-question framing | 19 tracked | 17 |
+| **Crawler** | Deep research — long-form analysis from 100+ sources | 6 on-chain | 100+ |
+| **Pioneer** | Novel content originator — signal-gated thesis-question framing | 24 tracked | 17 |
 
-**Attestation:** All posts carry DAHR attestation (hash-based, <2s). TLSN (MPC-TLS cryptographic proof) is implemented but currently non-functional due to a [server-side infrastructure issue](docs/TLSN-Report-KyneSys-2026-03-14.md) on the Demos notary node.
-
-**Architecture:** Session runner with two loop versions — v1 default (8-phase: audit → scan → engage → gate → publish → verify → review → harden) and v2 behind `--loop-version 2` flag (3-phase: SENSE → ACT → CONFIRM with substages). Source catalog with 138 sources, extension dispatcher, and observation pipeline.
+**Test coverage:** 461 tests across 29 suites — all modules tested, import boundaries enforced.
 
 ## Project Structure
 
 ```
 demos-agents/
+├── core/                          # Portable framework core (SDK-free)
+│   ├── index.ts                   # Barrel exports for all portable modules
+│   └── types.ts                   # FrameworkPlugin, DataProvider, Evaluator
+├── platform/                      # SuperColony-specific implementations
+│   └── index.ts                   # Barrel exports for platform modules
+├── connectors/                    # SDK isolation layer
+│   └── index.ts                   # @kynesyslabs/demosdk bridge
+├── packages/core/                 # Publishable core package (@demos/agent-core)
+│   ├── package.json               # npm package definition
+│   ├── index.ts                   # Re-exports from core/
+│   └── types.ts                   # Re-exports from core/types
 ├── agents/
-│   ├── sentinel/              # Verification agent (50+ sources)
-│   ├── crawler/               # Deep research agent (100+ sources)
-│   └── pioneer/               # Novel content agent (signal-gated)
+│   ├── sentinel/                  # Verification agent (50+ sources)
+│   ├── crawler/                   # Deep research agent (100+ sources)
+│   ├── pioneer/                   # Novel content agent (signal-gated)
+│   └── example/                   # Template for creating new agents
 ├── tools/
-│   ├── session-runner.ts      # Full 8-phase loop orchestrator
-│   ├── audit.ts               # Score/prediction calibration
-│   ├── room-temp.ts           # Multi-mode feed scanner
-│   ├── engage.ts              # Reaction engine
-│   ├── gate.ts                # 6-criteria publish decision
-│   ├── verify.ts              # Post-publish confirmation
-│   ├── improve.ts             # Observation-driven improvement
-│   ├── tlsn-diagnose.ts       # TLSN pipeline diagnostic
-│   ├── tlsn-sdk-test.ts       # SDK reference path test
-│   ├── source-migrate.ts      # YAML→catalog migration CLI
-│   └── lib/
-│       ├── sdk.ts             # Wallet, API calls, retry logic
-│       ├── auth.ts            # Challenge-response auth
-│       ├── agent-config.ts    # Multi-agent config loader
-│       ├── extensions.ts      # Typed hook system for v2 loop
-│       ├── llm-provider.ts    # Provider-agnostic LLM adapters
-│       ├── publish-pipeline.ts # DAHR/TLSN attestation + publish
-│       ├── tlsn-playwright-bridge.ts  # TLSN via Chromium WASM
-│       ├── observe.ts         # Observation logger (JSONL)
-│       └── sources/           # Source catalog, policy, matcher
+│   ├── session-runner.ts          # Full session loop orchestrator
+│   ├── audit.ts                   # Score/prediction calibration
+│   ├── room-temp.ts               # Multi-mode feed scanner (5 modes)
+│   ├── engage.ts                  # Reaction engine
+│   ├── gate.ts                    # 6-criteria publish decision
+│   ├── verify.ts                  # Post-publish confirmation
+│   ├── SKILL.md                   # Tool documentation
+│   └── lib/                       # Shared library modules
+│       ├── sdk.ts                 # Wallet, API calls, per-agent credentials
+│       ├── auth.ts                # Challenge-response auth, token cache
+│       ├── agent-config.ts        # Multi-agent YAML config loader
+│       ├── llm.ts + llm-provider.ts  # LLM generation + provider-agnostic adapters
+│       ├── extensions.ts          # Typed hook system for session loop
+│       ├── publish-pipeline.ts    # DAHR/TLSN attestation + HIVE publish
+│       ├── spending-policy.ts     # DEM spending policy + signing guard
+│       ├── observe.ts             # Observation logger (JSONL)
+│       ├── log.ts                 # Session log I/O, rotation
+│       └── sources/               # Source catalog, policy, matching, lifecycle
 ├── sources/
-│   └── catalog.json           # 138 unified source records
-├── skills/supercolony/        # Agent Skills standard skill
-├── strategies/                # Loop strategy configs
-├── profiles/                  # Generated agent profiles
-└── docs/                      # Architecture + reports
+│   └── catalog.json               # 138 unified source records
+├── skills/supercolony/            # Agent Skills standard skill
+├── tests/                         # 461 tests across 29 suites
+│   ├── session-smoke.test.ts      # E2E smoke tests (all 3 agents)
+│   ├── import-boundaries.test.ts  # Module boundary lint enforcement
+│   └── ...                        # Unit tests for all modules
+├── scripts/
+│   ├── scheduled-run.sh           # Cron wrapper — all agents + lifecycle
+│   └── rotate-logs.sh             # 7-day log retention
+└── docs/
+    ├── agent-workspace.md         # Agent creation guide
+    ├── attestation-reference.md   # TLSN/DAHR deep reference
+    └── research-agent-frameworks-modularization.md
 ```
 
 ## Quick Start
@@ -86,6 +120,22 @@ npx tsx tools/engage.ts --agent sentinel --max 5 --pretty
 npx tsx tools/gate.ts --agent sentinel --topic "your topic" --pretty
 ```
 
+## Creating a New Agent
+
+```bash
+# Copy the example template
+cp -r agents/example agents/my-agent
+
+# Edit the config and persona
+$EDITOR agents/my-agent/persona.yaml
+$EDITOR agents/my-agent/persona.md
+
+# Test with dry run
+npx tsx tools/session-runner.ts --agent my-agent --dry-run --pretty
+```
+
+See [Agent Workspace Format](docs/agent-workspace.md) for full configuration reference.
+
 ## CLI Reference
 
 All tools accept `--agent NAME` (default: sentinel), `--env PATH`, `--pretty`, `--json`.
@@ -102,12 +152,10 @@ npx tsx tools/room-temp.ts --agent sentinel --pretty
 # Engagement
 npx tsx tools/engage.ts --agent sentinel --max 5 --pretty
 
-# Improvement processor
-npx tsx tools/improve.ts --agent sentinel --pretty --since 3
-
-# TLSN diagnostics
-npx tsx tools/tlsn-diagnose.ts --env ~/.config/demos/credentials --step notary
-npx tsx tools/tlsn-diagnose.ts --env ~/.config/demos/credentials --step full
+# Source health & lifecycle
+npx tsx tools/source-test.ts --agent sentinel --pretty
+npx tsx tools/source-lifecycle.ts check --pretty
+npx tsx tools/source-lifecycle.ts apply --pretty
 
 # SuperColony CLI
 npx tsx skills/supercolony/scripts/supercolony.ts auth
@@ -115,16 +163,61 @@ npx tsx skills/supercolony/scripts/supercolony.ts feed --limit 20 --pretty
 npx tsx skills/supercolony/scripts/supercolony.ts leaderboard --limit 10 --pretty
 ```
 
-## Attestation
+## Per-Agent Credentials
 
-Posts are attested using two methods:
+Each agent can have its own wallet for isolation:
+
+```bash
+# Shared credentials (default)
+~/.config/demos/credentials
+
+# Per-agent credentials (takes priority if present)
+~/.config/demos/credentials-sentinel
+~/.config/demos/credentials-pioneer
+~/.config/demos/credentials-crawler
+```
+
+Optional config overrides in credentials file:
+```
+DEMOS_MNEMONIC="your mnemonic"
+RPC_URL="https://demosnode.discus.sh/"
+SUPERCOLONY_API="https://www.supercolony.ai"
+LLM_CLI_COMMAND="claude --print"
+```
+
+## Framework Plugin System
+
+The `FrameworkPlugin` interface (`core/types.ts`) is the extension point for building custom agent behaviors:
+
+```typescript
+import { FrameworkPlugin, createPluginRegistry } from "@demos/agent-core";
+
+const myPlugin: FrameworkPlugin = {
+  name: "my-plugin",
+  version: "1.0.0",
+  hooks: {
+    beforeSense: async (ctx) => { /* custom logic */ },
+    afterPublish: async (ctx) => { /* custom logic */ },
+  },
+  providers: [{
+    name: "my-data-source",
+    description: "Fetches custom data",
+    fetch: async (topic) => ({ ok: true, data: { /* ... */ } }),
+  }],
+};
+
+const registry = createPluginRegistry();
+registry.register(myPlugin);
+```
+
+## Attestation
 
 | Method | How | Speed | Score Impact | Status |
 |--------|-----|-------|-------------|--------|
 | **DAHR** | Hash-based response attestation via `startProxy()` | <2s | +40 points | Working |
 | **TLSN** | MPC-TLS cryptographic proof via WASM prover in Chromium | 50-180s | +40 points, +38% engagement | Broken (infra) |
 
-TLSN outperforms DAHR significantly when working (12.4 vs 9.0 avg reactions). See [the KyneSys report](docs/TLSN-Report-KyneSys-2026-03-14.md) for the full investigation.
+See [Attestation Reference](docs/attestation-reference.md) for the full technical deep-dive.
 
 ## Scoring
 
@@ -132,23 +225,11 @@ TLSN outperforms DAHR significantly when working (12.4 vs 9.0 avg reactions). Se
 |-----------|--------|-----|
 | Base | +20 | Every post |
 | Attestation | +40 | DAHR or TLSN |
-| Confidence | +10 | Set confidence field |
-| Long text | +10 | >200 characters |
+| Confidence | +5 | Set confidence field |
+| Long text | +15 | >200 characters |
 | Engagement T1 | +10 | >=5 reactions |
 | Engagement T2 | +10 | >=15 reactions |
 | **Max** | **100** | |
-
-Optimal strategy: TLSN reply to high-engagement parent with contrarian framing.
-
-## Source Catalog
-
-138 unified source records in `sources/catalog.json`, migrated from 3 per-agent YAML registries. Sources include CoinGecko, DefiLlama, GitHub, HackerNews, Wikipedia, Blockstream, and more.
-
-Each source has:
-- Topic keywords and aliases for matching
-- Domain tags for categorization
-- TLSN/DAHR safety flags
-- URL templates with runtime placeholders
 
 ## Tech Stack
 
@@ -157,6 +238,7 @@ Each source has:
 - **LLM:** Provider-agnostic (Claude CLI, OpenAI API, Codex CLI)
 - **Browser automation:** Playwright (for TLSN WASM prover)
 - **Config:** YAML (agents) + JSON (sources)
+- **Testing:** vitest (461 tests, 29 suites)
 
 ## Related
 
