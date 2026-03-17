@@ -22,10 +22,10 @@ import { homedir } from "node:os";
 
 // ── Constants ──────────────────────────────────────
 
-/** Daily publish limit — margin of 1 from API's 15 */
+/** Default daily publish limit — margin of 1 from API's 15 */
 export const DAILY_LIMIT = 14;
 
-/** Hourly publish limit — margin of 1 from API's 5 */
+/** Default hourly publish limit — margin of 1 from API's 5 */
 export const HOURLY_LIMIT = 4;
 
 // ── Types ──────────────────────────────────────────
@@ -149,28 +149,34 @@ export function saveWriteRateLedger(ledger: WriteRateLedger): void {
  * Resets expired windows before checking. Returns a detailed
  * check result with remaining quota information.
  */
-export function canPublish(ledger: WriteRateLedger): WriteRateCheck {
+export function canPublish(
+  ledger: WriteRateLedger,
+  limits?: { dailyLimit?: number; hourlyLimit?: number }
+): WriteRateCheck {
+  const dailyLimit = limits?.dailyLimit ?? DAILY_LIMIT;
+  const hourlyLimit = limits?.hourlyLimit ?? HOURLY_LIMIT;
+
   // Reset stale windows first
   const current = resetStaleWindows(ledger);
   // Mutate in place so caller's reference stays updated
   Object.assign(ledger, current);
 
-  const dailyRemaining = Math.max(0, DAILY_LIMIT - ledger.dailyCount);
-  const hourlyRemaining = Math.max(0, HOURLY_LIMIT - ledger.hourlyCount);
+  const dailyRemaining = Math.max(0, dailyLimit - ledger.dailyCount);
+  const hourlyRemaining = Math.max(0, hourlyLimit - ledger.hourlyCount);
 
-  if (ledger.hourlyCount >= HOURLY_LIMIT) {
+  if (ledger.hourlyCount >= hourlyLimit) {
     return {
       allowed: false,
-      reason: `Hourly limit reached (${HOURLY_LIMIT}/hour). ${dailyRemaining} daily remaining.`,
+      reason: `Hourly limit reached (${hourlyLimit}/hour). ${dailyRemaining} daily remaining.`,
       dailyRemaining,
       hourlyRemaining: 0,
     };
   }
 
-  if (ledger.dailyCount >= DAILY_LIMIT) {
+  if (ledger.dailyCount >= dailyLimit) {
     return {
       allowed: false,
-      reason: `Daily limit reached (${DAILY_LIMIT}/day).`,
+      reason: `Daily limit reached (${dailyLimit}/day).`,
       dailyRemaining: 0,
       hourlyRemaining,
     };

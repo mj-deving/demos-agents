@@ -19,10 +19,10 @@ if (!globalThis.crypto) {
 
 import { Demos } from "@kynesyslabs/demosdk/websdk";
 
-// ── Constants ──────────────────────────────────────
+// ── Constants (defaults — overridable via credentials file) ──
 
-export const RPC_URL = "https://demosnode.discus.sh/";
-export const SUPERCOLONY_API = "https://www.supercolony.ai";
+export let RPC_URL = "https://demosnode.discus.sh/";
+export let SUPERCOLONY_API = "https://www.supercolony.ai";
 let logAgentName = process.env.AGENT_NAME || "agent";
 
 // ── Wallet ─────────────────────────────────────────
@@ -65,9 +65,42 @@ function parseMnemonic(content: string, filePath: string): string {
 }
 
 /**
+ * Parse an optional config variable from credentials file content.
+ * Returns undefined if not found. Handles quoted and unquoted values.
+ */
+function parseConfigVar(content: string, key: string): string | undefined {
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const dq = trimmed.match(new RegExp(`^${key}="(.+?)"`));
+    if (dq) return dq[1].trim();
+    const sq = trimmed.match(new RegExp(`^${key}='(.+?)'`));
+    if (sq) return sq[1].trim();
+    const uq = trimmed.match(new RegExp(`^${key}=(.+)`));
+    if (uq) {
+      const val = uq[1].replace(/\s+#\s.*$/, "").trim();
+      if (val) return val;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Apply config overrides from credentials file content.
+ * Sets RPC_URL and SUPERCOLONY_API if present in the file.
+ */
+function applyConfigOverrides(content: string): void {
+  const rpc = parseConfigVar(content, "RPC_URL");
+  if (rpc) RPC_URL = rpc;
+  const api = parseConfigVar(content, "SUPERCOLONY_API");
+  if (api) SUPERCOLONY_API = api;
+}
+
+/**
  * Load mnemonic from credentials file or .env file.
  * Resolution: explicit envPath (if non-default) → XDG → legacy envPath.
  * Explicit --env flag always wins; XDG is fallback for default paths.
+ * Also applies RPC_URL and SUPERCOLONY_API overrides from the file.
  */
 export function loadMnemonic(envPath: string): string {
   const legacy = resolve(envPath.replace(/^~/, homedir()));
@@ -75,19 +108,25 @@ export function loadMnemonic(envPath: string): string {
 
   // Explicit --env flag always wins
   if (isExplicit) {
-    return parseMnemonic(readFileSync(legacy, "utf-8"), legacy);
+    const content = readFileSync(legacy, "utf-8");
+    applyConfigOverrides(content);
+    return parseMnemonic(content, legacy);
   }
 
   // XDG path is preferred default
   if (existsSync(XDG_CREDENTIALS)) {
-    return parseMnemonic(readFileSync(XDG_CREDENTIALS, "utf-8"), XDG_CREDENTIALS);
+    const content = readFileSync(XDG_CREDENTIALS, "utf-8");
+    applyConfigOverrides(content);
+    return parseMnemonic(content, XDG_CREDENTIALS);
   }
 
   // Legacy fallback
   if (!existsSync(legacy)) {
     throw new Error(`No credentials file at ${XDG_CREDENTIALS} or ${legacy}`);
   }
-  return parseMnemonic(readFileSync(legacy, "utf-8"), legacy);
+  const content = readFileSync(legacy, "utf-8");
+  applyConfigOverrides(content);
+  return parseMnemonic(content, legacy);
 }
 
 /**

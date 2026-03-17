@@ -35,7 +35,7 @@ import type { EvidenceEntry } from "./providers/types.js";
  * 10: calibrated for financial/numeric sources — DAHR attestation proves
  *     source provenance, so the match is a secondary sanity check not a
  *     primary evidence gate. Score 10 requires basic topic token overlap. */
-const MATCH_THRESHOLD = 10;
+const DEFAULT_MATCH_THRESHOLD = 10;
 
 /** Stopwords excluded from claim extraction */
 const STOPWORDS = new Set([
@@ -58,6 +58,8 @@ export interface MatchInput {
   llm?: LLMProvider | null;
   /** Pre-fetched responses keyed by URL — avoids double-fetching sources already fetched for LLM context */
   prefetchedResponses?: Map<string, import("./providers/types.js").FetchedResponse>;
+  /** Override match score threshold (default: 10) — configurable per-agent via persona.yaml */
+  matchThreshold?: number;
 }
 
 export interface MatchResult {
@@ -499,7 +501,8 @@ interface ScoredCandidate {
  * reasonCode MATCH_THRESHOLD_NOT_MET.
  */
 export async function match(input: MatchInput): Promise<MatchResult> {
-  const { postText, postTags, candidates, llm, prefetchedResponses } = input;
+  const { postText, postTags, candidates, llm, prefetchedResponses, matchThreshold } = input;
+  const threshold = matchThreshold ?? DEFAULT_MATCH_THRESHOLD;
 
   if (candidates.length === 0) {
     return {
@@ -610,7 +613,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
   scored.sort((a, b) => b.score - a.score);
   const best = scored[0];
 
-  if (best.score >= MATCH_THRESHOLD) {
+  if (best.score >= threshold) {
     return {
       pass: true,
       reason: `Source "${best.source.name}" matches with score ${best.score}`,
@@ -629,7 +632,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
 
   return {
     pass: false,
-    reason: `Best source "${best.source.name}" scored ${best.score} (threshold: ${MATCH_THRESHOLD})`,
+    reason: `Best source "${best.source.name}" scored ${best.score} (threshold: ${threshold})`,
     reasonCode: "MATCH_THRESHOLD_NOT_MET",
     best: {
       sourceId: best.sourceId,

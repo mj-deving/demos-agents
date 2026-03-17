@@ -14,7 +14,6 @@ import { parseArgs } from "node:util";
 import { Demos } from "@kynesyslabs/demosdk/websdk";
 import { info, connectWallet } from "./lib/sdk.js";
 import { attestTlsnViaPlaywrightBridge } from "./lib/tlsn-playwright-bridge.js";
-import { attestTlsnViaNodeBridge } from "./lib/tlsn-node-bridge.js";
 
 const { values: flags } = parseArgs({
   options: {
@@ -166,9 +165,7 @@ async function main(): Promise<void> {
   const t3 = Date.now();
   console.log(`[4/5] Full TLSN attestation via ${bridge} bridge...`);
   try {
-    const result = bridge === "node"
-      ? await attestTlsnViaNodeBridge(demos as any, targetUrl)
-      : await attestTlsnViaPlaywrightBridge(demos as any, targetUrl);
+    const result = await attestTlsnViaPlaywrightBridge(demos as any, targetUrl);
     const duration = Date.now() - t3;
     console.log(`  ✓ Attestation succeeded! (${(duration / 1000).toFixed(1)}s)`);
     console.log(`    Token ID:     ${result.tokenId}`);

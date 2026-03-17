@@ -10,7 +10,6 @@
 import { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
 import { apiCall, info } from "./sdk.js";
 import { observe } from "./observe.js";
-import { attestTlsnViaNodeBridge } from "./tlsn-node-bridge.js";
 import { attestTlsnViaPlaywrightBridge } from "./tlsn-playwright-bridge.js";
 
 // ── Constants ──────────────────────────────────────
@@ -221,9 +220,7 @@ export async function attestTlsn(
   try {
     info(`TLSN attesting: ${url}`);
     const tlsnStart = Date.now();
-    const result = process.env.TLSN_NODE_BRIDGE_EXPERIMENTAL === "1"
-      ? await attestTlsnViaNodeBridge(demos, url, method)
-      : await attestTlsnViaPlaywrightBridge(demos, url, method);
+    const result = await attestTlsnViaPlaywrightBridge(demos, url, method);
     const tlsnDurationMs = Date.now() - tlsnStart;
     observe("pattern", `TLSN attestation succeeded in ${tlsnDurationMs}ms`, {
       substage: "publish",

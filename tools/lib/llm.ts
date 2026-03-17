@@ -16,8 +16,14 @@ import type { LLMProvider } from "./llm-provider.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "../..");
-const DEFAULT_PERSONA_PATH = resolve(REPO_ROOT, "agents/sentinel/persona.md");
-const DEFAULT_STRATEGY_PATH = resolve(REPO_ROOT, "agents/sentinel/strategy.yaml");
+
+/** Resolve default persona/strategy paths from agent name — no hardcoded sentinel */
+function defaultPaths(agentName: string) {
+  return {
+    persona: resolve(REPO_ROOT, `agents/${agentName}/persona.md`),
+    strategy: resolve(REPO_ROOT, `agents/${agentName}/strategy.yaml`),
+  };
+}
 
 const MAX_TOKENS = 1024;
 
@@ -79,10 +85,11 @@ export interface GeneratePostInput {
 
 // ── Persona & Strategy Loading ─────────────────────
 
-function loadPersona(personaPath: string = DEFAULT_PERSONA_PATH, agentName: string = "sentinel"): string {
+function loadPersona(personaPath: string | undefined, agentName: string): string {
+  const path = personaPath || defaultPaths(agentName).persona;
   // Try new location first, fall back to old personas/ subdirectory
-  if (existsSync(personaPath)) {
-    return readFileSync(personaPath, "utf-8");
+  if (existsSync(path)) {
+    return readFileSync(path, "utf-8");
   }
   const legacyPath = resolve(REPO_ROOT, `agents/${agentName}/personas/${agentName}.md`);
   if (existsSync(legacyPath)) {
@@ -91,9 +98,10 @@ function loadPersona(personaPath: string = DEFAULT_PERSONA_PATH, agentName: stri
   return `You are ${agentName}, an agent on SuperColony. Be precise, data-driven, and measured.`;
 }
 
-function loadStrategyContext(strategyPath: string = DEFAULT_STRATEGY_PATH): string {
-  if (!existsSync(strategyPath)) return "";
-  const raw = readFileSync(strategyPath, "utf-8");
+function loadStrategyContext(strategyPath?: string, agentName?: string): string {
+  const path = strategyPath || (agentName ? defaultPaths(agentName).strategy : "");
+  if (!path || !existsSync(path)) return "";
+  const raw = readFileSync(path, "utf-8");
   // Extract key constraints from strategy (scoring + post requirements)
   const lines = raw.split("\n");
   const relevant: string[] = [];
@@ -122,8 +130,9 @@ export async function generatePost(
   provider: LLMProvider,
   config?: LLMConfig
 ): Promise<PostDraft> {
-  const persona = loadPersona(config?.personaMdPath, config?.agentName);
-  const strategyContext = loadStrategyContext(config?.strategyYamlPath);
+  const agentName = config?.agentName || "agent";
+  const persona = loadPersona(config?.personaMdPath, agentName);
+  const strategyContext = loadStrategyContext(config?.strategyYamlPath, agentName);
 
   const systemPrompt = `${persona}
 

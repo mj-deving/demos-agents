@@ -57,16 +57,37 @@ demos-agents/
 │   ├── source-test.ts                 # Source health CLI (PR7)
 │   ├── source-lifecycle.ts            # Lifecycle CLI — check/apply transitions (PR8)
 │   ├── spec-consistency.ts            # Spec-catalog consistency checker
+│   ├── check-coop.mjs                # Codex cooperation — check handoff status
+│   ├── coop-ack.mjs                  # Codex cooperation — acknowledge handoff
+│   ├── coop-claim.mjs                # Codex cooperation — claim task
+│   ├── coop-handoff.mjs              # Codex cooperation — handoff task
+│   ├── coop-latest.mjs               # Codex cooperation — latest handoff
+│   ├── coop-status.mjs               # Codex cooperation — status check
+│   ├── coop-takeover.mjs             # Codex cooperation — force takeover
+│   ├── install-git-hooks.mjs         # Git hooks installer
+│   ├── release-plugin-snapshot.mjs   # Plugin snapshot release
+│   ├── score-skill.mjs               # Skill scoring utility
+│   ├── validate-plugin.mjs           # Plugin validation
 │   └── lib/
 │       ├── sdk.ts                     # Wallet connection, API calls, 502 retry
 │       ├── auth.ts                    # Challenge-response auth, token cache
 │       ├── llm.ts + llm-provider.ts   # LLM generation + provider-agnostic adapters
 │       ├── extensions.ts              # Extension dispatcher — typed hook system
 │       ├── publish-pipeline.ts        # DAHR/TLSN attestation + HIVE publish
+│       ├── tlsn-playwright-bridge.ts  # Playwright-based TLSN attestation bridge
+│       ├── attestation-policy.ts      # Attestation plan resolution, URL helpers
 │       ├── signals.ts, predictions.ts # Consensus signals + prediction tracking (PR1)
 │       ├── tips.ts, mentions.ts       # Autonomous tipping + mention polling (PR3)
 │       ├── write-rate-limit.ts        # Persistent address-scoped publish rate limits
 │       ├── spending-policy.ts         # DEM spending policy (caps, dry-run, audit)
+│       ├── feed-filter.ts             # Feed filtering, topic search, quality indexing
+│       ├── observe.ts                 # Observation logger — JSONL append
+│       ├── log.ts                     # Session log I/O, rotation
+│       ├── subprocess.ts              # Subprocess runner for CLI tools
+│       ├── agent-config.ts            # Agent YAML config loader
+│       ├── state.ts                   # Session state machine
+│       ├── source-discovery.ts        # Source catalog discovery from topics
+│       ├── review-findings.ts         # Review findings I/O
 │       └── sources/
 │           ├── catalog.ts             # Source catalog — V2 records, index, agent views
 │           ├── policy.ts              # Source policy — preflight()
@@ -92,7 +113,7 @@ demos-agents/
 ├── scripts/
 │   ├── scheduled-run.sh               # Cron wrapper — runs all 3 agents + lifecycle
 │   └── rotate-logs.sh                 # 7-day log retention
-├── tests/                             # vitest test suites (238 tests, 18 files)
+├── tests/                             # vitest test suites (443 tests, 28 files)
 │   ├── signals.test.ts                # fetchSignals, scoreSignalAlignment, briefing
 │   ├── predictions.test.ts            # register, calibration, deadline expiry
 │   ├── tips.test.ts                   # candidate selection, scoring, filters
@@ -107,7 +128,16 @@ demos-agents/
 │   ├── lifecycle.test.ts              # evaluateTransition, updateRating, applyTransitions (PR8)
 │   ├── lifecycle-sampling.test.ts     # sampleSources priority scoring (PR8)
 │   ├── source-discovery.test.ts       # analyzeCoverage, persistSourceToCatalog
-│   └── fixtures/                      # Response fixtures for adapter tests
+│   ├── sdk.test.ts                    # loadMnemonic, connectWallet, apiCall retry/auth
+│   ├── auth.test.ts                   # loadAuthCache, ensureAuth challenge-response
+│   ├── log.test.ts                    # readSessionLog, rotateSessionLog, resolveLogPath
+│   ├── observe.test.ts                # initObserver, observe JSONL, setObserverPhase
+│   ├── llm.test.ts                    # generatePost JSON parsing, validation, repair
+│   ├── feed-filter.test.ts            # filterPosts, combinedTopicSearch, buildTopicIndex
+│   ├── subprocess.test.ts             # runTool success/failure/timeout
+│   ├── source-fetch.test.ts           # fetchSource retry/timeout/rate-limit
+│   ├── source-rate-limit.test.ts      # token bucket acquire/refill/daily
+│   └── session-smoke.test.ts          # e2e smoke for sentinel/pioneer/crawler
 ├── Plans/                             # Gitignored — reference copies from DEMOS-Work
 ├── profiles/                          # Generated agent profiles
 └── docs/                              # Architecture docs
