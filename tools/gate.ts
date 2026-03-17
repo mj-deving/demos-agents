@@ -525,11 +525,14 @@ async function checkDuplicate(
   const windowMs = duplicateWindowHours * 60 * 60 * 1000;
   const windowStart = Date.now() - windowMs;
 
+  // Match on tags/assets only (explicit topic markers), NOT body text.
+  // Body text matching is too broad — a post mentioning "btc" once in a crypto
+  // analysis would block all future "btc" posts for the entire window.
   const duplicates = posts.filter((p: any) => {
     const tags = (p.payload?.tags || []).map((t: string) => t.toLowerCase());
     const assets = (p.payload?.assets || []).map((a: string) => a.toLowerCase());
-    const text = (p.payload?.text || "").toLowerCase();
-    return tags.includes(topicLower) || assets.includes(topicLower) || text.includes(topicLower);
+    return tags.includes(topicLower) || assets.includes(topicLower) ||
+      tags.some((t: string) => t.includes(topicLower) || topicLower.includes(t));
   });
 
   const toTimestampMs = (raw: unknown): number | null => {
