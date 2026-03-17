@@ -47,40 +47,9 @@ function resolveAgentCredentials(agentName?: string): string | null {
 }
 
 /**
- * Parse DEMOS_MNEMONIC from file content.
+ * Parse a key=value pair from credentials file content.
  * Handles double-quoted, single-quoted, and unquoted values.
- * Trims whitespace from the result.
- */
-function parseMnemonic(content: string, filePath: string): string {
-  // Process line-by-line, skip comments. Anchored to line start to avoid
-  // matching commented-out lines like "# DEMOS_MNEMONIC=old".
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-
-    // Double-quoted: DEMOS_MNEMONIC="value"
-    const dq = trimmed.match(/^DEMOS_MNEMONIC="(.+?)"/);
-    if (dq) return dq[1].trim();
-
-    // Single-quoted: DEMOS_MNEMONIC='value'
-    const sq = trimmed.match(/^DEMOS_MNEMONIC='(.+?)'/);
-    if (sq) return sq[1].trim();
-
-    // Unquoted: DEMOS_MNEMONIC=value (capture full value, strip inline # comments)
-    const uq = trimmed.match(/^DEMOS_MNEMONIC=(.+)/);
-    if (uq) {
-      // Strip inline comments: "word1 word2 # comment" → "word1 word2"
-      const val = uq[1].replace(/\s+#\s.*$/, "").trim();
-      if (val) return val;
-    }
-  }
-
-  throw new Error(`No DEMOS_MNEMONIC found in ${filePath}`);
-}
-
-/**
- * Parse an optional config variable from credentials file content.
- * Returns undefined if not found. Handles quoted and unquoted values.
+ * Skips comment lines. Strips inline comments. Returns undefined if not found.
  */
 function parseConfigVar(content: string, key: string): string | undefined {
   for (const line of content.split("\n")) {
@@ -97,6 +66,16 @@ function parseConfigVar(content: string, key: string): string | undefined {
     }
   }
   return undefined;
+}
+
+/**
+ * Parse DEMOS_MNEMONIC from file content. Throws if not found.
+ * Delegates to parseConfigVar for consistent key=value parsing.
+ */
+function parseMnemonic(content: string, filePath: string): string {
+  const mnemonic = parseConfigVar(content, "DEMOS_MNEMONIC");
+  if (!mnemonic) throw new Error(`No DEMOS_MNEMONIC found in ${filePath}`);
+  return mnemonic;
 }
 
 /**

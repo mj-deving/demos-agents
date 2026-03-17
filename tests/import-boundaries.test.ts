@@ -33,15 +33,6 @@ function getImports(filePath: string): string[] {
   return imports;
 }
 
-function isRelativeImport(imp: string): boolean {
-  return imp.startsWith(".");
-}
-
-function resolveRelativeImport(filePath: string, imp: string): string {
-  const dir = resolve(filePath, "..");
-  return resolve(dir, imp);
-}
-
 describe("import boundaries — core/ isolation", () => {
   const coreFile = resolve(ROOT, "core/index.ts");
 
