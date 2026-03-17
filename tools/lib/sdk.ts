@@ -141,6 +141,10 @@ export async function connectWallet(envPath: string, agentName?: string): Promis
 /**
  * Make an API call to SuperColony.
  * Handles JSON parsing, error wrapping, and auth header injection.
+ *
+ * IMPORTANT: This is the ONLY way to call SuperColony APIs.
+ * curl/WebFetch CANNOT reach supercolony.ai (TLS handshake fails from VPN IP).
+ * Node.js fetch() works fine — always use this function or the SDK.
  */
 export async function apiCall(
   path: string,

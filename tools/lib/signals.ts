@@ -142,10 +142,14 @@ export async function fetchLatestBriefing(token: string): Promise<string | null>
  * Topic matching uses case-insensitive token overlap between the
  * query topic and signal topic strings.
  */
+/** Default: pioneer rewards topics with ≤ this many agents covering them */
+const DEFAULT_LOW_COVERAGE_THRESHOLD = 2;
+
 export function scoreSignalAlignment(
   topic: string,
   snapshot: SignalSnapshot,
-  agentMode: "sentinel" | "pioneer" | "crawler"
+  agentMode: "sentinel" | "pioneer" | "crawler",
+  options?: { lowCoverageThreshold?: number }
 ): number {
   if (!snapshot.topics.length) return 0;
   if (agentMode === "crawler") return 0;
@@ -179,7 +183,7 @@ export function scoreSignalAlignment(
   if (agentMode === "pioneer") {
     // Pioneer rewards divergence (contrarian signal) and low-coverage topics
     if (bestMatch.divergence) return 5;
-    if (bestMatch.agentCount <= 2) return 3;
+    if (bestMatch.agentCount <= (options?.lowCoverageThreshold ?? DEFAULT_LOW_COVERAGE_THRESHOLD)) return 3;
     return 0;
   }
 

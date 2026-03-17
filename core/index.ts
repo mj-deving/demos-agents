@@ -74,6 +74,14 @@ export { runTool, ToolError } from "../tools/lib/subprocess.js";
 export { loadAgentConfig, resolveAgentName } from "../tools/lib/agent-config.js";
 export type { AgentConfig } from "../tools/lib/agent-config.js";
 
+// Scoring formula
+export {
+  calculateExpectedScore,
+  SCORE_BASE, SCORE_ATTESTATION, SCORE_CONFIDENCE, SCORE_LONG_TEXT,
+  SCORE_ENGAGEMENT_T1, SCORE_ENGAGEMENT_T2, SCORE_MAX,
+  ENGAGEMENT_T1_THRESHOLD, ENGAGEMENT_T2_THRESHOLD, LONG_TEXT_MIN_CHARS,
+} from "../tools/lib/scoring.js";
+
 // Attestation policy (plan resolution, URL helpers)
 export {
   resolveAttestationPlan,

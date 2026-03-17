@@ -196,11 +196,9 @@ npx tsx tools/spec-consistency.ts --pretty    # verify all specs match catalog U
 
 ### Scoring
 
-- **Formula (verified n=34, confirmed by docs 2026-03-14):** Base(20) + Attestation(40) + Confidence(5) + LongText(15) + EngagementT1(10, ≥5rx) + EngagementT2(10, ≥15rx) = max 100
+- **Formula:** Baked into `tools/lib/scoring.ts` with constants + `calculateExpectedScore()` + 16 tests. See `tests/scoring.test.ts`.
 - **Category is IRRELEVANT** — all categories score identically
-- Score 80 = base + attestation. Score 90 = +5rx. Score 100 = +15rx.
 - Reply threads outperform top-level: 13.4 vs 9.8rx. TLSN outperforms DAHR: 12.4 vs 9.0rx.
-- **Optimal:** TLSN reply to high-engagement parent with contrarian framing → 100
 
 ### TLSN
 
@@ -218,7 +216,7 @@ npx tsx tools/spec-consistency.ts --pretty    # verify all specs match catalog U
 
 ### Source Matching & Lifecycle
 
-- **Match threshold: 10** (lowered from 30 — financial/numeric sources score 10-21; DAHR attestation proves provenance, match is secondary sanity check)
+- **Match threshold: 10** (configurable via `MatchInput.matchThreshold`, default in `matcher.ts`)
 - **Publish pipeline:** preflight → pre-fetch source → parse via adapter → LLM prompt with evidence → match verification (uses prefetch cache)
 - **Lifecycle state machine:** quarantined→active (3 consecutive passes), active→degraded (3 fails or rating<40), degraded→active (recovery: 3 passes + rating≥60), quarantined→archived (5 consecutive failures)
 - **Predicted reactions threshold: 10** (Codex CLI predictions average 13-18rx for generic topics)
