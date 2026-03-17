@@ -11,9 +11,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { globSync } from "glob";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
@@ -103,6 +102,25 @@ describe("import boundaries — core modules have no SDK dependency", () => {
       const imports = getImports(filePath);
       const sdkImports = imports.filter((imp) => imp.includes("kynesyslabs"));
       expect(sdkImports, `${relPath} has direct SDK import: ${sdkImports.join(", ")}`).toEqual([]);
+    });
+  }
+});
+
+describe("import boundaries — packages/core/ has zero SuperColony imports", () => {
+  const corePackageFiles = readdirSync(resolve(ROOT, "packages/core"))
+    .filter((f) => f.endsWith(".ts"))
+    .map((f) => `packages/core/${f}`);
+
+  for (const relPath of corePackageFiles) {
+    it(`${relPath} has no supercolony/demos/hive references`, () => {
+      const content = readFileSync(resolve(ROOT, relPath), "utf-8");
+      const forbidden = ["supercolony", "demosdk", "kynesyslabs", "HIVE"];
+      for (const term of forbidden) {
+        expect(
+          content.toLowerCase().includes(term.toLowerCase()),
+          `${relPath} contains "${term}"`
+        ).toBe(false);
+      }
     });
   }
 });
