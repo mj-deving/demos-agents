@@ -29,10 +29,13 @@ import type { EvidenceEntry } from "./providers/types.js";
 
 // ── Constants ───────────────────────────────────────
 
-/** Match threshold — lowered from 50 to 30 after production testing.
- * Score 34 achieved with real HN data + exact-terms prompt. The original
- * 50 threshold was set pre-production when scoring was theoretical. */
-const MATCH_THRESHOLD = 30;
+/** Match threshold — lowered from 50 → 30 → 10 through production testing.
+ * 50: original pre-production theoretical value
+ * 30: calibrated on HN text-heavy data (score 34 with exact-terms prompt)
+ * 10: calibrated for financial/numeric sources — DAHR attestation proves
+ *     source provenance, so the match is a secondary sanity check not a
+ *     primary evidence gate. Score 10 requires basic topic token overlap. */
+const MATCH_THRESHOLD = 10;
 
 /** Stopwords excluded from claim extraction */
 const STOPWORDS = new Set([
