@@ -1077,8 +1077,14 @@ function extractTopicsFromScan(
     }
 
     if (mode === "pioneer") {
+      // Pre-filter: skip topics with no matching source to avoid NO_MATCHING_SOURCE at gate
+      const sourceView = getSourceView();
       const ranked = topicIndex
         .filter((entry) => !allAuthorsLowQuality(entry.stats))
+        .filter((entry) => {
+          const pf = sourcesPreflight(entry.topic, sourceView, agentConfig);
+          return pf.pass;
+        })
         .map((entry) => {
           const topicTokens = tokenizeTopicText(entry.topic);
           const focusOverlap = topicTokens.filter((t) => focusTokens.has(t)).length;
@@ -1114,8 +1120,10 @@ function extractTopicsFromScan(
       }
       if (topics.length > 0) return topics;
     } else {
+      const sv = getSourceView();
       const ranked = topicIndex
         .filter((entry) => !allAuthorsLowQuality(entry.stats))
+        .filter((entry) => sourcesPreflight(entry.topic, sv, agentConfig).pass)
         .sort((a, b) =>
           b.stats.totalReactions - a.stats.totalReactions ||
           b.stats.count - a.stats.count ||
