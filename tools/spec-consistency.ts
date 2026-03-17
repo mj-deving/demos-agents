@@ -122,7 +122,7 @@ for (const source of catalogSources) {
   const ops = spec.operations || {};
   let matchedOp: any = null;
   let matchedOpName = "";
-  let bestScore = -1;
+  let bestScore = 0; // Minimum score of 1 required to match (prevents false-negative on unknown URLs)
 
   const urlPath = catalogUrl.replace(/https?:\/\/[^/]+/, "").split("?")[0];
 
@@ -143,7 +143,14 @@ for (const source of catalogSources) {
     }
 
     // Query param overlap (helps distinguish etherscan ops sharing /api path)
+    // Check both urlTemplate params and request.query params
     const specParams = parseQueryParams(op.request.urlTemplate || "");
+    const requestQuery = op.request?.query || {};
+    for (const [k, v] of Object.entries(requestQuery)) {
+      if (typeof v === "string" && !v.includes("{")) {
+        specParams.set(k, v);
+      }
+    }
     for (const [key, val] of catalogParams) {
       if (val.includes("{")) continue;
       const specVal = specParams.get(key);
