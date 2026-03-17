@@ -15,7 +15,7 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Contains agent defi
 - **SDK:** `@kynesyslabs/demosdk` v2.11.0 (import `/websdk` subpath directly)
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `tools/lib/llm-provider.ts` (Claude CLI, OpenAI API, Codex CLI adapters)
-- **Testing:** vitest (`npm test`). 461 tests across 29 suites. All code changes must include tests. Mock SDK with `vi.mock()`. TDD workflow: `claude-codex-coop/WORKFLOW.md`
+- **Testing:** vitest (`npm test`). 477 tests across 30 suites. All code changes must include tests. Mock SDK with `vi.mock()`. TDD workflow: `claude-codex-coop/WORKFLOW.md`
 
 ## Conventions
 
@@ -34,6 +34,13 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Contains agent defi
 demos-agents/
 ├── CLAUDE.md                          # This file — project context
 ├── README.md                          # Public-facing docs
+├── core/                              # Portable framework core (SDK-free)
+│   ├── index.ts                       # Barrel exports for all portable modules
+│   ├── types.ts                       # FrameworkPlugin, DataProvider, Evaluator
+│   └── plugins/                       # 7 FrameworkPlugin implementations
+├── platform/                          # SuperColony-specific barrel exports
+├── connectors/                        # SDK isolation (@kynesyslabs/demosdk bridge)
+├── packages/core/                     # Publishable npm package (@demos/agent-core)
 ├── agents/
 │   ├── sentinel/                      # General-purpose verification agent
 │   │   ├── AGENT.yaml                 # Identity, capabilities, constraints
@@ -57,17 +64,8 @@ demos-agents/
 │   ├── source-test.ts                 # Source health CLI (PR7)
 │   ├── source-lifecycle.ts            # Lifecycle CLI — check/apply transitions (PR8)
 │   ├── spec-consistency.ts            # Spec-catalog consistency checker
-│   ├── check-coop.mjs                # Codex cooperation — check handoff status
-│   ├── coop-ack.mjs                  # Codex cooperation — acknowledge handoff
-│   ├── coop-claim.mjs                # Codex cooperation — claim task
-│   ├── coop-handoff.mjs              # Codex cooperation — handoff task
-│   ├── coop-latest.mjs               # Codex cooperation — latest handoff
-│   ├── coop-status.mjs               # Codex cooperation — status check
-│   ├── coop-takeover.mjs             # Codex cooperation — force takeover
-│   ├── install-git-hooks.mjs         # Git hooks installer
-│   ├── release-plugin-snapshot.mjs   # Plugin snapshot release
-│   ├── score-skill.mjs               # Skill scoring utility
-│   ├── validate-plugin.mjs           # Plugin validation
+│   ├── coop-*.mjs (7 files)           # Codex cooperation tools (handoff, claim, ack, status)
+│   ├── install-git-hooks.mjs, release-plugin-snapshot.mjs, score-skill.mjs, validate-plugin.mjs
 │   └── lib/
 │       ├── sdk.ts                     # Wallet connection, API calls, 502 retry
 │       ├── auth.ts                    # Challenge-response auth, token cache
@@ -113,31 +111,11 @@ demos-agents/
 ├── scripts/
 │   ├── scheduled-run.sh               # Cron wrapper — runs all 3 agents + lifecycle
 │   └── rotate-logs.sh                 # 7-day log retention
-├── tests/                             # vitest test suites (461 tests, 29 files)
-│   ├── signals.test.ts                # fetchSignals, scoreSignalAlignment, briefing
-│   ├── predictions.test.ts            # register, calibration, deadline expiry
-│   ├── tips.test.ts                   # candidate selection, scoring, filters
-│   ├── mentions.test.ts               # fetch, cursor, state
-│   ├── declarative-engine.test.ts     # jsonPath, templates, variables, parse modes
-│   ├── matcher.test.ts                # extractClaims, LLM claims, diversity scoring
-│   ├── spending-policy.test.ts        # caps, dry-run, bounds
-│   ├── write-rate-limit.test.ts       # limits, resets, recording
-│   ├── golden-adapters.test.ts        # declarative adapter correctness (62 tests, 10 providers)
-│   ├── extensions-llm-wiring.test.ts  # LLM provider threading through extensions (PR7)
-│   ├── source-health.test.ts          # testSource, resolveTestUrl, filterSources (PR7)
-│   ├── lifecycle.test.ts              # evaluateTransition, updateRating, applyTransitions (PR8)
-│   ├── lifecycle-sampling.test.ts     # sampleSources priority scoring (PR8)
-│   ├── source-discovery.test.ts       # analyzeCoverage, persistSourceToCatalog
-│   ├── sdk.test.ts                    # loadMnemonic, connectWallet, apiCall retry/auth
-│   ├── auth.test.ts                   # loadAuthCache, ensureAuth challenge-response
-│   ├── log.test.ts                    # readSessionLog, rotateSessionLog, resolveLogPath
-│   ├── observe.test.ts                # initObserver, observe JSONL, setObserverPhase
-│   ├── llm.test.ts                    # generatePost JSON parsing, validation, repair
-│   ├── feed-filter.test.ts            # filterPosts, combinedTopicSearch, buildTopicIndex
-│   ├── subprocess.test.ts             # runTool success/failure/timeout
-│   ├── source-fetch.test.ts           # fetchSource retry/timeout/rate-limit
-│   ├── source-rate-limit.test.ts      # token bucket acquire/refill/daily
-│   └── session-smoke.test.ts          # e2e smoke for sentinel/pioneer/crawler
+├── tests/                             # vitest — 477 tests, 30 suites (run: npm test)
+│   ├── session-smoke.test.ts          # E2E smoke: config, state, phases for all 3 agents
+│   ├── import-boundaries.test.ts      # Module boundary lint (core/platform/connectors)
+│   ├── plugins.test.ts                # FrameworkPlugin registry + all 7 plugins
+│   └── ...                            # Unit tests for all lib modules (sdk, auth, llm, etc.)
 ├── Plans/                             # Gitignored — reference copies from DEMOS-Work
 ├── profiles/                          # Generated agent profiles
 └── docs/                              # Architecture docs
@@ -209,11 +187,12 @@ npx tsx tools/spec-consistency.ts --pretty    # verify all specs match catalog U
 ### Credentials
 
 - **Primary:** `~/.config/demos/credentials` (XDG, mode 600)
+- **Per-agent:** `~/.config/demos/credentials-{agent}` (checked first, falls back to shared)
 - **Legacy fallback:** `.env` file with `DEMOS_MNEMONIC="..."`
 - **Override:** `--env PATH` flag on any tool (always takes priority)
+- **Config overrides:** `RPC_URL` and `SUPERCOLONY_API` can be set in credentials file
 - **Agent name validation:** `^[a-z0-9-]+$` — no path separators allowed
 - **Auth cache:** `~/.supercolony-auth.json` (mode 600, namespaced by address)
-- **isidore agent:** address `0x6a11...554b`, mnemonic in credentials file
 
 ### Scoring
 
@@ -226,7 +205,7 @@ npx tsx tools/spec-consistency.ts --pretty    # verify all specs match catalog U
 ### TLSN
 
 - **Status:** MPC-TLS broken server-side — awaiting KyneSys fix. Full reference: `memory/reference_tlsn_dahr_attestation.md`
-- **Key facts:** Playwright bridge only (node bridge non-functional). maxRecvData 16KB. Cost ~12 DEM/attestation. TLSN outperforms DAHR by +38% reactions.
+- **Key facts:** Playwright bridge only (node bridge deleted). maxRecvData 16KB. Cost ~12 DEM/attestation. TLSN outperforms DAHR by +38% reactions.
 - **Notary:** `ws://` → `http://` conversion required. Ports 7047, 55001, 55002 on node2.demos.sh.
 
 ### Write Rate Limits & Tipping
