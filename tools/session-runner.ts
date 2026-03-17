@@ -1467,6 +1467,111 @@ async function runGateApprove(
   return result;
 }
 
+/**
+ * LLM reasoning fallback for topic selection.
+ * Called when heuristic extractTopicsFromScan returns 0 viable topics.
+ * Asks the LLM to suggest topics that bridge feed activity with available sources.
+ */
+async function suggestTopicsWithReasoning(
+  state: AnySessionState,
+  sourceView: AgentSourceView,
+  flags: RunnerFlags,
+): Promise<TopicSuggestion[]> {
+  const scan = getScanResult(state) || {};
+  const mode = agentConfig.gate.mode === "pioneer" ? "pioneer" : "standard";
+
+  try {
+    const provider = resolveProvider(flags.env);
+    if (!provider) {
+      info("Reasoning fallback: no LLM provider — skipping");
+      return [];
+    }
+
+    // Build context for the LLM
+    const feedTopics = (scan.topicIndex || [])
+      .slice(0, 15)
+      .map((t: any) => `${t.topic || t[0]} (${t.stats?.totalReactions || t[1]?.totalReactions || 0}rx)`)
+      .join(", ");
+
+    const hotTopic = scan.heat?.topic
+      ? `${scan.heat.topic} (${scan.heat.reactions || 0}rx)`
+      : "none";
+
+    const sourceTopics = new Set<string>();
+    for (const s of sourceView.sources) {
+      for (const t of s.topics || []) sourceTopics.add(t);
+      for (const a of s.topicAliases || []) sourceTopics.add(a);
+    }
+    const availableSources = [...sourceTopics].sort().join(", ");
+
+    const agentFocus = [
+      ...agentConfig.topics.primary,
+      ...agentConfig.topics.secondary,
+    ].join(", ");
+
+    const category = mode === "pioneer" ? "QUESTION" : "ANALYSIS";
+
+    const prompt = `You are a topic selector for a SuperColony agent (${agentConfig.name}, focus: ${agentFocus}).
+
+The feed is active but heuristic topic selection found 0 publishable topics — either no matching data sources or topics failed quality gates.
+
+Feed hot topics: ${feedTopics || "none"}
+Hottest topic: ${hotTopic}
+Agent's available data source topics: ${availableSources}
+
+Suggest 1-3 topics that:
+1. Are active or trending in the feed (relevant to what other agents are discussing)
+2. Have matching data sources from the available list above
+3. Align with the agent's focus areas
+
+Return ONLY a JSON array of objects: [{"topic": "lowercase-kebab-case", "reason": "brief reason"}]
+No markdown, no explanation outside the JSON.`;
+
+    const response = await provider.complete(prompt, { maxTokens: 256 });
+    const trimmed = response.trim().replace(/^```json?\s*/, "").replace(/\s*```$/, "");
+    const parsed = JSON.parse(trimmed);
+
+    if (!Array.isArray(parsed)) return [];
+
+    const results: TopicSuggestion[] = [];
+    for (const item of parsed.slice(0, 3)) {
+      const topic = String(item.topic || "").trim().toLowerCase();
+      if (!topic || topic.length < 2) continue;
+
+      // Validate source availability
+      const pf = sourcesPreflight(topic, sourceView, agentConfig);
+      if (!pf.pass) {
+        info(`Reasoning suggestion "${topic}" rejected: ${pf.reason}`);
+        continue;
+      }
+
+      results.push({
+        topic,
+        category,
+        reason: `reasoning fallback (${String(item.reason || "LLM suggested").slice(0, 60)})`,
+      });
+    }
+
+    if (results.length > 0) {
+      info(`Reasoning fallback: ${results.length} topic(s) suggested`);
+      observe("insight", `Reasoning fallback suggested ${results.length} topic(s): ${results.map(r => r.topic).join(", ")}`, {
+        phase: "gate", substage: "gate",
+        source: "session-runner.ts:suggestTopicsWithReasoning",
+      });
+    } else {
+      info("Reasoning fallback: LLM returned 0 viable topics");
+    }
+    return results;
+  } catch (e: any) {
+    info(`Reasoning fallback failed (non-fatal): ${e.message}`);
+    observe("error", `Reasoning fallback failed: ${e.message}`, {
+      phase: "gate", substage: "gate",
+      source: "session-runner.ts:suggestTopicsWithReasoning",
+    });
+    return [];
+  }
+}
+
 /** GATE: autonomous oversight — auto-pick topics from scan, auto-accept by gate summary */
 async function runGateAutonomous(
   state: AnySessionState,
@@ -1475,8 +1580,19 @@ async function runGateAutonomous(
   const gatePosts: GatePost[] = [];
   const suggestions = extractTopicsFromScan(state, flags.log);
 
-  if (suggestions.length === 0) {
-    observe("insight", "No topics found in scan — gate skipped", {
+  // Load source view (cached per session — shared with publish phase)
+  const sourceView = getSourceView();
+  info(`Gate: ${sourceView.sources.length} sources available (catalog v${sourceView.catalogVersion})`);
+
+  // If heuristic extraction returned 0 topics, try LLM reasoning fallback
+  let effectiveSuggestions = suggestions;
+  if (effectiveSuggestions.length === 0) {
+    info("Heuristic topic selection returned 0 — trying LLM reasoning fallback");
+    effectiveSuggestions = await suggestTopicsWithReasoning(state, sourceView, flags);
+  }
+
+  if (effectiveSuggestions.length === 0) {
+    observe("insight", "No topics found (heuristic + reasoning) — gate skipped", {
       phase: "gate", substage: "gate",
       source: "session-runner.ts:runGateAutonomous",
     });
@@ -1486,11 +1602,7 @@ async function runGateAutonomous(
     return result;
   }
 
-  // Load source view (cached per session — shared with publish phase)
-  const sourceView = getSourceView();
-  info(`Gate: ${sourceView.sources.length} sources available (catalog v${sourceView.catalogVersion})`);
-
-  for (const suggestion of suggestions) {
+  for (const suggestion of effectiveSuggestions) {
     // Source-availability pre-check via preflight (v2 — uses catalog index, no discovery)
     const preflightResult = sourcesPreflight(suggestion.topic, sourceView, agentConfig);
     if (!preflightResult.pass) {
@@ -1527,6 +1639,33 @@ async function runGateAutonomous(
       });
     } else {
       info(`Gate FAIL: ${suggestion.topic} (${passed}/${total}, fail=${failCount}) — skipping`);
+    }
+  }
+
+  // If all heuristic suggestions failed gate, try LLM reasoning as last resort
+  if (gatePosts.length === 0 && effectiveSuggestions.length > 0) {
+    info("All heuristic topics failed gate — trying LLM reasoning fallback");
+    const reasoningSuggestions = await suggestTopicsWithReasoning(state, sourceView, flags);
+    for (const suggestion of reasoningSuggestions) {
+      const preflightResult = sourcesPreflight(suggestion.topic, sourceView, agentConfig);
+      if (!preflightResult.pass) {
+        info(`Reasoning SKIP: ${suggestion.topic} — ${preflightResult.reason}`);
+        continue;
+      }
+      const gateArgs = ["--agent", flags.agent, "--topic", suggestion.topic, "--category", suggestion.category, "--json", "--env", flags.env, "--scan-cache", getStateFilePath(state)];
+      const gResult = await runToolAndParse("tools/gate.ts", gateArgs, "gate.ts");
+      const gateEval = normalizeGateResult(gResult);
+      if (shouldAutoPassGate(gResult, gateEval)) {
+        info(`Reasoning PASS: ${suggestion.topic} (${gateEval.passed}/${gateEval.total})`);
+        gatePosts.push({
+          topic: suggestion.topic,
+          category: suggestion.category,
+          text: "",
+          confidence: 0,
+          gateResult: gResult,
+        });
+        break; // One reasoning-backed topic is enough
+      }
     }
   }
 
