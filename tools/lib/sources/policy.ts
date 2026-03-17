@@ -147,13 +147,9 @@ export function selectSourceForTopicV2(
     if (source.tlsn_safe) score += 1;
     if (source.dahr_safe) score += 1;
 
-    // Response size scoring: TLSN needs small responses (<=16KB), DAHR benefits from richer data
-    if (method === "TLSN") {
-      if ((source.max_response_kb || 999) <= 16) score += 1;
-    } else {
-      // DAHR: prefer sources with more data for better evidence/match scores
-      if ((source.max_response_kb || 0) >= 2) score += 1;
-    }
+    // Small response bonus (TLSN-friendly) — only for TLSN where 16KB limit matters
+    // DAHR tiebreak handled in sort below (prefer richer data for better match scores)
+    if (method === "TLSN" && (source.max_response_kb || 999) <= 16) score += 1;
 
     // Source health penalty — prefer reliable sources over degraded/low-quality ones
     // -5 for degraded status: unreliable responses, may fail attestation

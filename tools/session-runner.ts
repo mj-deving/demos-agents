@@ -2870,6 +2870,11 @@ async function runV2Loop(
   const gateSub = ensureSubstage("gate");
   if (gateSub.status === "completed") {
     gateResult = gateSub.result || getGateResult(state) || { posts: [] };
+    // Bridge on resume too — getGateResult reads state.phases.act.result.gate
+    if (isV2(state)) {
+      if (!state.phases.act.result) state.phases.act.result = {};
+      state.phases.act.result.gate = gateResult;
+    }
     info("ACT/gate already completed — skipping (resume)");
   } else {
     try {

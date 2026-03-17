@@ -101,7 +101,7 @@ describe("selectSourceForTopicV2", () => {
     expect(result!.source.id).toBe("thin-1kb");
   });
 
-  it("DAHR gives response richness bonus to sources >= 2kb", () => {
+  it("DAHR tiebreak prefers larger response (richer evidence) without changing scores", () => {
     const tiny = makeSource({
       id: "tiny",
       name: "tiny-source",
@@ -118,8 +118,35 @@ describe("selectSourceForTopicV2", () => {
     const view = makeView([tiny, medium]);
     const result = selectSourceForTopicV2("bitcoin", view, "DAHR");
 
-    // medium gets +1 richness bonus AND wins tiebreak
+    // Same base score, DAHR tiebreak prefers larger
     expect(result).not.toBeNull();
     expect(result!.source.id).toBe("medium");
+  });
+
+  it("TLSN gives small response bonus that DAHR does not", () => {
+    const small = makeSource({
+      id: "small",
+      name: "small-source",
+      topics: ["crypto", "bitcoin"],
+      max_response_kb: 5,
+      tlsn_safe: true,
+    });
+    const large = makeSource({
+      id: "large",
+      name: "large-source",
+      topics: ["crypto", "bitcoin"],
+      max_response_kb: 50,
+      tlsn_safe: true,
+    });
+
+    const viewTlsn = makeView([small, large]);
+    const resultTlsn = selectSourceForTopicV2("bitcoin", viewTlsn, "TLSN");
+    // TLSN: small gets +1 bonus → wins on score
+    expect(resultTlsn!.source.id).toBe("small");
+
+    const viewDahr = makeView([small, large]);
+    const resultDahr = selectSourceForTopicV2("bitcoin", viewDahr, "DAHR");
+    // DAHR: no bonus, tiebreak prefers larger
+    expect(resultDahr!.source.id).toBe("large");
   });
 });
