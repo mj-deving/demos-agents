@@ -20,6 +20,7 @@ import { connectWallet, apiCall, info, setLogAgent } from "./lib/sdk.js";
 import { ensureAuth } from "./lib/auth.js";
 import { readSessionLog, resolveLogPath } from "./lib/log.js";
 import { resolveAgentName } from "./lib/agent-config.js";
+import { toErrorMessage } from "./lib/errors.js";
 
 const VERIFY_RETRY_DELAYS_MS = [5000, 10000, 15000] as const;
 
@@ -290,6 +291,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error("Error:", err instanceof Error ? err.message : String(err));
+  console.error("Error:", toErrorMessage(err));
   process.exit(1);
 });

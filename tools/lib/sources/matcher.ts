@@ -26,6 +26,7 @@ import type { PreflightCandidate } from "./policy.js";
 import { fetchSource } from "./fetch.js";
 import { getProviderAdapter } from "./providers/index.js";
 import type { EvidenceEntry } from "./providers/types.js";
+import { toErrorMessage } from "../errors.js";
 
 // ── Constants ───────────────────────────────────────
 
@@ -584,7 +585,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
       });
       considered.push({ sourceId: candidate.sourceId, score: scoreResult.score });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = toErrorMessage(err);
       considered.push({ sourceId: candidate.sourceId, error: msg });
     }
   }

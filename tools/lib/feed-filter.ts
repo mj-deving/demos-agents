@@ -7,6 +7,7 @@
 
 import { apiCall } from "./sdk.js";
 import { observe } from "./observe.js";
+import { toErrorMessage } from "./errors.js";
 
 export interface QualityFilter {
   minScore: number;
@@ -230,7 +231,7 @@ export async function combinedTopicSearch(
       data: {
         topic: normalizedTopic,
         source,
-        error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        error: toErrorMessage(result.reason),
       },
     });
   }
@@ -256,7 +257,7 @@ export async function combinedTopicSearch(
       source: "feed-filter.ts:combinedTopicSearch",
       data: {
         topic: normalizedTopic,
-        error: err instanceof Error ? err.message : String(err),
+        error: toErrorMessage(err),
       },
     });
     return [];

@@ -9,6 +9,7 @@
  */
 
 import type { AgentEvent, EventAction } from "../../core/types.js";
+import { toErrorMessage } from "./errors.js";
 import type { WriteRateLedger, WriteRateCheck } from "./write-rate-limit.js";
 import type { PublishInput, PublishResult, PublishOptions } from "./publish-pipeline.js";
 import type { GeneratePostInput, PostDraft } from "./llm.js";
@@ -100,12 +101,6 @@ export interface ActionExecutorContext {
   observe: ObserveFn;
   info: (msg: string) => void;
   warn: (msg: string) => void;
-}
-
-// ── Helpers ─────────────────────────────────────────
-
-function toErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
 }
 
 // ── Factory ─────────────────────────────────────────

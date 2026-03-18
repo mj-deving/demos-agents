@@ -1,3 +1,5 @@
+import { toErrorMessage } from "./errors.js";
+
 /**
  * Transaction queue — serializes concurrent publish calls via async mutex.
  *
@@ -96,7 +98,7 @@ export function createTxQueue(options: TxQueueOptions = {}): TxQueue {
 
           return { ...result, nonce: currentNonce };
         } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
+          const message = toErrorMessage(error);
           return { success: false, error: message, nonce: currentNonce };
         } finally {
           pendingCount--;

@@ -13,6 +13,7 @@ import {
   acquireRateLimitToken,
   recordRateLimitResponse,
 } from "./rate-limit.js";
+import { toErrorMessage } from "../errors.js";
 
 // ── Fetch Options ───────────────────────────────────
 
@@ -149,7 +150,7 @@ export async function fetchSource(
         totalMs: Date.now() - start,
       };
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = toErrorMessage(err);
 
       // Timeout / abort
       if (msg.includes("abort") || msg.includes("timeout")) {

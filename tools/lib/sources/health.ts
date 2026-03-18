@@ -19,6 +19,7 @@ import { tokenizeTopic } from "./catalog.js";
 import { fetchSource } from "./fetch.js";
 import { getProviderAdapter } from "./providers/index.js";
 import type { ProviderAdapter } from "./providers/types.js";
+import { toErrorMessage } from "../errors.js";
 
 // ── Types ────────────────────────────────────────────
 
@@ -239,7 +240,7 @@ export async function testSource(
       latencyMs: 0,
       entryCount: 0,
       sampleTitles: [],
-      error: `buildCandidates failed: ${err instanceof Error ? err.message : String(err)}`,
+      error: `buildCandidates failed: ${toErrorMessage(err)}`,
     };
   }
 
@@ -311,7 +312,7 @@ export async function testSource(
         latencyMs,
         entryCount: 0,
         sampleTitles: [],
-        error: err instanceof Error ? err.message : String(err),
+        error: toErrorMessage(err),
       };
     }
   } catch (err: unknown) {
@@ -321,7 +322,7 @@ export async function testSource(
       latencyMs,
       entryCount: 0,
       sampleTitles: [],
-      error: err instanceof Error ? err.message : String(err),
+      error: toErrorMessage(err),
     };
   }
 }

@@ -7,6 +7,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import { toErrorMessage } from "../tools/lib/errors.js";
 
 // ── Test: React action API shape ────────────────
 
@@ -166,21 +167,15 @@ describe("Tip action", () => {
 
 describe("Action error handling", () => {
   it("extracts error message from Error instance", () => {
-    const err = new Error("Network timeout");
-    const message = err instanceof Error ? err.message : String(err);
-    expect(message).toBe("Network timeout");
+    expect(toErrorMessage(new Error("Network timeout"))).toBe("Network timeout");
   });
 
   it("extracts error message from non-Error", () => {
-    const err = "raw string error";
-    const message = err instanceof Error ? err.message : String(err);
-    expect(message).toBe("raw string error");
+    expect(toErrorMessage("raw string error")).toBe("raw string error");
   });
 
   it("handles null error gracefully", () => {
-    const err = null;
-    const message = err instanceof Error ? err.message : String(err);
-    expect(message).toBe("null");
+    expect(toErrorMessage(null)).toBe("null");
   });
 });
 
