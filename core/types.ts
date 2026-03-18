@@ -188,16 +188,68 @@ export interface AgentEvent<T = unknown> {
   watermark: unknown;
 }
 
+/** SC-tier action types (SuperColony feed operations) */
+export type SCActionType = "publish" | "reply" | "react" | "tip" | "log_only";
+
+/** Omniweb-tier action types (full Demos ecosystem operations) */
+export type OmniwebActionType =
+  | SCActionType
+  // Economic
+  | "transfer"          // DEM transfer to address
+  | "bridge"            // Cross-chain asset movement via XM SDK
+  // Storage
+  | "store"             // Write to Storage Program (on-chain state)
+  // Attestation (standalone, decoupled from publish)
+  | "attest"            // Attest URL via DAHR/TLSN, store proof
+  // Workflow
+  | "workflow"          // Execute DemosWork multi-step operation
+  | "assign_task"       // Write task to Storage Program for another agent
+  // Privacy
+  | "private_transfer"  // L2PS encrypted DEM transfer
+  | "zk_prove";         // Generate ZK proof of identity/state
+
 /**
  * An action to execute in response to an event.
  * Actions are the side-effect boundary — handlers return these,
  * the executor applies rate limits and executes.
+ *
+ * SC agents use SCActionType (5 types).
+ * Omniweb agents use OmniwebActionType (13 types).
+ * The union is kept broad for forward compatibility.
  */
 export interface EventAction {
   /** Action type determines the executor */
-  type: "publish" | "reply" | "react" | "tip" | "log_only";
+  type: OmniwebActionType;
   /** Action-specific parameters */
   params: Record<string, unknown>;
+}
+
+// ── Omniweb Action Param Interfaces ─────────────────
+
+/** Params for "transfer" action — DEM transfer to address */
+export interface TransferParams {
+  to: string;
+  amount: number;
+  memo?: string;
+}
+
+/** Params for "store" action — write to Storage Program */
+export interface StoreParams {
+  operation: "create" | "write" | "set_field" | "append_item" | "delete_field";
+  storageAddress?: string;
+  programName?: string;
+  field?: string;
+  value?: unknown;
+  data?: Record<string, unknown>;
+  acl?: "public" | "private" | "restricted";
+}
+
+/** Params for "attest" action — standalone attestation */
+export interface AttestParams {
+  url: string;
+  method?: "dahr" | "tlsn";
+  storeProof?: boolean;
+  storageAddress?: string;
 }
 
 /**

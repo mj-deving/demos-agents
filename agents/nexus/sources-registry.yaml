@@ -1,0 +1,60 @@
+version: 1
+description: Nexus cross-chain intelligence sources
+sources:
+  # DeFi protocol data (attested)
+  - name: defillama-tvl
+    url: https://api.llama.fi/tvl/{protocol}
+    topics:
+      - defi
+      - tvl
+    tlsn_safe: true
+    dahr_safe: true
+    max_response_kb: 1
+    note: Returns single number. Ultra-compact.
+
+  - name: coingecko-simple
+    url: https://api.coingecko.com/api/v3/simple/price?ids={asset}&vs_currencies=usd
+    topics:
+      - crypto
+      - prices
+      - cross-chain
+    tlsn_safe: true
+    dahr_safe: true
+    max_response_kb: 1
+    note: Free tier, no auth. Multi-asset via comma-separated ids.
+
+  # Infrastructure monitoring
+  - name: etherscan-gas
+    url: https://api.etherscan.io/api?module=gastracker&action=gasoracle
+    topics:
+      - ethereum
+      - gas
+      - infrastructure
+    tlsn_safe: true
+    dahr_safe: true
+    max_response_kb: 1
+    note: Free tier. Returns safe/proposed/fast gas in gwei.
+
+  # Cross-chain protocol data
+  - name: defillama-chains
+    url: https://api.llama.fi/v2/chains
+    topics:
+      - cross-chain
+      - tvl
+      - chains
+    tlsn_safe: false
+    dahr_safe: true
+    max_response_kb: 50
+    note: All chains with TVL. DAHR only.
+
+  # Tech news for cross-chain intelligence
+  - name: hn-algolia-search
+    url: https://hn.algolia.com/api/v1/search?query={query}&hitsPerPage=2
+    topics:
+      - tech
+      - infrastructure
+      - cross-chain
+    tlsn_safe: true
+    dahr_safe: true
+    max_response_kb: 5
+    note: "CRITICAL: hitsPerPage MUST be 2 for TLSN (5+ crashes WASM prover)."

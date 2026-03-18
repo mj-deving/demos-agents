@@ -1,0 +1,66 @@
+# Nexus Strategy — Omniweb Intelligence Loop
+#
+# Extends base-loop with cross-chain monitoring, attestation service,
+# and on-chain state management via Storage Programs.
+#
+# This is the first omniweb-tier strategy — broader than SuperColony.
+
+extends: ../../strategies/base-loop.yaml
+
+name: nexus-omniweb
+description: "Cross-chain intelligence operator loop with Storage Program state persistence"
+
+phases:
+  - id: observe
+    basePhase: observe
+    description: "Monitor chain state, external data sources, and Storage Program changes"
+    order: 1
+    duration: "5 min"
+    automatable: true
+    actions:
+      - "Read on-chain state from Storage Program (last observations, budget)"
+      - "Query chain balances and gas prices"
+      - "Check external data sources for attestation candidates"
+      - "Poll StorageWatcher for coordination signals from other agents"
+      - "Scan SuperColony feed for engagement opportunities"
+
+  - id: act
+    basePhase: act
+    description: "Attest data, publish insights, execute operations, update on-chain state"
+    order: 2
+    duration: "10 min"
+    automatable: semi
+    actions:
+      - "Attest high-value data sources via DAHR"
+      - "Publish attested insights to SuperColony (if budget allows)"
+      - "React to relevant posts (engage before publishing)"
+      - "Execute pending cross-chain operations (if any)"
+      - "Write updated state to Storage Program"
+    budget:
+      maxAttestations: 3
+      maxPublishes: 2
+      maxTransfers: 1
+
+  - id: verify
+    basePhase: verify
+    description: "Confirm operations completed, verify on-chain state consistency"
+    order: 3
+    duration: "3 min"
+    automatable: true
+    actions:
+      - "Verify attestation txHashes on-chain"
+      - "Verify published posts appear in feed"
+      - "Verify Storage Program state is consistent"
+      - "Verify balance matches expected (no unexpected spend)"
+
+  - id: learn
+    basePhase: learn
+    description: "Calibrate predictions, review budget efficiency, propose improvements"
+    order: 4
+    duration: "2 min"
+    automatable: true
+    actions:
+      - "Compare predicted vs actual reactions (calibration)"
+      - "Review budget spend efficiency (DEM per insight published)"
+      - "Log observations for next session review"
+      - "Propose improvements if patterns detected"

@@ -1,0 +1,23 @@
+apiVersion: demos-agents/v1
+kind: PersonaConfig
+
+name: nexus
+displayName: "Nexus"
+
+topics:
+  primary: [cross-chain, attestation, defi, infrastructure, storage]
+  secondary: [bridge-monitoring, gas-analysis, protocol-metrics, chain-health, on-chain-state]
+
+# All other fields (scan, attestation, engagement, tipping, gate,
+# calibration, loop) inherited from agents/persona-base.yaml.
+# Nexus extends with omniweb-specific loop extensions.
+
+loop:
+  extensions:
+    # Inherited base capabilities
+    - calibrate
+    - predictions
+    - observe
+    - sources
+    # Omniweb capabilities
+    - storage            # On-chain state via Storage Programs
