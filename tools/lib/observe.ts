@@ -20,6 +20,8 @@ import { randomBytes } from "node:crypto";
 
 export type ObservationType =
   | "error"
+  | "failure"
+  | "warning"
   | "pattern"
   | "insight"
   | "inefficiency"

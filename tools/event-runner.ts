@@ -27,6 +27,9 @@ import { connectWallet, setLogAgent, apiCall, info, warn } from "./lib/sdk.js";
 import { ensureAuth, loadAuthCache } from "./lib/auth.js";
 import { initObserver, observe } from "./lib/observe.js";
 import { loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger } from "./lib/write-rate-limit.js";
+import { attestAndPublish, type PublishInput } from "./lib/publish-pipeline.js";
+import { generatePost, type GeneratePostInput } from "./lib/llm.js";
+import { resolveProvider } from "./lib/llm-provider.js";
 import { createFileWatermarkStore } from "./lib/watermark-store.js";
 import { startEventLoop, type SourceRegistration } from "./lib/event-loop.js";
 
@@ -48,6 +51,11 @@ import type { AgentEvent, EventAction, EventHandler } from "../core/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
+
+/** Extract error message from unknown catch value. */
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 // ── Arg Parsing ────────────────────────────────────
 
@@ -101,6 +109,19 @@ async function fetchFeedPosts(token: string, limit: number = 50): Promise<any[]>
   const res = await apiCall(`/api/feed?limit=${limit}`, token);
   if (!res.ok) return [];
   return normalizePosts(res.data);
+}
+
+// Shared feed cache — prevents 4 identical API calls when sources poll simultaneously
+let feedCache: { posts: any[]; fetchedAt: number } | null = null;
+const FEED_CACHE_TTL_MS = 10_000; // 10 seconds
+
+async function fetchFeedCached(token: string): Promise<any[]> {
+  if (feedCache && Date.now() - feedCache.fetchedAt < FEED_CACHE_TTL_MS) {
+    return feedCache.posts;
+  }
+  const posts = await fetchFeedPosts(token);
+  feedCache = { posts, fetchedAt: Date.now() };
+  return posts;
 }
 
 // ── Session Log Reader ─────────────────────────────
@@ -175,6 +196,14 @@ async function main(): Promise<void> {
   // Budget config from persona.yaml (defaults)
   const dailyReactive = (config as any).events?.budget?.dailyReactive ?? 4;
 
+  // Resolve LLM provider once at startup (avoids file reads + subprocess forks per reply)
+  const llm = resolveProvider(flags.env || undefined);
+  if (!llm) {
+    warn("No LLM provider available — reply actions will be skipped");
+  } else {
+    info(`LLM provider: ${llm.name}`);
+  }
+
   // Track agent's published TX hashes (loaded from session log)
   const ownTxHashes = loadOwnTxHashes(flags.agent);
   info(`Loaded ${ownTxHashes.size} own TX hashes from session log`);
@@ -183,7 +212,7 @@ async function main(): Promise<void> {
 
   const replySrc = createSocialReplySource({
     fetchFeed: async () => {
-      const posts = await fetchFeedPosts(token);
+      const posts = await fetchFeedCached(token);
       return posts.map((p: any): ReplyPost => ({
         txHash: String(p?.txHash || ""),
         author: String(p?.author || p?.address || "").toLowerCase(),
@@ -197,7 +226,7 @@ async function main(): Promise<void> {
 
   const mentionSrc = createSocialMentionSource({
     fetchFeed: async () => {
-      const posts = await fetchFeedPosts(token);
+      const posts = await fetchFeedCached(token);
       return posts.map((p: any): MentionPost => ({
         txHash: String(p?.txHash || ""),
         author: String(p?.author || p?.address || "").toLowerCase(),
@@ -211,7 +240,7 @@ async function main(): Promise<void> {
   const tipSrc = createTipReceivedSource({
     fetchTips: async () => {
       // Filter feed for tip transactions to this agent
-      const posts = await fetchFeedPosts(token);
+      const posts = await fetchFeedCached(token);
       return posts
         .filter((p: any) => {
           const tipTo = String(p?.payload?.tipTo || p?.tipTo || "").toLowerCase();
@@ -230,7 +259,7 @@ async function main(): Promise<void> {
   const disagreeSrc = createDisagreeMonitorSource({
     fetchOwnPosts: async () => {
       // Filter feed for agent's own posts, compute disagree ratios
-      const posts = await fetchFeedPosts(token);
+      const posts = await fetchFeedCached(token);
       return posts
         .filter((p: any) => {
           const author = String(p?.author || p?.address || "").toLowerCase();
@@ -294,11 +323,10 @@ async function main(): Promise<void> {
     // Refresh auth token if needed before any API action
     token = await refreshTokenIfNeeded(demos, address, token);
 
-    // Load ledger for budget check and recording
-    const ledger = loadWriteRateLedger(address);
-
-    // Check reactive budget before publishing/replying
+    // Load ledger only for publish/reply (avoids file read for react/tip)
+    let ledger: ReturnType<typeof loadWriteRateLedger> | undefined;
     if (action.type === "publish" || action.type === "reply") {
+      ledger = loadWriteRateLedger(address);
       const check = canPublish(ledger, { dailyLimit: dailyReactive, hourlyLimit: 2 });
       if (!check.allowed) {
         warn(`[event] Reactive budget exhausted: ${check.reason}`);
@@ -311,28 +339,169 @@ async function main(): Promise<void> {
       }
     }
 
-    // Execute the action (placeholder — actual SDK calls go here)
+    // Execute the action via platform SDK/API calls
     switch (action.type) {
-      case "react":
-        info(`[event] React ${action.params.reaction} to ${action.params.txHash}`);
-        // TODO: apiCall to react endpoint
+      case "react": {
+        const txHash = String(action.params.txHash);
+        const reaction = String(action.params.reaction);
+        info(`[event] React ${reaction} to ${txHash}`);
+        try {
+          const res = await apiCall(
+            `/api/feed/${encodeURIComponent(txHash)}/react`,
+            token,
+            { method: "POST", body: JSON.stringify({ type: reaction }) },
+          );
+          if (res.ok) {
+            observe("insight", `Reacted ${reaction} to ${txHash}`, {
+              phase: "event-loop",
+              source: "event-runner:react",
+              data: { txHash, reaction },
+            });
+          } else {
+            warn(`[event] React failed (${res.status}): ${JSON.stringify(res.data)}`);
+            observe("failure", `React failed (${res.status})`, {
+              phase: "event-loop",
+              source: "event-runner:react",
+              data: { txHash, reaction, status: res.status },
+            });
+          }
+        } catch (err) {
+          const msg = toErrorMessage(err);
+          warn(`[event] React error: ${msg}`);
+          observe("failure", `React error: ${msg}`, {
+            phase: "event-loop",
+            source: "event-runner:react",
+            data: { txHash, error: msg },
+          });
+        }
         break;
-      case "reply":
-        info(`[event] Reply to ${action.params.parentTx}: ${String(action.params.question).slice(0, 50)}...`);
-        // TODO: LLM generation + publish reply
-        recordPublish(ledger);
-        saveWriteRateLedger(ledger, address);
+      }
+      case "reply": {
+        const parentTx = String(action.params.parentTx);
+        const question = String(action.params.question || "");
+        info(`[event] Reply to ${parentTx}: ${question.slice(0, 50)}...`);
+        try {
+          if (!llm) {
+            warn("[event] No LLM provider available — cannot generate reply");
+            break;
+          }
+          const replyInput: GeneratePostInput = {
+            topic: question,
+            category: "ANALYSIS",
+            scanContext: { activity_level: "reactive", posts_per_hour: 0 },
+            calibrationOffset: config.calibration.offset,
+            replyTo: {
+              txHash: parentTx,
+              author: String(action.params.author || "unknown"),
+              text: question,
+            },
+          };
+          const draft = await generatePost(replyInput, llm, {
+            agentName: flags.agent,
+            personaMdPath: config.paths.personaMd,
+            strategyYamlPath: config.paths.strategyYaml,
+          });
+          const publishInput: PublishInput = {
+            text: draft.text,
+            category: draft.category,
+            tags: draft.tags,
+            confidence: draft.confidence,
+            replyTo: parentTx,
+          };
+          const result = await attestAndPublish(demos, publishInput, undefined, { feedToken: token });
+          ownTxHashes.add(result.txHash);
+          recordPublish(ledger!);
+          saveWriteRateLedger(ledger!, address);
+          observe("insight", `Published reply ${result.txHash} to ${parentTx}`, {
+            phase: "event-loop",
+            source: "event-runner:reply",
+            data: { txHash: result.txHash, parentTx, textLength: draft.text.length },
+          });
+        } catch (err) {
+          const msg = toErrorMessage(err);
+          warn(`[event] Reply error: ${msg}`);
+          observe("failure", `Reply failed: ${msg}`, {
+            phase: "event-loop",
+            source: "event-runner:reply",
+            data: { parentTx, error: msg },
+          });
+        }
         break;
-      case "publish":
-        info(`[event] Publish: ${String(action.params.text).slice(0, 50)}...`);
-        // TODO: publish pipeline
-        recordPublish(ledger);
-        saveWriteRateLedger(ledger, address);
+      }
+      case "publish": {
+        const text = String(action.params.text || "");
+        info(`[event] Publish: ${text.slice(0, 50)}...`);
+        try {
+          const publishInput: PublishInput = {
+            text,
+            category: String(action.params.category || "ANALYSIS"),
+            tags: Array.isArray(action.params.tags) ? action.params.tags.map(String) : [],
+            confidence: Number(action.params.confidence || 70),
+          };
+          const attestUrl = action.params.attestUrl ? String(action.params.attestUrl) : undefined;
+          const result = await attestAndPublish(demos, publishInput, attestUrl, { feedToken: token });
+          ownTxHashes.add(result.txHash);
+          recordPublish(ledger!);
+          saveWriteRateLedger(ledger!, address);
+          observe("insight", `Published ${result.txHash}`, {
+            phase: "event-loop",
+            source: "event-runner:publish",
+            data: { txHash: result.txHash, category: publishInput.category, textLength: text.length },
+          });
+        } catch (err) {
+          const msg = toErrorMessage(err);
+          warn(`[event] Publish error: ${msg}`);
+          observe("failure", `Publish failed: ${msg}`, {
+            phase: "event-loop",
+            source: "event-runner:publish",
+            data: { error: msg },
+          });
+        }
         break;
-      case "tip":
-        info(`[event] Tip ${action.params.amount} DEM to ${action.params.address}`);
-        // TODO: SDK tip call
+      }
+      case "tip": {
+        const tipAmount = Number(action.params.amount || 1);
+        const postTxHash = String(action.params.txHash || "");
+        info(`[event] Tip ${tipAmount} DEM for post ${postTxHash}`);
+        try {
+          // Step 1: Validate via API (get recipient, enforce server-side limits)
+          const tipRes = await apiCall("/api/tip", token, {
+            method: "POST",
+            body: JSON.stringify({ postTxHash, amount: tipAmount }),
+          });
+          if (!tipRes.ok || !tipRes.data?.recipient) {
+            warn(`[event] Tip validation failed: ${JSON.stringify(tipRes.data)}`);
+            observe("failure", `Tip validation failed`, {
+              phase: "event-loop",
+              source: "event-runner:tip",
+              data: { postTxHash, amount: tipAmount, status: tipRes.status },
+            });
+            break;
+          }
+          const recipient = String(tipRes.data.recipient).toLowerCase();
+
+          // Step 2: Transfer via SDK
+          const transferResult = await (demos.transfer as any)(
+            recipient,
+            tipAmount,
+            `HIVE_TIP:${postTxHash}`,
+          );
+          observe("insight", `Tipped ${tipAmount} DEM to ${recipient}`, {
+            phase: "event-loop",
+            source: "event-runner:tip",
+            data: { amount: tipAmount, recipient, postTxHash, result: transferResult },
+          });
+        } catch (err) {
+          const msg = toErrorMessage(err);
+          warn(`[event] Tip error: ${msg}`);
+          observe("failure", `Tip failed: ${msg}`, {
+            phase: "event-loop",
+            source: "event-runner:tip",
+            data: { postTxHash, amount: tipAmount, error: msg },
+          });
+        }
         break;
+      }
     }
   }
 
