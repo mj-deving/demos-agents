@@ -6,6 +6,7 @@
  */
 
 import type { AgentEvent, EventSource } from "../../../core/types.js";
+import { extractLatestWatermark } from "./watermark-utils.js";
 
 export interface DisagreeSnapshot {
   timestamp: number;
@@ -67,9 +68,7 @@ export function createDisagreeMonitorSource(config: DisagreeMonitorSourceConfig)
     },
 
     extractWatermark(snapshot: DisagreeSnapshot): unknown {
-      if (snapshot.posts.length === 0) return null;
-      const latest = snapshot.posts.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
-      return { txHash: latest.txHash, timestamp: latest.timestamp };
+      return extractLatestWatermark(snapshot.posts, p => ({ txHash: p.txHash, timestamp: p.timestamp }));
     },
   };
 }

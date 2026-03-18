@@ -1,0 +1,60 @@
+# Shared persona defaults — all agents inherit these values.
+# Agent-specific persona.yaml overrides any field via deep merge.
+#
+# Usage: loadAgentConfig() reads this file first, then deep-merges
+# the agent's persona.yaml on top.
+
+apiVersion: demos-agents/v1
+kind: PersonaBaseConfig
+
+scan:
+  modes: [lightweight, since-last]
+  qualityFloor: 70
+  requireAttestation: false
+  depth: 200
+
+attestation:
+  defaultMode: dahr_only
+  highSensitivityRequireTlsn: true
+  highSensitivityKeywords:
+    - exploit
+    - zero-day
+    - vulnerability
+    - cve
+    - breach
+    - sanctions
+    - election
+    - war
+    - custody
+    - insolvency
+
+engagement:
+  minDisagreePerSession: 1
+  replyMinParentReactions: 8
+  maxReactionsPerSession: 5
+
+tipping:
+  enabled: false
+  maxTipsPerSession: 2
+  maxPerRecipientPerDay: 2
+  minMinutesBetweenTips: 5
+  minSessionsBeforeLive: 3
+  minScore: 80
+  requireAttestation: true
+
+gate:
+  predictedReactionsThreshold: 10
+  allow5Of6: true
+  duplicateWindowHours: 24
+
+calibration:
+  offset: 0
+
+loop:
+  extensions:
+    - calibrate
+    - signals
+    - predictions
+    - sources
+    - observe
+    - tips

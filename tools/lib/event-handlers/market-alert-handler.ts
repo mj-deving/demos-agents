@@ -5,7 +5,7 @@
  * No side effects — the action executor handles rate limits and publishing.
  */
 
-import type { AgentEvent, EventAction, EventHandler } from "../../../core/types.js";
+import { createSeverityHandler } from "./severity-handler.js";
 import { PROTOCOL_EVENT_TYPES, type ProtocolEvent } from "../event-sources/protocol-events.js";
 
 /**
@@ -16,50 +16,25 @@ import { PROTOCOL_EVENT_TYPES, type ProtocolEvent } from "../event-sources/proto
  * - Governance events are logged at info severity
  * - TVL and rate changes are logged for future threshold-based publishing
  */
-export function createMarketAlertHandler(): EventHandler {
-  return {
+export function createMarketAlertHandler() {
+  return createSeverityHandler({
     name: "market-alert",
-    eventTypes: [...PROTOCOL_EVENT_TYPES],
-
-    async handle(event: AgentEvent): Promise<EventAction | null> {
-      const payload = event.payload as ProtocolEvent;
-
-      // Exploits always get logged at critical severity
-      if (event.type === "exploit") {
-        return {
-          type: "log_only",
-          params: {
-            reason: `Protocol exploit detected: ${payload.protocol}`,
-            severity: "critical",
-            protocol: payload.protocol,
-            data: payload.data,
-          },
-        };
-      }
-
-      // Governance events get logged
-      if (event.type === "governance") {
-        return {
-          type: "log_only",
-          params: {
-            reason: `Governance event: ${payload.protocol}`,
-            severity: "info",
-            protocol: payload.protocol,
-            data: payload.data,
-          },
-        };
-      }
-
-      // TVL and rate changes — log for now, publish when threshold met
-      return {
-        type: "log_only",
-        params: {
-          reason: `Market event ${event.type}: ${payload.protocol}`,
-          severity: "info",
-          protocol: payload.protocol,
-          data: payload.data,
-        },
-      };
+    eventTypes: PROTOCOL_EVENT_TYPES,
+    mapping: {
+      severities: {
+        exploit: "critical",
+        governance: "info",
+        tvl_change: "info",
+        rate_change: "info",
+      },
     },
-  };
+    buildParams: (event, severity) => {
+      const payload = event.payload as ProtocolEvent;
+      const reason =
+        event.type === "exploit" ? `Protocol exploit detected: ${payload.protocol}`
+        : event.type === "governance" ? `Governance event: ${payload.protocol}`
+        : `Market event ${event.type}: ${payload.protocol}`;
+      return { reason, severity, protocol: payload.protocol, data: payload.data };
+    },
+  });
 }

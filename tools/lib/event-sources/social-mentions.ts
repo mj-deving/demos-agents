@@ -6,6 +6,7 @@
  */
 
 import type { AgentEvent, EventSource } from "../../../core/types.js";
+import { extractLatestWatermark } from "./watermark-utils.js";
 
 export interface MentionSnapshot {
   timestamp: number;
@@ -61,9 +62,7 @@ export function createSocialMentionSource(config: SocialMentionSourceConfig): Ev
     },
 
     extractWatermark(snapshot: MentionSnapshot): unknown {
-      if (snapshot.mentions.length === 0) return null;
-      const latest = snapshot.mentions.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
-      return { txHash: latest.txHash, timestamp: latest.timestamp };
+      return extractLatestWatermark(snapshot.mentions, m => ({ txHash: m.txHash, timestamp: m.timestamp }));
     },
   };
 }

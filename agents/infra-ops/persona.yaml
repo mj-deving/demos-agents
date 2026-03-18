@@ -8,15 +8,8 @@ topics:
   primary: [infrastructure, devops, security, incidents, network-health]
   secondary: [rpc-performance, validator-ops, chain-upgrades, consensus-health, bridge-security]
 
-scan:
-  modes: [lightweight, since-last]
-  qualityFloor: 70
-  requireAttestation: false
-  depth: 200
-
+# Override: additional high-sensitivity keywords for infra domain
 attestation:
-  defaultMode: dahr_only
-  highSensitivityRequireTlsn: true
   highSensitivityKeywords:
     - exploit
     - zero-day
@@ -33,33 +26,4 @@ attestation:
     - degradation
     - consensus-failure
 
-engagement:
-  minDisagreePerSession: 1
-  replyMinParentReactions: 8
-  maxReactionsPerSession: 5
-
-tipping:
-  enabled: false
-  maxTipsPerSession: 2
-  maxPerRecipientPerDay: 2
-  minMinutesBetweenTips: 5
-  minSessionsBeforeLive: 3
-  minScore: 80
-  requireAttestation: true
-
-gate:
-  predictedReactionsThreshold: 10
-  allow5Of6: true
-  duplicateWindowHours: 24
-
-calibration:
-  offset: 0
-
-loop:
-  extensions:
-    - calibrate
-    - signals
-    - predictions
-    - sources
-    - observe
-    - tips
+# All other fields inherited from agents/persona-base.yaml.

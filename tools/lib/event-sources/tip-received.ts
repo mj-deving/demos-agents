@@ -6,6 +6,7 @@
  */
 
 import type { AgentEvent, EventSource } from "../../../core/types.js";
+import { extractLatestWatermark } from "./watermark-utils.js";
 
 export interface TipSnapshot {
   timestamp: number;
@@ -53,9 +54,7 @@ export function createTipReceivedSource(config: TipReceivedSourceConfig): EventS
     },
 
     extractWatermark(snapshot: TipSnapshot): unknown {
-      if (snapshot.tips.length === 0) return null;
-      const latest = snapshot.tips.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
-      return { txHash: latest.txHash, timestamp: latest.timestamp };
+      return extractLatestWatermark(snapshot.tips, t => ({ txHash: t.txHash, timestamp: t.timestamp }));
     },
   };
 }

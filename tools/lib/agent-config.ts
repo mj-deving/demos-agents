@@ -399,10 +399,47 @@ function parseLoopExtensions(yaml: any, filePath: string): string[] {
   return validated;
 }
 
+// ── Deep Merge ──────────────────────────────────────
+
+/**
+ * Deep merge two plain objects. Agent values override base values.
+ * Arrays are replaced (not concatenated) — agent's array wins entirely.
+ */
+function deepMerge(base: Record<string, any>, override: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = { ...base };
+  for (const key of Object.keys(override)) {
+    const baseVal = base[key];
+    const overVal = override[key];
+    if (
+      overVal !== null && typeof overVal === "object" && !Array.isArray(overVal) &&
+      baseVal !== null && typeof baseVal === "object" && !Array.isArray(baseVal)
+    ) {
+      result[key] = deepMerge(baseVal, overVal);
+    } else {
+      result[key] = overVal;
+    }
+  }
+  return result;
+}
+
+/**
+ * Load persona-base.yaml shared defaults. Returns empty object if not found.
+ */
+function loadBasePersona(): Record<string, any> {
+  const basePath = resolve(REPO_ROOT, "agents", "persona-base.yaml");
+  if (!existsSync(basePath)) return {};
+  try {
+    return parseYaml(readFileSync(basePath, "utf-8")) ?? {};
+  } catch {
+    return {};
+  }
+}
+
 // ── Loader ─────────────────────────────────────────
 
 /**
  * Load and validate agent config from agents/{name}/persona.yaml.
+ * Deep-merges agents/persona-base.yaml defaults with agent-specific overrides.
  * Falls back to sensible defaults if persona.yaml is missing (for bootstrapping).
  */
 export function loadAgentConfig(name?: string): AgentConfig {
@@ -451,8 +488,10 @@ export function loadAgentConfig(name?: string): AgentConfig {
     };
   }
 
-  const raw = readFileSync(personaYamlPath, "utf-8");
-  const yaml = validatePersonaConfig(parseYaml(raw), personaYamlPath);
+  const base = loadBasePersona();
+  const agentRaw = parseYaml(readFileSync(personaYamlPath, "utf-8")) ?? {};
+  const merged = Object.keys(base).length > 0 ? deepMerge(base, agentRaw) : agentRaw;
+  const yaml = validatePersonaConfig(merged, personaYamlPath);
 
   return {
     name: yaml.name || agentName,

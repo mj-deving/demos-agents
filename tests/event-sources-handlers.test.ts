@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import { makeAgentEvent } from "./fixtures/event-fixtures.js";
 
 // ── Sources ──
 import {
@@ -440,14 +441,12 @@ describe("ReplyHandler", () => {
   });
 
   it("returns log_only for short replies (< 30 chars)", async () => {
-    const event = {
+    const event = makeAgentEvent({
       id: "social:replies:1000:tx1",
       sourceId: "social:replies",
       type: "reply",
-      detectedAt: Date.now(),
       payload: makeReply({ text: "Nice post!", txHash: "tx-short" }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -456,18 +455,16 @@ describe("ReplyHandler", () => {
   });
 
   it("returns react/agree for substantive replies (>= 30 chars)", async () => {
-    const event = {
+    const event = makeAgentEvent({
       id: "social:replies:1000:tx2",
       sourceId: "social:replies",
       type: "reply",
-      detectedAt: Date.now(),
       payload: makeReply({
         text: "This is a really thoughtful and detailed reply about the topic at hand",
         txHash: "tx-substantive",
         author: "0xAUTHOR1234",
       }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("react");
@@ -477,27 +474,21 @@ describe("ReplyHandler", () => {
   });
 
   it("boundary: exactly 29 chars is log_only", async () => {
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:replies",
       type: "reply",
-      detectedAt: Date.now(),
       payload: makeReply({ text: "a".repeat(29) }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.type).toBe("log_only");
   });
 
   it("boundary: exactly 30 chars is react", async () => {
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:replies",
       type: "reply",
-      detectedAt: Date.now(),
       payload: makeReply({ text: "a".repeat(30) }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.type).toBe("react");
   });
@@ -512,18 +503,15 @@ describe("MentionHandler", () => {
   });
 
   it("extracts question from /ask @address pattern", async () => {
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:mentions",
       type: "ask_mention",
-      detectedAt: Date.now(),
       payload: makeMention({
         text: "/ask @0xAgent What is the best staking strategy?",
         txHash: "tx-q1",
         author: "0xAsker",
       }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("reply");
@@ -533,14 +521,11 @@ describe("MentionHandler", () => {
   });
 
   it("returns log_only for too-short questions (< 5 chars)", async () => {
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:mentions",
       type: "ask_mention",
-      detectedAt: Date.now(),
       payload: makeMention({ text: "/ask @0xAgent Hi", txHash: "tx-short" }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -549,14 +534,11 @@ describe("MentionHandler", () => {
 
   it("falls back to full text if /ask pattern has no question", async () => {
     // When regex doesn't match, question = mention.text (the full thing)
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:mentions",
       type: "ask_mention",
-      detectedAt: Date.now(),
       payload: makeMention({ text: "This is a long enough text without the ask pattern format" }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     // Full text is > 5 chars so it should be a reply action
@@ -566,14 +548,11 @@ describe("MentionHandler", () => {
 
   it("returns reply with original text preserved", async () => {
     const originalText = "/ask @0xAgent Can you explain the consensus mechanism in detail?";
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:mentions",
       type: "ask_mention",
-      detectedAt: Date.now(),
       payload: makeMention({ text: originalText }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.params.originalText).toBe(originalText);
   });
@@ -589,14 +568,11 @@ describe("TipThanksHandler", () => {
 
   it("always returns log_only with tip details", async () => {
     const tip = makeTip({ txHash: "tx-tip-42", from: "0xGenerous", amount: 7 });
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:tips",
       type: "tip_received",
-      detectedAt: Date.now(),
       payload: tip,
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -608,28 +584,22 @@ describe("TipThanksHandler", () => {
   });
 
   it("handles small tips the same way", async () => {
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:tips",
       type: "tip_received",
-      detectedAt: Date.now(),
       payload: makeTip({ amount: 1 }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.type).toBe("log_only");
     expect(action!.params.amount).toBe(1);
   });
 
   it("handles large tips the same way", async () => {
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:tips",
       type: "tip_received",
-      detectedAt: Date.now(),
       payload: makeTip({ amount: 10 }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.type).toBe("log_only");
     expect(action!.params.amount).toBe(10);
@@ -652,14 +622,11 @@ describe("DisagreeHandler", () => {
       disagreeCount: 6,
       text: "Hot take that got pushback from the community",
     });
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:disagrees",
       type: "high_disagree",
-      detectedAt: Date.now(),
       payload: post,
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -673,28 +640,22 @@ describe("DisagreeHandler", () => {
 
   it("truncates textPreview to 100 chars", async () => {
     const longText = "A".repeat(200);
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:disagrees",
       type: "high_disagree",
-      detectedAt: Date.now(),
       payload: makeDisagreePost({ text: longText }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.params.textPreview).toBe("A".repeat(100));
   });
 
   it("preserves short text fully in textPreview", async () => {
     const shortText = "Brief controversial take";
-    const event = {
-      id: "e1",
+    const event = makeAgentEvent({
       sourceId: "social:disagrees",
       type: "high_disagree",
-      detectedAt: Date.now(),
       payload: makeDisagreePost({ text: shortText }),
-      watermark: {},
-    };
+    });
     const action = await handler.handle(event);
     expect(action!.params.textPreview).toBe(shortText);
   });

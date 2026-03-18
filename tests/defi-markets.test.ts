@@ -13,6 +13,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as yaml from "yaml";
 import { createPluginRegistry } from "../core/types.js";
+import { makeAgentEvent } from "./fixtures/event-fixtures.js";
+import { loadAgentConfig, type AgentConfig } from "../tools/lib/agent-config.js";
 import { createDefiMarketsPlugin } from "../core/plugins/defi-markets-plugin.js";
 import {
   createProtocolEventSource,
@@ -34,16 +36,15 @@ function makeProtocolEvent(overrides: Partial<ProtocolEvent> = {}): ProtocolEven
   };
 }
 
-function makeAgentEvent(overrides: Partial<{ type: string; payload: ProtocolEvent }> = {}) {
+function makeDefiEvent(overrides: Partial<{ type: string; payload: ProtocolEvent }> = {}) {
   const payload = overrides.payload ?? makeProtocolEvent();
-  return {
-    id: `defi:protocol-events:${payload.timestamp}:${payload.id}`,
-    sourceId: "defi:protocol-events",
+  return makeAgentEvent({
     type: overrides.type ?? payload.type,
-    detectedAt: Date.now(),
+    sourceId: "defi:protocol-events",
     payload,
+    id: `defi:protocol-events:${payload.timestamp}:${payload.id}`,
     watermark: { id: payload.id, timestamp: payload.timestamp },
-  };
+  });
 }
 
 // ════════════════════════════════════════════
@@ -109,7 +110,7 @@ describe("DefiMarketsPlugin", () => {
 
   it("init and destroy can be called", async () => {
     const plugin = createDefiMarketsPlugin();
-    await expect(plugin.init!({} as any)).resolves.not.toThrow();
+    await expect(plugin.init!({ name: "test" } as AgentConfig)).resolves.not.toThrow();
     await expect(plugin.destroy!()).resolves.not.toThrow();
   });
 });
@@ -228,7 +229,7 @@ describe("MarketAlertHandler", () => {
   });
 
   it("handles exploit events with critical severity", async () => {
-    const event = makeAgentEvent({
+    const event = makeDefiEvent({
       type: "exploit",
       payload: makeProtocolEvent({
         id: "exploit-1",
@@ -246,7 +247,7 @@ describe("MarketAlertHandler", () => {
   });
 
   it("handles governance events with info severity", async () => {
-    const event = makeAgentEvent({
+    const event = makeDefiEvent({
       type: "governance",
       payload: makeProtocolEvent({
         id: "gov-1",
@@ -264,7 +265,7 @@ describe("MarketAlertHandler", () => {
   });
 
   it("handles tvl_change events with info severity", async () => {
-    const event = makeAgentEvent({
+    const event = makeDefiEvent({
       type: "tvl_change",
       payload: makeProtocolEvent({
         id: "tvl-1",
@@ -282,7 +283,7 @@ describe("MarketAlertHandler", () => {
   });
 
   it("handles rate_change events with info severity", async () => {
-    const event = makeAgentEvent({
+    const event = makeDefiEvent({
       type: "rate_change",
       payload: makeProtocolEvent({
         id: "rate-1",
@@ -309,7 +310,7 @@ describe("MarketAlertHandler", () => {
 
   it("preserves protocol data in action params", async () => {
     const data = { tvlDelta: -50_000_000, newTvl: 800_000_000 };
-    const event = makeAgentEvent({
+    const event = makeDefiEvent({
       type: "tvl_change",
       payload: makeProtocolEvent({ data }),
     });
@@ -352,11 +353,17 @@ describe("DeFi Markets agent YAML files", () => {
     expect(doc.name).toBe("defi-markets");
     expect(doc.topics.primary).toBeInstanceOf(Array);
     expect(doc.topics.primary).toContain("defi");
-    expect(doc.scan.qualityFloor).toBe(70);
-    expect(doc.attestation.defaultMode).toBe("dahr_only");
-    expect(doc.gate.predictedReactionsThreshold).toBe(10);
-    expect(doc.calibration.offset).toBe(0);
-    expect(doc.loop.extensions).toBeInstanceOf(Array);
+  });
+
+  it("loadAgentConfig merges base defaults for defi-markets", () => {
+    const config = loadAgentConfig("defi-markets");
+    expect(config.name).toBe("defi-markets");
+    expect(config.topics.primary).toContain("defi");
+    expect(config.scan.qualityFloor).toBe(70);
+    expect(config.attestation.defaultMode).toBe("dahr_only");
+    expect(config.gate.predictedReactionsThreshold).toBe(10);
+    expect(config.calibration.offset).toBe(0);
+    expect(config.loopExtensions).toBeInstanceOf(Array);
   });
 
   it("persona.md exists", () => {

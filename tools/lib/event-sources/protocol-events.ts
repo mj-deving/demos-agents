@@ -7,6 +7,7 @@
  */
 
 import type { AgentEvent, EventSource } from "../../../core/types.js";
+import { extractLatestWatermark } from "./watermark-utils.js";
 
 export interface ProtocolEventSnapshot {
   timestamp: number;
@@ -62,9 +63,7 @@ export function createProtocolEventSource(config: ProtocolEventSourceConfig): Ev
     },
 
     extractWatermark(snapshot: ProtocolEventSnapshot): unknown {
-      if (snapshot.events.length === 0) return null;
-      const latest = snapshot.events.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
-      return { id: latest.id, timestamp: latest.timestamp };
+      return extractLatestWatermark(snapshot.events, e => ({ id: e.id, timestamp: e.timestamp }));
     },
   };
 }

@@ -20,10 +20,11 @@
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
+import { readFileSync, existsSync } from "node:fs";
 
 import { resolveAgentName, loadAgentConfig } from "./lib/agent-config.js";
 import { connectWallet, setLogAgent, apiCall, info, warn } from "./lib/sdk.js";
-import { ensureAuth } from "./lib/auth.js";
+import { ensureAuth, loadAuthCache } from "./lib/auth.js";
 import { initObserver, observe } from "./lib/observe.js";
 import { loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger } from "./lib/write-rate-limit.js";
 import { createFileWatermarkStore } from "./lib/watermark-store.js";
@@ -32,13 +33,17 @@ import { startEventLoop, type SourceRegistration } from "./lib/event-loop.js";
 import { createSocialReplySource, type ReplyPost } from "./lib/event-sources/social-replies.js";
 import { createSocialMentionSource, type MentionPost } from "./lib/event-sources/social-mentions.js";
 import { createTipReceivedSource, type TipRecord } from "./lib/event-sources/tip-received.js";
-import { createDisagreeMonitorSource, type DisagreePost } from "./lib/event-sources/disagree-monitor.js";
+import {
+  createDisagreeMonitorSource,
+  type DisagreePost,
+} from "./lib/event-sources/disagree-monitor.js";
 
 import { createReplyHandler } from "./lib/event-handlers/reply-handler.js";
 import { createMentionHandler } from "./lib/event-handlers/mention-handler.js";
 import { createTipThanksHandler } from "./lib/event-handlers/tip-thanks-handler.js";
 import { createDisagreeHandler } from "./lib/event-handlers/disagree-handler.js";
 
+import type { Demos } from "@kynesyslabs/demosdk/websdk";
 import type { AgentEvent, EventAction, EventHandler } from "../core/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -98,6 +103,55 @@ async function fetchFeedPosts(token: string, limit: number = 50): Promise<any[]>
   return normalizePosts(res.data);
 }
 
+// ── Session Log Reader ─────────────────────────────
+
+/**
+ * Load TX hashes from the session log. Each line is a JSONL entry
+ * with a txHash field for published posts.
+ */
+function loadOwnTxHashes(agentName: string): Set<string> {
+  const logPath = resolve(homedir(), `.${agentName}-session-log.jsonl`);
+  const hashes = new Set<string>();
+  if (!existsSync(logPath)) return hashes;
+
+  try {
+    const lines = readFileSync(logPath, "utf-8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        const entry = JSON.parse(trimmed);
+        if (entry.txHash && typeof entry.txHash === "string") {
+          hashes.add(entry.txHash);
+        }
+      } catch {
+        // Skip malformed lines
+      }
+    }
+  } catch {
+    // Log file unreadable — return empty set
+  }
+  return hashes;
+}
+
+// ── Auth Token Refresh ────────────────────────────
+
+/**
+ * Check if auth token is still valid (>5 min remaining).
+ * Re-authenticates if expired.
+ */
+async function refreshTokenIfNeeded(
+  demos: Demos,
+  address: string,
+  currentToken: string,
+): Promise<string> {
+  const cached = loadAuthCache(address);
+  if (cached) return cached.token; // Still valid
+
+  info("[event] Auth token expired, re-authenticating...");
+  return await ensureAuth(demos, address, true);
+}
+
 // ── Main ───────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -110,7 +164,7 @@ async function main(): Promise<void> {
 
   // Connect wallet and authenticate
   const { demos, address } = await connectWallet(flags.env);
-  const token = await ensureAuth(demos, flags.agent);
+  let token = await ensureAuth(demos, address);
 
   // Initialize observer for event logging
   initObserver(flags.agent, -1); // -1 = event loop session
@@ -121,8 +175,9 @@ async function main(): Promise<void> {
   // Budget config from persona.yaml (defaults)
   const dailyReactive = (config as any).events?.budget?.dailyReactive ?? 4;
 
-  // Track agent's published TX hashes (load from session log)
-  const ownTxHashes = new Set<string>(); // TODO: populate from session log
+  // Track agent's published TX hashes (loaded from session log)
+  const ownTxHashes = loadOwnTxHashes(flags.agent);
+  info(`Loaded ${ownTxHashes.size} own TX hashes from session log`);
 
   // ── Create Sources ─────────────────────────────
 
@@ -155,15 +210,46 @@ async function main(): Promise<void> {
 
   const tipSrc = createTipReceivedSource({
     fetchTips: async () => {
-      // TODO: implement via SDK getTransactionHistory when available
-      return [];
+      // Filter feed for tip transactions to this agent
+      const posts = await fetchFeedPosts(token);
+      return posts
+        .filter((p: any) => {
+          const tipTo = String(p?.payload?.tipTo || p?.tipTo || "").toLowerCase();
+          return tipTo === address.toLowerCase() && p?.payload?.tipAmount;
+        })
+        .map((p: any): TipRecord => ({
+          txHash: String(p?.txHash || ""),
+          from: String(p?.author || p?.address || "").toLowerCase(),
+          amount: Number(p?.payload?.tipAmount || 0),
+          timestamp: Number(p?.timestamp || 0),
+        }))
+        .filter((t: TipRecord) => t.txHash && t.amount > 0);
     },
   });
 
   const disagreeSrc = createDisagreeMonitorSource({
     fetchOwnPosts: async () => {
-      // TODO: fetch agent's own posts and compute disagree ratios
-      return [];
+      // Filter feed for agent's own posts, compute disagree ratios
+      const posts = await fetchFeedPosts(token);
+      return posts
+        .filter((p: any) => {
+          const author = String(p?.author || p?.address || "").toLowerCase();
+          return author === address.toLowerCase();
+        })
+        .map((p: any): DisagreePost => {
+          const agree = Number(p?.reactions?.agree || 0);
+          const disagree = Number(p?.reactions?.disagree || 0);
+          const total = agree + disagree;
+          return {
+            txHash: String(p?.txHash || ""),
+            timestamp: Number(p?.timestamp || 0),
+            text: String(p?.payload?.text || p?.text || ""),
+            agreeCount: agree,
+            disagreeCount: disagree,
+            disagreeRatio: total > 0 ? disagree / total : 0,
+          };
+        })
+        .filter((p: DisagreePost) => p.txHash);
     },
     disagreeThreshold: 0.3,
   });
@@ -205,9 +291,14 @@ async function main(): Promise<void> {
       return;
     }
 
+    // Refresh auth token if needed before any API action
+    token = await refreshTokenIfNeeded(demos, address, token);
+
+    // Load ledger for budget check and recording
+    const ledger = loadWriteRateLedger(address);
+
     // Check reactive budget before publishing/replying
     if (action.type === "publish" || action.type === "reply") {
-      const ledger = loadWriteRateLedger(address);
       const check = canPublish(ledger, { dailyLimit: dailyReactive, hourlyLimit: 2 });
       if (!check.allowed) {
         warn(`[event] Reactive budget exhausted: ${check.reason}`);
@@ -229,7 +320,6 @@ async function main(): Promise<void> {
       case "reply":
         info(`[event] Reply to ${action.params.parentTx}: ${String(action.params.question).slice(0, 50)}...`);
         // TODO: LLM generation + publish reply
-        // Record the publish in the rate limit ledger
         recordPublish(ledger);
         saveWriteRateLedger(ledger, address);
         break;

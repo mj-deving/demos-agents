@@ -12,6 +12,8 @@ import { describe, it, expect, vi } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { loadAgentConfig, type AgentConfig } from "../tools/lib/agent-config.js";
+import { makeAgentEvent } from "./fixtures/event-fixtures.js";
 
 // ── Plugin ──
 import { createInfraOpsPlugin } from "../core/plugins/infra-ops-plugin.js";
@@ -47,15 +49,13 @@ function makeSnapshot(
   return { timestamp, statuses };
 }
 
-function makeEvent(type: string, payload: unknown = {}) {
-  return {
-    id: `infra:status-monitor:1000:svc-1`,
-    sourceId: "infra:status-monitor",
+function makeInfraEvent(type: string, payload: unknown = {}) {
+  return makeAgentEvent({
     type,
-    detectedAt: Date.now(),
+    sourceId: "infra:status-monitor",
     payload,
-    watermark: {},
-  };
+    id: `infra:status-monitor:1000:svc-1`,
+  });
 }
 
 // ════════════════════════════════════════════
@@ -149,7 +149,7 @@ describe("InfraOpsPlugin", () => {
 
   it("init() can be called without error", async () => {
     const plugin = createInfraOpsPlugin();
-    const mockConfig = { name: "infra-ops" } as any;
+    const mockConfig = { name: "infra-ops" } as AgentConfig;
     await expect(plugin.init!(mockConfig)).resolves.not.toThrow();
   });
 
@@ -351,7 +351,7 @@ describe("IncidentAlertHandler", () => {
 
   it("handles outage events with critical severity", async () => {
     const payload = makeStatus({ service: "rpc-primary", status: "down" });
-    const event = makeEvent("outage", payload);
+    const event = makeInfraEvent("outage", payload);
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -362,7 +362,7 @@ describe("IncidentAlertHandler", () => {
 
   it("handles degradation events with warning severity", async () => {
     const payload = makeStatus({ service: "bridge", status: "degraded" });
-    const event = makeEvent("degradation", payload);
+    const event = makeInfraEvent("degradation", payload);
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -372,7 +372,7 @@ describe("IncidentAlertHandler", () => {
 
   it("handles recovery events with info severity", async () => {
     const payload = makeStatus({ service: "rpc-primary", status: "healthy" });
-    const event = makeEvent("recovery", payload);
+    const event = makeInfraEvent("recovery", payload);
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -385,7 +385,7 @@ describe("IncidentAlertHandler", () => {
       service: "validator",
       status: "maintenance",
     });
-    const event = makeEvent("status_change", payload);
+    const event = makeInfraEvent("status_change", payload);
     const action = await handler.handle(event);
     expect(action).not.toBeNull();
     expect(action!.type).toBe("log_only");
@@ -400,7 +400,7 @@ describe("IncidentAlertHandler", () => {
       "recovery",
       "status_change",
     ]) {
-      const action = await handler.handle(makeEvent(type));
+      const action = await handler.handle(makeInfraEvent(type));
       expect(action).not.toBeNull();
     }
   });
@@ -452,15 +452,23 @@ describe("Infra-Ops Agent YAML", () => {
     expect(doc.displayName).toBe("Infra Ops");
     expect(doc.topics.primary).toBeInstanceOf(Array);
     expect(doc.topics.primary).toContain("infrastructure");
-    expect(doc.topics.secondary).toBeInstanceOf(Array);
-    expect(doc.scan.modes).toEqual(["lightweight", "since-last"]);
-    expect(doc.scan.qualityFloor).toBe(70);
-    expect(doc.attestation.defaultMode).toBe("dahr_only");
+    // Infra overrides attestation keywords
     expect(doc.attestation.highSensitivityKeywords).toContain("outage");
     expect(doc.attestation.highSensitivityKeywords).toContain("downtime");
-    expect(doc.gate.predictedReactionsThreshold).toBe(10);
-    expect(doc.calibration.offset).toBe(0);
-    expect(doc.loop.extensions).toBeInstanceOf(Array);
+  });
+
+  it("loadAgentConfig merges base defaults for infra-ops", () => {
+    const config = loadAgentConfig("infra-ops");
+    expect(config.name).toBe("infra-ops");
+    expect(config.topics.primary).toContain("infrastructure");
+    expect(config.topics.secondary).toContain("rpc-performance");
+    expect(config.scan.qualityFloor).toBe(70);
+    expect(config.scan.modes).toEqual(["lightweight", "since-last"]);
+    expect(config.attestation.defaultMode).toBe("dahr_only");
+    expect(config.attestation.highSensitivityKeywords).toContain("outage");
+    expect(config.gate.predictedReactionsThreshold).toBe(10);
+    expect(config.calibration.offset).toBe(0);
+    expect(config.loopExtensions).toBeInstanceOf(Array);
   });
 
   it("persona.md exists", () => {

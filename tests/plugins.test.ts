@@ -11,6 +11,7 @@
 
 import { describe, it, expect } from "vitest";
 import type { FrameworkPlugin } from "../core/types.js";
+import type { AgentConfig } from "../tools/lib/agent-config.js";
 import { createPluginRegistry } from "../core/types.js";
 import {
   createSourcesPlugin,
@@ -124,7 +125,7 @@ describe("FrameworkPlugin implementations", () => {
     const plugin = createSourcesPlugin();
     if (plugin.init) {
       // Should not throw with a minimal mock config
-      const mockConfig = { name: "test-agent" } as any;
+      const mockConfig = { name: "test-agent" } as AgentConfig;
       await expect(plugin.init(mockConfig)).resolves.not.toThrow();
     }
   });

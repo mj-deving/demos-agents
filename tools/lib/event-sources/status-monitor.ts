@@ -7,6 +7,7 @@
  */
 
 import type { AgentEvent, EventSource } from "../../../core/types.js";
+import { extractLatestWatermark } from "./watermark-utils.js";
 
 export const STATUS_EVENT_TYPES = ["status_change", "degradation", "outage", "recovery"] as const;
 export type StatusEventType = typeof STATUS_EVENT_TYPES[number];
@@ -86,11 +87,7 @@ export function createStatusMonitorSource(
     },
 
     extractWatermark(snapshot: StatusSnapshot): unknown {
-      if (snapshot.statuses.length === 0) return null;
-      const latest = snapshot.statuses.reduce((a, b) =>
-        a.timestamp > b.timestamp ? a : b,
-      );
-      return { id: latest.id, timestamp: latest.timestamp };
+      return extractLatestWatermark(snapshot.statuses, s => ({ id: s.id, timestamp: s.timestamp }));
     },
   };
 }
