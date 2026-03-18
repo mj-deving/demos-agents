@@ -1,5 +1,5 @@
 /**
- * Plugin barrel export — all 7 FrameworkPlugin factory functions.
+ * Plugin barrel export — all 9 FrameworkPlugin factory functions.
  *
  * Each plugin wraps an existing extension or capability from the
  * tools/lib layer, exposing it through the FrameworkPlugin interface
@@ -13,3 +13,5 @@ export { createPredictionsPlugin } from "./predictions-plugin.js";
 export { createTipsPlugin } from "./tips-plugin.js";
 export { createCalibratePlugin } from "./calibrate-plugin.js";
 export { createObservePlugin } from "./observe-plugin.js";
+export { createDefiMarketsPlugin } from "./defi-markets-plugin.js";
+export { createInfraOpsPlugin } from "./infra-ops-plugin.js";
