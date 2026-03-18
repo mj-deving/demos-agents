@@ -316,6 +316,9 @@ export function createActionExecutor(
         }
         break;
       }
+      default:
+        ctx.warn(`[event] Unknown action type: ${action.type}`);
+        break;
     }
   };
 }

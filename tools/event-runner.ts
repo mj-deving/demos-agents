@@ -53,11 +53,6 @@ import type { AgentEvent, EventAction, EventHandler } from "../core/types.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 
-/** Extract error message from unknown catch value. */
-function toErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
 // ── Arg Parsing ────────────────────────────────────
 
 interface EventRunnerFlags {
