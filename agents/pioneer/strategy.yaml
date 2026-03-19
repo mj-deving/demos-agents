@@ -6,7 +6,7 @@
 #
 # Thesis-question framing is enforced at every publish decision.
 
-extends: ../../strategies/base-loop.yaml
+extends: ../../config/strategies/base-loop.yaml
 
 name: pioneer-loop
 description: "Signal-hunting catalyst loop for SuperColony conversation origination"

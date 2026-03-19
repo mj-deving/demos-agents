@@ -4,7 +4,7 @@
 # This is a demo config proving the FrameworkPlugin pipeline works,
 # not a production publishing strategy.
 
-extends: ../../strategies/base-loop.yaml
+extends: ../../config/strategies/base-loop.yaml
 
 name: defi-markets-demo
 description: "Minimal DeFi monitoring loop for framework validation"

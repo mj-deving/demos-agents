@@ -116,7 +116,7 @@ function buildPaths(name: string): AgentPaths {
     strategyYaml: resolve(agentDir, "strategy.yaml"),
     agentYaml: resolve(agentDir, "AGENT.yaml"),
     sourcesRegistry: resolve(agentDir, "sources-registry.yaml"),
-    sourceCatalog: resolve(REPO_ROOT, "sources", "catalog.json"),
+    sourceCatalog: resolve(REPO_ROOT, "config", "sources", "catalog.json"),
     sourceConfig: resolve(agentDir, "source-config.yaml"),
     sessionDir: resolve(home, `.${name}`, "sessions"),
     logFile: resolve(home, `.${name}-session-log.jsonl`),

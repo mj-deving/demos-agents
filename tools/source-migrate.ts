@@ -33,7 +33,7 @@ const { values: flags } = parseArgs({
     sentinel: { type: "string" },
     crawler: { type: "string" },
     pioneer: { type: "string" },
-    out: { type: "string", default: "sources/catalog.json" },
+    out: { type: "string", default: "config/sources/catalog.json" },
     "emit-agent-configs": { type: "boolean", default: false },
     pretty: { type: "boolean", default: false },
   },
@@ -156,7 +156,7 @@ function migrate(): void {
   };
 
   // Write catalog
-  const outPath = resolve(typeof flags.out === "string" ? flags.out : "sources/catalog.json");
+  const outPath = resolve(typeof flags.out === "string" ? flags.out : "config/sources/catalog.json");
   const outDir = dirname(outPath);
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
   writeFileSync(outPath, JSON.stringify(catalog, null, 2), "utf-8");

@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SPECS_DIR = resolve(__dirname, "lib/sources/providers/specs");
-const CATALOG_PATH = resolve(__dirname, "../sources/catalog.json");
+const CATALOG_PATH = resolve(__dirname, "../config/sources/catalog.json");
 
 // ── Arg Parsing ──────────────────────────────────────
 

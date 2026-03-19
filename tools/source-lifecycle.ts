@@ -53,7 +53,7 @@ const delayMs = parseInt(getFlag("delay") || "200", 10);
 
 // ── Load Catalog ─────────────────────────────────────
 
-const catalogPath = resolve(import.meta.dirname || ".", "../sources/catalog.json");
+const catalogPath = resolve(import.meta.dirname || ".", "../config/sources/catalog.json");
 const catalog = loadCatalog(catalogPath);
 
 if (!catalog) {

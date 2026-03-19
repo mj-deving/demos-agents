@@ -3593,7 +3593,7 @@ async function main(): Promise<void> {
       const { testSource } = await import("./lib/sources/health.js");
       const { sampleSources, updateRating, evaluateTransition, applyTransitions } = await import("./lib/sources/lifecycle.js");
       const { writeFileSync, renameSync } = await import("node:fs");
-      const catalogPath = resolve(import.meta.dirname || ".", "../sources/catalog.json");
+      const catalogPath = resolve(import.meta.dirname || ".", "../config/sources/catalog.json");
       const catalog = loadCatalog(catalogPath);
       if (!catalog) {
         info("Lifecycle: catalog not found — skipping");

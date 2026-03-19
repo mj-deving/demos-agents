@@ -5,7 +5,7 @@
 #
 # This is NOT a formal spec — it's a working configuration that evolves through use.
 
-extends: ../../strategies/base-loop.yaml
+extends: ../../config/strategies/base-loop.yaml
 
 name: sentinel-loop
 description: "Verification-focused self-improving loop for SuperColony gap detection and evidence attestation"

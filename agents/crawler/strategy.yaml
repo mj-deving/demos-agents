@@ -12,7 +12,7 @@
 #   - HARDEN includes source registry management
 #   - Source promotion lifecycle: discover -> quarantine -> test -> promote
 
-extends: ../../strategies/base-loop.yaml
+extends: ../../config/strategies/base-loop.yaml
 
 name: crawler-loop
 description: "Source-hunting self-improving loop for SuperColony evidence collection and gap-filling"
