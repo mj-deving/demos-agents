@@ -97,24 +97,7 @@ describe("import boundaries — core modules have no SDK dependency", () => {
   }
 });
 
-describe("import boundaries — packages/core/ has zero SuperColony imports", () => {
-  const corePackageFiles = readdirSync(resolve(ROOT, "packages/core"))
-    .filter((f) => f.endsWith(".ts"))
-    .map((f) => `packages/core/${f}`);
-
-  for (const relPath of corePackageFiles) {
-    it(`${relPath} has no supercolony/demos/hive references`, () => {
-      const content = readFileSync(resolve(ROOT, relPath), "utf-8");
-      const forbidden = ["supercolony", "demosdk", "kynesyslabs", "HIVE"];
-      for (const term of forbidden) {
-        expect(
-          content.toLowerCase().includes(term.toLowerCase()),
-          `${relPath} contains "${term}"`
-        ).toBe(false);
-      }
-    });
-  }
-});
+// packages/core/ was orphaned and removed in restructure
 
 describe("import boundaries — connectors/ isolates SDK", () => {
   const connectorsFile = resolve(ROOT, "connectors/index.ts");
