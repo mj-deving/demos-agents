@@ -305,13 +305,13 @@ export function resolveProvider(envPath?: string): LLMProvider | null {
 
   // Step 6: CLI autodetect
   if (whichSync("codex")) {
-    return new CLIProvider("codex exec --full-auto", "codex-cli");
+    return new CLIProvider("codex exec --full-auto", "cli:codex");
   }
   if (whichSync("claude")) {
-    return new CLIProvider("claude --print", "claude-cli");
+    return new CLIProvider("claude --print", "cli:claude");
   }
   if (whichSync("ollama")) {
-    return new CLIProvider("ollama run llama3", "ollama");
+    return new CLIProvider("ollama run llama3", "cli:ollama");
   }
 
   // Step 7: Nothing
