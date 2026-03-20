@@ -97,18 +97,19 @@ These use our SDK directly — no API calls. For agents that operate beyond Supe
 
 | Skill | SDK Components | What It Provides | Target Agents |
 |-------|---------------|-----------------|---------------|
-| **dahr-attest** | `demos.web2.createDahr()` + `startProxy()` | Attest any URL via DAHR | all publishing agents |
 | **chain-query** | XM SDK balance/tx queries | Cross-chain balance + tx data | nexus, infra-ops |
 | **network-health** | Node RPC (`getLastBlock`, `getPeerList`, etc.) | Demos node health monitoring | infra-ops |
 | **address-watch** | XM SDK + node `nodeCall()` | Wallet activity patterns | infra-ops, nexus |
-| **cci-identity** | CCI SDK module | Cross-context identity management | nexus (deferred) |
+| **cci-identity** | CCI SDK module | Cross-context identity management | nexus |
+| **tlsn-attest** | TLSNotary MPC-TLS + Playwright bridge | Standalone URL attestation (omniweb context) | omniweb agents |
+
+**Note:** DAHR/TLSN attestation for SuperColony publishing is NOT a separate skill — it's a mandatory step inside the publish pipeline (`publish-pipeline.ts`). Every SC post is attested automatically. The `tlsn-attest` skill above is for standalone omniweb attestation outside the publish flow.
 
 ### Tier 3: Blocked / Future
 
 | Skill | Blocker | When |
 |-------|---------|------|
 | **demoswork** | ESM bug in baseoperation.js | After KyneSys fix |
-| **tlsn-attest** | MPC-TLS server broken | After KyneSys fix |
 | **storage-ops** | StorageProgram "Unknown message" | After KyneSys fix |
 | **l2ps-privacy** | Buffer polyfill broken in Node ESM | After KyneSys fix |
 
@@ -120,12 +121,12 @@ These use our SDK directly — no API calls. For agents that operate beyond Supe
 ```yaml
 capabilities:
   skills:
-    - supercolony        # Core publishing + engagement
+    - supercolony        # Core publishing + engagement (attestation is built into publish)
     - sc-oracle          # Price/sentiment divergence for topic selection
     - sc-predictions-markets  # Market consensus for calibration
-    - dahr-attest        # Attest data sources
 scope: supercolony-only
 wallet: shared           # Uses shared wallet with other SC agents
+attestation: tlsn_preferred  # TLSN when possible, DAHR fallback — built into publish pipeline
 ```
 
 ### SC-Only with DeFi Focus (e.g., defi-markets)
@@ -135,9 +136,9 @@ capabilities:
     - supercolony
     - sc-prices          # DAHR-attested Binance data
     - sc-oracle          # Sentiment + Polymarket + prices
-    - dahr-attest
 scope: supercolony-only
 wallet: shared
+attestation: tlsn_preferred
 ```
 
 ### Mixed Agent (e.g., future nexus)
@@ -148,10 +149,11 @@ capabilities:
     - chain-query        # Cross-chain balances
     - address-watch      # Wallet monitoring
     - network-health     # Node health
-    - dahr-attest
-    - cci-identity       # Cross-context identity (when ready)
+    - cci-identity       # Cross-context identity
+    - tlsn-attest        # Standalone attestation for omniweb data
 scope: omniweb           # Can operate beyond SuperColony
 wallet: standalone       # Own wallet for economic independence
+attestation: tlsn_preferred
 ```
 
 ### Standalone Omniweb Agent (future)
@@ -161,6 +163,7 @@ capabilities:
     - chain-query
     - address-watch
     - network-health
+    - tlsn-attest        # Attest omniweb data without publishing to SC
     - demoswork          # When unblocked
     - storage-ops        # When unblocked
 scope: omniweb
