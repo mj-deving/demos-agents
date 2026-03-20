@@ -46,6 +46,14 @@ export function createChainOperationsProvider(
         ...(options?.message != null && {
           message: options.message as string,
         }),
+        // Transfer params
+        ...(options?.recipient != null && {
+          recipient: options.recipient as string,
+        }),
+        ...(options?.amount != null && {
+          amount: options.amount as string,
+        }),
+        // Contract write params
         ...(options?.contractAddress != null && {
           contractAddress: options.contractAddress as string,
         }),

@@ -1,9 +1,10 @@
 /**
  * Skill Dojo HTTP client with sliding-window rate limiting.
  *
- * Shared across all agents on the same machine (5 req/hr per IP).
- * Rate state is in-memory — resets on process restart, which is
- * acceptable for cron-driven session loops.
+ * Rate state is per-instance, in-memory — resets on process restart.
+ * For cron agents (each session is a fresh process), this is sufficient.
+ * For multi-process deployments, the server-side 5 req/hr per IP limit
+ * is the actual shared constraint — this client-side budget is advisory.
  */
 
 // ── Types ──────────────────────────────────────────
@@ -75,18 +76,31 @@ export function createSkillDojoClient(
   ): Promise<SkillDojoResponse<T>> {
     if (!canExecute()) {
       const { resetsAt } = getRemainingBudget();
-      throw new Error(
-        `Skill Dojo rate limit exceeded (${maxPerHour}/hr). Resets at ${new Date(resetsAt).toISOString()}`,
-      );
+      return {
+        ok: false,
+        skillId,
+        executionTimeMs: 0,
+        error: `Rate limit exceeded (${maxPerHour}/hr). Resets at ${new Date(resetsAt).toISOString()}`,
+      };
     }
 
     timestamps.push(Date.now());
 
-    const res = await fetch(`${baseUrl}/api/execute`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ skillId, params }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${baseUrl}/api/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skillId, params }),
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        skillId,
+        executionTimeMs: 0,
+        error: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
 
     if (!res.ok) {
       return {
@@ -97,7 +111,16 @@ export function createSkillDojoClient(
       };
     }
 
-    return (await res.json()) as SkillDojoResponse<T>;
+    try {
+      return (await res.json()) as SkillDojoResponse<T>;
+    } catch {
+      return {
+        ok: false,
+        skillId,
+        executionTimeMs: 0,
+        error: "Invalid JSON response from Skill Dojo",
+      };
+    }
   }
 
   return { execute, canExecute, getRemainingBudget };

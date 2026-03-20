@@ -11,7 +11,7 @@ import type { ElizaProvider, ElizaRuntime, ElizaMessage, ElizaState } from "./ty
 export function bridgeProvider(demosProvider: DataProvider): ElizaProvider {
   return {
     get: async (_runtime: ElizaRuntime, _message: ElizaMessage, state?: ElizaState) => {
-      const result = await demosProvider.fetch((state?.topic as string) || "", {});
+      const result = await demosProvider.fetch(String(state?.topic ?? ""), {});
       return JSON.stringify(result);
     },
   };

@@ -46,14 +46,19 @@ export function extractProofs(data: unknown): NormalizedProof[] {
   if (d.demosAttestation && typeof d.demosAttestation === "object") {
     const dem = d.demosAttestation as Record<string, unknown>;
     if (dem.proofs && typeof dem.proofs === "object") {
-      const proofs = dem.proofs as Record<string, Record<string, unknown>>;
-      return Object.entries(proofs).map(([key, p]) => ({
-        attested: true,
-        source: (p.source as string) ?? key,
-        responseHash: p.responseHash as string | undefined,
-        txHash: p.txHash as string | undefined,
-        explorerUrl: p.explorerUrl as string | undefined,
-      }));
+      const proofs = dem.proofs as Record<string, unknown>;
+      return Object.entries(proofs)
+        .filter(([, v]) => v != null && typeof v === "object")
+        .map(([key, v]) => {
+          const p = v as Record<string, unknown>;
+          return {
+            attested: true,
+            source: (p.source as string) ?? key,
+            responseHash: p.responseHash as string | undefined,
+            txHash: p.txHash as string | undefined,
+            explorerUrl: p.explorerUrl as string | undefined,
+          };
+        });
     }
   }
 

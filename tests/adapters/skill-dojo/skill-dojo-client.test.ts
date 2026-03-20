@@ -66,7 +66,7 @@ describe("SkillDojoClient", () => {
       expect(budget.resetsAt).toBeGreaterThan(Date.now());
     });
 
-    it("throws when rate limit exceeded", async () => {
+    it("returns error when rate limit exceeded", async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         json: () =>
@@ -86,9 +86,9 @@ describe("SkillDojoClient", () => {
       await client.execute("s", {});
       await client.execute("s", {});
 
-      await expect(client.execute("s", {})).rejects.toThrow(
-        /rate limit exceeded/i,
-      );
+      const res = await client.execute("s", {});
+      expect(res.ok).toBe(false);
+      expect(res.error).toMatch(/rate limit exceeded/i);
     });
 
     it("canExecute returns false when exhausted", async () => {

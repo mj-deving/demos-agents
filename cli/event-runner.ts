@@ -123,7 +123,7 @@ async function fetchFeedCached(token: string): Promise<any[]> {
 
 // ── Session Log Reader ─────────────────────────────
 
-// loadOwnTxHashes + pruneSessionLog imported from ./lib/own-tx-hashes.ts
+// loadOwnTxHashes + pruneSessionLog imported from ../src/reactive/own-tx-hashes.ts
 
 // ── Auth Token Refresh ────────────────────────────
 

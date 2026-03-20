@@ -14,19 +14,29 @@ export class EventSourceService implements ElizaService {
   readonly capabilityDescription = "Demos event source polling";
   private running = false;
   private timers: ReturnType<typeof setInterval>[] = [];
+  private runtime?: ElizaRuntime;
 
   constructor(
     private sources: EventSource[],
     private handlers: EventHandler[],
-    private runtime?: ElizaRuntime,
-  ) {}
+    runtime?: ElizaRuntime,
+  ) {
+    this.runtime = runtime;
+  }
+
+  /** Set the runtime after construction (e.g., when ElizaOS provides it at plugin init). */
+  setRuntime(runtime: ElizaRuntime): void {
+    this.runtime = runtime;
+  }
 
   async start(): Promise<void> {
     this.running = true;
     for (const source of this.sources) {
       let prev: unknown = null;
+      let polling = false;  // in-flight guard
       const timer = setInterval(async () => {
-        if (!this.running) return;
+        if (!this.running || polling) return;
+        polling = true;
         try {
           const curr = await source.poll();
           const events = source.diff(prev, curr);
@@ -43,6 +53,8 @@ export class EventSourceService implements ElizaService {
           }
         } catch (err) {
           this.runtime?.log?.(`EventSourceService poll error: ${err}`);
+        } finally {
+          polling = false;
         }
       }, 30_000);
       this.timers.push(timer);

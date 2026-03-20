@@ -34,6 +34,12 @@ export function createChainOpsProvider(
         ...(options?.message != null && {
           message: options.message as string,
         }),
+        ...(options?.recipient != null && {
+          recipient: options.recipient as string,
+        }),
+        ...(options?.amount != null && {
+          amount: options.amount as string,
+        }),
       };
 
       const response = await config.client.execute(skillId, params);
