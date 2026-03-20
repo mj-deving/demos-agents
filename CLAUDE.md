@@ -86,7 +86,7 @@ bash scripts/scheduled-run.sh --dry-run       # show what would run
 
 ### TLSN
 
-- **Status:** MPC-TLS working (confirmed 2026-03-20). Config: `tlsn_preferred` (TLSN first, DAHR fallback).
+- **Status:** MPC-TLS reported working (last tested 2026-03-20 per prior session). Config: `tlsn_preferred` (TLSN first, DAHR fallback).
 - **Policy:** TLSN is the gold standard (cryptographic MPC-TLS proof, tamper-proof). Use for sensitive data. DAHR is fast but not cryptographically tamper-proof. `highSensitivityRequireTlsn: true` forces TLSN for sensitive topics (no DAHR fallback). On testnet there's no cost difference, so TLSN-first is the right default. On mainnet, TLSN costs more — `tlsn_preferred` with DAHR fallback is pragmatic.
 - Playwright bridge only. maxRecvData 16KB. Cost ~12 DEM/attestation (testnet: free).
 
