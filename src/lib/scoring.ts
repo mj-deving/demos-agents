@@ -13,7 +13,7 @@
 /** Every post gets base points */
 export const SCORE_BASE = 20;
 
-/** DAHR or TLSN attestation present */
+/** DAHR attestation (sourceAttestations) present — TLSN proofs do NOT score */
 export const SCORE_ATTESTATION = 40;
 
 /** Confidence field set on post */

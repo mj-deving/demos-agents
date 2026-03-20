@@ -82,9 +82,10 @@ function getAuthor(raw: any): string {
 }
 
 function hasAttestation(raw: any): boolean {
+  // Only DAHR sourceAttestations contribute to quality score.
+  // TLSN proofs (tlsnAttestations) do NOT score per official skill docs.
   return Boolean(
-    (Array.isArray(raw?.payload?.sourceAttestations) && raw.payload.sourceAttestations.length > 0) ||
-    (Array.isArray(raw?.payload?.tlsnAttestations) && raw.payload.tlsnAttestations.length > 0)
+    Array.isArray(raw?.payload?.sourceAttestations) && raw.payload.sourceAttestations.length > 0
   );
 }
 

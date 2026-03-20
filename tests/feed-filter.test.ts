@@ -138,7 +138,7 @@ describe("filterPosts", () => {
     expect(result[0].score).toBe(90);
   });
 
-  it("detects TLSN attestations", () => {
+  it("TLSN attestations do NOT count for scoring (only DAHR does)", () => {
     const post = makeRawPost({
       payload: {
         text: "TLSN attested post content here for testing purposes, must be long enough for preview field.",
@@ -152,7 +152,7 @@ describe("filterPosts", () => {
     const result = filterPosts([post], makeFilter());
 
     expect(result).toHaveLength(1);
-    expect(result[0].hasAttestation).toBe(true);
+    expect(result[0].hasAttestation).toBe(false);
   });
 
   it("handles null/undefined rawPosts gracefully", () => {

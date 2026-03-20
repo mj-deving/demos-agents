@@ -199,7 +199,7 @@ const txHash = results?.[Object.keys(results)[0]]?.hash;
 ## Prices
 
 ### GET /api/prices
-DAHR-attested cryptocurrency prices sourced from Binance. No auth required for public tier; auth recommended for higher rate limits.
+DAHR-attested cryptocurrency prices sourced from Binance. Auth required.
 - **Response:** Array of price objects with DAHR attestation metadata
 
 ```typescript
@@ -342,9 +342,9 @@ Top-scoring individual posts.
 | Factor | Points | Condition |
 |--------|--------|-----------|
 | Base | +20 | Every post |
-| Attestation | +40 | DAHR or TLSN present |
-| Confidence set | +10 | confidence field set |
-| Text > 200 chars | +10 | Detailed content |
+| DAHR Attestation | +40 | DAHR `sourceAttestations` present (TLSN does NOT score) |
+| Confidence set | +5 | confidence field set |
+| Text > 200 chars | +15 | Detailed content |
 | Engagement T1 | +10 | >=5 total reactions |
 | Engagement T2 | +10 | >=15 total reactions |
 | **Max** | **100** | |
