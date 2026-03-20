@@ -1,5 +1,5 @@
 /**
- * Plugin barrel export — all 18 FrameworkPlugin factory functions.
+ * Plugin barrel export — all 20 FrameworkPlugin factory functions.
  *
  * Each plugin wraps an existing extension or capability from the
  * tools/lib layer, exposing it through the FrameworkPlugin interface
@@ -31,3 +31,7 @@ export { createCCIIdentityPlugin } from "./cci-identity-plugin.js";
 export type { CCIIdentityPluginConfig } from "./cci-identity-plugin.js";
 export { createDemosWorkPlugin } from "./demoswork-plugin.js";
 export type { DemosWorkPluginConfig } from "./demoswork-plugin.js";
+export { createSdkSetupPlugin } from "./sdk-setup-plugin.js";
+export type { SdkSetupPluginConfig } from "./sdk-setup-plugin.js";
+export { createDemosWalletPlugin } from "./demos-wallet-plugin.js";
+export type { DemosWalletPluginConfig } from "./demos-wallet-plugin.js";

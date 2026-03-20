@@ -5,6 +5,8 @@ import { createChainQueryPlugin } from "../src/plugins/chain-query-plugin.js";
 import { createAddressWatchPlugin } from "../src/plugins/address-watch-plugin.js";
 import { createCCIIdentityPlugin } from "../src/plugins/cci-identity-plugin.js";
 import { createDemosWorkPlugin } from "../src/plugins/demoswork-plugin.js";
+import { createSdkSetupPlugin } from "../src/plugins/sdk-setup-plugin.js";
+import { createDemosWalletPlugin } from "../src/plugins/demos-wallet-plugin.js";
 import type { ProviderResult } from "../src/types.js";
 
 const RPC_URL = "https://demosnode.discus.sh";
@@ -16,6 +18,10 @@ function mockFetchOk(data: unknown): typeof globalThis.fetch {
     statusText: "OK",
     json: async () => data,
   });
+}
+
+function mockFetchNetworkError(): typeof globalThis.fetch {
+  return vi.fn().mockRejectedValue(new Error("Network failure"));
 }
 
 function mockFetchError(status: number, statusText: string): typeof globalThis.fetch {
@@ -242,6 +248,123 @@ describe("Omniweb Plugins", () => {
       expect(result.error).toContain("SDK blocker:");
       expect(result.error).toContain("DemosWork has ESM directory import bug");
       expect(result.source).toBe("demoswork-plugin");
+    });
+  });
+
+  // ---------- sdk-setup (real) ----------
+  describe("createSdkSetupPlugin", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("creates a plugin with correct metadata", () => {
+      const plugin = createSdkSetupPlugin({ rpcUrl: RPC_URL });
+      expect(plugin.name).toBe("sdk-setup");
+      expect(plugin.version).toBe("1.0.0");
+      expect(plugin.providers).toHaveLength(1);
+      expect(plugin.providers[0].name).toBe("sdk-setup");
+    });
+
+    it("returns RPC connectivity status on success", async () => {
+      vi.stubGlobal("fetch", mockFetchOk({ result: { height: 12345 } }));
+
+      const plugin = createSdkSetupPlugin({ rpcUrl: RPC_URL, agentAddress: "0xagent" });
+      const result: ProviderResult = await plugin.providers[0].fetch("health");
+
+      expect(result.ok).toBe(true);
+      expect(result.data).toEqual({
+        rpcUrl: RPC_URL,
+        rpcReachable: true,
+        blockHeight: 12345,
+        agentAddress: "0xagent",
+      });
+      expect(result.source).toBe("sdk-setup-plugin");
+    });
+
+    it("returns ok:false on RPC failure", async () => {
+      vi.stubGlobal("fetch", mockFetchError(503, "Service Unavailable"));
+
+      const plugin = createSdkSetupPlugin({ rpcUrl: RPC_URL });
+      const result = await plugin.providers[0].fetch("health");
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain("RPC unreachable");
+      expect(result.source).toBe("sdk-setup-plugin");
+    });
+
+    it("returns ok:false on network error", async () => {
+      vi.stubGlobal("fetch", mockFetchNetworkError());
+
+      const plugin = createSdkSetupPlugin({ rpcUrl: RPC_URL });
+      const result = await plugin.providers[0].fetch("health");
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain("SDK setup check failed");
+      expect(result.source).toBe("sdk-setup-plugin");
+    });
+  });
+
+  // ---------- demos-wallet (real) ----------
+  describe("createDemosWalletPlugin", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("creates a plugin with correct metadata", () => {
+      const plugin = createDemosWalletPlugin({ rpcUrl: RPC_URL, agentAddress: "0xagent" });
+      expect(plugin.name).toBe("demos-wallet");
+      expect(plugin.version).toBe("1.0.0");
+      expect(plugin.providers).toHaveLength(1);
+      expect(plugin.providers[0].name).toBe("demos-wallet");
+    });
+
+    it("returns balance and address info on success", async () => {
+      vi.stubGlobal("fetch", mockFetchOk({ result: { balance: 95.5, nonce: 42 } }));
+
+      const plugin = createDemosWalletPlugin({ rpcUrl: RPC_URL, agentAddress: "0xagent" });
+      const result: ProviderResult = await plugin.providers[0].fetch("balance");
+
+      expect(result.ok).toBe(true);
+      expect(result.data).toEqual({
+        address: "0xagent",
+        balance: 95.5,
+        nonce: 42,
+        rpcUrl: RPC_URL,
+      });
+      expect(result.source).toBe("demos-wallet-plugin");
+    });
+
+    it("allows querying a different address via options", async () => {
+      const mock = mockFetchOk({ result: { balance: 10, nonce: 1 } });
+      vi.stubGlobal("fetch", mock);
+
+      const plugin = createDemosWalletPlugin({ rpcUrl: RPC_URL, agentAddress: "0xagent" });
+      const result = await plugin.providers[0].fetch("balance", { address: "0xother" });
+
+      expect(result.ok).toBe(true);
+      expect((result.data as any).address).toBe("0xother");
+    });
+
+    it("returns ok:false on RPC error", async () => {
+      vi.stubGlobal("fetch", mockFetchError(500, "Internal Server Error"));
+
+      const plugin = createDemosWalletPlugin({ rpcUrl: RPC_URL, agentAddress: "0xagent" });
+      const result = await plugin.providers[0].fetch("balance");
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain("HTTP 500");
+      expect(result.source).toBe("demos-wallet-plugin");
+    });
+
+    it("returns ok:false on network error", async () => {
+      vi.stubGlobal("fetch", mockFetchNetworkError());
+
+      const plugin = createDemosWalletPlugin({ rpcUrl: RPC_URL, agentAddress: "0xagent" });
+      const result = await plugin.providers[0].fetch("balance");
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("Network failure");
+      expect(result.source).toBe("demos-wallet-plugin");
     });
   });
 });
