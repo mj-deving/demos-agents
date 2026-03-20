@@ -233,6 +233,81 @@ Depends on KyneSys fixes:
 - `skills/storage-ops/` — after StorageProgram node support
 - `skills/l2ps-privacy/` — after Buffer polyfill fix
 
+### Phase 7: Full Demos SDK Integration (Systematic)
+
+**Goal:** Every Demos SDK capability becomes an agent skill. Demos is our infrastructure layer — we consume ALL of it, not just SuperColony + attestation. Each capability = a plugin with silent-fail (try, warn, degrade).
+
+Work through the SDK module-by-module. For each: (1) validate in Node.js, (2) build plugin, (3) write tests, (4) wire into skill manifest.
+
+**Tier 1 — Identity & Reputation (high value, partially started)**
+
+| SDK Module | Plugin | Status | Work Needed |
+|------------|--------|--------|-------------|
+| `abstraction` → Identities | cci-identity-plugin | ⚠️ RPC-direct | Blocker: NAPI SIGSEGV on barrel import. Workaround: RPC calls work. Report to KyneSys. |
+| `abstraction` → Web2 Identity | identity.ts (lib) | ✅ Built | CLI done. Need: post proof tweet, complete sentinel linking. |
+| `abstraction` → ZK Identity | zk-identity-plugin | 🔲 New | Groth16 ZK-SNARKs for privacy-preserving attestation. Build plugin. |
+| `abstraction` → Nomis Score | reputation-plugin | 🔲 New | Wallet reputation scoring. Blocked by NAPI — use RPC-direct. |
+| `abstraction` → Ethos Score | reputation-plugin | 🔲 New | Wallet reputation. Same NAPI workaround. |
+| `abstraction` → Human Passport | reputation-plugin | 🔲 New | Sybil resistance scoring. Same NAPI workaround. |
+| `abstraction` → PQC Identity | sdk.ts | ✅ Built | `bindPqcIdentity()` — upgrade identity to quantum-proof. |
+
+**Tier 2 — Data & Storage (blocked, high potential)**
+
+| SDK Module | Plugin | Status | Work Needed |
+|------------|--------|--------|-------------|
+| `storage` → Storage Programs | storage-plugin | ❌ Blocked | RPC "Unknown message". Need KyneSys fix. Plugin scaffold exists. |
+| `demoswork` → Work Steps | demoswork-plugin | ❌ Blocked | ESM directory import bug. Plugin scaffold → silent-fail done. |
+| `l2ps` → Privacy Subnets | l2ps-plugin | ❌ Blocked | Buffer polyfill issue. Build plugin when unblocked. |
+
+**Tier 3 — Cross-Chain Operations (partially started)**
+
+| SDK Module | Plugin | Status | Work Needed |
+|------------|--------|--------|-------------|
+| `xmcore/*` → Chain Operations | chain-query-plugin | ⚠️ RPC-direct | Basic address query works. Need: multi-chain balance, tx history. |
+| `xm-websdk` → Cross-Chain Tx | xm-tx-plugin | 🔲 New | Cross-chain transfers, swaps. Build when tested. |
+| `bridge` → Rubic Bridge | bridge-plugin | 🔲 New | Cross-chain asset bridging. |
+| `xmcore/evm` → EVM Contracts | evm-plugin | 🔲 New | Smart contract read/write via Demos. |
+
+**Tier 4 — Communication & Auth (new territory)**
+
+| SDK Module | Plugin | Status | Work Needed |
+|------------|--------|--------|-------------|
+| `websdk/instant-messaging` | messaging-plugin | 🔲 New | E2E encrypted agent-to-agent messaging (ml-kem-aes). |
+| `keyserver` → OAuth | keyserver-plugin | 🔲 New | OAuth flow for Web2 identity (GitHub, etc.). |
+| `d402` → D402 Protocol | d402-plugin | 🔲 New | Investigate what D402 does (payment protocol?). |
+| `encryption` → Crypto Utils | (library, not plugin) | 🔲 New | Unified crypto, hashing, FHE utils. |
+
+**Tier 5 — Chain Query & Feed (direct RPC)**
+
+| SDK Module | Plugin | Status | Work Needed |
+|------------|--------|--------|-------------|
+| RPC → Full Feed History | feed-history-plugin | 🔲 New | Read all 112k+ posts from GCR via RPC (API caps at ~20k). |
+| RPC → Transaction Query | tx-query-plugin | 🔲 New | Query specific transactions by hash. |
+| RPC → Block Query | (in network-health) | ✅ Built | getLastBlock already works. |
+
+**Tier 6 — External Protocol Integration**
+
+| Protocol | Plugin | Status | Work Needed |
+|----------|--------|--------|-------------|
+| Agent Auth Protocol | agent-auth-plugin | 🔲 New | `@auth/agent` SDK evaluated. Build capability-based service auth. |
+| Demos MCP Server | mcp-client-plugin | 🔲 New | Use MCP server for documentation lookups + node queries. |
+
+**Execution order:** Tier 1 → Tier 5 → Tier 3 → Tier 4 → Tier 2 (blocked) → Tier 6
+- Tier 1 first because identity + reputation is the highest-value differentiator
+- Tier 5 next because feed history unlocks source mining at scale
+- Tier 2 last because it depends on KyneSys SDK fixes
+
+**Validation protocol for each module:**
+1. Test bare import: `npx tsx -e 'import { X } from "@kynesyslabs/demosdk/module"'`
+2. Test instantiation: create class, call a method
+3. If NAPI crash: use RPC-direct workaround (same pattern as CCI identity)
+4. Build plugin with silent-fail pattern (try → warn → degrade)
+5. Write tests (mock fetch for RPC calls)
+6. Add to skill manifest (Phase 5 integration)
+7. Wire into at least one agent's AGENT.yaml
+
+**NAPI crash strategy:** The `abstraction` barrel import crashes because it transitively loads FHE/PQC/zK native modules. For any class in that barrel, reconstruct the RPC calls using `DemosTransactions` + `demos.sign()` + `demos.confirm()` — the same pattern that works for identity.ts. File issue with KyneSys requesting barrel splitting or lazy-loading of native deps.
+
 ---
 
 ## What Happens to Existing Work

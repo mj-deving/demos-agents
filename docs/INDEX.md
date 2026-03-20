@@ -91,7 +91,7 @@ What Demos offers vs what we use. **Updated each session.**
 
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
-| [roadmap-unified.md](roadmap-unified.md) | `current` | 2026-03-20 | 6-phase plan: Phases 1-4 complete, Phase 5 planned, Phase 6 blocked |
+| [roadmap-unified.md](roadmap-unified.md) | `current` | 2026-03-20 | 7-phase plan: Phases 1-4 complete, Phase 5 planned, Phase 6 blocked, **Phase 7: systematic full SDK integration** |
 | [roadmap-skill-dojo-local.md](roadmap-skill-dojo-local.md) | `current` | 2026-03-20 | Course correction: extract Skill Dojo as local SDK-direct implementations |
 | [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `plan` | 2026-03-20 | Skill loader + manifest design. Codex-reviewed. Phase 0 prerequisite identified. |
 
