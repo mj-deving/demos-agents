@@ -224,3 +224,10 @@ export function setLogAgent(agentName: string): void {
 export function info(msg: string, agentName: string = logAgentName): void {
   console.error(`[${agentName}] ${msg}`);
 }
+
+/**
+ * Log warning to stderr.
+ */
+export function warn(msg: string, agentName: string = logAgentName): void {
+  console.error(`[${agentName}] WARN: ${msg}`);
+}
