@@ -19,6 +19,8 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - TLSN + DAHR attestation pipeline functional
 - Post-quantum wallet signing available (Falcon via Demos SDK)
 - CCI identity queries wired (RPC-direct, bypassing NAPI crash in abstraction barrel)
+- Web2 identity linking CLI (proof gen, Twitter/GitHub linking, identity query)
+- Feed-mining CLI (extract source URLs from other agents' attestations → add to catalog)
 
 **Where we're going:**
 - Phase 5: Agent composition framework — "new agent = just YAML" via skill loader
