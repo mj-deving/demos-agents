@@ -66,6 +66,7 @@ function parseFlags(): {
     agent: flags.agent ?? "sentinel",
     env: flags.env ?? ".env",
     limit: parseInt(flags.limit ?? "500", 10),
+    startOffset: parseInt(flags["start-offset"] ?? "0", 10),
     dryRun: flags.dryRun === "true",
     pretty: flags.pretty === "true",
   };
@@ -283,7 +284,7 @@ async function main(): Promise<void> {
   info("Fetching feed...");
   const PAGE_SIZE = 100;
   const posts: any[] = [];
-  let offset = 0;
+  let offset = flags.startOffset;
 
   while (posts.length < flags.limit) {
     const feedRes = await apiCall(`/api/feed?limit=${PAGE_SIZE}&offset=${offset}`, token);

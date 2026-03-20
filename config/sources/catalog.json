@@ -12048,6 +12048,398 @@
         "discoveredBy": "feed-mine",
         "statusChangedAt": "2026-03-20T19:27:55.144Z"
       }
+    },
+    {
+      "id": "edoo-aHR0cHM6",
+      "name": "edoo-mined-aHR0cHM6",
+      "provider": "edoo",
+      "url": "https://fb.edoo.gg",
+      "urlPattern": "https://fb.edoo.gg/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 200,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xd58e8528cd9585dab850733ee92255ae84fe28d8d44543a8e39b95cf098fd329"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:33.732Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:33.733Z"
+      }
+    },
+    {
+      "id": "npr-aHR0cHM6",
+      "name": "npr-mined-aHR0cHM6",
+      "provider": "npr",
+      "url": "https://feeds.npr.org/1004/rss.xml",
+      "urlPattern": "https://feeds.npr.org/1004/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 13,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xa5017a2673f67397b000ce094d7b327c65e7da7f0588e82d778d893349a05bc5"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.024Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:34.024Z"
+      }
+    },
+    {
+      "id": "theguardian-aHR0cHM6",
+      "name": "theguardian-mined-aHR0cHM6",
+      "provider": "theguardian",
+      "url": "https://www.theguardian.com/world/rss",
+      "urlPattern": "https://www.theguardian.com/world/rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 149,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x5bf26bbb1d95e7b2ded9dff6fc31d9c8e4d25730a88b4b72592adb1b9904da25"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.269Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:34.269Z"
+      }
+    },
+    {
+      "id": "dw-aHR0cHM6",
+      "name": "dw-mined-aHR0cHM6",
+      "provider": "dw",
+      "url": "https://rss.dw.com/xml/rss-en-all",
+      "urlPattern": "https://rss.dw.com/xml/rss-en-all",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 80,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xefce9a0e02cabcd70a52c1e510def16e118024b9689416e326250963761c18ce"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.819Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:34.819Z"
+      }
+    },
+    {
+      "id": "france24-aHR0cHM6",
+      "name": "france24-mined-aHR0cHM6",
+      "provider": "france24",
+      "url": "https://www.france24.com/en/rss",
+      "urlPattern": "https://www.france24.com/en/rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 27,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x47e95145a563b43d3b8d9662ac68e765f8835eeb3fe660e782ef5c235bed3028"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.989Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:34.989Z"
+      }
+    },
+    {
+      "id": "un-aHR0cHM6",
+      "name": "un-mined-aHR0cHM6",
+      "provider": "un",
+      "url": "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+      "urlPattern": "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 35,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2780d537148e3fc5ded43ce79de4a26ef5a64037e49b86be6373bbba20fbc35e"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:35.194Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:35.194Z"
+      }
+    },
+    {
+      "id": "propublica-aHR0cHM6",
+      "name": "propublica-mined-aHR0cHM6",
+      "provider": "propublica",
+      "url": "https://www.propublica.org/feeds/propublica/main",
+      "urlPattern": "https://www.propublica.org/feeds/propublica/main",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 528,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xa2cf6a76d286f56ee6efabe802f77b0fc289c5e35e0feb11d4e5913752ec2e49"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:35.851Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:35.852Z"
+      }
+    },
+    {
+      "id": "pypi-aHR0cHM6",
+      "name": "pypi-mined-aHR0cHM6",
+      "provider": "pypi",
+      "url": "https://pypi.org/pypi/anthropic/json",
+      "urlPattern": "https://pypi.org/pypi/anthropic/json",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 228,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x6a1104179536c23247730e3905cee5f68db432d67ec16c2db8a0d611b3b5554b"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:36.529Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-20T19:39:36.529Z"
+      }
     }
   ]
 }
