@@ -68,24 +68,18 @@ import {
   runAfterConfirm,
   registerHook,
   type BeforeSenseContext,
+  type HookLogger,
 } from "../src/lib/extensions.js";
 import type { PublishedPostRecord } from "../src/lib/state.js";
+import { createCalibrateBeforeSense } from "../src/plugins/calibrate-plugin.js";
+import { signalsBeforeSense } from "../src/plugins/signals-plugin.js";
+import { predictionsBeforeSense, predictionsAfterConfirm } from "../src/plugins/predictions-plugin.js";
+import { tipsBeforeSense, tipsAfterAct } from "../src/plugins/tips-plugin.js";
+import { lifecycleBeforeSense } from "../src/plugins/lifecycle-plugin.js";
+import { scOracleBeforeSense } from "../src/plugins/sc-oracle-plugin.js";
+import { scPricesBeforeSense } from "../src/plugins/sc-prices-plugin.js";
 import { loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger } from "../src/lib/write-rate-limit.js";
-import { fetchSignals, scoreSignalAlignment, type SignalSnapshot } from "../src/lib/signals.js";
-import { loadPredictions, savePredictions, registerPrediction, resolvePendingPredictions, getCalibrationAdjustment } from "../src/lib/predictions.js";
-import { loadMentionState, saveMentionState, fetchMentions } from "../src/lib/mentions.js";
-import {
-  executeTip,
-  incrementWarmupCounter,
-  loadTipState,
-  saveTipState,
-  selectTipCandidates,
-} from "../src/lib/tips.js";
-import {
-  defaultSpendingPolicy,
-  loadSpendingLedger,
-  saveSpendingLedger,
-} from "../src/lib/spending-policy.js";
+import { type SignalSnapshot } from "../src/lib/signals.js";
 import {
   loadAgentSourceView,
   preflight as sourcesPreflight,
@@ -345,6 +339,9 @@ function phaseError(msg: string): void {
 function info(msg: string): void {
   console.error(`[runner] ${msg}`);
 }
+
+/** Hook logger — bridges plugin hook output to session-runner CLI formatting */
+const hookLogger: HookLogger = { info, result: phaseResult };
 
 // ── Session Number ─────────────────────────────────
 
@@ -3035,10 +3032,11 @@ async function runV2Loop(
   // Extension hooks: beforeSense (e.g., calibrate runs audit)
   // Each hook is isolated with its own try/catch and timeout (see extensions.ts)
   if (!senseCompleted) {
-    const hookCtx = {
+    const hookCtx: BeforeSenseContext = {
       state,
       config: agentConfig,
       flags: { agent: flags.agent, env: flags.env, log: flags.log, dryRun: flags.dryRun, pretty: flags.pretty },
+      logger: hookLogger,
     };
     await runBeforeSense(agentConfig.loopExtensions, hookCtx);
 
@@ -3253,6 +3251,7 @@ async function runV2Loop(
       config: agentConfig,
       actResult,
       flags: { agent: flags.agent, env: flags.env, log: flags.log, dryRun: flags.dryRun, pretty: flags.pretty },
+      logger: hookLogger,
     });
   } catch (e: any) {
     observe("error", `afterAct hooks failed: ${e.message}`, {
@@ -3303,6 +3302,7 @@ async function runV2Loop(
         config: agentConfig,
         publishedPosts: state.publishedPosts,
         confirmResult: state.phases.confirm?.result,
+        logger: hookLogger,
       });
     } catch (e: any) {
       observe("error", `afterConfirm hooks failed: ${e.message}`, {
@@ -3544,290 +3544,19 @@ async function main(): Promise<void> {
   // Initialize observation logging for this session
   initObserver(flags.agent, sessionNumber);
 
-  // Register extension hooks that depend on session-runner internals.
-  // This avoids circular imports: extensions.ts stays pure, session-runner
-  // provides implementations that use runToolAndParse() etc.
-  registerHook("calibrate", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: calibrate (running audit)...");
-    const auditArgs = ["--agent", ctx.flags.agent, "--update", "--log", ctx.flags.log, "--env", ctx.flags.env];
-    const auditResult = await runToolAndParse("cli/audit.ts", auditArgs, "audit.ts (calibrate)");
-    const stats = auditResult.stats || {};
-    phaseResult(
-      `Calibrate: ${stats.total_entries || 0} entries | avg error: ${stats.avg_prediction_error !== undefined ? stats.avg_prediction_error.toFixed(1) : "N/A"}`
-    );
-  });
-
-  // PR1+PR2: Register signals extension — fetch consensus signals + briefing before SENSE
-  registerHook("signals", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: signals (fetching consensus + briefing)...");
-    try {
-      const { loadAuthCache } = await import("../src/lib/auth.js");
-      const cached = loadAuthCache();
-      if (!cached) {
-        info("Signals: no auth token cached — skipping");
-        return;
-      }
-      const snapshot = await fetchSignals(cached.token);
-      if (snapshot && ctx.state.loopVersion === 2) {
-        (ctx.state as any).signalSnapshot = snapshot;
-        phaseResult(`Signals: ${snapshot.topics.length} topic(s), ${snapshot.alerts.length} alert(s)`);
-      }
-      // PR2: Also fetch latest colony briefing
-      const { fetchLatestBriefing } = await import("../src/lib/signals.js");
-      const briefing = await fetchLatestBriefing(cached.token);
-      if (briefing && ctx.state.loopVersion === 2) {
-        (ctx.state as any).briefingContext = briefing;
-        info(`Briefing: ${briefing.length} chars`);
-      }
-    } catch (e: any) {
-      observe("error", `Signals/briefing fetch failed: ${e.message}`, {
-        phase: "sense", source: "session-runner.ts:signals-hook",
-      });
-    }
-  });
-
-  // PR1: Register predictions extension — resolve pending predictions before SENSE
-  registerHook("predictions", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: predictions (checking pending resolutions)...");
-    try {
-      const { loadAuthCache } = await import("../src/lib/auth.js");
-      const cached = loadAuthCache();
-      const token = cached?.token || "";
-      let store = loadPredictions(ctx.flags.agent);
-      store = await resolvePendingPredictions(store, token);
-      savePredictions(store);
-      const pending = Object.values(store.predictions).filter(p => p.status === "pending").length;
-      const resolved = Object.values(store.predictions).filter(p => p.status === "correct" || p.status === "incorrect").length;
-      const adj = getCalibrationAdjustment(store);
-      phaseResult(`Predictions: ${pending} pending, ${resolved} resolved, calibration adj: ${adj > 0 ? "+" : ""}${adj}`);
-    } catch (e: any) {
-      observe("error", `Predictions resolution failed: ${e.message}`, {
-        phase: "sense", source: "session-runner.ts:predictions-hook",
-      });
-    }
-  });
-
-  // PR1: Register predictions afterConfirm — register new PREDICTION posts
-  registerHook("predictions", "afterConfirm", async (ctx) => {
-    if (!ctx.publishedPosts || ctx.publishedPosts.length === 0) return;
-    const predictionPosts = ctx.publishedPosts.filter(p => p.category.toUpperCase() === "PREDICTION");
-    if (predictionPosts.length === 0) return;
-
-    info(`Extension: predictions (registering ${predictionPosts.length} prediction(s))...`);
-    let store = loadPredictions(ctx.config.name);
-    for (const post of predictionPosts) {
-      store = registerPrediction(store, post);
-    }
-    savePredictions(store);
-    phaseResult(`Predictions registered: ${predictionPosts.length}`);
-  });
-
-  registerHook("tips", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: tips (polling mentions)...");
-    const mentionState = loadMentionState(ctx.config.name);
-    saveMentionState(mentionState, ctx.config.name);
-
-    const { demos, address } = await connectWallet(ctx.flags.env);
-    const token = await ensureAuth(demos, address);
-    const mentions = await fetchMentions(address, token, {
-      cursor: mentionState.lastProcessedMention,
-      limit: 100,
-    });
-
-    if (ctx.state.loopVersion === 2) {
-      ctx.state.pendingMentions = mentions.slice(-20);
-      saveState(ctx.state, ctx.config.paths.sessionDir);
-    }
-
-    phaseResult(`Mentions queued: ${mentions.length}`);
-  });
-
-  registerHook("tips", "afterAct", async (ctx) => {
-    info("Extension: tips (evaluating tip candidates)...");
-    const { demos, address } = await connectWallet(ctx.flags.env);
-    const token = await ensureAuth(demos, address);
-
-    const feedRes = await apiCall("/api/feed?limit=50", token);
-    if (!feedRes.ok) {
-      throw new Error(`Tip feed fetch failed (${feedRes.status})`);
-    }
-
-    const rawPosts = Array.isArray(feedRes.data?.posts)
-      ? feedRes.data.posts
-      : Array.isArray(feedRes.data)
-        ? feedRes.data
-        : [];
-
-    let tipState = loadTipState(ctx.config.name);
-    const completedWarmupSessions = tipState.warmupCounter;
-    tipState = incrementWarmupCounter(tipState, ctx.state.sessionNumber);
-
-    const candidates = selectTipCandidates(rawPosts, {
-      agentAddress: address,
-      config: ctx.config,
-      tipState,
-    });
-
-    let ledger = loadSpendingLedger(address, ctx.config.name);
-    const spendingConfig = defaultSpendingPolicy();
-    const liveTippingEnabled =
-      ctx.config.tipping.enabled &&
-      !ctx.flags.dryRun &&
-      completedWarmupSessions >= ctx.config.tipping.minSessionsBeforeLive;
-    spendingConfig.dryRun = !liveTippingEnabled;
-
-    observe("insight", "Tips afterAct policy resolved", {
-      phase: "act",
-      source: "session-runner.ts:tips-afterAct",
-      data: {
-        tippingEnabled: ctx.config.tipping.enabled,
-        runnerDryRun: ctx.flags.dryRun,
-        completedWarmupSessions,
-        minSessionsBeforeLive: ctx.config.tipping.minSessionsBeforeLive,
-        liveTippingEnabled,
-        candidateCount: candidates.length,
-      },
-    });
-
-    for (const candidate of candidates) {
-      const result = await executeTip({
-        agentName: ctx.config.name,
-        candidate,
-        demos,
-        token,
-        spendingConfig,
-        ledger,
-        tipState,
-      });
-      ledger = result.ledger;
-      tipState = result.tipState;
-    }
-
-    saveSpendingLedger(ledger, ctx.config.name);
-    saveTipState(tipState, ctx.config.name);
-    phaseResult(`Tips evaluated: ${candidates.length}${liveTippingEnabled ? "" : " (dry-run)"}`);
-  });
-
-  // PR8: Register lifecycle extension — source health checks + promotion/degradation
-  registerHook("lifecycle", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: lifecycle (source health + transitions)...");
-    try {
-      const { loadCatalog } = await import("../src/lib/sources/catalog.js");
-      const { testSource } = await import("../src/lib/sources/health.js");
-      const { sampleSources, updateRating, evaluateTransition, applyTransitions } = await import("../src/lib/sources/lifecycle.js");
-      const { writeFileSync, renameSync } = await import("node:fs");
-      const catalogPath = resolve(import.meta.dirname || ".", "../config/sources/catalog.json");
-      const catalog = loadCatalog(catalogPath);
-      if (!catalog) {
-        info("Lifecycle: catalog not found — skipping");
-        return;
-      }
-
-      const allSources = catalog.sources as any[];
-      const sampleSize = 10;
-      const sampled = sampleSources(allSources, sampleSize);
-
-      if (sampled.length === 0) {
-        info("Lifecycle: no eligible sources to test");
-        return;
-      }
-
-      info(`Lifecycle: testing ${sampled.length} sources...`);
-      const transitions: any[] = [];
-      const updatedMap = new Map<string, any>();
-
-      for (const source of sampled) {
-        const testResult = await testSource(source);
-        const withRating = updateRating(source, testResult);
-        const transition = evaluateTransition(withRating, testResult);
-        updatedMap.set(source.id, withRating);
-        if (transition.newStatus !== null) {
-          transitions.push(transition);
-          observe("insight", `Lifecycle transition: ${source.id} ${transition.currentStatus}→${transition.newStatus}`, {
-            phase: "sense", source: "session-runner.ts:lifecycle-hook",
-            data: { sourceId: source.id, from: transition.currentStatus, to: transition.newStatus, reason: transition.reason },
-          });
-        }
-      }
-
-      // Persist: merge rating updates + transitions into full catalog
-      if (!ctx.flags.dryRun) {
-        const fullSources = allSources.map((s: any) => updatedMap.get(s.id) || s);
-        const withTransitions = transitions.length > 0
-          ? applyTransitions(fullSources, transitions)
-          : fullSources;
-        const tmpPath = catalogPath + ".tmp";
-        writeFileSync(tmpPath, JSON.stringify({ ...catalog, generatedAt: new Date().toISOString(), sources: withTransitions }, null, 2) + "\n");
-        renameSync(tmpPath, catalogPath);
-      }
-
-      phaseResult(`Lifecycle: ${sampled.length} tested, ${transitions.length} transition(s)${ctx.flags.dryRun ? " (dry-run)" : ""}`);
-    } catch (e: any) {
-      // Non-fatal: lifecycle errors must not block other beforeSense hooks
-      observe("error", `Lifecycle hook failed: ${e.message}`, {
-        phase: "sense", source: "session-runner.ts:lifecycle-hook",
-      });
-      info(`Lifecycle: error (non-fatal) — ${e.message}`);
-    }
-  });
-
-  // SC Oracle extension — fetch sentiment + prices + Polymarket before SENSE
-  registerHook("sc-oracle", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: sc-oracle (fetching oracle data)...");
-    try {
-      const { loadAuthCache } = await import("../src/lib/auth.js");
-      const cached = loadAuthCache();
-      if (!cached) {
-        info("SC Oracle: no auth token cached — skipping");
-        return;
-      }
-      const { createSCOraclePlugin } = await import("../src/plugins/sc-oracle-plugin.js");
-      const plugin = createSCOraclePlugin({
-        apiBaseUrl: "https://www.supercolony.ai",
-        getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
-      });
-      const result = await plugin.providers![0].fetch("oracle");
-      if (result.ok && ctx.state.loopVersion === 2) {
-        (ctx.state as any).oracleSnapshot = result.data;
-        phaseResult("SC Oracle: data injected into session state");
-      } else if (!result.ok) {
-        info(`SC Oracle: fetch failed — ${result.error}`);
-      }
-    } catch (e: any) {
-      observe("error", `SC Oracle hook failed: ${e.message}`, {
-        phase: "sense", source: "session-runner.ts:sc-oracle-hook",
-      });
-    }
-  });
-
-  // SC Prices extension — fetch DAHR-attested Binance prices before SENSE
-  registerHook("sc-prices", "beforeSense", async (ctx: BeforeSenseContext) => {
-    info("Extension: sc-prices (fetching price data)...");
-    try {
-      const { loadAuthCache } = await import("../src/lib/auth.js");
-      const cached = loadAuthCache();
-      if (!cached) {
-        info("SC Prices: no auth token cached — skipping");
-        return;
-      }
-      const { createSCPricesPlugin } = await import("../src/plugins/sc-prices-plugin.js");
-      const plugin = createSCPricesPlugin({
-        apiBaseUrl: "https://www.supercolony.ai",
-        getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
-      });
-      const result = await plugin.providers![0].fetch("prices");
-      if (result.ok && ctx.state.loopVersion === 2) {
-        (ctx.state as any).priceSnapshot = result.data;
-        phaseResult("SC Prices: data injected into session state");
-      } else if (!result.ok) {
-        info(`SC Prices: fetch failed — ${result.error}`);
-      }
-    } catch (e: any) {
-      observe("error", `SC Prices hook failed: ${e.message}`, {
-        phase: "sense", source: "session-runner.ts:sc-prices-hook",
-      });
-    }
-  });
+  // Register extension hooks from plugin files (Phase 0 internalization).
+  // Hook implementations live in src/plugins/*.ts — session-runner imports
+  // and registers them here to avoid pulling SDK transitive deps into
+  // extensions.ts module graph (which would break tests).
+  registerHook("calibrate", "beforeSense", createCalibrateBeforeSense(runToolAndParse));
+  registerHook("signals", "beforeSense", signalsBeforeSense);
+  registerHook("predictions", "beforeSense", predictionsBeforeSense);
+  registerHook("predictions", "afterConfirm", predictionsAfterConfirm);
+  registerHook("tips", "beforeSense", tipsBeforeSense);
+  registerHook("tips", "afterAct", tipsAfterAct);
+  registerHook("lifecycle", "beforeSense", lifecycleBeforeSense);
+  registerHook("sc-oracle", "beforeSense", scOracleBeforeSense);
+  registerHook("sc-prices", "beforeSense", scPricesBeforeSense);
 
   banner(sessionNumber, flags.oversight, flags.agent);
   if (isV2(state)) {

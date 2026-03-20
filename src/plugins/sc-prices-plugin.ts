@@ -1,14 +1,49 @@
 /**
  * SC Prices Plugin — DAHR-attested cryptocurrency prices from SuperColony.
  *
- * Thin DataProvider wrapper around GET /api/prices.
+ * DataProvider wrapper around GET /api/prices.
+ * beforeSense hook: fetches price data and injects into session state.
  */
 
 import type { FrameworkPlugin, DataProvider, ProviderResult } from "../types.js";
+import type { BeforeSenseContext } from "../lib/extensions.js";
 
 export interface SCDataPluginConfig {
   apiBaseUrl: string;
   getAuthHeaders: () => Promise<Record<string, string>>;
+}
+
+/**
+ * beforeSense hook — fetch DAHR-attested prices and inject into session state.
+ * Uses dynamic imports to avoid pulling SDK deps into the module graph.
+ */
+export async function scPricesBeforeSense(ctx: BeforeSenseContext): Promise<void> {
+  ctx.logger?.info("Extension: sc-prices (fetching price data)...");
+  try {
+    const { loadAuthCache } = await import("../lib/auth.js");
+    const { SUPERCOLONY_API } = await import("../lib/sdk.js");
+    const cached = loadAuthCache();
+    if (!cached) {
+      ctx.logger?.info("SC Prices: no auth token cached — skipping");
+      return;
+    }
+    const plugin = createSCPricesPlugin({
+      apiBaseUrl: SUPERCOLONY_API,
+      getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
+    });
+    const result = await plugin.providers![0].fetch("prices");
+    if (result.ok && ctx.state.loopVersion === 2) {
+      (ctx.state as any).priceSnapshot = result.data;
+      ctx.logger?.result("SC Prices: data injected into session state");
+    } else if (!result.ok) {
+      ctx.logger?.info(`SC Prices: fetch failed — ${result.error}`);
+    }
+  } catch (e: any) {
+    const { observe } = await import("../lib/observe.js");
+    observe("error", `SC Prices hook failed: ${e.message}`, {
+      phase: "sense", source: "sc-prices-plugin.ts:beforeSense",
+    });
+  }
 }
 
 export function createSCPricesPlugin(config: SCDataPluginConfig): FrameworkPlugin {

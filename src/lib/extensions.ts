@@ -21,6 +21,21 @@ import type { AgentSourceView, SourceRecordV2 } from "./sources/catalog.js";
 import { preflight as sourcesPreflight, type PreflightCandidate } from "./sources/policy.js";
 import { match as sourcesMatch } from "./sources/matcher.js";
 
+// Plugin hook implementations live in src/plugins/*.ts files (Phase 0).
+// They are NOT statically imported here to avoid pulling SDK transitive
+// dependencies into the extensions.ts module graph. Instead, session-runner
+// imports them and calls registerHook() during init.
+
+// ── Logger Interface ──────────────────────────────
+
+/** Logger injected into hook contexts by the session runner. */
+export interface HookLogger {
+  /** Informational message (e.g., "Extension: signals (fetching...)") */
+  info(msg: string): void;
+  /** Phase result summary (e.g., "Signals: 3 topic(s), 1 alert(s)") */
+  result(msg: string): void;
+}
+
 // ── Context Types ─────────────────────────────────
 
 export interface BeforeSenseContext {
@@ -31,6 +46,8 @@ export interface BeforeSenseContext {
   flags: BeforeSenseFlags;
   /** Populated by runBeforeSense — tracks hook failures/timeouts for observability */
   hookErrors?: Array<{ hook: string; error: string; elapsed: number; isTimeout: boolean }>;
+  /** Optional logger — provided by session-runner for CLI output */
+  logger?: HookLogger;
 }
 
 type BeforeSenseFlags = {
@@ -74,6 +91,8 @@ export interface AfterConfirmContext {
   publishedPosts: PublishedPostRecord[];
   /** Confirm phase result (verify output) */
   confirmResult?: unknown;
+  /** Optional logger — provided by session-runner for CLI output */
+  logger?: HookLogger;
 }
 
 export interface AfterActContext {
@@ -81,6 +100,8 @@ export interface AfterActContext {
   config: AgentConfig;
   actResult?: unknown;
   flags: BeforeSenseFlags;
+  /** Optional logger — provided by session-runner for CLI output */
+  logger?: HookLogger;
 }
 
 // ── Decision Types ────────────────────────────────
@@ -190,8 +211,7 @@ async function runSourcesMatchHook(
  */
 const EXTENSION_REGISTRY: Record<KnownExtension, LoopExtensionHooks> = {
   calibrate: {
-    // beforeSense registered at runtime by session-runner via registerHook()
-    // because it needs runToolAndParse() which lives in session-runner scope
+    // beforeSense: registered at runtime from calibrate-plugin.ts
   },
   sources: {
     beforePublishDraft: runSourcesPreflightHook,
@@ -202,28 +222,22 @@ const EXTENSION_REGISTRY: Record<KnownExtension, LoopExtensionHooks> = {
     // Included in registry for validation only.
   },
   signals: {
-    // beforeSense registered at runtime by session-runner via registerHook()
-    // because it needs auth token from the session context
+    // beforeSense: registered at runtime from signals-plugin.ts
   },
   predictions: {
-    // beforeSense (resolution) + afterConfirm (registration) registered at runtime
-    // because they need auth token and agent config from session context
+    // beforeSense + afterConfirm: registered at runtime from predictions-plugin.ts
   },
   tips: {
-    // beforeSense (mention polling) + afterAct (tip execution) registered at runtime
-    // because they need auth token, wallet access, and session context
+    // beforeSense + afterAct: registered at runtime from tips-plugin.ts
   },
   lifecycle: {
-    // beforeSense registered at runtime by session-runner via registerHook()
-    // because it needs catalog path, agent config, and write access
+    // beforeSense: registered at runtime from lifecycle-plugin.ts
   },
   "sc-oracle": {
-    // beforeSense registered at runtime by session-runner via registerHook()
-    // Fetches oracle data (sentiment + prices + Polymarket) from SC API
+    // beforeSense: registered at runtime from sc-oracle-plugin.ts
   },
   "sc-prices": {
-    // beforeSense registered at runtime by session-runner via registerHook()
-    // Fetches DAHR-attested Binance price data from SC API
+    // beforeSense: registered at runtime from sc-prices-plugin.ts
   },
 };
 
