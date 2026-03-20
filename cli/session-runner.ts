@@ -201,7 +201,7 @@ function parseArgs(): RunnerFlags {
   }
 
   // Parse oversight level
-  let oversight: OversightLevel = "full";
+  let oversight: OversightLevel = "autonomous";
   if (flags["oversight"]) {
     const val = flags["oversight"].toLowerCase();
     if (!["full", "approve", "autonomous"].includes(val)) {
@@ -274,7 +274,7 @@ FLAGS:
   --agent NAME           Agent name (default: sentinel)
   --env PATH             Path to .env file (default: .env in cwd)
   --log PATH             Session log path (default: ~/.{agent}-session-log.jsonl)
-  --oversight LEVEL      Oversight level: full|approve|autonomous (default: full)
+  --oversight LEVEL      Oversight level: full|approve|autonomous (default: autonomous)
   --resume               Resume interrupted session from last completed phase
   --skip-to PHASE        Start from specific phase (audit|scan|engage|gate|publish|verify|review|harden)
   --force-skip-audit     Required with --skip-to when skipping AUDIT phase
