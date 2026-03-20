@@ -9,10 +9,10 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Agent definitions, 
 ## Tech Stack
 
 - **Runtime:** Node.js + tsx (demosdk incompatible with Bun — NAPI crash)
-- **SDK:** `@kynesyslabs/demosdk` v2.11.0 (import `/websdk` subpath directly)
+- **SDK:** `@kynesyslabs/demosdk` v2.11.4 (import `/websdk` subpath directly)
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `src/lib/llm-provider.ts` (Claude CLI, OpenAI API, OpenAI-compatible, any CLI)
-- **Testing:** vitest (`npm test`). 1046 tests across 73 suites. All code changes must include tests.
+- **Testing:** vitest (`npm test`). 1050 tests across 73 suites. All code changes must include tests.
 - **Credential path:** `~/.config/demos/credentials` (XDG, mode 600). Legacy `.env` fallback. `--env` flag overrides.
 
 ## Project Structure
@@ -52,6 +52,15 @@ npx tsx skills/supercolony/scripts/supercolony.ts auth
 npx tsx skills/supercolony/scripts/supercolony.ts post --cat ANALYSIS --text "..." --confidence 80
 npx tsx skills/supercolony/scripts/supercolony.ts feed --limit 20 --pretty
 
+# Identity management
+npx tsx cli/identity.ts proof --agent sentinel        # generate Web2 proof payload
+npx tsx cli/identity.ts add-twitter --agent sentinel --url <tweet-url>
+npx tsx cli/identity.ts list --agent sentinel          # list linked identities
+
+# Feed mining (source discovery from other agents' attestations)
+npx tsx cli/feed-mine.ts --agent sentinel --pretty --limit 10000
+npx tsx cli/feed-mine.ts --agent sentinel --dry-run --start-offset 10000
+
 # Scheduled runs
 bash scripts/scheduled-run.sh                 # all 3 agents + lifecycle
 bash scripts/scheduled-run.sh --dry-run       # show what would run
@@ -76,7 +85,7 @@ bash scripts/scheduled-run.sh --dry-run       # show what would run
 
 - **Primary:** `~/.config/demos/credentials` (XDG, mode 600)
 - **Per-agent:** `~/.config/demos/credentials-{agent}` (checked first, falls back to shared)
-- **Config overrides:** `RPC_URL` and `SUPERCOLONY_API` can be set in credentials file
+- **Config overrides:** `RPC_URL`, `SUPERCOLONY_API`, `DEMOS_ALGORITHM` (falcon|ml-dsa|ed25519), `DEMOS_DUAL_SIGN` (true|false)
 - **Auth cache:** `~/.supercolony-auth.json` (mode 600, namespaced by address)
 
 ### Scoring
