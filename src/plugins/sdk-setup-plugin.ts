@@ -41,7 +41,16 @@ export function createSdkSetupPlugin(config: SdkSetupPluginConfig): FrameworkPlu
           };
         }
 
-        const json = await response.json() as { result?: { height?: number } };
+        const json = await response.json() as { result?: { height?: number }; error?: { message?: string } };
+
+        if (json.error) {
+          return {
+            ok: false,
+            error: `RPC error: ${json.error.message || "unknown JSON-RPC error"}`,
+            source: "sdk-setup-plugin",
+          };
+        }
+
         const blockHeight = json.result?.height;
 
         return {

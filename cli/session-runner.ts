@@ -3648,6 +3648,64 @@ async function main(): Promise<void> {
     }
   });
 
+  // SC Oracle extension — fetch sentiment + prices + Polymarket before SENSE
+  registerHook("sc-oracle", "beforeSense", async (ctx: BeforeSenseContext) => {
+    info("Extension: sc-oracle (fetching oracle data)...");
+    try {
+      const { loadAuthCache } = await import("../src/lib/auth.js");
+      const cached = loadAuthCache();
+      if (!cached) {
+        info("SC Oracle: no auth token cached — skipping");
+        return;
+      }
+      const { createSCOraclePlugin } = await import("../src/plugins/sc-oracle-plugin.js");
+      const plugin = createSCOraclePlugin({
+        apiBaseUrl: "https://www.supercolony.ai",
+        getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
+      });
+      const result = await plugin.providers![0].fetch("oracle");
+      if (result.ok && ctx.state.loopVersion === 2) {
+        (ctx.state as any).oracleSnapshot = result.data;
+        phaseResult("SC Oracle: data injected into session state");
+      } else if (!result.ok) {
+        info(`SC Oracle: fetch failed — ${result.error}`);
+      }
+    } catch (e: any) {
+      observe("error", `SC Oracle hook failed: ${e.message}`, {
+        phase: "sense", source: "session-runner.ts:sc-oracle-hook",
+      });
+    }
+  });
+
+  // SC Prices extension — fetch DAHR-attested Binance prices before SENSE
+  registerHook("sc-prices", "beforeSense", async (ctx: BeforeSenseContext) => {
+    info("Extension: sc-prices (fetching price data)...");
+    try {
+      const { loadAuthCache } = await import("../src/lib/auth.js");
+      const cached = loadAuthCache();
+      if (!cached) {
+        info("SC Prices: no auth token cached — skipping");
+        return;
+      }
+      const { createSCPricesPlugin } = await import("../src/plugins/sc-prices-plugin.js");
+      const plugin = createSCPricesPlugin({
+        apiBaseUrl: "https://www.supercolony.ai",
+        getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
+      });
+      const result = await plugin.providers![0].fetch("prices");
+      if (result.ok && ctx.state.loopVersion === 2) {
+        (ctx.state as any).priceSnapshot = result.data;
+        phaseResult("SC Prices: data injected into session state");
+      } else if (!result.ok) {
+        info(`SC Prices: fetch failed — ${result.error}`);
+      }
+    } catch (e: any) {
+      observe("error", `SC Prices hook failed: ${e.message}`, {
+        phase: "sense", source: "session-runner.ts:sc-prices-hook",
+      });
+    }
+  });
+
   banner(sessionNumber, flags.oversight, flags.agent);
   if (isV2(state)) {
     console.log(`  Loop: v2 (SENSE → ACT → CONFIRM)${flags.shadow ? " [SHADOW]" : ""}`);

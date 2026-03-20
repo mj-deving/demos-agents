@@ -42,6 +42,7 @@ import {
   createDisagreeMonitorSource,
   type DisagreePost,
 } from "../src/reactive/event-sources/disagree-monitor.js";
+import { createSSEFeedSource } from "../src/reactive/event-sources/sse-feed.js";
 
 import { createReplyHandler } from "../src/reactive/event-handlers/reply-handler.js";
 import { createMentionHandler } from "../src/reactive/event-handlers/mention-handler.js";
@@ -255,6 +256,27 @@ async function main(): Promise<void> {
     disagreeThreshold: 0.3,
   });
 
+  // ── SSE Feed Source ──────────────────────────────
+
+  const sseFeedSrc = createSSEFeedSource({
+    streamUrl: "https://www.supercolony.ai/api/feed/stream",
+    getToken: async () => {
+      token = await refreshTokenIfNeeded(demos, address, token);
+      return token;
+    },
+    fetchFeedFallback: async () => {
+      const posts = await fetchFeedCached(token);
+      return posts.map((p: any) => ({
+        txHash: String(p?.txHash || ""),
+        author: String(p?.author || p?.address || "").toLowerCase(),
+        timestamp: Number(p?.timestamp || Date.now()),
+        text: String(p?.payload?.text || p?.text || ""),
+        category: String(p?.payload?.cat || p?.category || ""),
+      }));
+    },
+    categories: config.topics?.primary,
+  });
+
   // ── Create Handlers ────────────────────────────
 
   const handlers: EventHandler[] = [
@@ -271,6 +293,7 @@ async function main(): Promise<void> {
     { source: mentionSrc, intervalMs: 60_000, minIntervalMs: 30_000, maxIntervalMs: 600_000 },
     { source: tipSrc, intervalMs: 120_000, minIntervalMs: 60_000, maxIntervalMs: 900_000 },
     { source: disagreeSrc, intervalMs: 300_000, minIntervalMs: 120_000, maxIntervalMs: 900_000 },
+    { source: sseFeedSrc, intervalMs: 30_000, minIntervalMs: 15_000, maxIntervalMs: 120_000 },
   ];
 
   // ── Action Executor (src/actions/action-executor.ts) ────

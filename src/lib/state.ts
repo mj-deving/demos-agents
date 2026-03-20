@@ -81,7 +81,7 @@ const PHASE_ORDER: PhaseName[] = [
 export type CorePhase = "sense" | "act" | "confirm";
 export type LoopVersion = 1 | 2;
 export const CORE_PHASE_ORDER: CorePhase[] = ["sense", "act", "confirm"];
-export const KNOWN_EXTENSIONS = ["calibrate", "sources", "observe", "signals", "predictions", "tips", "lifecycle"] as const;
+export const KNOWN_EXTENSIONS = ["calibrate", "sources", "observe", "signals", "predictions", "tips", "lifecycle", "sc-oracle", "sc-prices"] as const;
 
 export type SubstageStatus = "pending" | "running" | "completed" | "failed" | "skipped";
 

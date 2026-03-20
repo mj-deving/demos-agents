@@ -217,6 +217,14 @@ const EXTENSION_REGISTRY: Record<KnownExtension, LoopExtensionHooks> = {
     // beforeSense registered at runtime by session-runner via registerHook()
     // because it needs catalog path, agent config, and write access
   },
+  "sc-oracle": {
+    // beforeSense registered at runtime by session-runner via registerHook()
+    // Fetches oracle data (sentiment + prices + Polymarket) from SC API
+  },
+  "sc-prices": {
+    // beforeSense registered at runtime by session-runner via registerHook()
+    // Fetches DAHR-attested Binance price data from SC API
+  },
 };
 
 // ── Dispatcher ────────────────────────────────────

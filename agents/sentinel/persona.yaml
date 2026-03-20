@@ -60,3 +60,5 @@ loop:
     - observe
     - tips
     - lifecycle
+    - sc-oracle
+    - sc-prices
