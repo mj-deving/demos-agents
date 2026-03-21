@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-20 | **SDK:** 2.11.4 | **Tests:** 73 suites, 1050 passing | **Agents:** 6 defined, 3 publishing
+**Last updated:** 2026-03-21 | **SDK:** 2.11.4 | **Tests:** 78 suites, 1139 passing | **Agents:** 6 defined, 3 publishing
 
 ---
 
@@ -21,6 +21,7 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - CCI identity queries wired (RPC-direct, bypassing NAPI crash in abstraction barrel)
 - Web2 identity linking CLI (proof gen, Twitter/GitHub linking, identity query)
 - Feed-mining CLI (extract source URLs from other agents' attestations → add to catalog)
+- Claim-driven attestation (Phases 1-4): extract claims from post text → build surgical URLs → attest per-claim → verify values
 
 **Where we're going:**
 - Phase 5: Agent composition framework — "new agent = just YAML" via skill loader
@@ -66,7 +67,7 @@ What Demos offers vs what we use. **Updated each session.**
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
 | [loop-heuristics.md](loop-heuristics.md) | `current` | 2026-03-20 | **Single source of truth** for SCAN→GATE→PUBLISH pipeline, agent differentiation, 8 constitutional rules |
-| [project-structure.md](project-structure.md) | `current` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (73 suites now, was 51) |
+| [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (78 suites now). Missing claim-attestation files. |
 | [omniweb-agent-architecture.md](omniweb-agent-architecture.md) | `stale` | 2026-03-18 | Two-tier agent model. References omniweb-runner.ts which doesn't exist. Aspirational, not current. |
 | [agent-workspace.md](agent-workspace.md) | `reference` | 2026-03-17 | YAML agent config format spec. agents/ directory exists but format not fully enforced by loader yet. |
 
@@ -84,6 +85,7 @@ What Demos offers vs what we use. **Updated each session.**
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
 | [attestation-reference.md](attestation-reference.md) | `current` | 2026-03-14 | TLSN + DAHR design constraints, performance drift, pipeline detail |
+| [claim-driven-attestation-spec.md](claim-driven-attestation-spec.md) | `current` | 2026-03-21 | Claim-driven attestation design spec (Phases 1-4). Codex-reviewed. |
 | [sdk-exploration-results.md](sdk-exploration-results.md) | `current` | 2026-03-18 | StorageProgram / DemosWork / L2PS blocker diagnosis. SDK 2.11.2 (now 2.11.4, blockers likely unchanged) |
 | [TLSN-Report-KyneSys-2026-03-14.md](TLSN-Report-KyneSys-2026-03-14.md) | `current` | 2026-03-14 | MPC-TLS proxy relay failure diagnosis — KyneSys infrastructure issue |
 
@@ -100,6 +102,27 @@ What Demos offers vs what we use. **Updated each session.**
 ## Session Changelog
 
 Most recent first. Each entry captures what changed, what was learned, what's next.
+
+### 2026-03-21 — Claim-Driven Attestation Phases 2-4
+
+**Theme:** Surgical attestation — attest the exact data point a claim needs, not a generic blob.
+
+**Delivered:**
+- **Phase 2: Surgical URL construction** — `SurgicalCandidate` type, `buildSurgicalUrl` on `ProviderAdapter`. Declarative engine generates from YAML specs with `claimTypes` + `extractionPath` (supports `{var}` interpolation). 3 specs updated (binance, coingecko, etherscan).
+- **Phase 3: Attestation planner + executor** — `buildAttestationPlan` (portable, `src/lib/`) with budget limits (maxCostPerPost, maxTlsn/DahrPerPost). `executeAttestationPlan` (platform-bound, `src/actions/`) with rate limiting + TLSN→DAHR fallback. `plannedMethod` field carries planner's budget decision to executor.
+- **Phase 4: Value verifier** — `verifyAttestedValues` with tolerance (2% price, 5% metric). Trend/quote always pass. Missing data fails closed.
+- **Pipeline wiring** — `preAttested` in `PublishOptions` (not new positional param). Multi-attestation mapping. Primary-only reporting model (no changes to log/audit/review).
+- **Entity canonicalization** — `inferAssetAlias` resolves tickers ("BTC"→"bitcoin") for CoinGecko API compatibility.
+
+**Key findings:**
+- Planner/executor decoupling gap: planner must record method decisions, not let executor re-derive (Codex #1)
+- Fail-open verification is dangerous: missing attestation data should fail, not silently pass (Codex #2)
+- CoinGecko API needs canonical asset names, not tickers — `ids=btc` is Bitcoin Cash, not Bitcoin (Codex #3)
+
+**Tests:** 78 suites, 1139 passing (up from 73 suites, 1100)
+**Commits:** 5 pushed to main (3 implementation + 1 simplify + 1 Codex fixes)
+
+---
 
 ### 2026-03-20 — Identity + Quantum + Agent Auth + Phase 5
 

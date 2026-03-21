@@ -1,6 +1,6 @@
 # Claim-Driven Attestation — Design Spec
 
-> **Status:** Proposal v2 (2026-03-21) — incorporates Codex architectural review
+> **Status:** Implemented v2 (2026-03-21) — Phases 1-4 complete, Codex-reviewed
 > **Author:** Marius + PAI
 > **Depends on:** Phase 4 (declarative adapters), Phase 5 (skill loader)
 > **Review:** Codex found 4 High, 2 Medium gaps in v1. All addressed below.
