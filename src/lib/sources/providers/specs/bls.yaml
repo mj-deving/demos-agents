@@ -46,9 +46,13 @@ operations:
           - uppercase
           - map:
               cpi: CUUR0000SA0
+              inflation: CUUR0000SA0
+              cpiaucsl: CUUR0000SA0
               unemployment: LNS14000000
+              unrate: LNS14000000
               employment: CES0000000001
               wages: CES0500000003
+              fedfunds: CES0500000003
     compatibility:
       responseFormats: [json]
       tlsn:

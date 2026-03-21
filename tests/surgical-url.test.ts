@@ -442,30 +442,30 @@ describe("Surgical URL construction", () => {
       expect(adapter!.buildSurgicalUrl).toBeDefined();
     });
 
-    it("bls timeseries returns SurgicalCandidate for CPI claim", () => {
+    it("bls timeseries returns SurgicalCandidate for CPI claim with BLS series ID", () => {
       const adapter = adapters.get("bls");
       expect(adapter).toBeDefined();
-      // "CPI" → inferMacroEntity → { series: "CPIAUCSL" } → vars.series resolves
+      // "CPI" → inferMacroEntity → { series: "CPIAUCSL" } → BLS map: CPIAUCSL → CUUR0000SA0
       const claim = makeClaim({ type: "metric", text: "CPI at 3.2%", entities: ["CPI"], value: 3.2, unit: "%" });
       const source = makeSource("bls", "timeseries");
       const result = adapter!.buildSurgicalUrl!(claim, source);
       expect(result).not.toBeNull();
-      // MACRO_ENTITY_MAP gives series=CPIAUCSL, BLS spec resolves via vars.series
-      expect(result!.url).toContain("CPIAUCSL");
+      // MACRO_ENTITY_MAP gives series=CPIAUCSL, BLS spec maps CPIAUCSL → CUUR0000SA0
+      expect(result!.url).toContain("CUUR0000SA0");
       expect(result!.provider).toBe("bls");
     });
 
-    it("bls timeseries returns SurgicalCandidate for unemployment claim", () => {
+    it("bls timeseries returns SurgicalCandidate for unemployment claim with BLS series ID", () => {
       const adapter = adapters.get("bls");
-      // "unemployment" → inferMacroEntity → { series: "UNRATE" } → vars.series resolves
+      // "unemployment" → inferMacroEntity → { series: "UNRATE" } → BLS map: UNRATE → LNS14000000
       const claim = makeClaim({ type: "metric", text: "Unemployment at 4.1%", entities: ["unemployment"], value: 4.1, unit: "%" });
       const source = makeSource("bls", "timeseries");
       const result = adapter!.buildSurgicalUrl!(claim, source);
       expect(result).not.toBeNull();
-      expect(result!.url).toContain("UNRATE");
+      expect(result!.url).toContain("LNS14000000");
     });
 
-    it("exchangerate-api latest returns SurgicalCandidate", () => {
+    it("exchangerate-api latest returns SurgicalCandidate with interpolated extractionPath", () => {
       const adapter = adapters.get("exchangerate-api");
       expect(adapter).toBeDefined();
       const claim = makeClaim({ type: "metric", text: "EUR/USD at 1.08", entities: ["USD"], value: 1.08, unit: "" });
@@ -473,6 +473,8 @@ describe("Surgical URL construction", () => {
       const result = adapter!.buildSurgicalUrl!(claim, source);
       expect(result).not.toBeNull();
       expect(result!.url).toContain("open.er-api.com");
+      // extractionPath should interpolate {target} to default "EUR"
+      expect(result!.extractionPath).toBe("$.rates.EUR");
       expect(result!.provider).toBe("exchangerate-api");
     });
 

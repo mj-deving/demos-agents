@@ -24,7 +24,7 @@ operations:
       urlPatterns: ["/v6/latest"]
       default: true
     claimTypes: [metric]
-    extractionPath: "$.rates.EUR"
+    extractionPath: "$.rates.{target}"
     request:
       method: GET
       urlTemplate: "https://open.er-api.com/v6/latest/{base}"
@@ -39,6 +39,12 @@ operations:
       base:
         sources: [vars.base, vars.currency, "tokens[0]"]
         default: "USD"
+        transforms:
+          - trim
+          - uppercase
+      target:
+        sources: [vars.target]
+        default: "EUR"
         transforms:
           - trim
           - uppercase
