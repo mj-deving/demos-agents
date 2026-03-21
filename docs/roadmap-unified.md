@@ -218,12 +218,12 @@ Local SDK-based skills for beyond-SuperColony operations:
 3. `skills/network-health/` — Node RPC health monitoring
 4. `skills/address-watch/` — Wallet activity patterns
 
-### Phase 5: Agent Composition Framework (Month 2)
+### Phase 5: Agent Composition Framework ✅ Complete (2026-03-20)
 
-1. Formalize the `capabilities.skills` + `scope` + `wallet` model in AGENT.yaml
-2. Skill loader that reads agent definition → loads declared skills
-3. Session loop integrates loaded skills at the right lifecycle hooks
-4. Test: create a new agent by composing existing skills (no new code, just YAML)
+1. ~~Formalize the `capabilities.skills` + `scope` + `wallet` model in AGENT.yaml~~
+2. ~~Skill loader that reads agent definition → loads declared skills~~ → `loadExtensions()` replaces `registerHook()`
+3. ~~Session loop integrates loaded skills at the right lifecycle hooks~~ → 9 hook closures internalized into plugins (Phase 0)
+4. ~~Test: create a new agent by composing existing skills (no new code, just YAML)~~ → Extension system fully dynamic with immutable registry
 
 ### Phase 6: Unblocked Skills (When Ready)
 

@@ -24,7 +24,7 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - Claim-driven attestation (Phases 1-4): extract claims from post text → build surgical URLs → attest per-claim → verify values
 
 **Where we're going:**
-- Phase 5: Agent composition framework — "new agent = just YAML" via skill loader
+- Session-runner wiring for claim-driven attestation (insert between match and publish)
 - CCI identity as root → Agent Auth Protocol as session auth layer
 - Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy
 - Feed-mining for source discovery, dynamic topic expansion
@@ -93,9 +93,9 @@ What Demos offers vs what we use. **Updated each session.**
 
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
-| [roadmap-unified.md](roadmap-unified.md) | `current` | 2026-03-20 | 7-phase plan: Phases 1-4 complete, Phase 5 planned, Phase 6 blocked, **Phase 7: systematic full SDK integration** |
+| [roadmap-unified.md](roadmap-unified.md) | `stale` | 2026-03-20 | 7-phase plan: Phases 1-5 complete, Phase 6 blocked, Phase 7 systematic SDK integration. Phase 5 status not updated in file. |
 | [roadmap-skill-dojo-local.md](roadmap-skill-dojo-local.md) | `current` | 2026-03-20 | Course correction: extract Skill Dojo as local SDK-direct implementations |
-| [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `plan` | 2026-03-20 | Skill loader + manifest design. Codex-reviewed. Phase 0 prerequisite identified. |
+| [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `complete` | 2026-03-20 | Skill loader + manifest design. Codex-reviewed. Implemented: Phase 0 (hook internalization) + Phase 5 (loadExtensions). |
 
 ---
 
@@ -103,9 +103,10 @@ What Demos offers vs what we use. **Updated each session.**
 
 Most recent first. Each entry captures what changed, what was learned, what's next.
 
-### 2026-03-21 — Claim-Driven Attestation Phases 2-4
+### 2026-03-21 — Claim-Driven Attestation Phases 2-4 (afternoon)
 
 **Theme:** Surgical attestation — attest the exact data point a claim needs, not a generic blob.
+*(Phase 1 and spec work in morning session below)*
 
 **Delivered:**
 - **Phase 2: Surgical URL construction** — `SurgicalCandidate` type, `buildSurgicalUrl` on `ProviderAdapter`. Declarative engine generates from YAML specs with `claimTypes` + `extractionPath` (supports `{var}` interpolation). 3 specs updated (binance, coingecko, etherscan).
@@ -124,12 +125,39 @@ Most recent first. Each entry captures what changed, what was learned, what's ne
 
 ---
 
-### 2026-03-20 — Identity + Quantum + Agent Auth + Phase 5
+### 2026-03-21 — Claim Spec + Source Curation + Claim Phase 1 (morning)
+
+**Theme:** Design-first — write the spec, get Codex review, curate sources, then build Phase 1.
+
+**Delivered:**
+- **Claim-driven attestation spec** written (`docs/claim-driven-attestation-spec.md`), iterated 3 times with Codex review. 4 High + 2 Medium findings addressed in v2.
+- **Source curation** — triaged 74 quarantined sources, fixed 2 active arxiv DAHR flags (arxiv is TLSN-only), promoted deribit + polymarket with trimmed URLs.
+- **Phase 1: Claim extraction** — `src/lib/claim-extraction.ts` with rules-first extraction (prices, percentages, domain units) + LLM fallback. ASSET_MAP entity recognition. Fix for double-extract on shorthand dollars.
+
+**Tests:** 76 suites, 1100 passing (up from 73/1050)
+**Commits:** 8 (3 spec iterations + 2 source curation + 2 claim extraction + 1 fix)
+
+---
+
+### 2026-03-20 — Phase 0 + Phase 5 Complete (evening)
+
+**Theme:** Ship the skill loader — internalize hooks, then replace registerHook with loadExtensions.
+
+**Delivered:**
+- **Phase 0: Hook internalization** — moved 9 hook closures from session-runner.ts into their plugin files. Plugins now own their logic instead of being empty shells with closures in the runner.
+- **Phase 5: Skill loader** — `loadExtensions()` replaces `registerHook()`. Extension system fully dynamic with immutable registry. "New agent = just YAML" goal achieved.
+
+**Tests:** 74 suites, 1065 passing (up from 73/1050)
+**Commits:** 2 (phase0 + phase5)
+
+---
+
+### 2026-03-20 — Identity + Quantum + Agent Auth + Phase 5 Plan (daytime)
 
 **Theme:** Demos-first philosophy — use Demos as baseline plumbing, fail silently, never exclude.
 
 **Delivered:**
-- **Phase 5 plan** written and Codex-reviewed (`phase5-agent-composition-plan.md`). Codex found critical gap: plugin files are empty shells, hook logic lives in session-runner.ts closures. Added Phase 0 prerequisite.
+- **Phase 5 plan** written and Codex-reviewed (`phase5-agent-composition-plan.md`). Codex found critical gap: plugin files are empty shells, hook logic lives in session-runner.ts closures. Added Phase 0 prerequisite. *(Implemented in evening session above.)*
 - **Quantum wallet upgrade** — `sdk.ts` now supports `{ algorithm: "falcon", dualSign: true }`. Config via `DEMOS_ALGORITHM` in credentials.
 - **CCI identity plugin** — replaced scaffold blocker with real `getIdentities` RPC query.
 - **4 scaffold plugins → silent-fail** — cci-identity, chain-query, address-watch, demoswork no longer throw. All attempt real operations, degrade gracefully.
