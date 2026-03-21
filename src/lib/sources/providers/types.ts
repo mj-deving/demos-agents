@@ -8,10 +8,36 @@
  */
 
 import type { SourceRecordV2 } from "../catalog.js";
+import type { ExtractedClaim } from "../../claim-extraction.js";
 
 // ── Attestation Method ──────────────────────────────
 
 export type AttestationMethod = "TLSN" | "DAHR";
+
+// ── Surgical Candidate ──────────────────────────────
+
+/**
+ * A targeted URL constructed from a specific claim in the post text.
+ * Used by the attestation planner to verify individual facts surgically.
+ */
+export interface SurgicalCandidate {
+  /** The claim this candidate was built for */
+  claim: ExtractedClaim;
+  /** Fully resolved URL ready to attest */
+  url: string;
+  /** Estimated response size in bytes */
+  estimatedSizeBytes: number;
+  /** HTTP method (always GET for attestation) */
+  method: "GET";
+  /** JSONPath to extract the verifiable value from the response */
+  extractionPath: string;
+  /** Tolerance for numeric comparison (e.g., 0.02 = 2%) */
+  tolerance?: number;
+  /** Provider name for attribution */
+  provider: string;
+  /** Rate limit bucket key for acquireRateLimitToken */
+  rateLimitBucket?: string;
+}
 
 // ── Candidate Request ───────────────────────────────
 
@@ -175,4 +201,11 @@ export interface ProviderAdapter {
    * (Phase 4 rule: XML/RSS is TLSN-only for publish).
    */
   parseResponse(source: SourceRecordV2, response: FetchedResponse): ParsedAdapterResponse;
+
+  /**
+   * Build a surgical URL targeting a specific claim for attestation.
+   * Returns a SurgicalCandidate if this provider can verify the claim, null otherwise.
+   * Optional — only YAML specs with claimTypes produce this method.
+   */
+  buildSurgicalUrl?(claim: ExtractedClaim, source: SourceRecordV2): SurgicalCandidate | null;
 }

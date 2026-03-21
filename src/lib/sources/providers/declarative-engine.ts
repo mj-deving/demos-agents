@@ -26,7 +26,9 @@ import type {
   ParsedAdapterResponse,
   EvidenceEntry,
   AttestationMethod,
+  SurgicalCandidate,
 } from "./types.js";
+import type { ExtractedClaim } from "../../claim-extraction.js";
 
 // ── Spec Types ──────────────────────────────────────
 
@@ -141,6 +143,10 @@ export interface OperationSpec {
   variables?: Record<string, VariableSpec>;
   compatibility?: CompatibilitySpec;
   parse: ParseSpec;
+  /** Claim types this operation can verify (e.g., ["price", "metric"]) */
+  claimTypes?: string[];
+  /** JSONPath to extract the verifiable value; supports {var} interpolation */
+  extractionPath?: string;
 }
 
 // ── Hook Module Interface ───────────────────────────
@@ -1152,6 +1158,62 @@ function createAdapterFromSpec(
         return { entries, normalized };
       } catch {
         return { entries: [] };
+      }
+    },
+
+    buildSurgicalUrl(claim: ExtractedClaim, source: SourceRecordV2): SurgicalCandidate | null {
+      try {
+        // Find operations that declare claimTypes matching this claim
+        for (const [, operation] of Object.entries(spec.operations)) {
+          if (!operation.claimTypes || !operation.claimTypes.includes(claim.type)) continue;
+          if (!operation.extractionPath) continue;
+
+          // Build a synthetic context from claim entities
+          const entity = claim.entities[0] || "";
+          const syntheticCtx: BuildCandidatesContext = {
+            source,
+            topic: entity,
+            tokens: claim.entities,
+            vars: { asset: entity, symbol: entity },
+            attestation: "DAHR", // default; caller upgrades to TLSN if appropriate
+            maxCandidates: 1,
+          };
+
+          // Resolve variables using existing engine logic
+          const resolved = resolveAllVariables(operation, syntheticCtx);
+          if (resolved === null) continue;
+
+          // Build URL using existing engine logic
+          const url = buildUrl(operation, spec, resolved, syntheticCtx);
+
+          // Interpolate extractionPath with resolved variables
+          const extractionPath = interpolate(operation.extractionPath, resolved, syntheticCtx);
+
+          // Estimate size (prefer TLSN estimate, fall back to DAHR)
+          const sizeKb = operation.request.estimatedSizeKb?.TLSN
+            ?? operation.request.estimatedSizeKb?.DAHR
+            ?? 16;
+          const estimatedSizeBytes = sizeKb * 1024;
+
+          // Resolve rate limit bucket (per-operation override or provider default)
+          const opName = Object.entries(spec.operations).find(([, op]) => op === operation)?.[0];
+          const rateLimitBucket = (opName && spec.provider.rateLimit.byOperation?.[opName]?.bucket)
+            || spec.provider.rateLimit.bucket;
+
+          return {
+            claim,
+            url,
+            estimatedSizeBytes,
+            method: "GET",
+            extractionPath,
+            provider: providerName,
+            rateLimitBucket,
+          };
+        }
+
+        return null;
+      } catch {
+        return null;
       }
     },
   };

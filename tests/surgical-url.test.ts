@@ -1,0 +1,204 @@
+/**
+ * Tests for surgical URL construction from claims (Phase 2).
+ *
+ * Verifies that buildSurgicalUrl on declarative adapters correctly:
+ * - Matches claim types to operations with claimTypes
+ * - Resolves variables from claim entities
+ * - Interpolates extractionPath with resolved variables
+ * - Carries provider + rateLimitBucket metadata
+ * - Returns null for unsupported claims
+ */
+
+import { describe, it, expect, beforeAll } from "vitest";
+import { loadDeclarativeProviderAdaptersSync } from "../src/lib/sources/providers/declarative-engine.js";
+import type { ProviderAdapter, SurgicalCandidate } from "../src/lib/sources/providers/types.js";
+import type { ExtractedClaim } from "../src/lib/claim-extraction.js";
+import type { SourceRecordV2 } from "../src/lib/sources/catalog.js";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SPEC_DIR = resolve(__dirname, "../src/lib/sources/providers/specs");
+
+// ── Test Helpers ────────────────────────────────────
+
+function makeClaim(overrides: Partial<ExtractedClaim> = {}): ExtractedClaim {
+  return {
+    text: "BTC at $64,231",
+    type: "price",
+    entities: ["bitcoin", "BTC"],
+    value: 64231,
+    unit: "USD",
+    ...overrides,
+  };
+}
+
+function makeSource(provider: string, operation: string): SourceRecordV2 {
+  return {
+    id: `test-${provider}-${operation}`,
+    name: `Test ${provider}`,
+    url: `https://api.${provider}.com/test`,
+    provider,
+    adapter: { operation },
+    topics: ["crypto"],
+    status: "active" as any,
+    responseFormat: "json",
+    attestation: { tlsn: true, dahr: true },
+  } as any;
+}
+
+// ── Tests ───────────────────────────────────────────
+
+describe("Surgical URL construction", () => {
+  let adapters: Map<string, ProviderAdapter>;
+
+  beforeAll(() => {
+    adapters = loadDeclarativeProviderAdaptersSync({ specDir: SPEC_DIR });
+  });
+
+  describe("Binance ticker-price", () => {
+    it("returns SurgicalCandidate for BTC price claim", () => {
+      const adapter = adapters.get("binance");
+      expect(adapter).toBeDefined();
+      expect(adapter!.buildSurgicalUrl).toBeDefined();
+
+      const claim = makeClaim({ entities: ["bitcoin", "BTC"] });
+      const source = makeSource("binance", "ticker-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.url).toContain("BTCUSDT");
+      expect(result!.extractionPath).toBe("$.price");
+      expect(result!.method).toBe("GET");
+      expect(result!.provider).toBe("binance");
+    });
+
+    it("returns SurgicalCandidate for ETH price claim", () => {
+      const adapter = adapters.get("binance");
+      const claim = makeClaim({ entities: ["ethereum", "ETH"] });
+      const source = makeSource("binance", "ticker-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.url).toContain("ETHUSDT");
+    });
+
+    it("carries rateLimitBucket from spec", () => {
+      const adapter = adapters.get("binance");
+      const claim = makeClaim();
+      const source = makeSource("binance", "ticker-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.rateLimitBucket).toBe("binance");
+    });
+  });
+
+  describe("CoinGecko simple-price", () => {
+    it("returns SurgicalCandidate for BTC with correct extractionPath", () => {
+      const adapter = adapters.get("coingecko");
+      expect(adapter).toBeDefined();
+
+      const claim = makeClaim({ entities: ["bitcoin", "BTC"] });
+      const source = makeSource("coingecko", "simple-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.url).toContain("ids=bitcoin");
+      expect(result!.extractionPath).toBe("$.bitcoin.usd");
+      expect(result!.provider).toBe("coingecko");
+    });
+
+    it("returns SurgicalCandidate for ETH with correct templated extractionPath", () => {
+      const adapter = adapters.get("coingecko");
+      const claim = makeClaim({ entities: ["ethereum", "ETH"] });
+      const source = makeSource("coingecko", "simple-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.extractionPath).toBe("$.ethereum.usd");
+      expect(result!.url).toContain("ids=ethereum");
+    });
+
+    it("carries rateLimitBucket from spec", () => {
+      const adapter = adapters.get("coingecko");
+      const claim = makeClaim();
+      const source = makeSource("coingecko", "simple-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.rateLimitBucket).toBe("coingecko");
+    });
+  });
+
+  describe("Etherscan gas-oracle", () => {
+    it("returns SurgicalCandidate for gas price claim", () => {
+      const adapter = adapters.get("etherscan");
+      expect(adapter).toBeDefined();
+
+      const claim = makeClaim({ entities: ["ethereum", "ETH"], text: "gas at 15 gwei" });
+      const source = makeSource("etherscan", "gas-oracle");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).not.toBeNull();
+      expect(result!.url).toContain("gasoracle");
+      expect(result!.extractionPath).toBe("$.result.ProposeGasPrice");
+    });
+  });
+
+  describe("Null cases", () => {
+    it("returns null for trend claim type", () => {
+      const adapter = adapters.get("binance");
+      const claim = makeClaim({ type: "trend" });
+      const source = makeSource("binance", "ticker-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).toBeNull();
+    });
+
+    it("returns null for quote claim type", () => {
+      const adapter = adapters.get("coingecko");
+      const claim = makeClaim({ type: "quote" });
+      const source = makeSource("coingecko", "simple-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).toBeNull();
+    });
+
+    it("returns null for event claim type when no event claimTypes defined", () => {
+      const adapter = adapters.get("binance");
+      const claim = makeClaim({ type: "event" });
+      const source = makeSource("binance", "ticker-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("YAML spec claimTypes", () => {
+    it("binance ticker-price has claimTypes", () => {
+      // Verify the spec was loaded correctly by checking surgical URL works
+      const adapter = adapters.get("binance");
+      const claim = makeClaim();
+      const source = makeSource("binance", "ticker-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
+
+    it("coingecko simple-price has claimTypes", () => {
+      const adapter = adapters.get("coingecko");
+      const claim = makeClaim();
+      const source = makeSource("coingecko", "simple-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
+
+    it("etherscan gas-oracle has claimTypes", () => {
+      const adapter = adapters.get("etherscan");
+      const claim = makeClaim();
+      const source = makeSource("etherscan", "gas-oracle");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
+  });
+});

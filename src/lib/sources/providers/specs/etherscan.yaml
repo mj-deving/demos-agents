@@ -24,6 +24,8 @@ operations:
       sourceAdapterOperation: [gas-oracle, gas]
       urlPatterns: ["/api.*gastracker"]
       default: true
+    claimTypes: [price]
+    extractionPath: "$.result.ProposeGasPrice"
     request:
       method: GET
       urlTemplate: "https://api.etherscan.io/api?module=gastracker&action=gasoracle"

@@ -23,6 +23,8 @@ operations:
       sourceAdapterOperation: [ticker-price]
       urlPatterns: ["/ticker/price"]
       default: true
+    claimTypes: [price]
+    extractionPath: "$.price"
     request:
       method: GET
       urlTemplate: "https://api.binance.com/api/v3/ticker/price"

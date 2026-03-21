@@ -24,6 +24,8 @@ operations:
       sourceAdapterOperation: [simple-price]
       urlPatterns: ["/simple/price"]
       default: true
+    claimTypes: [price]
+    extractionPath: "$.{assetId}.usd"
     request:
       method: GET
       urlTemplate: "https://api.coingecko.com/api/v3/simple/price"
