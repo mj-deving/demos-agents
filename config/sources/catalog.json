@@ -9622,13 +9622,17 @@
       "id": "polymarket-aHR0cHM6",
       "name": "polymarket-mined-aHR0cHM6",
       "provider": "polymarket",
-      "url": "https://gamma-api.polymarket.com/markets?limit=100&active=true&closed=false",
-      "urlPattern": "https://gamma-api.polymarket.com/markets",
-      "topics": [],
+      "url": "https://gamma-api.polymarket.com/markets?limit=10&active=true&closed=false",
+      "urlPattern": "https://gamma-api.polymarket.com/markets?limit=10&active=true&closed=false",
+      "topics": [
+        "predictions",
+        "geopolitics",
+        "markets"
+      ],
       "domainTags": [],
       "tlsn_safe": false,
       "dahr_safe": true,
-      "max_response_kb": 585,
+      "max_response_kb": 70,
       "responseFormat": "json",
       "scope": {
         "visibility": "global",
@@ -9649,9 +9653,9 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "active",
       "rating": {
-        "overall": 0,
+        "overall": 50,
         "uptime": 0,
         "relevance": 0,
         "freshness": 0,
@@ -9665,9 +9669,10 @@
       "lifecycle": {
         "discoveredAt": "2026-03-20T19:26:55.449Z",
         "discoveredBy": "feed-mine",
-        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
-        "archivedReason": "curation-2026-03-21"
-      }
+        "statusChangedAt": "2026-03-21T05:13:02.121180+00:00",
+        "promotedAt": "2026-03-21T05:13:02.121180+00:00"
+      },
+      "note": "Active prediction markets. Reduced from limit=100 (617KB) to limit=10 (67KB)."
     },
     {
       "id": "geckoterminal-aHR0cHM6",
@@ -10641,13 +10646,17 @@
       "id": "deribit-aHR0cHM6",
       "name": "deribit-mined-aHR0cHM6",
       "provider": "deribit",
-      "url": "https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=BTC&kind=option",
-      "urlPattern": "https://www.deribit.com/api/v2/public/get_book_summary_by_currency",
-      "topics": [],
+      "url": "https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=BTC&kind=future",
+      "urlPattern": "https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=BTC&kind=future",
+      "topics": [
+        "crypto",
+        "derivatives",
+        "bitcoin-futures"
+      ],
       "domainTags": [],
-      "tlsn_safe": false,
+      "tlsn_safe": true,
       "dahr_safe": true,
-      "max_response_kb": 426,
+      "max_response_kb": 4,
       "responseFormat": "json",
       "scope": {
         "visibility": "global",
@@ -10667,9 +10676,9 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "active",
       "rating": {
-        "overall": 0,
+        "overall": 50,
         "uptime": 0,
         "relevance": 0,
         "freshness": 0,
@@ -10683,9 +10692,10 @@
       "lifecycle": {
         "discoveredAt": "2026-03-20T19:27:22.418Z",
         "discoveredBy": "feed-mine",
-        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
-        "archivedReason": "curation-2026-03-21"
-      }
+        "statusChangedAt": "2026-03-21T05:13:02.121180+00:00",
+        "promotedAt": "2026-03-21T05:13:02.121180+00:00"
+      },
+      "note": "BTC futures summary. Changed from kind=option (964 items, 464KB) to kind=future (7 items, 3KB)."
     },
     {
       "id": "bbc-aHR0cHM6",
