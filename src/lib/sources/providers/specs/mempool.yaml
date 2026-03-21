@@ -110,22 +110,34 @@ operations:
         - "hashrate"
         - "mining"
     variables: {}
+    compatibility:
+      responseFormats: [json]
+      tlsn:
+        allowed: true
+        maxResponseKb: 16
+      dahr:
+        allowed: true
+        requireNormalizedJson: true
     parse:
-      mode: json
-      rootPath: "$"
+      format: json
       items:
-        jsonPath: "$"
-        fields:
-          id:
-            template: "mempool-hashrate"
-          title:
-            template: "Bitcoin Mining Hashrate"
-          bodyText:
-            template: "Current hashrate: {currentHashrate}, Difficulty: {currentDifficulty}"
-          topics:
-            static: [bitcoin, mining, hashrate]
-          metrics:
-            jsonPath: "$"
-            fields:
-              currentHashrate: "$.currentHashrate"
-              currentDifficulty: "$.currentDifficulty"
+        mode: single-object
+      fields:
+        id:
+          template: "mempool-hashrate"
+          required: true
+        title:
+          template: "Bitcoin Mining Hashrate"
+        bodyText:
+          template: "Bitcoin hashrate and difficulty"
+        topics:
+          template: "bitcoin,mining,hashrate"
+        metrics:
+          currentHashrate:
+            jsonPath: "$.currentHashrate"
+            default: 0
+          currentDifficulty:
+            jsonPath: "$.currentDifficulty"
+            default: 0
+        raw:
+          mode: item

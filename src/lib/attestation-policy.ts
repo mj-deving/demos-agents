@@ -72,7 +72,7 @@ export const MACRO_ENTITY_MAP: Array<[RegExp, Record<string, string>]> = [
   [/\bgdp\b/i, { series: "GDP", indicator: "NY.GDP.MKTP.CD", asset: "gdp" }],
   [/\bunemployment\b/i, { series: "UNRATE", indicator: "SL.UEM.TOTL.ZS", asset: "unemployment" }],
   [/\binflation\b|\bcpi\b/i, { series: "CPIAUCSL", indicator: "FP.CPI.TOTL.ZG", asset: "inflation" }],
-  [/\binterest.?rate\b|\bfed.?funds?\b/i, { series: "FEDFUNDS", indicator: "FEDFUNDS", asset: "interest-rate" }],
+  [/\binterest.?rate\b|\bfed.?funds?\b/i, { series: "FEDFUNDS", asset: "interest-rate" }],
   [/\bmoney.?supply\b|\bm2\b/i, { series: "M2SL", asset: "money-supply" }],
   [/\bnational.?debt\b|\bpublic.?debt\b|\bdebt\b/i, { asset: "debt" }],
   [/\bearthquake\b|\bseismic\b|\bmagnitude\b/i, { asset: "earthquake" }],
