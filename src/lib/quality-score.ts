@@ -11,6 +11,9 @@
  * - LLM prediction error averages 6.9rx (unreliable)
  */
 
+import { appendFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+
 export interface QualitySignals {
   /** Post text contains at least one numeric value with unit (e.g., "$67,432", "3.2%") */
   hasNumericClaim: boolean;
@@ -110,4 +113,36 @@ export function calculateQualityScore(input: {
     signals,
     breakdown,
   };
+}
+
+// ── Quality Data Logger ──────────────────────
+
+export interface QualityDataEntry {
+  timestamp: string;
+  agent: string;
+  topic: string;
+  category: string;
+  quality_score: number;
+  quality_max: number;
+  quality_breakdown: Record<string, number>;
+  predicted_reactions: number;
+  confidence: number;
+  text_length: number;
+  isReply: boolean;
+  hasAttestation: boolean;
+}
+
+/**
+ * Append a quality data entry to the agent-scoped JSONL file.
+ * Non-blocking — logs errors but never throws.
+ */
+export function logQualityData(entry: QualityDataEntry): void {
+  try {
+    const dir = join(process.env.HOME || "~", ".config", "demos");
+    mkdirSync(dir, { recursive: true });
+    const filePath = join(dir, `quality-data-${entry.agent}.jsonl`);
+    appendFileSync(filePath, JSON.stringify(entry) + "\n", { mode: 0o600 });
+  } catch {
+    // Non-blocking — never fail the publish pipeline for logging
+  }
 }

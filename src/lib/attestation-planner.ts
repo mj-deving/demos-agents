@@ -30,6 +30,8 @@ export interface AttestationPlan {
   primary: SurgicalCandidate;
   /** Additional claims + candidates within budget */
   secondary: SurgicalCandidate[];
+  /** Fallback candidates if primary/secondary attestation fails */
+  fallbacks: SurgicalCandidate[];
   /** Claims that couldn't be matched to a surgical URL */
   unattested: ExtractedClaim[];
   /** Estimated total cost in DEM */
@@ -105,6 +107,65 @@ export function resolveAttestationBudget(
   };
 }
 
+// ── Source Routing ────────────────────────────────
+
+export interface SourceUsageTracker {
+  /** Count of times each source was used in this session */
+  usageCount: Map<string, number>;
+  /** Set of providers already selected in this plan */
+  providersUsed: Set<string>;
+}
+
+/**
+ * Create a fresh usage tracker for a session/plan.
+ */
+export function createUsageTracker(): SourceUsageTracker {
+  return { usageCount: new Map(), providersUsed: new Set() };
+}
+
+/**
+ * Score a surgical candidate based on source health, recency of use,
+ * and provider diversity. Higher score = better candidate.
+ *
+ * Scoring:
+ *   base = source health (rating 0-100, default 70)
+ *   + status bonus: active +10, degraded +0
+ *   - session usage penalty: -15 per use in current session
+ *   + provider diversity: +5 if provider not yet used in this plan
+ */
+export function scoreSurgicalCandidate(
+  candidate: SurgicalCandidate,
+  source: SourceRecordV2,
+  tracker: SourceUsageTracker,
+): number {
+  // Base health score
+  const healthRating = source.rating?.overall ?? 70;
+  let score = healthRating;
+
+  // Status bonus
+  if (source.status === "active") score += 10;
+  // degraded: +0 (implicit)
+
+  // Session usage penalty — penalize sources already used this session
+  const usageCount = tracker.usageCount.get(source.id) || 0;
+  score -= usageCount * 15;
+
+  // Provider diversity bonus — prefer different providers in the same plan
+  if (!tracker.providersUsed.has(source.provider)) {
+    score += 5;
+  }
+
+  return score;
+}
+
+/**
+ * Record that a source was selected, updating the usage tracker.
+ */
+export function recordSourceUsage(tracker: SourceUsageTracker, sourceId: string, provider: string): void {
+  tracker.usageCount.set(sourceId, (tracker.usageCount.get(sourceId) || 0) + 1);
+  tracker.providersUsed.add(provider);
+}
+
 // ── Attestation Planning ──────────────────────────
 
 /**
@@ -120,6 +181,7 @@ export function buildAttestationPlan(
   sourceView: AgentSourceView,
   config?: { attestation?: { budget?: Partial<AttestationBudget> } },
   adapters?: Map<string, ProviderAdapter>,
+  tracker?: SourceUsageTracker,
 ): AttestationPlan | null {
   if (!claims.length || !adapters?.size) return null;
 
@@ -132,29 +194,43 @@ export function buildAttestationPlan(
 
   if (prioritized.length === 0) return null;
 
-  // Find surgical candidates for each claim
+  // Find surgical candidates for each claim — scored, with fallbacks
   const candidates: SurgicalCandidate[] = [];
+  const fallbackCandidates: SurgicalCandidate[] = [];
   const unattested: ExtractedClaim[] = [];
+  const usageTracker = tracker || createUsageTracker();
 
   for (const claim of prioritized) {
-    let bestCandidate: SurgicalCandidate | null = null;
+    // Collect ALL matching candidates for this claim, not just first
+    const claimCandidates: { candidate: SurgicalCandidate; source: SourceRecordV2; score: number }[] = [];
 
-    // Try each source's adapter
     for (const source of sourceView.sources) {
       const adapter = adapters.get(source.provider);
       if (!adapter?.buildSurgicalUrl) continue;
 
       const candidate = adapter.buildSurgicalUrl(claim, source);
       if (candidate) {
-        bestCandidate = candidate;
-        break; // First match wins per claim
+        const score = scoreSurgicalCandidate(candidate, source, usageTracker);
+        claimCandidates.push({ candidate, source, score });
       }
     }
 
-    if (bestCandidate) {
-      candidates.push(bestCandidate);
-    } else {
+    if (claimCandidates.length === 0) {
       unattested.push(claim);
+      continue;
+    }
+
+    // Sort by score descending — best candidate first
+    claimCandidates.sort((a, b) => b.score - a.score);
+
+    // Best candidate goes to primary/secondary selection
+    const best = claimCandidates[0];
+    candidates.push(best.candidate);
+    recordSourceUsage(usageTracker, best.source.id, best.source.provider);
+
+    // Additional candidates become fallbacks (up to 2 per claim)
+    for (let i = 1; i < Math.min(claimCandidates.length, 3); i++) {
+      fallbackCandidates.push(claimCandidates[i].candidate);
     }
   }
 
@@ -195,6 +271,7 @@ export function buildAttestationPlan(
   return {
     primary: selected[0],
     secondary: selected.slice(1),
+    fallbacks: fallbackCandidates,
     unattested,
     estimatedCost: totalCost,
     budget,

@@ -26,7 +26,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { stdin, stdout } from "node:process";
 
 import { runTool, ToolError, type ToolResult } from "../src/lib/subprocess.js";
-import { calculateQualityScore } from "../src/lib/quality-score.js";
+import { calculateQualityScore, logQualityData } from "../src/lib/quality-score.js";
 import {
   startSession,
   loadState,
@@ -2126,11 +2126,11 @@ async function runPublishAutonomous(
       }
 
       // Hybrid quality score (parallel logger — data collection, not blocking yet)
+      const isReplyPost = !!gp.replyTo?.txHash;
       const qualityResult = calculateQualityScore({
         text: draft.text,
-        isReply: !!(publishInput as any).parentTxHash,
-        hasAttestation: !!(publishInput as any).attestedData,
-        agentsReferenced: (publishInput as any).agentsReferenced,
+        isReply: isReplyPost,
+        hasAttestation: false, // not yet attested at this point — updated post-attestation
       });
 
       console.log(`\n  LLM draft for "${gp.topic}":`);
@@ -2140,6 +2140,22 @@ async function runPublishAutonomous(
       console.log(`    Confidence: ${draft.confidence}`);
       console.log(`    Predicted: ${draft.predicted_reactions} reactions`);
       console.log(`    Quality: ${qualityResult.score}/${qualityResult.maxScore} (attest=${qualityResult.attestationGate}) [${Object.entries(qualityResult.breakdown).filter(([,v]) => v !== 0).map(([k,v]) => `${k}:${v > 0 ? '+' : ''}${v}`).join(', ')}]`);
+
+      // Persist quality data for correlation analysis
+      logQualityData({
+        timestamp: new Date().toISOString(),
+        agent: flags.agent,
+        topic: gp.topic,
+        category: draft.category,
+        quality_score: qualityResult.score,
+        quality_max: qualityResult.maxScore,
+        quality_breakdown: qualityResult.breakdown,
+        predicted_reactions: draft.predicted_reactions,
+        confidence: draft.confidence,
+        text_length: draft.text.length,
+        isReply: isReplyPost,
+        hasAttestation: false, // logged pre-attestation; actual attestation status captured in session log
+      });
 
       // Step 2: Post-generation source matching via extension hooks (Phase 4)
       const matchDecision = await runAfterPublishDraft(extensionRegistry, enabledExtensions, {

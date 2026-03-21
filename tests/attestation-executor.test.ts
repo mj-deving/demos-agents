@@ -58,6 +58,7 @@ function makePlan(overrides: Partial<AttestationPlan> = {}): AttestationPlan {
   return {
     primary: makeCandidate(),
     secondary: [],
+    fallbacks: [],
     unattested: [],
     estimatedCost: 1,
     budget: DEFAULT_BUDGET,

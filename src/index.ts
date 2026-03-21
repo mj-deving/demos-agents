@@ -107,11 +107,15 @@ export {
   buildAttestationPlan,
   resolveAttestationBudget,
   verifyAttestedValues,
+  createUsageTracker,
+  scoreSurgicalCandidate,
+  recordSourceUsage,
 } from "./lib/attestation-planner.js";
 export type {
   AttestationBudget,
   AttestationPlan,
   VerificationResult,
+  SourceUsageTracker,
 } from "./lib/attestation-planner.js";
 
 // Note: executeAttestationPlan is NOT exported here — it's platform-bound

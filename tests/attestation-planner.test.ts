@@ -7,6 +7,9 @@ import {
   buildAttestationPlan,
   resolveAttestationBudget,
   verifyAttestedValues,
+  createUsageTracker,
+  scoreSurgicalCandidate,
+  recordSourceUsage,
 } from "../src/lib/attestation-planner.js";
 import type { ExtractedClaim } from "../src/lib/claim-extraction.js";
 import type { ProviderAdapter, SurgicalCandidate } from "../src/lib/sources/providers/types.js";
@@ -355,5 +358,143 @@ describe("verifyAttestedValues", () => {
     expect(results).toHaveLength(1);
     expect(results[0].verified).toBe(false);
     expect(results[0].failureReason).toContain("No attestation result");
+  });
+});
+
+// ── Source Routing Diversity Tests ──────────────────
+
+describe("source routing diversity", () => {
+  it("selects highest-scored source, not first in catalog order", () => {
+    // Two sources — second has higher rating
+    const lowRated = makeSource("binance");
+    (lowRated as any).rating = { overall: 30 };
+    const highRated = makeSource("coingecko");
+    (highRated as any).rating = { overall: 90 };
+
+    const candidate1 = makeCandidate({ provider: "binance", url: "https://binance.com/btc" });
+    const candidate2 = makeCandidate({ provider: "coingecko", url: "https://coingecko.com/btc" });
+
+    const adapters = new Map<string, ProviderAdapter>();
+    adapters.set("binance", makeAdapter("binance", candidate1));
+    adapters.set("coingecko", makeAdapter("coingecko", candidate2));
+
+    // Low-rated source FIRST in catalog order
+    const sourceView = makeSourceView([lowRated, highRated]);
+    const plan = buildAttestationPlan([makeClaim()], sourceView, undefined, adapters);
+
+    expect(plan).not.toBeNull();
+    // Should pick coingecko (higher rated), not binance (first in catalog)
+    expect(plan!.primary.provider).toBe("coingecko");
+  });
+
+  it("penalizes sources used in current session via tracker", () => {
+    const source1 = makeSource("binance");
+    (source1 as any).rating = { overall: 80 };
+    const source2 = makeSource("coingecko");
+    (source2 as any).rating = { overall: 75 };
+
+    const candidate1 = makeCandidate({ provider: "binance", url: "https://binance.com/btc" });
+    const candidate2 = makeCandidate({ provider: "coingecko", url: "https://coingecko.com/btc" });
+
+    const adapters = new Map<string, ProviderAdapter>();
+    adapters.set("binance", makeAdapter("binance", candidate1));
+    adapters.set("coingecko", makeAdapter("coingecko", candidate2));
+
+    // Pre-load tracker — binance already used twice this session
+    const tracker = createUsageTracker();
+    tracker.usageCount.set("test-binance", 2);
+
+    const sourceView = makeSourceView([source1, source2]);
+    const plan = buildAttestationPlan([makeClaim()], sourceView, undefined, adapters, tracker);
+
+    expect(plan).not.toBeNull();
+    // Binance: 80 + 10 - 30 = 60. Coingecko: 75 + 10 + 5 = 90.
+    expect(plan!.primary.provider).toBe("coingecko");
+  });
+
+  it("provides fallback candidates when multiple sources match", () => {
+    const source1 = makeSource("binance");
+    const source2 = makeSource("coingecko");
+    const source3 = makeSource("kraken");
+
+    const adapters = new Map<string, ProviderAdapter>();
+    adapters.set("binance", makeAdapter("binance", makeCandidate({ provider: "binance" })));
+    adapters.set("coingecko", makeAdapter("coingecko", makeCandidate({ provider: "coingecko" })));
+    adapters.set("kraken", makeAdapter("kraken", makeCandidate({ provider: "kraken" })));
+
+    const sourceView = makeSourceView([source1, source2, source3]);
+    const plan = buildAttestationPlan([makeClaim()], sourceView, undefined, adapters);
+
+    expect(plan).not.toBeNull();
+    expect(plan!.fallbacks.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("gives diversity bonus for unused providers", () => {
+    const source1 = makeSource("binance");
+    (source1 as any).rating = { overall: 70 };
+    const source2 = makeSource("coingecko");
+    (source2 as any).rating = { overall: 70 };
+
+    const adapters = new Map<string, ProviderAdapter>();
+    adapters.set("binance", makeAdapter("binance", makeCandidate({ provider: "binance" })));
+    adapters.set("coingecko", makeAdapter("coingecko", makeCandidate({ provider: "coingecko" })));
+
+    // binance already used as a provider in this plan
+    const tracker = createUsageTracker();
+    tracker.providersUsed.add("binance");
+
+    const sourceView = makeSourceView([source1, source2]);
+    const plan = buildAttestationPlan([makeClaim()], sourceView, undefined, adapters, tracker);
+
+    expect(plan).not.toBeNull();
+    // Both sources have same rating. Coingecko gets +5 diversity bonus
+    expect(plan!.primary.provider).toBe("coingecko");
+  });
+});
+
+describe("scoreSurgicalCandidate", () => {
+  it("scores active source higher than degraded", () => {
+    const candidate = makeCandidate();
+    const activeSource = makeSource("binance");
+    activeSource.status = "active";
+    (activeSource as any).rating = { overall: 70 };
+
+    const degradedSource = makeSource("coingecko");
+    degradedSource.status = "degraded" as any;
+    (degradedSource as any).rating = { overall: 70 };
+
+    const tracker = createUsageTracker();
+
+    const activeScore = scoreSurgicalCandidate(candidate, activeSource, tracker);
+    const degradedScore = scoreSurgicalCandidate(candidate, degradedSource, tracker);
+
+    expect(activeScore).toBeGreaterThan(degradedScore);
+  });
+
+  it("penalizes repeated usage", () => {
+    const candidate = makeCandidate();
+    const source = makeSource("binance");
+    (source as any).rating = { overall: 80 };
+
+    const freshTracker = createUsageTracker();
+    const usedTracker = createUsageTracker();
+    usedTracker.usageCount.set("test-binance", 2);
+
+    const freshScore = scoreSurgicalCandidate(candidate, source, freshTracker);
+    const usedScore = scoreSurgicalCandidate(candidate, source, usedTracker);
+
+    expect(freshScore).toBe(usedScore + 30); // 2 uses * 15 penalty
+  });
+
+  it("defaults to rating 70 when no rating available", () => {
+    const candidate = makeCandidate();
+    const source = makeSource("binance");
+    // No rating set
+
+    const tracker = createUsageTracker();
+    const score = scoreSurgicalCandidate(candidate, source, tracker);
+
+    // 70 (default health) + 10 (active) + 5 (unused provider) = 85
+    expect(score).toBe(85);
   });
 });

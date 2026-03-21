@@ -893,6 +893,58 @@ async function loadHookModule(
   }
 }
 
+// ── URL Parameter Extraction ────────────────────────
+
+/**
+ * Extract URL parameters from a source URL by matching against a spec's
+ * URL template and query configuration. Returns vars that can be merged
+ * into the build context.
+ */
+export function extractUrlParams(
+  sourceUrl: string,
+  urlTemplate: string,
+  querySpec?: Record<string, string>,
+): Record<string, string> {
+  const extracted: Record<string, string> = {};
+
+  try {
+    const srcUrl = new URL(sourceUrl);
+    const tmplUrl = new URL(urlTemplate);
+
+    // Extract path parameters by comparing segments
+    const srcSegments = srcUrl.pathname.split("/").filter(Boolean);
+    // Decode template segments — new URL() encodes {/} as %7B/%7D
+    const tmplSegments = tmplUrl.pathname.split("/").filter(Boolean)
+      .map(s => decodeURIComponent(s));
+
+    if (srcSegments.length === tmplSegments.length) {
+      for (let i = 0; i < tmplSegments.length; i++) {
+        const match = tmplSegments[i].match(/^\{(\w+)\}$/);
+        if (match && srcSegments[i]) {
+          extracted[match[1]] = decodeURIComponent(srcSegments[i]);
+        }
+      }
+    }
+
+    // Extract query parameters
+    if (querySpec) {
+      for (const [key, tmplValue] of Object.entries(querySpec)) {
+        const varMatch = String(tmplValue).match(/^\{(\w+)\}$/);
+        if (varMatch) {
+          const actual = srcUrl.searchParams.get(key);
+          if (actual) {
+            extracted[varMatch[1]] = actual;
+          }
+        }
+      }
+    }
+  } catch {
+    // Invalid URL — return empty extraction
+  }
+
+  return extracted;
+}
+
 // ── Adapter Factory ─────────────────────────────────
 
 /**
@@ -1212,6 +1264,15 @@ function createAdapterFromSpec(
             }
           }
 
+          // Extract URL parameters from source URL, merge with claim-derived vars
+          // Claim-derived vars take precedence (they're more specific to the claim)
+          const urlVars = extractUrlParams(
+            source.url,
+            operation.request.urlTemplate,
+            operation.request.query,
+          );
+          vars = { ...urlVars, ...vars };
+
           const syntheticCtx: BuildCandidatesContext = {
             source,
             topic,
@@ -1426,3 +1487,4 @@ export { resolveOperation as _resolveOperation };
 export { applyRewriteQuery as _applyRewriteQuery };
 export { extractItems as _extractItems };
 export { mapItemToEntry as _mapItemToEntry };
+export { extractUrlParams as _extractUrlParams };

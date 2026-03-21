@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
-import { calculateQualityScore } from "../src/lib/quality-score.js";
+import { describe, it, expect, afterEach } from "vitest";
+import { calculateQualityScore, logQualityData, type QualityDataEntry } from "../src/lib/quality-score.js";
+import * as fs from "fs";
+import * as path from "path";
 
 describe("calculateQualityScore", () => {
   it("scores a high-quality attested reply with numeric claims", () => {
@@ -117,5 +119,83 @@ describe("calculateQualityScore", () => {
     );
     // attestation is reported in attestationGate, not breakdown
     expect(result.attestationGate).toBeDefined();
+  });
+});
+
+describe("logQualityData", () => {
+  const testDir = path.join(process.env.HOME || "/tmp", ".config", "demos");
+  const testFile = path.join(testDir, "quality-data-test-agent.jsonl");
+
+  afterEach(() => {
+    try { fs.unlinkSync(testFile); } catch { /* ignore */ }
+  });
+
+  it("writes valid JSONL entry to agent-scoped file", () => {
+    const entry: QualityDataEntry = {
+      timestamp: "2026-03-21T22:30:00Z",
+      agent: "test-agent",
+      topic: "bitcoin price",
+      category: "ANALYSIS",
+      quality_score: 5,
+      quality_max: 7,
+      quality_breakdown: { hasNumericClaim: 2, referencesAgent: 2, isReply: 0, isLongForm: 1, hasGenericLanguage: 0 },
+      predicted_reactions: 12,
+      confidence: 80,
+      text_length: 450,
+      isReply: false,
+      hasAttestation: true,
+    };
+
+    logQualityData(entry);
+
+    const content = fs.readFileSync(testFile, "utf-8");
+    const parsed = JSON.parse(content.trim());
+    expect(parsed.agent).toBe("test-agent");
+    expect(parsed.quality_score).toBe(5);
+    expect(parsed.predicted_reactions).toBe(12);
+    expect(parsed.quality_breakdown.hasNumericClaim).toBe(2);
+  });
+
+  it("appends multiple entries as separate lines", () => {
+    const base: QualityDataEntry = {
+      timestamp: "2026-03-21T22:30:00Z",
+      agent: "test-agent",
+      topic: "bitcoin",
+      category: "ANALYSIS",
+      quality_score: 3,
+      quality_max: 7,
+      quality_breakdown: {},
+      predicted_reactions: 8,
+      confidence: 70,
+      text_length: 300,
+      isReply: false,
+      hasAttestation: true,
+    };
+
+    logQualityData(base);
+    logQualityData({ ...base, topic: "ethereum", quality_score: 5 });
+
+    const lines = fs.readFileSync(testFile, "utf-8").trim().split("\n");
+    expect(lines).toHaveLength(2);
+    expect(JSON.parse(lines[0]).topic).toBe("bitcoin");
+    expect(JSON.parse(lines[1]).topic).toBe("ethereum");
+  });
+
+  it("never throws on write failure", () => {
+    // With an invalid agent name containing path separators, it should not throw
+    expect(() => logQualityData({
+      timestamp: "2026-03-21T22:30:00Z",
+      agent: "../../etc/passwd",
+      topic: "test",
+      category: "ANALYSIS",
+      quality_score: 0,
+      quality_max: 7,
+      quality_breakdown: {},
+      predicted_reactions: 0,
+      confidence: 0,
+      text_length: 0,
+      isReply: false,
+      hasAttestation: false,
+    })).not.toThrow();
   });
 });
