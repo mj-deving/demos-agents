@@ -278,7 +278,7 @@
       "tlsn_safe": false,
       "dahr_safe": true,
       "max_response_kb": 200,
-      "note": "Full protocol history. DAHR only \u2014 response far exceeds 16KB.",
+      "note": "Full protocol history. DAHR only — response far exceeds 16KB.",
       "topicAliases": [],
       "domainTags": [
         "defi",
@@ -526,6 +526,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "gas-oracle"
       }
     },
     {
@@ -1073,6 +1076,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "package"
       }
     },
     {
@@ -1155,7 +1161,7 @@
       "tlsn_safe": true,
       "dahr_safe": false,
       "max_response_kb": 10,
-      "note": "Returns Atom XML, not JSON. Parse XML. DAHR expects JSON \u2014 use TLSN or convert.",
+      "note": "Returns Atom XML, not JSON. Parse XML. DAHR expects JSON — use TLSN or convert.",
       "topicAliases": [],
       "domainTags": [
         "science",
@@ -1468,6 +1474,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "search"
       }
     },
     {
@@ -1597,6 +1606,9 @@
         "statusChangedAt": "2026-03-17T06:55:27.850Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
         "lastFailedAt": "2026-03-17T17:34:03.721Z"
+      },
+      "adapter": {
+        "operation": "lookup"
       }
     },
     {
@@ -1730,6 +1742,9 @@
         "statusChangedAt": "2026-03-17T06:56:18.505Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
         "lastFailedAt": "2026-03-17T17:34:04.187Z"
+      },
+      "adapter": {
+        "operation": "chart"
       }
     },
     {
@@ -1796,6 +1811,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "spark"
       }
     },
     {
@@ -2193,6 +2211,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "search"
       }
     },
     {
@@ -2259,6 +2280,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "search"
       }
     },
     {
@@ -2581,6 +2605,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "apod"
       }
     },
     {
@@ -2647,6 +2674,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "feed"
       }
     },
     {
@@ -2713,6 +2743,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "feed"
       }
     },
     {
@@ -2843,6 +2876,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "ticker"
       }
     },
     {
@@ -2909,6 +2945,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "stats"
       }
     },
     {
@@ -2925,7 +2964,7 @@
       "tlsn_safe": true,
       "dahr_safe": true,
       "max_response_kb": 1,
-      "note": "Returns single number \u2014 current block height.",
+      "note": "Returns single number — current block height.",
       "topicAliases": [],
       "domainTags": [
         "crypto",
@@ -2975,6 +3014,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "block-tip"
       }
     },
     {
@@ -3107,6 +3149,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "fees"
       }
     },
     {
@@ -3173,6 +3218,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "mempool-stats"
       }
     },
     {
@@ -3239,6 +3287,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "balance"
       }
     },
     {
@@ -3305,6 +3356,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "token-transfers"
       }
     },
     {
@@ -3369,6 +3423,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "fear-greed"
       }
     },
     {
@@ -3890,6 +3947,9 @@
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-14T20:01:37.679Z",
         "promotedAt": "2026-03-14T20:01:37.679Z"
+      },
+      "adapter": {
+        "operation": "search"
       }
     },
     {
@@ -4600,7 +4660,7 @@
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
-        "failureReason": "esummary requires specific PMIDs \u2014 not available from topic vars at runtime",
+        "failureReason": "esummary requires specific PMIDs — not available from topic vars at runtime",
         "statusChangedAt": "2026-03-21T04:58:31.492887Z",
         "archivedReason": "curation-2026-03-21"
       },
@@ -5646,7 +5706,7 @@
     {
       "id": "generic-1ce35c25",
       "name": "stackexchange-tags",
-      "provider": "generic",
+      "provider": "stackexchange",
       "url": "https://api.stackexchange.com/2.3/tags?order=desc&sort=popular&site=stackoverflow&pagesize=10&inname={query}",
       "urlPattern": "api.stackexchange.com/2.3/tags?inname={VAR}&order=desc&pagesize=10&site=stackoverflow&sort=popular",
       "topics": [
@@ -5705,6 +5765,9 @@
         "discoveredBy": "import",
         "lastFailedAt": "2026-03-14T20:23:11.778Z",
         "statusChangedAt": "2026-03-14T20:23:18.599Z"
+      },
+      "adapter": {
+        "operation": "search"
       }
     },
     {
@@ -7318,7 +7381,7 @@
     {
       "id": "generic-0d8c4ecd",
       "name": "npm-search",
-      "provider": "generic",
+      "provider": "npm",
       "url": "https://registry.npmjs.org/-/v1/search?text={query}&size=5",
       "urlPattern": "registry.npmjs.org/-/v1/search?size=5&text={VAR}",
       "topics": [
@@ -7379,6 +7442,9 @@
         "discoveredBy": "import",
         "lastFailedAt": "2026-03-14T20:23:16.993Z",
         "statusChangedAt": "2026-03-14T20:23:18.599Z"
+      },
+      "adapter": {
+        "operation": "package"
       }
     },
     {
@@ -8218,7 +8284,7 @@
       "tlsn_safe": true,
       "dahr_safe": false,
       "max_response_kb": 15,
-      "note": "Latest AI papers. XML response \u2014 parse for titles/abstracts. TLSN only (DAHR rejects XML).",
+      "note": "Latest AI papers. XML response — parse for titles/abstracts. TLSN only (DAHR rejects XML).",
       "topicAliases": [],
       "domainTags": [
         "ai-policy",
@@ -8542,7 +8608,7 @@
       "tlsn_safe": true,
       "dahr_safe": true,
       "max_response_kb": 8,
-      "note": "PyPI recent updates \u2014 detect new tooling trends. RSS/XML.",
+      "note": "PyPI recent updates — detect new tooling trends. RSS/XML.",
       "topicAliases": [],
       "domainTags": [
         "emerging-tech"
@@ -9068,6 +9134,9 @@
         "discoveredBy": "feed-mine",
         "statusChangedAt": "2026-03-21T04:58:31.492887Z",
         "promotedAt": "2026-03-21T04:58:31.492887Z"
+      },
+      "adapter": {
+        "operation": "ticker-24hr"
       }
     },
     {
@@ -9368,6 +9437,9 @@
         "discoveredBy": "feed-mine",
         "statusChangedAt": "2026-03-21T04:58:31.492887Z",
         "archivedReason": "curation-2026-03-21"
+      },
+      "adapter": {
+        "operation": "global"
       }
     },
     {
@@ -9521,6 +9593,9 @@
         "discoveredBy": "feed-mine",
         "statusChangedAt": "2026-03-21T04:58:31.492887Z",
         "archivedReason": "curation-2026-03-21"
+      },
+      "adapter": {
+        "operation": "gas-oracle"
       }
     },
     {
@@ -12694,6 +12769,466 @@
       },
       "adapter": {
         "operation": "ticker-24hr"
+      }
+    },
+    {
+      "id": "kraken-ticker-btc",
+      "name": "kraken-ticker-xbtusd",
+      "provider": "kraken",
+      "url": "https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD",
+      "urlPattern": "api.kraken.com/0/public/Ticker",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "note": "No auth, ~500B. Kraken BTC/USD ticker.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker"
+      }
+    },
+    {
+      "id": "kraken-ticker-eth",
+      "name": "kraken-ticker-xethzusd",
+      "provider": "kraken",
+      "url": "https://api.kraken.com/0/public/Ticker?pair=XETHZUSD",
+      "urlPattern": "api.kraken.com/0/public/Ticker",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "note": "No auth, ~500B. Kraken ETH/USD ticker.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker"
+      }
+    },
+    {
+      "id": "defillama-chains",
+      "name": "defillama-chains-tvl",
+      "provider": "defillama",
+      "url": "https://api.llama.fi/v2/chains",
+      "urlPattern": "api.llama.fi/v2/chains",
+      "topics": [
+        "defi",
+        "tvl",
+        "chains"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 15,
+      "note": "No auth, ~15KB. TVL per chain. Borderline TLSN.",
+      "topicAliases": [],
+      "domainTags": [
+        "defi",
+        "tvl",
+        "l2"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "chains"
+      }
+    },
+    {
+      "id": "deribit-perp-btc",
+      "name": "deribit-btc-perpetual",
+      "provider": "deribit",
+      "url": "https://www.deribit.com/api/v2/public/ticker?instrument_name=BTC-PERPETUAL",
+      "urlPattern": "www.deribit.com/api/v2/public/ticker",
+      "topics": [
+        "crypto",
+        "derivatives",
+        "futures",
+        "funding"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "note": "No auth, ~1KB. BTC perpetual ticker with funding rate.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "derivatives",
+        "futures"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler",
+          "pioneer"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker"
+      }
+    },
+    {
+      "id": "binance-funding-btc",
+      "name": "binance-futures-funding",
+      "provider": "binance",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1",
+      "urlPattern": "fapi.binance.com/fapi/v1/fundingRate",
+      "topics": [
+        "crypto",
+        "derivatives",
+        "futures",
+        "funding"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "No auth, ~150B. BTC perpetual funding rate.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "derivatives",
+        "funding"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker-price"
+      }
+    },
+    {
+      "id": "blockchair-btc-stats",
+      "name": "blockchair-bitcoin-stats",
+      "provider": "blockchair",
+      "url": "https://api.blockchair.com/bitcoin/stats",
+      "urlPattern": "api.blockchair.com/bitcoin/stats",
+      "topics": [
+        "crypto",
+        "bitcoin",
+        "blockchain",
+        "network"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 3,
+      "note": "No auth, ~3KB. Multi-chain stats. Free tier 1440/day.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "bitcoin",
+        "on-chain"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "stats"
+      }
+    },
+    {
+      "id": "treasury-debt",
+      "name": "treasury-debt-to-penny",
+      "provider": "treasury",
+      "url": "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?sort=-record_date&page[size]=1",
+      "urlPattern": "api.fiscaldata.treasury.gov/services/api/fiscal_service",
+      "topics": [
+        "macro",
+        "economics",
+        "debt",
+        "government"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "note": "No auth, ~1KB. US national debt. Updated daily.",
+      "topicAliases": [],
+      "domainTags": [
+        "macro",
+        "economics",
+        "government"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "pioneer"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 10000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 2000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "debt"
       }
     }
   ]
