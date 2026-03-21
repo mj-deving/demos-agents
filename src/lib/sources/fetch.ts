@@ -8,6 +8,7 @@
  */
 
 import type { SourceRecordV2 } from "./catalog.js";
+import { fetchWithTimeout } from "../fetch-with-timeout.js";
 import type { FetchedResponse } from "./providers/types.js";
 import {
   acquireRateLimitToken,
@@ -97,19 +98,13 @@ export async function fetchSource(
     }
 
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, timeoutMs, {
         method: "GET",
-        signal: controller.signal,
         headers: {
           "Accept": "application/json, application/xml, text/xml, */*",
           "User-Agent": "demos-agents/1.0",
         },
       });
-
-      clearTimeout(timer);
 
       // Handle 429 with rate-limit recording
       if (res.status === 429) {

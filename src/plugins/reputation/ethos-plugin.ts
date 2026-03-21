@@ -6,6 +6,7 @@
 
 import type { FrameworkPlugin, DataProvider, ProviderResult } from "../../types.js";
 import type { AgentConfig } from "../../lib/agent-config.js";
+import { fetchWithTimeout } from "../../lib/fetch-with-timeout.js";
 
 interface CacheEntry {
   data: { score: number; vouches: number; reviews: number };
@@ -37,16 +38,13 @@ export class EthosPlugin implements FrameworkPlugin {
           };
         }
 
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10_000);
         try {
           const url = `https://api.ethos.network/v1/score/${encodeURIComponent(topic)}`;
-          const response = await fetch(url, {
+          const response = await fetchWithTimeout(url, 10_000, {
             headers: {
               "X-Ethos-Client": "demos-agents",
               Accept: "application/json",
             },
-            signal: controller.signal,
           });
 
           if (!response.ok) {
@@ -86,8 +84,6 @@ export class EthosPlugin implements FrameworkPlugin {
             error: `Ethos fetch failed: ${message}`,
             source: "ethos.network",
           };
-        } finally {
-          clearTimeout(timeout);
         }
       },
     },

@@ -35,3 +35,4 @@ export { createSdkSetupPlugin } from "./sdk-setup-plugin.js";
 export type { SdkSetupPluginConfig } from "./sdk-setup-plugin.js";
 export { createDemosWalletPlugin } from "./demos-wallet-plugin.js";
 export type { DemosWalletPluginConfig } from "./demos-wallet-plugin.js";
+export { EthosPlugin } from "./reputation/index.js";

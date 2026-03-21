@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync, existsSync, renameSync } from "node:fs";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { info } from "./sdk.js";
+import { fetchWithTimeout } from "./fetch-with-timeout.js";
 import type { SourceRecord, AttestationType } from "./attestation-policy.js";
 import type { SourceRecordV2 } from "./sources/catalog.js";
 import { generateSourceId, normalizeUrlPattern, loadCatalog } from "./sources/catalog.js";
@@ -265,14 +266,9 @@ export async function discoverSourceForTopic(
 
   for (const candidate of compatible) {
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      const resp = await fetch(candidate.url, {
-        signal: controller.signal,
+      const resp = await fetchWithTimeout(candidate.url, timeoutMs, {
         headers: { "Accept": "application/json", "User-Agent": "demos-agent/1.0" },
       });
-      clearTimeout(timer);
 
       const body = await resp.text();
       const relevance = scoreContentRelevance(topic, body, resp.ok);
