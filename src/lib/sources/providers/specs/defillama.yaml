@@ -266,6 +266,8 @@ operations:
     when:
       sourceAdapterOperation: [stablecoins]
       urlPatterns: ["/stablecoins", "stablecoins.llama.fi"]
+    claimTypes: [metric]
+    extractionPath: "$.peggedAssets[0].circulating.peggedUSD"
     request:
       method: GET
       urlTemplate: "https://stablecoins.llama.fi/stablecoins"

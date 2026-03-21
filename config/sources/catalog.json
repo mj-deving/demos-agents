@@ -10977,6 +10977,600 @@
       "adapter": {
         "operation": "ticker"
       }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "coingecko-global",
+      "name": "coingecko-global-data",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/global",
+      "urlPattern": "api.coingecko.com/api/v3/global",
+      "topics": [
+        "crypto",
+        "market-overview"
+      ],
+      "max_response_kb": 2,
+      "topicAliases": [
+        "crypto-market",
+        "market-cap",
+        "total-market"
+      ],
+      "domainTags": [
+        "crypto",
+        "market-overview"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "global"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "mempool-hashrate",
+      "name": "mempool-hashrate-3d",
+      "provider": "mempool",
+      "url": "https://mempool.space/api/v1/mining/hashrate/3d",
+      "urlPattern": "mempool.space/api/v1/mining/hashrate",
+      "topics": [
+        "crypto",
+        "mining",
+        "bitcoin"
+      ],
+      "max_response_kb": 4,
+      "topicAliases": [
+        "hashrate",
+        "mining",
+        "bitcoin-mining"
+      ],
+      "domainTags": [
+        "crypto",
+        "mining"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "crawler"
+        ],
+        "importedFrom": [
+          "crawler"
+        ]
+      },
+      "adapter": {
+        "operation": "hashrate"
+      }
+    },
+    {
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "defillama-stablecoins",
+      "name": "defillama-stablecoins-list",
+      "provider": "defillama",
+      "url": "https://stablecoins.llama.fi/stablecoins?includePrices=true",
+      "urlPattern": "stablecoins.llama.fi/stablecoins",
+      "topics": [
+        "defi",
+        "stablecoins"
+      ],
+      "max_response_kb": 80,
+      "topicAliases": [
+        "stablecoins",
+        "usdt",
+        "usdc"
+      ],
+      "domainTags": [
+        "defi",
+        "stablecoins"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "adapter": {
+        "operation": "stablecoins"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "coinbase-ada-usd",
+      "name": "coinbase-ada-usd-spot",
+      "provider": "coinbase",
+      "url": "https://api.coinbase.com/v2/prices/ADA-USD/spot",
+      "urlPattern": "api.coinbase.com/v2/prices/{VAR}/spot",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "max_response_kb": 1,
+      "topicAliases": [
+        "cardano",
+        "ada"
+      ],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "spot-price"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "coinbase-dot-usd",
+      "name": "coinbase-dot-usd-spot",
+      "provider": "coinbase",
+      "url": "https://api.coinbase.com/v2/prices/DOT-USD/spot",
+      "urlPattern": "api.coinbase.com/v2/prices/{VAR}/spot",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "max_response_kb": 1,
+      "topicAliases": [
+        "polkadot",
+        "dot"
+      ],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "spot-price"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "coinbase-avax-usd",
+      "name": "coinbase-avax-usd-spot",
+      "provider": "coinbase",
+      "url": "https://api.coinbase.com/v2/prices/AVAX-USD/spot",
+      "urlPattern": "api.coinbase.com/v2/prices/{VAR}/spot",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "max_response_kb": 1,
+      "topicAliases": [
+        "avalanche",
+        "avax"
+      ],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "spot-price"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "deribit-perp-sol",
+      "name": "deribit-sol-perpetual",
+      "provider": "deribit",
+      "url": "https://www.deribit.com/api/v2/public/ticker?instrument_name=SOL-PERPETUAL",
+      "urlPattern": "www.deribit.com/api/v2/public/ticker",
+      "topics": [
+        "crypto",
+        "derivatives",
+        "options"
+      ],
+      "max_response_kb": 1,
+      "topicAliases": [
+        "solana",
+        "sol",
+        "perpetual"
+      ],
+      "domainTags": [
+        "crypto",
+        "derivatives"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "ticker"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "blockchair-ltc-stats",
+      "name": "blockchair-litecoin-stats",
+      "provider": "blockchair",
+      "url": "https://api.blockchair.com/litecoin/stats",
+      "urlPattern": "api.blockchair.com/{VAR}/stats",
+      "topics": [
+        "crypto",
+        "blockchain",
+        "on-chain"
+      ],
+      "max_response_kb": 3,
+      "topicAliases": [
+        "litecoin",
+        "ltc"
+      ],
+      "domainTags": [
+        "crypto",
+        "blockchain",
+        "on-chain"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "stats"
+      }
+    },
+    {
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "responseFormat": "json",
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T15:24:25.305Z",
+        "discoveredBy": "manual"
+      },
+      "id": "blockchair-doge-stats",
+      "name": "blockchair-dogecoin-stats",
+      "provider": "blockchair",
+      "url": "https://api.blockchair.com/dogecoin/stats",
+      "urlPattern": "api.blockchair.com/{VAR}/stats",
+      "topics": [
+        "crypto",
+        "blockchain",
+        "on-chain"
+      ],
+      "max_response_kb": 3,
+      "topicAliases": [
+        "dogecoin",
+        "doge"
+      ],
+      "domainTags": [
+        "crypto",
+        "blockchain",
+        "on-chain"
+      ],
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "adapter": {
+        "operation": "stats"
+      }
     }
   ]
 }

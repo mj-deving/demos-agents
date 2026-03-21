@@ -29,7 +29,7 @@ import type {
   SurgicalCandidate,
 } from "./types.js";
 import type { ExtractedClaim } from "../../claim-extraction.js";
-import { inferAssetAlias } from "../../attestation-policy.js";
+import { inferAssetAlias, inferMacroEntity } from "../../attestation-policy.js";
 
 // ── Spec Types ──────────────────────────────────────
 
@@ -1170,16 +1170,34 @@ function createAdapterFromSpec(
           if (!operation.extractionPath) continue;
 
           // Build a synthetic context from claim entities
-          // Canonicalize: if entity is a ticker (e.g., "BTC"), resolve to canonical name
+          // Canonicalize: try crypto asset first, then macro entity
           const rawEntity = claim.entities[0] || "";
           const alias = inferAssetAlias(rawEntity);
-          const asset = alias?.asset || rawEntity;
-          const symbol = alias?.symbol || rawEntity;
+          let vars: Record<string, string>;
+          let topic: string;
+
+          if (alias) {
+            // Crypto entity — asset + symbol
+            vars = { asset: alias.asset, symbol: alias.symbol };
+            topic = alias.asset;
+          } else {
+            // Try macro entity — may provide series, indicator, asset, etc.
+            const macroVars = inferMacroEntity(rawEntity);
+            if (macroVars) {
+              vars = { ...macroVars, symbol: "" };
+              topic = macroVars.asset || rawEntity;
+            } else {
+              // Unknown entity — use raw value
+              vars = { asset: rawEntity, symbol: rawEntity };
+              topic = rawEntity;
+            }
+          }
+
           const syntheticCtx: BuildCandidatesContext = {
             source,
-            topic: asset,
+            topic,
             tokens: claim.entities,
-            vars: { asset, symbol },
+            vars,
             attestation: "DAHR", // default; caller upgrades to TLSN if appropriate
             maxCandidates: 1,
           };

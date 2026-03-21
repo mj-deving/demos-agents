@@ -249,6 +249,64 @@ operations:
         raw:
           mode: parsed-root
 
+  global:
+    when:
+      sourceAdapterOperation: [global]
+      urlPatterns: ["/global"]
+    claimTypes: [metric]
+    extractionPath: "$.data.total_market_cap.usd"
+    request:
+      method: GET
+      urlTemplate: "https://api.coingecko.com/api/v3/global"
+      estimatedSizeKb:
+        TLSN: 2
+        DAHR: 2
+      matchHints:
+        - "market"
+        - "crypto"
+        - "global"
+    variables: {}
+    compatibility:
+      responseFormats: [json]
+      tlsn:
+        allowed: true
+        maxResponseKb: 16
+      dahr:
+        allowed: true
+        requireNormalizedJson: true
+    parse:
+      format: json
+      items:
+        mode: json-path
+        jsonPath: "$.data"
+      fields:
+        id:
+          template: "coingecko-global"
+          required: true
+        title:
+          template: "Crypto Global Market Data"
+        summary:
+          template: "Total market cap: ${total_market_cap.usd}"
+        bodyText:
+          template: "Global crypto: market cap ${total_market_cap.usd}, BTC dominance {market_cap_percentage.btc}%"
+        topics:
+          template: "crypto,market,global"
+        metrics:
+          total_market_cap:
+            jsonPath: "$.total_market_cap.usd"
+            default: 0
+          btc_dominance:
+            jsonPath: "$.market_cap_percentage.btc"
+            default: 0
+          total_volume:
+            jsonPath: "$.total_volume.usd"
+            default: 0
+          active_cryptocurrencies:
+            jsonPath: "$.active_cryptocurrencies"
+            default: 0
+        raw:
+          mode: item
+
   categories:
     when:
       sourceAdapterOperation: [categories]

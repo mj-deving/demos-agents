@@ -63,6 +63,41 @@ export const ASSET_MAP: Array<[RegExp, string, string]> = [
   [/\baptos\b|\bAPT\b/, "aptos", "APT"],
 ];
 
+/**
+ * Macro entity mapping for non-crypto attestation targets.
+ * Returns variable overrides needed by spec templates (series, indicator, etc.).
+ * Used by buildSurgicalUrl when inferAssetAlias returns null.
+ */
+export const MACRO_ENTITY_MAP: Array<[RegExp, Record<string, string>]> = [
+  [/\bgdp\b/i, { series: "GDP", indicator: "NY.GDP.MKTP.CD", asset: "gdp" }],
+  [/\bunemployment\b/i, { series: "UNRATE", indicator: "SL.UEM.TOTL.ZS", asset: "unemployment" }],
+  [/\binflation\b|\bcpi\b/i, { series: "CPIAUCSL", indicator: "FP.CPI.TOTL.ZG", asset: "inflation" }],
+  [/\binterest.?rate\b|\bfed.?funds?\b/i, { series: "FEDFUNDS", indicator: "FEDFUNDS", asset: "interest-rate" }],
+  [/\bmoney.?supply\b|\bm2\b/i, { series: "M2SL", asset: "money-supply" }],
+  [/\bnational.?debt\b|\bpublic.?debt\b|\bdebt\b/i, { asset: "debt" }],
+  [/\bearthquake\b|\bseismic\b|\bmagnitude\b/i, { asset: "earthquake" }],
+  [/\bhousing\b|\bhousing.?starts\b/i, { series: "HOUST", asset: "housing" }],
+  [/\bretail.?sales\b/i, { series: "RSXFS", asset: "retail-sales" }],
+  [/\bindustrial.?production\b/i, { series: "INDPRO", asset: "industrial-production" }],
+  [/\bpopulation\b/i, { indicator: "SP.POP.TOTL", asset: "population" }],
+  [/\blife.?expectancy\b/i, { indicator: "SP.DYN.LE00.IN", asset: "life-expectancy" }],
+  [/\bco2\b|\bemissions?\b/i, { indicator: "EN.ATM.CO2E.PC", asset: "co2-emissions" }],
+  [/\bgini\b|\binequality\b/i, { indicator: "SI.POV.GINI", asset: "gini" }],
+  [/\bpoverty\b/i, { indicator: "SI.POV.DDAY", asset: "poverty" }],
+];
+
+/**
+ * Look up macro entity variables for non-crypto claims.
+ * Returns spec variable overrides (series, indicator, asset, etc.) or null.
+ */
+export function inferMacroEntity(text: string): Record<string, string> | null {
+  const t = text.toLowerCase();
+  for (const [rx, vars] of MACRO_ENTITY_MAP) {
+    if (rx.test(t)) return vars;
+  }
+  return null;
+}
+
 export function unresolvedPlaceholders(url: string): string[] {
   const matches = url.match(/\{([^}]+)\}/g) || [];
   return matches.map((m) => m.slice(1, -1));

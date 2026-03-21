@@ -92,3 +92,40 @@ operations:
               count: "$.count"
               vsize: "$.vsize"
               total_fee: "$.total_fee"
+
+  hashrate:
+    when:
+      sourceAdapterOperation: [hashrate, mining-hashrate]
+      urlPatterns: ["/mining/hashrate"]
+    claimTypes: [metric]
+    extractionPath: "$.currentHashrate"
+    request:
+      method: GET
+      urlTemplate: "https://mempool.space/api/v1/mining/hashrate/3d"
+      estimatedSizeKb:
+        TLSN: 4
+        DAHR: 4
+      matchHints:
+        - "bitcoin"
+        - "hashrate"
+        - "mining"
+    variables: {}
+    parse:
+      mode: json
+      rootPath: "$"
+      items:
+        jsonPath: "$"
+        fields:
+          id:
+            template: "mempool-hashrate"
+          title:
+            template: "Bitcoin Mining Hashrate"
+          bodyText:
+            template: "Current hashrate: {currentHashrate}, Difficulty: {currentDifficulty}"
+          topics:
+            static: [bitcoin, mining, hashrate]
+          metrics:
+            jsonPath: "$"
+            fields:
+              currentHashrate: "$.currentHashrate"
+              currentDifficulty: "$.currentDifficulty"
