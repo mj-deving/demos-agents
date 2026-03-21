@@ -33,9 +33,10 @@ T4 (feed history) ─── fully independent, spike first (known blocker)
 
 **Minimum viable slice (1 session, proves end-to-end):**
 1. T2: Add LLM nudge → posts include exact values
-2. T1: Add claimTypes to fred.yaml → metric claims match
-3. T0: Add Binance catalog entries → source found
+2. T1a: Add claimTypes to `cryptocompare.yaml` → price claims match (crypto entity extraction already works)
+3. T0: Add Binance + CryptoCompare catalog entries → source found
 4. Run session → verify attestation fires
+> Note: FRED was replaced with crypto-native providers for MVP (Codex Finding #3: entity extraction is crypto-only)
 
 **Execution order:** T2+T1-existing → T0-existing + T1-new (parallel) → T0-new → T3/T4 (parallel spikes early)
 
@@ -84,9 +85,11 @@ Grow from 66 → 200+ active sources across 12 domains so that every agent topic
 ### Implementation Plan
 
 #### Phase 0: Catalog Cleanup (prerequisite)
-- **Fix invalid entries (indices 138-208):** 70+ entries imported by feed-mine with malformed schemas. Either fix or remove.
-- **Validate all existing active sources:** Run `npx tsx cli/scan-feed.ts --agent sentinel` and mark unreachable sources as degraded.
+- **Revalidate catalog state:** ~~70+ invalid entries at indices 138-208~~ (Codex review: catalog is now 139 records and loads cleanly — this blocker may be stale). Verify current validation status before assuming cleanup is needed.
+- **Validate all existing active sources:** Use lifecycle plugin health checks (NOT `scan-feed.ts`, which is a feed scanner, not a source health tool).
 - **Effort:** S (1-2 hours)
+
+> **Codex Finding #8 (Medium):** The cleanup prerequisite should be revalidated, not treated as fact. The current catalog may already be clean.
 
 #### Phase 1: New YAML Specs for Unrepresented Providers
 Create YAML spec files for providers that have no spec yet but will have catalog entries:
@@ -94,20 +97,33 @@ Create YAML spec files for providers that have no spec yet but will have catalog
 | New Spec | Operations | claimTypes | Auth | Notes |
 |----------|-----------|------------|------|-------|
 | `coinbase.yaml` | spot-price | [price] | none | ~200B, highly reliable |
-| `owlracle.yaml` | gas-price | [metric] | API key (free tier) | Multi-chain gas |
+| ~~`owlracle.yaml`~~ | ~~gas-price~~ | ~~[metric]~~ | ~~API key~~ | **BLOCKED: auth-key leakage** (see below) |
 | `deribit.yaml` | ticker | [price] | none | Derivatives/options |
-| `opensea.yaml` | collection-stats | [metric] | API key (free) | NFT floor/volume |
+| ~~`opensea.yaml`~~ | ~~collection-stats~~ | ~~[metric]~~ | ~~API key~~ | **BLOCKED: auth-key leakage** (see below) |
 | `magiceden.yaml` | collection-stats | [metric] | none | Solana NFTs |
 | `snapshot.yaml` | proposals | [event] | none (GraphQL POST) | TLSN POST needs testing |
 | `blockchair.yaml` | stats | [metric] | none | Multi-chain on-chain stats |
-| `coinalyze.yaml` | open-interest, funding-rate | [metric] | API key (free) | Derivatives analytics |
+| ~~`coinalyze.yaml`~~ | ~~open-interest, funding-rate~~ | ~~[metric]~~ | ~~API key~~ | **BLOCKED: auth-key leakage** (see below) |
 
 **Removed from original plan:**
 - ~~`l2beat.yaml`~~ — no public REST API (use DefiLlama `/v2/chains`)
 - ~~`tally.yaml`~~ — GraphQL + key, low priority
 - ~~`solscan.yaml`~~ — Pro API only (paid)
+- ~~`owlracle.yaml`~~ — auth-key leakage blocker (see below)
+- ~~`opensea.yaml`~~ — auth-key leakage blocker (see below)
+- ~~`coinalyze.yaml`~~ — auth-key leakage blocker (see below)
 
-**Effort:** M (one session per 3-4 specs, ~3 sessions total)
+> **Codex Finding #1 (HIGH): Auth-Key Leakage in Attestation URLs**
+> `buildUrl()` in `declarative-engine.ts:410` appends `query-param-env` credentials directly into the final attested URL. This means API keys for FRED, Owlracle, OpenSea, etc. would be published on-chain in the attestation record. **Until a secret-safe URL redaction/proxy model exists, auth-required APIs MUST NOT be counted as attestation-capable sources.** They can still be used for data fetching (scan phase) but not for surgical attestation (publish phase).
+>
+> **Impact:** Reduces Wave 2 attestable sources. FRED, Etherscan, CoinMarketCap, Owlracle, OpenSea, Coinalyze all affected. Only no-auth APIs count toward Gate 3 attestation capacity.
+>
+> **Resolution options:**
+> 1. Strip auth params from attested URL before on-chain submission (requires executor change)
+> 2. Proxy auth-required requests through a local endpoint that adds keys server-side
+> 3. Accept: auth-required sources are scan-only, not attestation-capable (simplest)
+
+**Effort:** M (one session per 3-4 specs, ~2 sessions for remaining no-auth specs)
 
 #### Phase 2: Catalog Entry Batch Creation
 Template for new catalog entries (batch 20-30 per session):
@@ -129,13 +145,13 @@ Template for new catalog entries (batch 20-30 per session):
   "scope": {
     "visibility": "scoped",
     "agents": ["sentinel", "crawler"],
-    "importedFrom": ["manual"]
+    "importedFrom": ["sentinel"]
   },
   "runtime": {
     "timeoutMs": 8000,
     "retry": { "maxAttempts": 2, "backoffMs": 1000, "retryOn": ["timeout", "5xx"] }
   },
-  "trustTier": "new",
+  "trustTier": "experimental",
   "status": "quarantined",
   "rating": {
     "overall": 50, "uptime": 50, "relevance": 50, "freshness": 50,
@@ -153,6 +169,15 @@ Template for new catalog entries (batch 20-30 per session):
 ```
 
 **Key:** New sources start as `"status": "quarantined"` and promote to active after 3 successful passes (existing lifecycle logic handles this).
+
+> **Codex Finding #2 (HIGH): Quarantine-to-Active Promotion Math**
+> Lifecycle plugin samples only **10 sources per session**. Promotion requires **3 consecutive passes** per source (`lifecycle.ts:22`). With 130+ new quarantined sources, promotion needs ~40 sessions at current sample rate — not the single "health check sweep" planned.
+>
+> **Required:** Build a bulk quarantine test/promotion workflow before Session 10:
+> - Option A: Increase lifecycle sample size to 50 for quarantined sources specifically
+> - Option B: Create `cli/bulk-health-check.ts` that tests all quarantined sources in one run and applies lifecycle transitions
+> - Option C: Directly insert as `"status": "active"` with manual health verification per batch (skip quarantine)
+> **Recommended:** Option B — new CLI tool, run 3 times to trigger promotion
 
 **Batching strategy:**
 - Session 1: Crypto prices (Binance, Kraken, CryptoCompare, Coinbase) — ~15 entries
@@ -176,7 +201,7 @@ Assessment happens during Phase 2 entry creation by checking `estimatedSizeKb` i
 Current matching uses `topics` and `domainTags` fields with a threshold of 10. To improve match rates:
 - Ensure new sources have comprehensive `topics` arrays (not just domain, but specific subtopics)
 - Add `topicAliases` for common variations (e.g., "BTC" → "bitcoin", "ETH" → "ethereum")
-- Consider lowering match threshold from 10 to 8 for sources with `claimTypes` (incentivize attestable sources)
+- ~~Consider lowering match threshold from 10 to 8~~ (Codex Finding #9: increases false-positive risk; keep at 10)
 
 **Effort:** S (part of Phase 2 work)
 
@@ -219,8 +244,8 @@ Increase claimTypes coverage from 8/26 to 18+/26 specs (the remaining specs that
 **WITHOUT claimTypes — CAN add (10):**
 | Spec | Recommended claimType | extractionPath | Notes |
 |------|----------------------|----------------|-------|
-| `fred.yaml` | `metric` | `$.observations[0].value` | Economic indicators (GDP, CPI, unemployment) |
-| `worldbank.yaml` | `metric` | `$[1][0].value` | Development indicators |
+| `fred.yaml` | `metric` | `$.observations[0].value` | **NEEDS ENTITY PLUMBING** — see Finding #3 below |
+| `worldbank.yaml` | `metric` | `$[1][0].value` | **NEEDS ENTITY PLUMBING** — see Finding #3 below |
 | `cryptocompare.yaml` | `price` | `$.{ASSET}.USD` | Crypto prices (CoinGecko redundancy) |
 | `yahoo-finance.yaml` | `price` | `$.chart.result[0].meta.regularMarketPrice` | Equities, commodities |
 | `usgs.yaml` | `metric` | `$.features[0].properties.mag` | Earthquake magnitude |
@@ -254,8 +279,17 @@ extractionPath: "$.path.to.value"
 **Batch 2 (macro/science):** `fred.yaml`, `worldbank.yaml`, `usgs.yaml`, `nasa.yaml`
 **Batch 3 (low priority):** `npm.yaml`, `ipinfo.yaml`
 
+> **Codex Finding #3 (HIGH): Entity Extraction is Crypto-Only**
+> `buildSurgicalUrl()` synthesizes `asset`/`symbol` vars from claim entities via `inferAssetAlias()`, which uses `ASSET_MAP` — a crypto-only mapping (BTC, ETH, SOL, etc.). Macro claims like "GDP at 3.2%" won't resolve because "GDP" is not in `ASSET_MAP`. Adding `claimTypes` to `fred.yaml` alone is NOT sufficient — the entity resolution pipeline also needs extension.
+>
+> **T1 must be split into two tiers:**
+> - **T1a (field-only):** Specs where existing entity extraction works: `cryptocompare`, `mempool`, `blockchain-info`, `yahoo-finance` (crypto tickers). Just add YAML fields.
+> - **T1b (needs entity plumbing):** Specs where entities are non-crypto: `fred`, `worldbank`, `usgs`, `nasa`. Requires extending `ASSET_MAP` or `buildSurgicalUrl()` to handle macro entity types (series IDs, indicator codes).
+>
+> **Revised MVP slice:** Replace FRED with a crypto-native existing-provider slice (e.g., Binance ticker + CryptoCompare price) that works with current entity extraction.
+
 ### Declarative Engine Impact
-No changes needed. `buildSurgicalUrl()` (declarative-engine.ts:1165) already:
+No changes needed for T1a specs. `buildSurgicalUrl()` (declarative-engine.ts:1165) already:
 1. Iterates operations looking for `claimTypes` match
 2. Checks `extractionPath` exists
 3. Resolves variables and builds URL
@@ -476,6 +510,26 @@ If RPC query fails due to SDK issues:
 
 ---
 
+---
+
+## Codex Review Findings (2026-03-21)
+
+9 findings incorporated into the plan. Summary of changes made:
+
+| # | Severity | Finding | Resolution |
+|---|----------|---------|------------|
+| 1 | **HIGH** | Auth-key leakage in attestation URLs | Auth-required specs blocked from attestation; only no-auth APIs count for Gate 3 |
+| 2 | **HIGH** | Quarantine promotion math (10/session, 3 passes needed) | Added bulk health-check CLI requirement; Option B recommended |
+| 3 | **HIGH** | Entity extraction is crypto-only (`ASSET_MAP`) | T1 split into T1a (field-only, crypto) and T1b (needs entity plumbing, macro); MVP changed to crypto-native |
+| 4 | **Medium** | Catalog template uses invalid `trustTier: "new"` | Fixed to `"experimental"`; `importedFrom` fixed to agent names |
+| 5 | **Medium** | Success criteria don't measure per-gate verification | Add per-gate metrics: claims extracted, URL built, attestation executed, numeric verification passed |
+| 6 | **Medium** | T3 `FrameworkPlugin.register()` doesn't match actual interface | T3 must use `hooks/providers/evaluators/actions/init/destroy` + `loadExtensions()` |
+| 7 | **Medium** | T0 metric should be per-agent coverage, not raw count | Success criteria updated to per-agent visible attestable sources |
+| 8 | **Medium** | Catalog cleanup prerequisite may be stale | Revalidate before assuming cleanup needed |
+| 9 | **Low** | Lowering match threshold from 10→8 adds false-positive risk | Removed from plan; keep threshold at 10 |
+
+---
+
 ## Cross-Cutting Concerns
 
 ### Dependency Graph
@@ -529,13 +583,18 @@ T4 (feed history) ── independent, has hard blocker (spike first)
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Active sources | 66 | 200+ |
-| Specs with claimTypes | 8/26 | 18+/26+ |
-| Claim extraction hit rate | ~10% | >50% |
-| "No matching source" rate | ~80% | <5% |
-| Attestation fire rate | ~0% | >33% of publishes |
+| Active sources (no-auth, attestable) | 66 | 150+ (no-auth only count for attestation) |
+| Active sources (all, including scan-only) | 66 | 200+ |
+| Per-agent visible attestable sources | sentinel:39, crawler:49, pioneer:20 | Each agent: 60+ visible attestable |
+| Specs with claimTypes (T1a, field-only) | 8/26 | 14+/26+ |
+| Specs with claimTypes (T1b, needs entity plumbing) | 0 | 4+ (fred, worldbank, usgs, nasa) |
+| Claim extraction hit rate (Gate 1) | ~10% | >50% |
+| Surgical URL built rate (Gate 2+3) | ~10% | >60% |
+| Attestation executed rate (Gate 4) | ~95% | >95% |
+| Numeric verification passed rate | unknown | >80% of executed |
+| Combined attestation fire rate | ~0% | >25% of publishes |
 | Domain coverage | 8 domains | 12+ domains |
-| Reputation providers | 0 | 3 |
+| Reputation providers | 0 | 2-3 (Ethos most accessible) |
 | Feed history access | ~20k posts | 50k+ (or documented blocker) |
 
 ---
