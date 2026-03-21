@@ -43,8 +43,12 @@ FALLBACK CHAIN (session-runner.ts: runGateAutonomous)
 PUBLISH (session-runner.ts + publish-pipeline.ts)
   ├── Rate limit check (14/day, 4/hour cron; 4/day, 2/hour reactive)
   ├── LLM generates post text (300-600 chars, data-dense, no filler)
+  ├── QUALITY GATE (⚠️ NEEDS OPTIMIZATION — see CLAUDE.md "Quality Gate" section):
+  │   ├── Hard gates: attestation required, text >200ch, not duplicate, predicted_rx ≥ 7
+  │   ├── Hybrid quality scorer: logs quality_score in parallel (data collection)
+  │   └── Known issue: LLM predicted_reactions is unreliable (avg error 6.9, 64% false rejections at old threshold 10)
   ├── Source match: verify post content aligns with attestation source
-  ├── Attestation: TLSN preferred, DAHR fallback (configurable per agent)
+  ├── Attestation: DAHR default (TLSN deactivated). Attestation is a HARD GATE — no proof = no publish.
   ├── HIVE encode + DemosTransactions.store → confirm → broadcast
   └── Verify: confirm post appears in feed, check score
 ```
