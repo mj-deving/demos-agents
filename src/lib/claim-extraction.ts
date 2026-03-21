@@ -15,7 +15,7 @@
 
 import { ASSET_MAP } from "./attestation-policy.js";
 import type { LLMProvider } from "./llm-provider.js";
-import { LLM_CLAIM_MAX_TEXT, LLM_CLAIM_TIMEOUT_MS, truncateForLLM, cleanLLMJson } from "./llm-claim-config.js";
+import { LLM_CLAIM_TIMEOUT_MS, truncateForLLM, cleanLLMJson } from "./llm-claim-config.js";
 
 // ── Types ─────────────────────────────────────────
 
@@ -74,9 +74,9 @@ interface ExtractionRule {
 
 /** Pre-compiled extraction rules applied in order */
 const EXTRACTION_RULES: ExtractionRule[] = [
-  // $64,231.50 or $64,231 or $0.50
+  // $64,231.50 or $64,231 or $0.50 (negative lookahead excludes shorthand like $2.3B)
   {
-    regex: /\$(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/g,
+    regex: /\$(\d{1,3}(?:,\d{3})*(?:\.\d+)?)(?!\s*[BMKTbmkt]\b)/g,
     type: "price",
     parseValue: (m) => {
       const v = parseFloat(m[1].replace(/,/g, ""));
@@ -198,13 +198,22 @@ interface EntityMatch {
 
 /**
  * Find all known entities in text using ASSET_MAP.
+ * Matches against both original text (for case-sensitive ticker patterns like \bSOL\b)
+ * and lowercased text (for case-insensitive full name patterns like \bsolana\b).
  */
 function extractEntities(text: string): EntityMatch[] {
   const entities: EntityMatch[] = [];
-  const t = text.toLowerCase();
+  const lower = text.toLowerCase();
 
   for (const [rx, asset, symbol] of ASSET_MAP) {
-    const match = rx.exec(t);
+    // Try original text first (catches case-sensitive tickers like SOL, DOT)
+    // then lowercase (catches full names like "solana", "polkadot")
+    rx.lastIndex = 0;
+    let match = rx.exec(text);
+    if (!match) {
+      rx.lastIndex = 0;
+      match = rx.exec(lower);
+    }
     if (match) {
       entities.push({ asset, symbol, index: match.index });
     }

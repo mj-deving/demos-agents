@@ -47,26 +47,35 @@ describe("extractStructuredClaims", () => {
       expect(price!.value).toBe(1234567);
     });
 
-    it("extracts $X.XB shorthand billions", () => {
+    it("extracts $X.XB shorthand billions without double-extracting as plain USD", () => {
       const claims = extractStructuredClaims("Protocol TVL is $2.3B across all chains.");
       const metric = findClaim(claims, "metric");
       expect(metric).toBeDefined();
       expect(metric!.value).toBe(2_300_000_000);
       expect(metric!.unit).toBe("USD");
+      // Must NOT also extract $2.3 as a plain price
+      const bogusPrice = findClaim(claims, "price", (v) => v === 2.3);
+      expect(bogusPrice).toBeUndefined();
     });
 
-    it("extracts $X.XM shorthand millions", () => {
+    it("extracts $X.XM shorthand millions without double-extracting", () => {
       const claims = extractStructuredClaims("Daily volume hit $500M on the exchange.");
       const metric = findClaim(claims, "metric");
       expect(metric).toBeDefined();
       expect(metric!.value).toBe(500_000_000);
+      // Must NOT also extract $500 as a plain price
+      const bogusPrice = findClaim(claims, "price", (v) => v === 500);
+      expect(bogusPrice).toBeUndefined();
     });
 
-    it("extracts $XK shorthand thousands", () => {
+    it("extracts $XK shorthand thousands without double-extracting", () => {
       const claims = extractStructuredClaims("Average transaction size is $10K.");
       const metric = findClaim(claims, "metric");
       expect(metric).toBeDefined();
       expect(metric!.value).toBe(10_000);
+      // Must NOT also extract $10 as a plain price
+      const bogusPrice = findClaim(claims, "price", (v) => v === 10);
+      expect(bogusPrice).toBeUndefined();
     });
   });
 
@@ -139,6 +148,21 @@ describe("extractStructuredClaims", () => {
       const entityClaim = claims.find((c) => c.type === "event");
       expect(entityClaim).toBeDefined();
       expect(entityClaim!.entities.length).toBeGreaterThan(0);
+    });
+
+    it("does not false-positive on English words that collide with tickers", () => {
+      // "link", "near", "op", "dot", "uni" are English words — should NOT match as crypto entities
+      const claims = extractStructuredClaims("Please open the link near the dot point. The uni op team handled it.");
+      // No known crypto entities, no numbers → should return empty
+      expect(claims).toEqual([]);
+    });
+
+    it("matches full asset names case-insensitively", () => {
+      const claims = extractStructuredClaims("Polkadot and Chainlink are gaining momentum in DeFi.");
+      expect(claims.length).toBeGreaterThan(0);
+      const entities = claims.flatMap((c) => c.entities);
+      expect(entities).toContain("polkadot");
+      expect(entities).toContain("chainlink");
     });
   });
 

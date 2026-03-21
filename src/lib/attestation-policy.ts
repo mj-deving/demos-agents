@@ -31,29 +31,36 @@ export interface AttestationPlan {
  * Known asset mapping for entity recognition in topics and post text.
  * Used by source selection (policy.ts) and claim extraction (claim-extraction.ts).
  * Ordered by market cap / usage frequency for early-exit optimization.
+ *
+ * Short tickers that collide with English words (dot, link, near, op, uni, arb, atom,
+ * sol, fil, sui, apt) are matched case-insensitively ONLY via their full names.
+ * The ticker form requires uppercase to avoid false positives ("open the link" ≠ LINK).
+ * Note: extractEntities() in claim-extraction.ts lowercases text before matching,
+ * so case-sensitive ticker patterns only match in policy.ts (which passes original text).
+ * For claim-extraction, the full name match is the primary path.
  */
 export const ASSET_MAP: Array<[RegExp, string, string]> = [
-  [/\bbitcoin|\bbtc\b/, "bitcoin", "BTC"],
-  [/\bethereum|\beth\b/, "ethereum", "ETH"],
-  [/\bsolana|\bsol\b/, "solana", "SOL"],
-  [/\bripple|\bxrp\b/, "ripple", "XRP"],
-  [/\bcardano|\bada\b/, "cardano", "ADA"],
-  [/\bdogecoin|\bdoge\b/, "dogecoin", "DOGE"],
-  [/\bpolkadot|\bdot\b/, "polkadot", "DOT"],
-  [/\bavalanche|\bavax\b/, "avalanche", "AVAX"],
-  [/\bchainlink|\blink\b/, "chainlink", "LINK"],
-  [/\bpolygon|\bmatic\b/, "polygon", "MATIC"],
-  [/\buniswap|\buni\b/, "uniswap", "UNI"],
-  [/\blitecoin|\bltc\b/, "litecoin", "LTC"],
-  [/\bcosmos|\batom\b/, "cosmos", "ATOM"],
-  [/\bnear\sprotocol|\bnear\b/, "near", "NEAR"],
-  [/\barbitrum|\barb\b/, "arbitrum", "ARB"],
-  [/\boptimism\b|\b\bop\b/, "optimism", "OP"],
-  [/\baave\b/, "aave", "AAVE"],
-  [/\bmonero|\bxmr\b/, "monero", "XMR"],
-  [/\bfilecoin|\bfil\b/, "filecoin", "FIL"],
-  [/\bsui\b/, "sui", "SUI"],
-  [/\baptos|\bapt\b/, "aptos", "APT"],
+  [/\bbitcoin|\bbtc\b/i, "bitcoin", "BTC"],
+  [/\bethereum|\beth\b/i, "ethereum", "ETH"],
+  [/\bsolana\b|\bSOL\b/, "solana", "SOL"],
+  [/\bripple|\bxrp\b/i, "ripple", "XRP"],
+  [/\bcardano|\bada\b/i, "cardano", "ADA"],
+  [/\bdogecoin|\bdoge\b/i, "dogecoin", "DOGE"],
+  [/\bpolkadot\b|\bDOT\b/, "polkadot", "DOT"],
+  [/\bavalanche|\bavax\b/i, "avalanche", "AVAX"],
+  [/\bchainlink\b|\bLINK\b/, "chainlink", "LINK"],
+  [/\bpolygon|\bmatic\b/i, "polygon", "MATIC"],
+  [/\buniswap\b|\bUNI\b/, "uniswap", "UNI"],
+  [/\blitecoin|\bltc\b/i, "litecoin", "LTC"],
+  [/\bcosmos\b|\bATOM\b/, "cosmos", "ATOM"],
+  [/\bnear\sprotocol\b|\bNEAR\b/, "near", "NEAR"],
+  [/\barbitrum\b|\bARB\b/, "arbitrum", "ARB"],
+  [/\boptimism\b|\bOP\b/, "optimism", "OP"],
+  [/\baave\b/i, "aave", "AAVE"],
+  [/\bmonero|\bxmr\b/i, "monero", "XMR"],
+  [/\bfilecoin\b|\bFIL\b/, "filecoin", "FIL"],
+  [/\bSUI\b|\bsui\b(?=\s+(?:network|protocol|token|chain|price|trading))/, "sui", "SUI"],
+  [/\baptos\b|\bAPT\b/, "aptos", "APT"],
 ];
 
 export function unresolvedPlaceholders(url: string): string[] {
