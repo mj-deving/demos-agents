@@ -241,12 +241,35 @@ Decision logic:
 5. **Pipeline integration** — Wire into `runPublishAutonomous()` between post generation and attestation
 6. **Multi-attestation support** — Allow >1 attestation per post (SDK support TBD)
 
+## Decisions (2026-03-21)
+
+1. **Claim extraction: rules first, LLM fallback.** Regex/pattern rules extract prices and metrics. LLM only for ambiguous or complex claims. Cheapest path that still catches edge cases.
+2. **Priority: next workstream.** Start immediately after this design session. Ahead of Tier 1 reputation plugins.
+3. **Surgical endpoints: provider specs (YAML).** Extend existing declarative adapter specs with surgical endpoint templates. Co-located with adapter logic, consistent with Phase 4 architecture.
+4. **Multi-attestation: investigating SDK support** (see Open Questions below).
+
+## SDK Investigation Results (2026-03-21)
+
+**Multi-attestation is fully supported at every layer:**
+
+| Layer | Support | Evidence |
+|-------|---------|----------|
+| API schema | `Array<{...}>` | `api-reference.md:158-163` |
+| PublishInput type | `Array<{...}>` | `publish-pipeline.ts:31-41` |
+| publishPost() | Maps full array | `publish-pipeline.ts:299-313` |
+| HIVE encoding | JSON stringify (no size constraint) | `publish-pipeline.ts:317-320` |
+| On-chain | Array stored as-is | HIVE prefix + JSON bytes |
+
+**Current bottleneck is our code only:** `attestAndPublish()` hardcodes a single-element array because it calls `attestDahr()` once. The fix is straightforward — call `attestDahr()` N times and collect results into the array.
+
+**Scoring:** +40 DAHR bonus checks `sourceAttestations.length > 0` (boolean presence). Multiple attestations don't increase score but increase proof density for reputation/trust.
+
+**Both DAHR and TLSN attestations can coexist on the same post** — `sourceAttestations` (DAHR) and `tlsnAttestations` (TLSN) are separate arrays. A single post could have 1 TLSN surgical proof + 2 DAHR broad proofs.
+
 ## Open Questions
 
-1. **Does the Demos SDK support multiple attestations per post?** If not, surgical attestation picks the single best claim. If yes, multi-attestation multiplies proof strength.
-2. **Should claim extraction use LLM or rules?** Rules are cheaper/faster but miss nuance. LLM is better but adds ~1s + cost per post. Hybrid: rules first, LLM for ambiguous claims.
-3. **How does SuperColony scoring treat multiple attestations?** If only the first counts for the +40 DAHR bonus, multi-attestation is about proof quality not score.
-4. **Post-attestation verification:** Should we verify the attested value matches the claim value (e.g., attested price $64,231 ≈ claimed price $64,231)? This catches stale data but adds complexity.
+1. **Post-attestation verification:** Should we verify the attested value matches the claim value (e.g., attested price $64,231 ≈ claimed price $64,231)? This catches stale data but adds complexity.
+2. **Cost ceiling per post:** With multi-attestation possible, what's the max DEM budget per post? 1 TLSN (~12 DEM) + 2 DAHR (~2 DEM) = ~14 DEM — acceptable on testnet, needs budgeting on mainnet.
 
 ## Success Metrics
 
