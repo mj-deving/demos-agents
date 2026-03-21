@@ -57,6 +57,10 @@ import { resolveProvider, type LLMProvider } from "../src/lib/llm-provider.js";
 import { apiCall, connectWallet, setLogAgent } from "../src/lib/sdk.js";
 import { ensureAuth } from "../src/lib/auth.js";
 import { attestDahr, attestTlsn, publishPost, type PublishResult, type AttestResult } from "../src/actions/publish-pipeline.js";
+import { extractStructuredClaimsAuto } from "../src/lib/claim-extraction.js";
+import { buildAttestationPlan, verifyAttestedValues } from "../src/lib/attestation-planner.js";
+import { executeAttestationPlan } from "../src/actions/attestation-executor.js";
+import { loadDeclarativeProviderAdaptersSync } from "../src/lib/sources/providers/declarative-engine.js";
 import { resolveAttestationPlan, type AttestationType } from "../src/lib/attestation-policy.js";
 import { resolveAgentName, loadAgentConfig, type AgentConfig } from "../src/lib/agent-config.js";
 import { initObserver, setObserverPhase, observe, type SubstageResult, type SubstageFailureCode } from "../src/lib/observe.js";
@@ -1932,6 +1936,11 @@ async function runPublishAutonomous(
   // Load source view (cached per session — shared with gate phase)
   const sourceView = getSourceView();
 
+  // Load declarative provider adapters for claim-driven attestation
+  const declarativeAdapters = loadDeclarativeProviderAdaptersSync({
+    specDir: resolve(dirname(fileURLToPath(import.meta.url)), "../src/lib/sources/providers/specs"),
+  });
+
   let existingLog: any[] = [];
   try {
     existingLog = readSessionLog(flags.log);
@@ -2189,52 +2198,122 @@ async function runPublishAutonomous(
 
       info(`Attesting (${selectedMethod}) source "${selectedSourceName}" for topic "${gp.topic}"`);
 
-      let attested: AttestResult;
-      if (selectedMethod === "TLSN") {
-        try {
-          attested = await attestTlsn(demos, selectedUrl);
-        } catch (err: any) {
-          // Try DAHR fallback if available
-          const plan = resolveAttestationPlan(gp.topic, agentConfig);
-          const fallbackCandidate = preflightDecision?.candidates?.find(
-            (c: any) => c.method === "DAHR"
-          );
-          if (plan.fallback === "DAHR" && fallbackCandidate) {
-            info(`TLSN failed (${String(err?.message || err)}), falling back to DAHR`);
-            selectedUrl = fallbackCandidate.url;
-            selectedMethod = "DAHR";
-            attested = await attestDahr(demos, selectedUrl);
-          } else {
-            throw err;
+      // ── Claim-driven attestation (additive, between match and publish) ──
+      // Extract claims from draft text, build surgical attestation plan,
+      // execute per-claim attestations, verify values. Falls back to existing
+      // single-attestation path when no surgical candidates exist.
+      let claimAttestedResults: AttestResult[] | null = null;
+      try {
+        const claims = await extractStructuredClaimsAuto(draft.text, provider);
+        if (claims.length > 0) {
+          const claimPlan = buildAttestationPlan(claims, sourceView, agentConfig, declarativeAdapters);
+          if (claimPlan) {
+            info(`Claim plan: ${1 + claimPlan.secondary.length} attestations (${claimPlan.unattested.length} unattested), est ${claimPlan.estimatedCost} DEM`);
+            const execution = await executeAttestationPlan(claimPlan, demos);
+            if (execution.results.length > 0) {
+              const allCandidates = [claimPlan.primary, ...claimPlan.secondary];
+              const verifications = verifyAttestedValues(execution.results, allCandidates);
+              const anyFailed = verifications.some((v) => !v.verified);
+              if (anyFailed) {
+                const failures = verifications.filter((v) => !v.verified);
+                info(`Claim verification failed (${failures.length}): ${failures.map((f) => f.failureReason).join("; ")} — falling back to source attestation`);
+                observe("insight", `Claim verification failed, falling back`, {
+                  phase: "publish",
+                  substage: "publish",
+                  source: "session-runner.ts:claimAttestation",
+                  data: { topic: gp.topic, failures: failures.map((f) => f.failureReason) },
+                });
+              } else {
+                claimAttestedResults = execution.results;
+                info(`Claim attestation succeeded: ${execution.results.length} attestations verified`);
+              }
+            }
           }
         }
-      } else {
-        attested = await attestDahr(demos, selectedUrl);
+      } catch (err: any) {
+        // Claim-driven attestation is additive — never block publish on failure
+        info(`Claim attestation error (non-fatal): ${String(err?.message || err)}`);
       }
 
-      // Step 3: Publish (requires attestation proof in payload)
-      const published = await publishPost(
-        demos,
-        {
-          text: draft.text,
-          category: draft.category,
-          tags: draft.tags,
-          confidence: draft.confidence,
-          replyTo: draft.replyTo,
-          sourceAttestations: attested.type === "dahr" ? [{
-            url: attested.url,
-            responseHash: String(attested.responseHash || ""),
-            txHash: attested.txHash,
-            timestamp: Date.now(),
-          }] : undefined,
-          tlsnAttestations: attested.type === "tlsn" ? [{
-            url: attested.url,
-            txHash: attested.txHash,
-            timestamp: Date.now(),
-          }] : undefined,
+      let attested: AttestResult;
+      let pubResult: PublishResult;
+
+      if (claimAttestedResults && claimAttestedResults.length > 0) {
+        // Claim-driven path: use multi-attestation results
+        attested = claimAttestedResults[0]; // Primary for reporting
+        const published = await publishPost(
+          demos,
+          {
+            text: draft.text,
+            category: draft.category,
+            tags: draft.tags,
+            confidence: draft.confidence,
+            replyTo: draft.replyTo,
+            sourceAttestations: claimAttestedResults
+              .filter((a) => a.type === "dahr")
+              .map((a) => ({
+                url: a.url,
+                responseHash: String(a.responseHash || ""),
+                txHash: a.txHash,
+                timestamp: Date.now(),
+              })),
+            tlsnAttestations: claimAttestedResults
+              .filter((a) => a.type === "tlsn")
+              .map((a) => ({
+                url: a.url,
+                txHash: a.txHash,
+                timestamp: Date.now(),
+              })),
+          }
+        );
+        pubResult = { ...published, attestation: attested };
+      } else {
+        // Existing single-attestation path (fallback)
+        if (selectedMethod === "TLSN") {
+          try {
+            attested = await attestTlsn(demos, selectedUrl);
+          } catch (err: any) {
+            // Try DAHR fallback if available
+            const plan = resolveAttestationPlan(gp.topic, agentConfig);
+            const fallbackCandidate = preflightDecision?.candidates?.find(
+              (c: any) => c.method === "DAHR"
+            );
+            if (plan.fallback === "DAHR" && fallbackCandidate) {
+              info(`TLSN failed (${String(err?.message || err)}), falling back to DAHR`);
+              selectedUrl = fallbackCandidate.url;
+              selectedMethod = "DAHR";
+              attested = await attestDahr(demos, selectedUrl);
+            } else {
+              throw err;
+            }
+          }
+        } else {
+          attested = await attestDahr(demos, selectedUrl);
         }
-      );
-      const pubResult: PublishResult = { ...published, attestation: attested };
+
+        const published = await publishPost(
+          demos,
+          {
+            text: draft.text,
+            category: draft.category,
+            tags: draft.tags,
+            confidence: draft.confidence,
+            replyTo: draft.replyTo,
+            sourceAttestations: attested.type === "dahr" ? [{
+              url: attested.url,
+              responseHash: String(attested.responseHash || ""),
+              txHash: attested.txHash,
+              timestamp: Date.now(),
+            }] : undefined,
+            tlsnAttestations: attested.type === "tlsn" ? [{
+              url: attested.url,
+              txHash: attested.txHash,
+              timestamp: Date.now(),
+            }] : undefined,
+          }
+        );
+        pubResult = { ...published, attestation: attested };
+      }
       for (const warning of pubResult.warnings || []) {
         info(`Publish warning: ${warning}`);
       }
