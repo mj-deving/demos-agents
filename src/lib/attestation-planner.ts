@@ -10,6 +10,7 @@
 import type { ExtractedClaim, ClaimType } from "./claim-extraction.js";
 import type { ProviderAdapter, SurgicalCandidate } from "./sources/providers/types.js";
 import type { SourceRecordV2, AgentSourceView } from "./sources/catalog.js";
+import { _jsonPathGet as jsonPathGet } from "./sources/providers/declarative-engine.js";
 
 // ── Types ─────────────────────────────────────────
 
@@ -73,6 +74,9 @@ const DEFAULT_BUDGET: AttestationBudget = {
 /** Estimated cost per attestation type (DEM, testnet) */
 const TLSN_COST = 12;
 const DAHR_COST = 1;
+
+/** Max response size for TLSN eligibility (bytes) */
+export const TLSN_MAX_SIZE_BYTES = 16 * 1024;
 
 /** Tolerance thresholds */
 const PRICE_TOLERANCE = 0.02; // 2%
@@ -166,7 +170,7 @@ export function buildAttestationPlan(
     if (selected.length >= budget.maxAttestationsPerPost) break;
 
     // Determine method (TLSN if small enough and under budget, else DAHR)
-    const canTlsn = candidate.estimatedSizeBytes <= 16 * 1024 && tlsnCount < budget.maxTlsnPerPost;
+    const canTlsn = candidate.estimatedSizeBytes <= TLSN_MAX_SIZE_BYTES && tlsnCount < budget.maxTlsnPerPost;
     const cost = canTlsn ? TLSN_COST : DAHR_COST;
 
     if (totalCost + cost > budget.maxCostPerPost) continue;
@@ -191,25 +195,6 @@ export function buildAttestationPlan(
 }
 
 // ── Value Verification ────────────────────────────
-
-/**
- * Minimal JSONPath extraction for verification.
- * Supports: $.field, $.a.b, $.a.b.c (no arrays, no wildcards).
- */
-function jsonPathExtract(obj: unknown, path: string): unknown {
-  if (!path || path === "$") return obj;
-
-  const rest = path.startsWith("$.") ? path.slice(2) : path.startsWith("$") ? path.slice(1) : path;
-  const parts = rest.split(".");
-
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (current == null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[part];
-  }
-
-  return current;
-}
 
 /**
  * Verify attested values against original claims.
@@ -258,7 +243,7 @@ export function verifyAttestedValues(
       continue;
     }
 
-    const attestedRaw = jsonPathExtract(attestResult.data, candidate.extractionPath);
+    const attestedRaw = jsonPathGet(attestResult.data, candidate.extractionPath);
     const attestedValue = typeof attestedRaw === "string" ? parseFloat(attestedRaw) : attestedRaw;
 
     if (typeof attestedValue !== "number" || isNaN(attestedValue)) {

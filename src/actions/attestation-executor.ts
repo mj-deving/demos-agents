@@ -9,6 +9,7 @@
 
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
 import type { SurgicalCandidate } from "../lib/sources/providers/types.js";
+import { TLSN_MAX_SIZE_BYTES } from "../lib/attestation-planner.js";
 import type { AttestationPlan } from "../lib/attestation-planner.js";
 import type { AttestResult } from "./publish-pipeline.js";
 import { attestDahr, attestTlsn } from "./publish-pipeline.js";
@@ -58,7 +59,7 @@ export async function executeAttestationPlan(
     }
 
     // Determine method: TLSN if small enough, else DAHR
-    const useTlsn = candidate.estimatedSizeBytes <= 16 * 1024;
+    const useTlsn = candidate.estimatedSizeBytes <= TLSN_MAX_SIZE_BYTES;
 
     try {
       let result: AttestResult;

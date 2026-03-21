@@ -1164,7 +1164,7 @@ function createAdapterFromSpec(
     buildSurgicalUrl(claim: ExtractedClaim, source: SourceRecordV2): SurgicalCandidate | null {
       try {
         // Find operations that declare claimTypes matching this claim
-        for (const [, operation] of Object.entries(spec.operations)) {
+        for (const [opName, operation] of Object.entries(spec.operations)) {
           if (!operation.claimTypes || !operation.claimTypes.includes(claim.type)) continue;
           if (!operation.extractionPath) continue;
 
@@ -1196,8 +1196,7 @@ function createAdapterFromSpec(
           const estimatedSizeBytes = sizeKb * 1024;
 
           // Resolve rate limit bucket (per-operation override or provider default)
-          const opName = Object.entries(spec.operations).find(([, op]) => op === operation)?.[0];
-          const rateLimitBucket = (opName && spec.provider.rateLimit.byOperation?.[opName]?.bucket)
+          const rateLimitBucket = spec.provider.rateLimit.byOperation?.[opName]?.bucket
             || spec.provider.rateLimit.bucket;
 
           return {
