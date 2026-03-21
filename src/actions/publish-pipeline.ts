@@ -62,6 +62,8 @@ export interface PublishResult {
 
 export interface PublishOptions {
   feedToken?: string | null;
+  /** Pre-attested results from claim-driven attestation (skips attestAndPublish's own attest step) */
+  preAttested?: AttestResult[];
 }
 
 // ── HIVE Encoding ──────────────────────────────────
@@ -385,7 +387,37 @@ export async function attestAndPublish(
 ): Promise<PublishResult> {
   let attestation: AttestResult | undefined;
 
-  // Step 1: Attest if URL provided
+  // Step 1: Use pre-attested results if available, otherwise attest
+  if (options.preAttested && options.preAttested.length > 0) {
+    // Claim-driven attestation already ran — use those results
+    attestation = options.preAttested[0]; // Primary for reporting
+
+    const sourceAttestations = options.preAttested
+      .filter((a) => a.type === "dahr")
+      .map((a) => ({
+        url: a.url,
+        responseHash: String(a.responseHash || ""),
+        txHash: a.txHash,
+        timestamp: Date.now(),
+      }));
+    const tlsnAttestations = options.preAttested
+      .filter((a) => a.type === "tlsn")
+      .map((a) => ({
+        url: a.url,
+        txHash: a.txHash,
+        timestamp: Date.now(),
+      }));
+
+    const result = await publishPost(demos, {
+      ...input,
+      sourceAttestations: sourceAttestations.length > 0 ? sourceAttestations : input.sourceAttestations,
+      tlsnAttestations: tlsnAttestations.length > 0 ? tlsnAttestations : input.tlsnAttestations,
+    }, options);
+    result.attestation = attestation;
+    return result;
+  }
+
+  // Legacy single-attestation path
   if (attestUrl) {
     attestation = await attestDahr(demos, attestUrl);
   }

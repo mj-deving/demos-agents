@@ -17,7 +17,7 @@
 // Declarative provider engine
 export { loadDeclarativeProviderAdapters, loadDeclarativeProviderAdaptersSync } from "./lib/sources/providers/declarative-engine.js";
 export type { DeclarativeProviderSpec } from "./lib/sources/providers/declarative-engine.js";
-export type { ProviderAdapter, FetchedResponse } from "./lib/sources/providers/types.js";
+export type { ProviderAdapter, FetchedResponse, SurgicalCandidate } from "./lib/sources/providers/types.js";
 
 // Source lifecycle
 export {
@@ -101,3 +101,18 @@ export {
   extractStructuredClaimsAuto,
 } from "./lib/claim-extraction.js";
 export type { ExtractedClaim, ClaimType } from "./lib/claim-extraction.js";
+
+// Attestation planner + verifier (claim-driven attestation Phases 3-4, portable)
+export {
+  buildAttestationPlan,
+  resolveAttestationBudget,
+  verifyAttestedValues,
+} from "./lib/attestation-planner.js";
+export type {
+  AttestationBudget,
+  AttestationPlan,
+  VerificationResult,
+} from "./lib/attestation-planner.js";
+
+// Note: executeAttestationPlan is NOT exported here — it's platform-bound
+// (src/actions/attestation-executor.ts). Import directly when needed.
