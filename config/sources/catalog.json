@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-03-21T18:55:19.780Z",
+  "generatedAt": "2026-03-21T20:08:30.305Z",
   "aliasesVersion": 1,
   "sources": [
     {
@@ -9610,7 +9610,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "quarantined",
+      "status": "active",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -9619,15 +9619,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 12,
-        "successCount": 1,
+        "testCount": 14,
+        "successCount": 3,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-03-21T18:55:19.276Z"
+        "lastTestedAt": "2026-03-21T20:06:28.830Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:50:00.000Z",
         "discoveredBy": "manual",
-        "lastFailedAt": "2026-03-21T18:55:05.593Z"
+        "lastFailedAt": "2026-03-21T18:55:05.593Z",
+        "statusChangedAt": "2026-03-21T20:06:35.163Z",
+        "promotedAt": "2026-03-21T20:06:35.163Z"
       },
       "adapter": {
         "operation": "simple-price"
@@ -9676,7 +9678,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "quarantined",
+      "status": "active",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -9685,15 +9687,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 12,
-        "successCount": 1,
+        "testCount": 14,
+        "successCount": 3,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-03-21T18:55:19.536Z"
+        "lastTestedAt": "2026-03-21T20:06:32.126Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:50:00.000Z",
         "discoveredBy": "manual",
-        "lastFailedAt": "2026-03-21T18:55:05.794Z"
+        "lastFailedAt": "2026-03-21T18:55:05.794Z",
+        "statusChangedAt": "2026-03-21T20:06:35.163Z",
+        "promotedAt": "2026-03-21T20:06:35.163Z"
       },
       "adapter": {
         "operation": "simple-price"
@@ -9742,7 +9746,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "quarantined",
+      "status": "active",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -9751,15 +9755,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 12,
-        "successCount": 1,
+        "testCount": 19,
+        "successCount": 3,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-03-21T18:55:19.779Z"
+        "lastTestedAt": "2026-03-21T20:08:30.303Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:50:00.000Z",
         "discoveredBy": "manual",
-        "lastFailedAt": "2026-03-21T18:55:05.995Z"
+        "lastFailedAt": "2026-03-21T20:07:14.118Z",
+        "statusChangedAt": "2026-03-21T20:08:30.305Z",
+        "promotedAt": "2026-03-21T20:08:30.305Z"
       },
       "adapter": {
         "operation": "simple-price"
