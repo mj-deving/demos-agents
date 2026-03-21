@@ -307,5 +307,37 @@ describe("Surgical URL construction", () => {
       const result = adapter!.buildSurgicalUrl!(claim, source);
       expect(result).not.toBeNull();
     });
+
+    it("coinbase spot-price has claimTypes", () => {
+      const adapter = adapters.get("coinbase");
+      const claim = makeClaim();
+      const source = makeSource("coinbase", "spot-price");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
+
+    it("deribit ticker has claimTypes", () => {
+      const adapter = adapters.get("deribit");
+      const claim = makeClaim();
+      const source = makeSource("deribit", "ticker");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
+
+    it("blockchair stats has claimTypes", () => {
+      const adapter = adapters.get("blockchair");
+      const claim = makeClaim();
+      const source = makeSource("blockchair", "stats");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
+
+    it("treasury debt has claimTypes", () => {
+      const adapter = adapters.get("treasury");
+      const claim = makeClaim({ type: "metric", text: "National debt $34T", entities: ["debt", "treasury"], value: 34000000000000, unit: "USD" });
+      const source = makeSource("treasury", "debt");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
   });
 });

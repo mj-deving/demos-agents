@@ -1,0 +1,92 @@
+schemaVersion: 1
+
+provider:
+  name: coinbase
+  displayName: Coinbase
+  matches:
+    providers: [coinbase]
+    hosts: [api.coinbase.com]
+  domains: [crypto, prices, exchange]
+  rateLimit:
+    bucket: coinbase
+    maxPerMinute: 30
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  spot-price:
+    when:
+      sourceAdapterOperation: [spot-price]
+      urlPatterns: ["/v2/prices"]
+      default: true
+    claimTypes: [price]
+    extractionPath: "$.data.amount"
+    request:
+      method: GET
+      urlTemplate: "https://api.coinbase.com/v2/prices/{pair}/spot"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "{pair}"
+        - "{asset}"
+    variables:
+      asset:
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
+        default: "BTC"
+      pair:
+        sources: [vars.asset, vars.symbol, "tokens[0]"]
+        default: "BTC-USD"
+        transforms:
+          - trim
+          - uppercase
+          - map:
+              bitcoin: BTC-USD
+              btc: BTC-USD
+              ethereum: ETH-USD
+              eth: ETH-USD
+              solana: SOL-USD
+              sol: SOL-USD
+              cardano: ADA-USD
+              ada: ADA-USD
+              polkadot: DOT-USD
+              dot: DOT-USD
+              avalanche: AVAX-USD
+              avax: AVAX-USD
+    compatibility:
+      responseFormats: [json]
+      tlsn:
+        allowed: true
+        maxResponseKb: 16
+      dahr:
+        allowed: true
+        requireNormalizedJson: true
+    parse:
+      format: json
+      items:
+        mode: single-object
+      fields:
+        id:
+          template: "coinbase-{data.base}-{data.currency}"
+          required: true
+        title:
+          template: "{data.base}/{data.currency} spot price"
+        summary:
+          template: "{data.base}: ${data.amount}"
+        bodyText:
+          template: "Coinbase {data.base}/{data.currency} spot price: ${data.amount}"
+        topics:
+          template: "crypto,prices,{data.base}"
+        metrics:
+          amount:
+            jsonPath: "$.data.amount"
+          base:
+            jsonPath: "$.data.base"
+          currency:
+            jsonPath: "$.data.currency"
+        raw:
+          mode: item

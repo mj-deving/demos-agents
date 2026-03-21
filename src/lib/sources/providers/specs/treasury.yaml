@@ -1,0 +1,72 @@
+schemaVersion: 1
+
+provider:
+  name: treasury
+  displayName: US Treasury
+  matches:
+    providers: [treasury]
+    hosts: [api.fiscaldata.treasury.gov]
+  domains: [economics, macro, government, debt]
+  rateLimit:
+    bucket: treasury
+    maxPerMinute: 30
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  debt:
+    when:
+      sourceAdapterOperation: [debt]
+      urlPatterns: ["/debt_to_penny"]
+      default: true
+    claimTypes: [metric]
+    extractionPath: "$.data[0].tot_pub_debt_out_amt"
+    request:
+      method: GET
+      urlTemplate: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny"
+      query:
+        sort: "-record_date"
+        "page[size]": "1"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "debt"
+        - "treasury"
+        - "national debt"
+    compatibility:
+      responseFormats: [json]
+      tlsn:
+        allowed: true
+        maxResponseKb: 16
+      dahr:
+        allowed: true
+        requireNormalizedJson: true
+    parse:
+      format: json
+      items:
+        mode: json-path
+        jsonPath: "$.data[*]"
+      fields:
+        id:
+          template: "treasury-debt-{record_date}"
+          required: true
+        title:
+          template: "US National Debt ({record_date})"
+        summary:
+          template: "Total public debt: ${tot_pub_debt_out_amt}"
+        bodyText:
+          template: "US Treasury debt as of {record_date}: total outstanding ${tot_pub_debt_out_amt}"
+        topics:
+          template: "economics,macro,government,debt"
+        metrics:
+          tot_pub_debt_out_amt:
+            jsonPath: "$.tot_pub_debt_out_amt"
+          record_date:
+            jsonPath: "$.record_date"
+        raw:
+          mode: item

@@ -1,0 +1,93 @@
+schemaVersion: 1
+
+provider:
+  name: blockchair
+  displayName: Blockchair
+  matches:
+    providers: [blockchair]
+    hosts: [api.blockchair.com]
+  domains: [crypto, blockchain, on-chain]
+  rateLimit:
+    bucket: blockchair
+    maxPerMinute: 30
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  stats:
+    when:
+      sourceAdapterOperation: [stats]
+      urlPatterns: ["/stats"]
+      default: true
+    claimTypes: [price, metric]
+    extractionPath: "$.data.market_price_usd"
+    request:
+      method: GET
+      urlTemplate: "https://api.blockchair.com/{chain}/stats"
+      estimatedSizeKb:
+        TLSN: 3
+        DAHR: 3
+      matchHints:
+        - "{chain}"
+        - "blockchain"
+        - "on-chain"
+    variables:
+      chain:
+        sources: [vars.chain, vars.asset, "tokens[0]"]
+        default: "bitcoin"
+        transforms:
+          - trim
+          - lowercase
+          - map:
+              btc: bitcoin
+              eth: ethereum
+              sol: solana
+              bnb: bnb
+              litecoin: litecoin
+              ltc: litecoin
+              dogecoin: dogecoin
+              doge: dogecoin
+    compatibility:
+      responseFormats: [json]
+      tlsn:
+        allowed: true
+        maxResponseKb: 16
+      dahr:
+        allowed: true
+        requireNormalizedJson: true
+    parse:
+      format: json
+      items:
+        mode: single-object
+        jsonPath: "$.data"
+      fields:
+        id:
+          template: "blockchair-{chain}"
+          required: true
+        title:
+          template: "{chain} blockchain stats"
+        summary:
+          template: "{chain}: blocks={blocks}, price=${market_price_usd}"
+        bodyText:
+          template: "Blockchair {chain} stats — blocks: {blocks}, txs: {transactions}, hash rate: {hashrate_24h}, price: ${market_price_usd}"
+        topics:
+          template: "crypto,blockchain,on-chain,{chain}"
+        metrics:
+          market_price_usd:
+            jsonPath: "$.market_price_usd"
+          blocks:
+            jsonPath: "$.blocks"
+          transactions:
+            jsonPath: "$.transactions"
+          hashrate_24h:
+            jsonPath: "$.hashrate_24h"
+            default: 0
+          difficulty:
+            jsonPath: "$.difficulty"
+            default: 0
+        raw:
+          mode: item

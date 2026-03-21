@@ -1,0 +1,92 @@
+schemaVersion: 1
+
+provider:
+  name: deribit
+  displayName: Deribit
+  matches:
+    providers: [deribit]
+    hosts: [www.deribit.com]
+  domains: [crypto, derivatives, options, futures]
+  rateLimit:
+    bucket: deribit
+    maxPerMinute: 20
+  auth:
+    mode: none
+  defaults:
+    responseFormat: json
+    parseFailureMode: empty-entries
+    normalizeJson: true
+
+operations:
+  ticker:
+    when:
+      sourceAdapterOperation: [ticker]
+      urlPatterns: ["/public/ticker"]
+      default: true
+    claimTypes: [price]
+    extractionPath: "$.result.last_price"
+    request:
+      method: GET
+      urlTemplate: "https://www.deribit.com/api/v2/public/ticker"
+      query:
+        instrument_name: "{instrument}"
+      estimatedSizeKb:
+        TLSN: 1
+        DAHR: 1
+      matchHints:
+        - "{instrument}"
+        - "deribit"
+        - "perpetual"
+    variables:
+      instrument:
+        sources: [vars.instrument, vars.asset, "tokens[0]"]
+        default: "BTC-PERPETUAL"
+        transforms:
+          - trim
+          - uppercase
+          - map:
+              bitcoin: BTC-PERPETUAL
+              btc: BTC-PERPETUAL
+              ethereum: ETH-PERPETUAL
+              eth: ETH-PERPETUAL
+              solana: SOL-PERPETUAL
+              sol: SOL-PERPETUAL
+    compatibility:
+      responseFormats: [json]
+      tlsn:
+        allowed: true
+        maxResponseKb: 16
+      dahr:
+        allowed: true
+        requireNormalizedJson: true
+    parse:
+      format: json
+      items:
+        mode: json-path
+        jsonPath: "$.result"
+      fields:
+        id:
+          jsonPath: "$.instrument_name"
+          required: true
+        title:
+          template: "{instrument_name} ticker"
+        summary:
+          template: "{instrument_name}: ${last_price}"
+        bodyText:
+          template: "Deribit {instrument_name} — last: ${last_price}, mark: ${mark_price}, index: ${index_price}"
+        topics:
+          template: "crypto,derivatives,{instrument_name}"
+        metrics:
+          last_price:
+            jsonPath: "$.last_price"
+          mark_price:
+            jsonPath: "$.mark_price"
+          index_price:
+            jsonPath: "$.index_price"
+          open_interest:
+            jsonPath: "$.open_interest"
+          funding_rate:
+            jsonPath: "$.current_funding"
+            default: 0
+        raw:
+          mode: item
