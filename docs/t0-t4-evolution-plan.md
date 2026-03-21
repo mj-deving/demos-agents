@@ -756,3 +756,21 @@ Research conducted via parallel Claude + Gemini agents (2026-03-21). URLs verifi
 | Specs with claimTypes | 8/26 | 11/26 | 11/26 | **15/26** | **19/30** | 19/30 |
 | Macro entities | 0 | 0 | 0 | 0 | 0 | **15** |
 | Tests | 1139 | 1145 | 1145 | 1146 | 1150 | **1168** |
+
+### E2E Attestation Test Results (post-Session 5)
+**Commit:** `12fe1d5`
+
+Tested 7 sample posts through claim extraction → source matching → surgical URL construction. Results:
+- **8/10 claims matched** (80%) — pipeline fires
+- **Crypto claims work correctly:** BTC price → CoinGecko simple-price, Aave TVL → DefiLlama TVL
+- **Macro entity extraction works:** GDP, debt recognized as entities (was empty before fix)
+
+**Issues found and fixed:**
+1. **buildSurgicalUrl operation filtering** — CoinGecko's `global` op caught ALL metric claims. Fixed: when source has `adapter.operation`, only use that operation.
+2. **Macro entity extraction** — `extractEntities()` now checks `MACRO_ENTITY_MAP` alongside `ASSET_MAP`.
+3. **Stopword filtering** — "The" extracted as entity from "The national debt". Fixed: capitalized phrase fallback filters stopwords.
+
+**Remaining gaps (documented, not blocking):**
+- `event` type claims (earthquake, hashrate records) unmatched — no spec has `claimTypes: [event]`
+- GDP/debt metric claims match DefiLlama TVL before FRED/Treasury in naive iteration — production planner uses topic matching
+- Gas fees (14 gwei) extracted as `price` not `metric` — low priority
