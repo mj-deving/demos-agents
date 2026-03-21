@@ -1164,8 +1164,21 @@ function createAdapterFromSpec(
 
     buildSurgicalUrl(claim: ExtractedClaim, source: SourceRecordV2): SurgicalCandidate | null {
       try {
-        // Find operations that declare claimTypes matching this claim
-        for (const [opName, operation] of Object.entries(spec.operations)) {
+        // When source has adapter.operation, ONLY use that operation.
+        // This prevents catch-all ops (e.g. coingecko global) from matching
+        // claims meant for other providers.
+        const adapterOp = source.adapter?.operation;
+        let opEntries = Object.entries(spec.operations);
+
+        if (adapterOp) {
+          // Filter to only the matching operation
+          const matched = opEntries.filter(([_, op]) =>
+            op.when?.sourceAdapterOperation?.includes(adapterOp)
+          );
+          if (matched.length > 0) opEntries = matched;
+        }
+
+        for (const [opName, operation] of opEntries) {
           if (!operation.claimTypes || !operation.claimTypes.includes(claim.type)) continue;
           if (!operation.extractionPath) continue;
 

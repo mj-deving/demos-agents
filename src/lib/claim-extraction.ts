@@ -13,7 +13,7 @@
  * for attestation planning. Both modules share LLM constants from llm-claim-config.ts.
  */
 
-import { ASSET_MAP } from "./attestation-policy.js";
+import { ASSET_MAP, MACRO_ENTITY_MAP } from "./attestation-policy.js";
 import type { LLMProvider } from "./llm-provider.js";
 import { LLM_CLAIM_TIMEOUT_MS, truncateForLLM, cleanLLMJson } from "./llm-claim-config.js";
 
@@ -205,6 +205,7 @@ function extractEntities(text: string): EntityMatch[] {
   const entities: EntityMatch[] = [];
   const lower = text.toLowerCase();
 
+  // Crypto entities from ASSET_MAP
   for (const [rx, asset, symbol] of ASSET_MAP) {
     // Try original text first (catches case-sensitive tickers like SOL, DOT)
     // then lowercase (catches full names like "solana", "polkadot")
@@ -216,6 +217,15 @@ function extractEntities(text: string): EntityMatch[] {
     }
     if (match) {
       entities.push({ asset, symbol, index: match.index });
+    }
+  }
+
+  // Macro entities from MACRO_ENTITY_MAP (GDP, unemployment, debt, etc.)
+  for (const [rx, vars] of MACRO_ENTITY_MAP) {
+    rx.lastIndex = 0;
+    const match = rx.exec(lower);
+    if (match && vars.asset) {
+      entities.push({ asset: vars.asset, symbol: vars.asset.toUpperCase(), index: match.index });
     }
   }
 
@@ -243,11 +253,15 @@ function resolveEntities(
     return [...new Set(allEntities.flatMap((e) => [e.asset, e.symbol]))];
   }
 
-  // Fallback: capitalized phrases near the match
+  // Fallback: capitalized phrases near the match (filter stopwords)
+  const STOPWORDS = new Set(["the", "a", "an", "is", "was", "are", "were", "has", "have", "had", "its", "this", "that", "with", "from", "for", "not", "but", "and", "yet"]);
   const before = text.slice(Math.max(0, matchIndex - ENTITY_PROXIMITY), matchIndex);
   const caps = before.match(/[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g);
   if (caps && caps.length > 0) {
-    return [caps[caps.length - 1].toLowerCase()];
+    const filtered = caps.filter(c => !STOPWORDS.has(c.toLowerCase()));
+    if (filtered.length > 0) {
+      return [filtered[filtered.length - 1].toLowerCase()];
+    }
   }
 
   return [];
