@@ -27,6 +27,8 @@ operations:
       sourceAdapterOperation: [series, series-observations]
       urlPatterns: ["/fred/series/observations"]
       default: true
+    claimTypes: [metric]
+    extractionPath: "$.observations[0].value"
     request:
       method: GET
       urlTemplate: "https://api.stlouisfed.org/fred/series/observations"

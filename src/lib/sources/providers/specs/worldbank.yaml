@@ -23,6 +23,8 @@ operations:
       sourceAdapterOperation: [indicator]
       urlPatterns: ["/indicator/"]
       default: true
+    claimTypes: [metric]
+    extractionPath: "$[1][0].value"
     request:
       method: GET
       urlTemplate: "https://api.worldbank.org/v2/country/{country}/indicator/{indicator}"

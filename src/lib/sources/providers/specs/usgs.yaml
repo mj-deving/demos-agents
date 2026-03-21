@@ -24,6 +24,8 @@ operations:
       sourceAdapterOperation: [significant, earthquakes]
       urlPatterns: ["/significant"]
       default: true
+    claimTypes: [metric]
+    extractionPath: "$.features[0].properties.mag"
     request:
       method: GET
       urlTemplate: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson"

@@ -24,6 +24,8 @@ operations:
       sourceAdapterOperation: [quote, chart]
       urlPatterns: ["/v8/finance/chart"]
       default: true
+    claimTypes: [price]
+    extractionPath: "$.chart.result[0].meta.regularMarketPrice"
     request:
       method: GET
       urlTemplate: "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?range=5d&interval=1d"

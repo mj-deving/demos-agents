@@ -13164,6 +13164,1031 @@
       "adapter": {
         "operation": "debt"
       }
+    },
+    {
+      "id": "coingecko-eth-price",
+      "name": "coingecko-eth-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price?ids={VAR}&vs_currencies=usd",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Free tier, no auth. Simple USD price for Ethereum.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-sol-price",
+      "name": "coingecko-sol-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price?ids={VAR}&vs_currencies=usd",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Free tier, no auth. Simple USD price for Solana.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-ada-price",
+      "name": "coingecko-ada-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price?ids={VAR}&vs_currencies=usd",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Free tier, no auth. Simple USD price for Cardano.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-dot-price",
+      "name": "coingecko-dot-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price?ids={VAR}&vs_currencies=usd",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Free tier, no auth. Simple USD price for Polkadot.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-avax-price",
+      "name": "coingecko-avax-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price?ids={VAR}&vs_currencies=usd",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Free tier, no auth. Simple USD price for Avalanche.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "binance-ethusdt",
+      "name": "binance-ticker-ethusdt",
+      "provider": "binance",
+      "url": "https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT",
+      "urlPattern": "api.binance.com/api/v3/ticker/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "No auth, ~100B response. Real-time spot price.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker-price"
+      }
+    },
+    {
+      "id": "binance-solusdt",
+      "name": "binance-ticker-solusdt",
+      "provider": "binance",
+      "url": "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT",
+      "urlPattern": "api.binance.com/api/v3/ticker/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "No auth, ~100B response. Real-time spot price.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker-price"
+      }
+    },
+    {
+      "id": "binance-adausdt",
+      "name": "binance-ticker-adausdt",
+      "provider": "binance",
+      "url": "https://api.binance.com/api/v3/ticker/price?symbol=ADAUSDT",
+      "urlPattern": "api.binance.com/api/v3/ticker/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "No auth, ~100B response. Real-time spot price.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker-price"
+      }
+    },
+    {
+      "id": "defillama-aave",
+      "name": "defillama-aave-tvl",
+      "provider": "defillama",
+      "url": "https://api.llama.fi/tvl/aave",
+      "urlPattern": "api.llama.fi/tvl/%7BVAR%7D",
+      "topics": [
+        "defi",
+        "tvl"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Returns single number. Ultra-compact.",
+      "topicAliases": [],
+      "domainTags": [
+        "defi",
+        "tvl"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "tvl"
+      }
+    },
+    {
+      "id": "defillama-uniswap",
+      "name": "defillama-uniswap-tvl",
+      "provider": "defillama",
+      "url": "https://api.llama.fi/tvl/uniswap",
+      "urlPattern": "api.llama.fi/tvl/%7BVAR%7D",
+      "topics": [
+        "defi",
+        "tvl"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Returns single number. Ultra-compact.",
+      "topicAliases": [],
+      "domainTags": [
+        "defi",
+        "tvl"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "tvl"
+      }
+    },
+    {
+      "id": "defillama-lido",
+      "name": "defillama-lido-tvl",
+      "provider": "defillama",
+      "url": "https://api.llama.fi/tvl/lido",
+      "urlPattern": "api.llama.fi/tvl/%7BVAR%7D",
+      "topics": [
+        "defi",
+        "tvl"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Returns single number. Ultra-compact.",
+      "topicAliases": [],
+      "domainTags": [
+        "defi",
+        "tvl"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel",
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "tvl"
+      }
+    },
+    {
+      "id": "kraken-ethxbt",
+      "name": "kraken-ticker-ethxbt",
+      "provider": "kraken",
+      "url": "https://api.kraken.com/0/public/Ticker?pair=ETHXBT",
+      "urlPattern": "api.kraken.com/0/public/Ticker",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "note": "No auth, ~500B. Kraken ETH/XBT ticker.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker"
+      }
+    },
+    {
+      "id": "kraken-solusd",
+      "name": "kraken-ticker-solusd",
+      "provider": "kraken",
+      "url": "https://api.kraken.com/0/public/Ticker?pair=SOLUSD",
+      "urlPattern": "api.kraken.com/0/public/Ticker",
+      "topics": [
+        "crypto",
+        "prices",
+        "trading"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "note": "No auth, ~500B. Kraken SOL/USD ticker.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices",
+        "exchange"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel",
+          "crawler"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "ticker"
+      }
+    },
+    {
+      "id": "cryptocompare-eth",
+      "name": "cryptocompare-eth-price",
+      "provider": "cryptocompare",
+      "url": "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD,EUR,BTC",
+      "urlPattern": "min-api.cryptocompare.com/data/price?fsym={VAR}&tsyms=USD,EUR,BTC",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Multi-currency price. Ultra-compact. Free tier.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "crawler"
+        ],
+        "importedFrom": [
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "price"
+      }
+    },
+    {
+      "id": "cryptocompare-sol",
+      "name": "cryptocompare-sol-price",
+      "provider": "cryptocompare",
+      "url": "https://min-api.cryptocompare.com/data/price?fsym=SOL&tsyms=USD,EUR,BTC",
+      "urlPattern": "min-api.cryptocompare.com/data/price?fsym={VAR}&tsyms=USD,EUR,BTC",
+      "topics": [
+        "crypto",
+        "prices"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "note": "Multi-currency price. Ultra-compact. Free tier.",
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "crawler"
+        ],
+        "importedFrom": [
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "price"
+      }
+    },
+    {
+      "id": "dexscreener-weth-usdc",
+      "name": "dexscreener-weth-usdc",
+      "provider": "dexscreener",
+      "url": "https://api.dexscreener.com/latest/dex/search?q=WETH%2FUSDC%20ethereum",
+      "urlPattern": "api.dexscreener.com/latest/dex/search?q={VAR}",
+      "topics": [
+        "defi",
+        "dex",
+        "tokens"
+      ],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 10,
+      "note": "DEX pair search scoped to WETH/USDC on Ethereum. DAHR safer than TLSN.",
+      "topicAliases": [],
+      "domainTags": [
+        "defi",
+        "dex",
+        "tokens"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "crawler"
+        ],
+        "importedFrom": [
+          "crawler"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-21T18:50:00.000Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "search"
+      }
     }
   ]
 }

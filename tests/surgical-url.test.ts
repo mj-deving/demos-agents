@@ -299,5 +299,13 @@ describe("Surgical URL construction", () => {
       const result = adapter!.buildSurgicalUrl!(claim, source);
       expect(result).not.toBeNull();
     });
+
+    it("yahoo-finance quote has claimTypes", () => {
+      const adapter = adapters.get("yahoo-finance");
+      const claim = makeClaim();
+      const source = makeSource("yahoo-finance", "quote");
+      const result = adapter!.buildSurgicalUrl!(claim, source);
+      expect(result).not.toBeNull();
+    });
   });
 });
