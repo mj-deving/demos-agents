@@ -2676,7 +2676,7 @@
         "promotedAt": "2026-03-14T20:01:37.679Z"
       },
       "adapter": {
-        "operation": "feed"
+        "operation": "significant"
       }
     },
     {
@@ -2745,7 +2745,7 @@
         "promotedAt": "2026-03-14T20:01:37.679Z"
       },
       "adapter": {
-        "operation": "feed"
+        "operation": "hourly"
       }
     },
     {
@@ -10757,7 +10757,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "active",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 0,
@@ -13012,7 +13012,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "active",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -13031,72 +13031,6 @@
       },
       "adapter": {
         "operation": "ticker"
-      }
-    },
-    {
-      "id": "binance-funding-btc",
-      "name": "binance-futures-funding",
-      "provider": "binance",
-      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1",
-      "urlPattern": "fapi.binance.com/fapi/v1/fundingRate",
-      "topics": [
-        "crypto",
-        "derivatives",
-        "futures",
-        "funding"
-      ],
-      "tlsn_safe": true,
-      "dahr_safe": true,
-      "max_response_kb": 1,
-      "note": "No auth, ~150B. BTC perpetual funding rate.",
-      "topicAliases": [],
-      "domainTags": [
-        "crypto",
-        "derivatives",
-        "funding"
-      ],
-      "responseFormat": "json",
-      "scope": {
-        "visibility": "scoped",
-        "agents": [
-          "sentinel",
-          "crawler"
-        ],
-        "importedFrom": [
-          "sentinel"
-        ]
-      },
-      "runtime": {
-        "timeoutMs": 8000,
-        "retry": {
-          "maxAttempts": 2,
-          "backoffMs": 1000,
-          "retryOn": [
-            "timeout",
-            "5xx"
-          ]
-        }
-      },
-      "trustTier": "experimental",
-      "status": "active",
-      "rating": {
-        "overall": 50,
-        "uptime": 50,
-        "relevance": 50,
-        "freshness": 50,
-        "sizeStability": 50,
-        "engagement": 50,
-        "trust": 50,
-        "testCount": 0,
-        "successCount": 0,
-        "consecutiveFailures": 0
-      },
-      "lifecycle": {
-        "discoveredAt": "2026-03-21T18:50:00.000Z",
-        "discoveredBy": "manual"
-      },
-      "adapter": {
-        "operation": "ticker-price"
       }
     },
     {
@@ -13144,7 +13078,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "active",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -13210,7 +13144,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "active",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,

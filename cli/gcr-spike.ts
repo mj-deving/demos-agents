@@ -20,13 +20,16 @@ if (!globalThis.crypto) (globalThis as any).crypto = webcrypto;
 import { connectWallet, info, warn, RPC_URL } from "../src/lib/sdk.js";
 import { resolveAgentName, loadAgentConfig } from "../src/lib/agent-config.js";
 
-const agent = resolveAgentName(process.argv);
-const flags = Object.fromEntries(
-  process.argv.slice(2).reduce((acc: [string,string][], arg, i, arr) => {
-    if (arg.startsWith("--") && arr[i+1] && !arr[i+1].startsWith("--")) acc.push([arg.slice(2), arr[i+1]]);
-    return acc;
-  }, [])
-);
+const flags: Record<string, string> = {};
+const argv = process.argv.slice(2);
+for (let i = 0; i < argv.length; i++) {
+  if (argv[i].startsWith("--") && argv[i + 1] && !argv[i + 1].startsWith("--")) {
+    flags[argv[i].slice(2)] = argv[i + 1];
+    i++;
+  }
+}
+
+const agent = resolveAgentName(flags);
 const envPath = flags["env"] || ".env";
 
 async function main() {
