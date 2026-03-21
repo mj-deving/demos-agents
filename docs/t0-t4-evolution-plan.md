@@ -721,11 +721,38 @@ Research conducted via parallel Claude + Gemini agents (2026-03-21). URLs verifi
 - **Catalog:** 211 → 217 (80 active, 81 with adapter, 4 quarantined)
 - **Learnings:** Always verify new catalog entries against YAML spec registry. `fapi.binance.com` ≠ `api.binance.com` (different spec needed).
 
-### Current State After Session 2
-| Metric | Before | After S1 | After S2 |
-|--------|--------|----------|----------|
-| Total sources | 209 | 211 | 217 |
-| Active sources | 66 | 78 | 80 |
-| With adapter | 50 | 52 | 81 |
-| Specs with claimTypes | 8/26 | 11/26 | 11/26 |
-| Tests | 1139 | 1145 | 1145 |
+### Session 3 (2026-03-21) ✅
+**Commits:** `2923bdc`
+- **T1a:** claimTypes + extractionPath added to 4 specs: fred (metric), worldbank (metric), usgs (metric), yahoo-finance (price). NASA skipped (APOD is text-only).
+- **T0 Batch 2:** 16 new quarantined catalog entries: CoinGecko (5 assets), Binance (3 pairs), DefiLlama (3 protocols), Kraken (2 pairs), CryptoCompare (2 assets), DexScreener (1 pair).
+- **Tests:** 1145 → 1146 (1 new yahoo-finance surgical-url test)
+- **Codex review:** Clean execution, no issues found.
+
+### Session 4 (2026-03-21) ✅
+**Commits:** `58d9bc5`, `1e9658e`
+- **T1-new:** 4 new YAML specs created: coinbase.yaml (price), deribit.yaml (price), blockchair.yaml (price+metric), treasury.yaml (metric). All with claimTypes.
+- **T0 Batch 3:** 8 new catalog entries (Coinbase BTC/ETH/SOL, Blockchair ETH, DefiLlama stablecoins, CoinGecko global, Mempool hashrate, Deribit ETH-PERPETUAL).
+- **Codex findings (plan):** Existing `cli/source-lifecycle.ts` already handles bulk promotion — no new CLI needed. DefiLlama stablecoins op already exists.
+- **Codex findings (commit):** blockchair.yaml had single-object+jsonPath bug (fixed to json-path). 3 catalog entries had non-existent operations (removed). `/simplify` caught deribit parse mode bug and blockchair bnb mapping.
+- **Specs:** 26 → 30. claimTypes: 15 → 19/30.
+- **Tests:** 1146 → 1150 (4 new spec tests)
+
+### Session 5 (2026-03-21) ✅
+**Commits:** `692749b`, `6e4b8f8`, `f54366a`, `bd7d700`
+- **Quarantine promotion:** 27 sources promoted quarantined→active across passes 1-6. 2 CoinGecko entries archived (5 consecutive failures). Active: 80 → 98.
+- **T1-new ops:** 3 new spec operations: coingecko global (metric), mempool hashrate (metric), defillama stablecoins (added claimTypes to existing op).
+- **T1b entity plumbing:** MACRO_ENTITY_MAP (15 macro entities: GDP, unemployment, inflation, interest rate, debt, earthquake, etc.) + inferMacroEntity() + buildSurgicalUrl integration. Fred, worldbank, treasury, usgs specs can now build surgical URLs for macro claims.
+- **T0 Batch 4:** 9 catalog entries (3 re-added + 6 new: Coinbase ADA/DOT/AVAX, Deribit SOL-PERPETUAL, Blockchair litecoin/dogecoin).
+- **Codex findings:** Mempool hashrate used legacy parse format (fixed to standard). Interest-rate macro entry had wrong World Bank indicator (removed). Catalog cleaned: 238 → 176 (invalid archived entries purged by validation).
+- **Tests:** 1150 → 1168 (+18: 10 macro entity + 3 new ops + 5 macro integration)
+
+### Current State After Session 5
+| Metric | Before | After S1 | After S2 | After S3 | After S4 | After S5 |
+|--------|--------|----------|----------|----------|----------|----------|
+| Total sources | 209 | 211 | 217 | 233 | 238→167 | 176 |
+| Active sources | 66 | 78 | 80 | 80 | 80 | **98** |
+| Quarantined | 0 | 0 | 4 | 20 | 25→5 | **4** |
+| Specs total | 26 | 26 | 26 | 26 | **30** | 30 |
+| Specs with claimTypes | 8/26 | 11/26 | 11/26 | **15/26** | **19/30** | 19/30 |
+| Macro entities | 0 | 0 | 0 | 0 | 0 | **15** |
+| Tests | 1139 | 1145 | 1145 | 1146 | 1150 | **1168** |
