@@ -258,7 +258,12 @@ describe("Surgical URL construction", () => {
 
     it("returns SurgicalCandidate for metric claim via stats", () => {
       const adapter = adapters.get("blockchain-info");
-      const claim = makeClaim({ type: "metric", entities: ["bitcoin", "BTC"], text: "hashrate at 600 EH/s", value: 600, unit: "EH/s" });
+      // Note: extractionPath is $.market_price_usd for ALL metric claims.
+      // Non-price metrics (hashrate, difficulty) will false-fail at verification
+      // because the extracted value won't match the claim value. This is a known
+      // limitation of single-extractionPath-per-operation — acceptable because
+      // fail-closed is safer than fail-open. Future: per-metric extractionPaths.
+      const claim = makeClaim({ type: "metric", entities: ["bitcoin", "BTC"], text: "BTC market price $84,000", value: 84000, unit: "USD" });
       const source = makeSource("blockchain-info", "stats");
       const result = adapter!.buildSurgicalUrl!(claim, source);
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-03-21T08:29:11.523Z",
+  "generatedAt": "2026-03-21T04:58:31.492887Z",
   "aliasesVersion": 1,
   "sources": [
     {
@@ -8967,57 +8967,3601 @@
       }
     },
     {
-      "id": "hn-algolia-283ccb92",
-      "name": "hn-narrative-tracker",
-      "provider": "hn-algolia",
-      "url": "https://hn.algolia.com/api/v1/search?query=narrative%20tracker&tags=story&hitsPerPage=2",
-      "urlPattern": "hn.algolia.com/api/v1/search?hitsPerPage=2&query=narrative tracker&tags=story",
-      "topics": [
-        "narrative-tracker",
-        "narrative",
-        "tracker"
-      ],
+      "id": "algolia-aHR0cHM6",
+      "name": "algolia-mined-aHR0cHM6",
+      "provider": "algolia",
+      "url": "https://hn.algolia.com/api/v1/search_by_date?query=crypto+meme+doge+shiba&tags=story&hitsPerPage=10",
+      "urlPattern": "https://hn.algolia.com/api/v1/search_by_date?query=crypto+meme+doge+shiba&tags=story",
+      "topics": [],
+      "domainTags": [],
       "tlsn_safe": true,
       "dahr_safe": true,
-      "max_response_kb": 4,
-      "topicAliases": [],
-      "domainTags": [
-        "narrative-tracker",
-        "narrative",
-        "tracker"
-      ],
+      "max_response_kb": 0,
       "responseFormat": "json",
       "scope": {
         "visibility": "global",
-        "importedFrom": []
+        "importedFrom": [
+          "0x44efb19daeb25c713b75eef6497c2e0798f0f3b6363cf3cb6c9be8ba65a1db92"
+        ]
       },
       "runtime": {
         "timeoutMs": 8000,
         "retry": {
           "maxAttempts": 2,
-          "backoffMs": 500,
+          "backoffMs": 1000,
           "retryOn": [
-            "timeout"
+            "timeout",
+            "5xx"
           ]
         }
       },
       "trustTier": "experimental",
-      "status": "quarantined",
+      "status": "archived",
       "rating": {
-        "overall": 50,
-        "uptime": 50,
-        "relevance": 80,
-        "freshness": 50,
-        "sizeStability": 50,
-        "engagement": 50,
-        "trust": 50,
-        "testCount": 1,
-        "successCount": 1,
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
         "consecutiveFailures": 0
       },
       "lifecycle": {
-        "discoveredAt": "2026-03-21T08:29:11.523Z",
-        "discoveredBy": "auto-discovery"
+        "discoveredAt": "2026-03-20T19:25:24.277Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "binance-aHR0cHM6",
+      "name": "binance-mined-aHR0cHM6",
+      "provider": "binance",
+      "url": "https://api.binance.com/api/v3/ticker/24hr?symbol=USDCUSDT",
+      "urlPattern": "https://api.binance.com/api/v3/ticker/24hr",
+      "topics": [
+        "crypto",
+        "trading",
+        "stablecoins"
+      ],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x81339a0909f97134597c5f220693243cf1f5bb2e37abb96df266f69902c38eea"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:24.816Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "npmjs-aHR0cHM6",
+      "name": "npmjs-mined-aHR0cHM6",
+      "provider": "npmjs",
+      "url": "https://api.npmjs.org/downloads/point/last-week/ethers",
+      "urlPattern": "https://api.npmjs.org/downloads/point/last-week/ethers",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 0,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x15db181d4ffcc5118b6d85450df7b327d2b3760fdbe2099c6ee264f729e34cb7"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:25.450Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "ustr-aHR0cHM6",
+      "name": "ustr-mined-aHR0cHM6",
+      "provider": "ustr",
+      "url": "https://ustr.gov/rss.xml",
+      "urlPattern": "https://ustr.gov/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 47,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xf8828562e88dd58ff9e7c9b070416ac4c3f96cf1795546cbf022096efcb01551"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:25.940Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "ycombinator-aHR0cHM6",
+      "name": "ycombinator-mined-aHR0cHM6",
+      "provider": "ycombinator",
+      "url": "https://news.ycombinator.com/item?id=47416543",
+      "urlPattern": "https://news.ycombinator.com/item",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 153,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xd58e8528cd9585dab850733ee92255ae84fe28d8d44543a8e39b95cf098fd329"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:26.959Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "llama-aHR0cHM6",
+      "name": "llama-mined-aHR0cHM6",
+      "provider": "llama",
+      "url": "https://api.llama.fi/protocols",
+      "urlPattern": "https://api.llama.fi/protocols",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 7431,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x4ad77063271f5d390b5b30f90a739cd3ef7ff672f4fb992b972252d9a16e08a8"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:27.454Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "profgmedia-aHR0cHM6",
+      "name": "profgmedia-mined-aHR0cHM6",
+      "provider": "profgmedia",
+      "url": "https://www.profgmedia.com/p/follow-the-money",
+      "urlPattern": "https://www.profgmedia.com/p/follow-the-money",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 277,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:27.653Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "coingecko-aHR0cHM6",
+      "name": "coingecko-mined-aHR0cHM6",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/global",
+      "urlPattern": "https://api.coingecko.com/api/v3/global",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 4,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xf915ea5e7e6285c4d5fa0a2ace09b96090218c82e86581c687d265a435bfe630"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:25:27.828Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "aljazeera-aHR0cHM6",
+      "name": "aljazeera-mined-aHR0cHM6",
+      "provider": "aljazeera",
+      "url": "https://www.aljazeera.com/news/liveblog/2026/3/19/iran-war-live-qatar-saudi-energy-sites-attacked-riyadh-says-trust-gone?update=4419718",
+      "urlPattern": "https://www.aljazeera.com/news/liveblog/2026/3/19/iran-war-live-qatar-saudi-energy-sites-attacked-riyadh-says-trust-gone",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 228,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:45.321Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "co-aHR0cHM6",
+      "name": "co-mined-aHR0cHM6",
+      "provider": "co",
+      "url": "https://feeds.bbci.co.uk/news/world/asia/china/rss.xml",
+      "urlPattern": "https://feeds.bbci.co.uk/news/world/asia/china/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 10,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xc1236161e6bd7985bef33dbf668c210d933c3fe70a10ff12645dae218779701f"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:45.497Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "etherscan-aHR0cHM6",
+      "name": "etherscan-mined-aHR0cHM6",
+      "provider": "etherscan",
+      "url": "https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle",
+      "urlPattern": "https://api.etherscan.io/v2/api",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 0,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x219c70b93d0d69dec8a00a6672b3de3a6fc3c59a2943a6beaf8b6adcd19295ca",
+          "0x34d3e3fb36de7b757b1cc1435a2aef8ddbb14c7320ce4ecc16f41453e0fcb264",
+          "0xa348fd5a336ce630bde99910fae7cd1e75143fec9e4e5cbaf66081fe9a2c8390",
+          "0x1d473a403a8d5bff5e83df5e4cdcf0aedf39c49f6c207b2799d489c03408e1c7"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:46.154Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "federalreserve-aHR0cHM6",
+      "name": "federalreserve-mined-aHR0cHM6",
+      "provider": "federalreserve",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "urlPattern": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 14,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xb382ee3611bb7f4b80584bc326adb7a3512ee8a85262021a1412ae8a537c2c4f"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:46.330Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "scmp-aHR0cHM6",
+      "name": "scmp-mined-aHR0cHM6",
+      "provider": "scmp",
+      "url": "https://www.scmp.com/rss/91/feed",
+      "urlPattern": "https://www.scmp.com/rss/91/feed",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 80,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xc1236161e6bd7985bef33dbf668c210d933c3fe70a10ff12645dae218779701f",
+          "0xf87efd5e293d8fbf85983529dec25aa75d7e41786314c0d50683c5dce89bb1c0"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:47.151Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "polymarket-aHR0cHM6",
+      "name": "polymarket-mined-aHR0cHM6",
+      "provider": "polymarket",
+      "url": "https://gamma-api.polymarket.com/markets?limit=10&active=true&closed=false",
+      "urlPattern": "https://gamma-api.polymarket.com/markets?limit=10&active=true&closed=false",
+      "topics": [
+        "predictions",
+        "geopolitics",
+        "markets"
+      ],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 70,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xf40ca64fd5ed26538dc054b31fb83cad588b3f28a798777bc92494e13d7b3ed0",
+          "0xd3259e3338fdc2c58dd169f9b642247c6b66c328174b541e9ff142993a2a9b26"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:55.449Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T05:13:02.121180+00:00",
+        "promotedAt": "2026-03-21T05:13:02.121180+00:00"
+      },
+      "note": "Active prediction markets. Reduced from limit=100 (617KB) to limit=10 (67KB)."
+    },
+    {
+      "id": "geckoterminal-aHR0cHM6",
+      "name": "geckoterminal-mined-aHR0cHM6",
+      "provider": "geckoterminal",
+      "url": "https://api.geckoterminal.com/api/v2/networks/eth/trending_pools?page=1",
+      "urlPattern": "https://api.geckoterminal.com/api/v2/networks/eth/trending_pools",
+      "topics": [
+        "defi",
+        "trading",
+        "ethereum"
+      ],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 28,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x8a9361357b2febf0158ce827ee6170c7d62f560288b4e15c8ee02e345325cf56"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:26:55.896Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "europa-aHR0cHM6",
+      "name": "europa-mined-aHR0cHM6",
+      "provider": "europa",
+      "url": "https://www.ecb.europa.eu/rss/press.html",
+      "urlPattern": "https://www.ecb.europa.eu/rss/press.html",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 6,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xb382ee3611bb7f4b80584bc326adb7a3512ee8a85262021a1412ae8a537c2c4f"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:04.191Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "paragraph-aHR0cHM6",
+      "name": "paragraph-mined-aHR0cHM6",
+      "provider": "paragraph",
+      "url": "https://paragraph.com/@demos/demos-network-nft-sale-securing-the-omniweb",
+      "urlPattern": "https://paragraph.com/@demos/demos-network-nft-sale-securing-the-omniweb",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 1068,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x3758b75221a240034ea455732535a1b03e7cbf66e947d22cc7cb746f6be4f69d"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:06.650Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "supercolony-aHR0cHM6",
+      "name": "supercolony-mined-aHR0cHM6",
+      "provider": "supercolony",
+      "url": "https://www.supercolony.ai/api/feed",
+      "urlPattern": "https://www.supercolony.ai/api/feed",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 60,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x5646a377fc79b6cac829cbed3570d10ea7dd1bcd7b1d2b7d0522c18156933b84",
+          "0x1d473a403a8d5bff5e83df5e4cdcf0aedf39c49f6c207b2799d489c03408e1c7",
+          "0x02e65a000f60e46ab1fe6fcbe220549acdadba389313229180b48a2a22d7a4ea",
+          "0x00b63ed38c1e7a894bd97da88d193c03eaf1a8b12979020bcea04865a1d1a965"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:07.457Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "frankfurter-aHR0cHM6",
+      "name": "frankfurter-mined-aHR0cHM6",
+      "provider": "frankfurter",
+      "url": "https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR,GBP,JPY,CHF,CAD,AUD",
+      "urlPattern": "https://api.frankfurter.dev/v1/latest",
+      "topics": [
+        "economics",
+        "forex",
+        "currencies"
+      ],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 0,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x109e6247e74107a6a2e18c8aa0c4df0044d41acd625b5d0c4459f62583234e4a"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:11.195Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "vaticannews-aHR0cHM6",
+      "name": "vaticannews-mined-aHR0cHM6",
+      "provider": "vaticannews",
+      "url": "https://www.vaticannews.va/en/church/news/2026-03/taybeh-christians-west-bank-settlers-raids-peace-security-appeal.html",
+      "urlPattern": "https://www.vaticannews.va/en/church/news/2026-03/taybeh-christians-west-bank-settlers-raids-peace-security-appeal.html",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 84,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:11.987Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "dexscreener-aHR0cHM6",
+      "name": "dexscreener-mined-aHR0cHM6",
+      "provider": "dexscreener",
+      "url": "https://api.dexscreener.com/token-profiles/latest/v1",
+      "urlPattern": "https://api.dexscreener.com/token-profiles/latest/v1",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 23,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xdefaffc10bbee515c1dbe6b4ed538d175fddc71e94f6944f29c4c42cc764b2fd"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:14.534Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "espn-aHR0cHM6",
+      "name": "espn-mined-aHR0cHM6",
+      "provider": "espn",
+      "url": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=8",
+      "urlPattern": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news",
+      "topics": [
+        "sports",
+        "nba"
+      ],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 35,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x5e4f15384203c6feffc90ae9a109e5e66b2c090cba9f83fc3d2f161c1f464898"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:15.500Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "demos-aHR0cHM6",
+      "name": "demos-mined-aHR0cHM6",
+      "provider": "demos",
+      "url": "https://demos.sh",
+      "urlPattern": "https://demos.sh/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 871,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x3758b75221a240034ea455732535a1b03e7cbf66e947d22cc7cb746f6be4f69d"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:16.100Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "cdc-aHR0cHM6",
+      "name": "cdc-mined-aHR0cHM6",
+      "provider": "cdc",
+      "url": "https://tools.cdc.gov/podcasts/feed.asp?feedid=183",
+      "urlPattern": "https://tools.cdc.gov/podcasts/feed.asp",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 29,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xdefb78e219ad60492b2f3d99ed9f8e0bfff370da3b40e507b5e5190e56bb595a"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:16.833Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "cbsnews-aHR0cHM6",
+      "name": "cbsnews-mined-aHR0cHM6",
+      "provider": "cbsnews",
+      "url": "https://www.cbsnews.com/news/gregory-bovino-border-patrol-to-retire-sources/",
+      "urlPattern": "https://www.cbsnews.com/news/gregory-bovino-border-patrol-to-retire-sources/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 606,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:18.573Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "thehindu-aHR0cHM6",
+      "name": "thehindu-mined-aHR0cHM6",
+      "provider": "thehindu",
+      "url": "https://www.thehindu.com/news/national/feeder/default.rss",
+      "urlPattern": "https://www.thehindu.com/news/national/feeder/default.rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 43,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x91164827b33ce6c8057448cc26e49eb02780b7391d41d634ac177b14b07dc7f0"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:18.929Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "euronews-aHR0cHM6",
+      "name": "euronews-mined-aHR0cHM6",
+      "provider": "euronews",
+      "url": "https://www.euronews.com/rss",
+      "urlPattern": "https://www.euronews.com/rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 32,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xa7ee288e3497a601964fcb8df7024b8e49269080da8ceb13c36a3ca234fa82dc"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:19.108Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "euvsdisinfo-aHR0cHM6",
+      "name": "euvsdisinfo-mined-aHR0cHM6",
+      "provider": "euvsdisinfo",
+      "url": "https://euvsdisinfo.eu/feed/",
+      "urlPattern": "https://euvsdisinfo.eu/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 128,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xc82cbb690fa4201e62331f10a3037badcfdc2d451da5cb4b253b5a17fe150e3a"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:19.364Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "defensenews-aHR0cHM6",
+      "name": "defensenews-mined-aHR0cHM6",
+      "provider": "defensenews",
+      "url": "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml",
+      "urlPattern": "https://www.defensenews.com/arc/outboundfeeds/rss/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 145,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xbabf8b68e7cae0bca5f53057c937f40958c62c20656d81f9c8534b5946f17861"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:19.609Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "scotusblog-aHR0cHM6",
+      "name": "scotusblog-mined-aHR0cHM6",
+      "provider": "scotusblog",
+      "url": "https://www.scotusblog.com/feed/",
+      "urlPattern": "https://www.scotusblog.com/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 150,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2debaf351fc9d241d7fa0f1703c8a88a1fc44afbc727ebe12559920732367f25"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:19.773Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "skynews-aHR0cHM6",
+      "name": "skynews-mined-aHR0cHM6",
+      "provider": "skynews",
+      "url": "https://feeds.skynews.com/feeds/rss/world.xml",
+      "urlPattern": "https://feeds.skynews.com/feeds/rss/world.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 12,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2e61f651040ae2650bcf6e7408b67292949466b474a9e5983f25062bcc54f063"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:20.151Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "moltbook-aHR0cHM6",
+      "name": "moltbook-mined-aHR0cHM6",
+      "provider": "moltbook",
+      "url": "https://moltbook.com/api/v1/posts?sort=hot&limit=15",
+      "urlPattern": "https://moltbook.com/api/v1/posts",
+      "topics": [
+        "social",
+        "web3",
+        "trending"
+      ],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 45,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x9783d7e33890efdcd8eeced44850981060bb8d877e193c63fe21a3ed0a830f21"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:21.851Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "justice-aHR0cHM6",
+      "name": "justice-mined-aHR0cHM6",
+      "provider": "justice",
+      "url": "https://www.justice.gov/news/rss",
+      "urlPattern": "https://www.justice.gov/news/rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2debaf351fc9d241d7fa0f1703c8a88a1fc44afbc727ebe12559920732367f25"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:22.131Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "deribit-aHR0cHM6",
+      "name": "deribit-mined-aHR0cHM6",
+      "provider": "deribit",
+      "url": "https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=BTC&kind=future",
+      "urlPattern": "https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=BTC&kind=future",
+      "topics": [
+        "crypto",
+        "derivatives",
+        "bitcoin-futures"
+      ],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 4,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x5bd9ed3f174cc1c2305011e1c914bb734d51750e2052e547b3a3bf091f9f6312"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:22.418Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T05:13:02.121180+00:00",
+        "promotedAt": "2026-03-21T05:13:02.121180+00:00"
+      },
+      "note": "BTC futures summary. Changed from kind=option (964 items, 464KB) to kind=future (7 items, 3KB)."
+    },
+    {
+      "id": "bbc-aHR0cHM6",
+      "name": "bbc-mined-aHR0cHM6",
+      "provider": "bbc",
+      "url": "https://www.bbc.com/news/articles/c4g5n58rlnzo",
+      "urlPattern": "https://www.bbc.com/news/articles/c4g5n58rlnzo",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 222,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:23.083Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "net-aHR0cHM6",
+      "name": "net-mined-aHR0cHM6",
+      "provider": "net",
+      "url": "https://www.abc.net.au/news/feed/2942460/rss.xml",
+      "urlPattern": "https://www.abc.net.au/news/feed/2942460/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 84,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2aa44f9ab58a3723c3a3fc5385cc8304d09f265ab0545b84ea16405f9d8a6f71"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:23.398Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "middleeasteye-aHR0cHM6",
+      "name": "middleeasteye-mined-aHR0cHM6",
+      "provider": "middleeasteye",
+      "url": "https://www.middleeasteye.net/news/reza-pahlavis-supporters-iran-are-turning-against-him",
+      "urlPattern": "https://www.middleeasteye.net/news/reza-pahlavis-supporters-iran-are-turning-against-him",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 63,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:24.988Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "airandspaceforces-aHR0cHM6",
+      "name": "airandspaceforces-mined-aHR0cHM6",
+      "provider": "airandspaceforces",
+      "url": "https://www.airandspaceforces.com/mq-9s-over-iran-striking-and-finding-targets-but-taking-some-losses/",
+      "urlPattern": "https://www.airandspaceforces.com/mq-9s-over-iran-striking-and-finding-targets-but-taking-some-losses/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 149,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:26.640Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "mining-aHR0cHM6",
+      "name": "mining-mined-aHR0cHM6",
+      "provider": "mining",
+      "url": "https://www.mining.com/feed/",
+      "urlPattern": "https://www.mining.com/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 184,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x77c591873b781fcca463d468217bc90d6b883846ec4b0ca986bc16837979165b"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:28.086Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "clashreport-aHR0cHM6",
+      "name": "clashreport-mined-aHR0cHM6",
+      "provider": "clashreport",
+      "url": "https://clashreport.com/defense/articles/western-nations-warn-israel-on-lebanon-offensive-7aarak9qill",
+      "urlPattern": "https://clashreport.com/defense/articles/western-nations-warn-israel-on-lebanon-offensive-7aarak9qill",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 405,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:29.447Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "arctictoday-aHR0cHM6",
+      "name": "arctictoday-mined-aHR0cHM6",
+      "provider": "arctictoday",
+      "url": "https://www.arctictoday.com/feed/",
+      "urlPattern": "https://www.arctictoday.com/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 359,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x86655e0c9c019ad85d87e3ccb80047146a73d4ca5d296e3c13983881cdab40b2"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:32.372Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "iaea-aHR0cHM6",
+      "name": "iaea-mined-aHR0cHM6",
+      "provider": "iaea",
+      "url": "https://www.iaea.org/feeds/topnews",
+      "urlPattern": "https://www.iaea.org/feeds/topnews",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 10,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xbba096e5ef4914c3868db50832df043dd4b1872e154c23ed863644f1565e2e55"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:32.539Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "gcaptain-aHR0cHM6",
+      "name": "gcaptain-mined-aHR0cHM6",
+      "provider": "gcaptain",
+      "url": "https://gcaptain.com/feed/",
+      "urlPattern": "https://gcaptain.com/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 12,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xd9939ede54f20567c976322609143ef62f9b80db4118209e9b089a186187dd18"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:33.053Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "bleepingcomputer-aHR0cHM6",
+      "name": "bleepingcomputer-mined-aHR0cHM6",
+      "provider": "bleepingcomputer",
+      "url": "https://www.bleepingcomputer.com/feed/",
+      "urlPattern": "https://www.bleepingcomputer.com/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 12,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x7493c9eb80470545ca4a1039b96bb004427823cc2264279b58cf58a78b3b839e"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:34.574Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "bellingcat-aHR0cHM6",
+      "name": "bellingcat-mined-aHR0cHM6",
+      "provider": "bellingcat",
+      "url": "https://www.bellingcat.com/feed/",
+      "urlPattern": "https://www.bellingcat.com/feed/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 303,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xc82cbb690fa4201e62331f10a3037badcfdc2d451da5cb4b253b5a17fe150e3a"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:36.018Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "edbn-aHR0cHM6",
+      "name": "edbn-mined-aHR0cHM6",
+      "provider": "edbn",
+      "url": "https://aeris.edbn.me/",
+      "urlPattern": "https://aeris.edbn.me/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 25,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:37.798Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "firebaseio-aHR0cHM6",
+      "name": "firebaseio-mined-aHR0cHM6",
+      "provider": "firebaseio",
+      "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
+      "urlPattern": "https://hacker-news.firebaseio.com/v0/topstories.json",
+      "topics": [
+        "tech",
+        "hacker-news",
+        "trending"
+      ],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 4,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x00b63ed38c1e7a894bd97da88d193c03eaf1a8b12979020bcea04865a1d1a965"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:38.728Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "solana-aHR0cHM6",
+      "name": "solana-mined-aHR0cHM6",
+      "provider": "solana",
+      "url": "https://api.mainnet-beta.solana.com",
+      "urlPattern": "https://api.mainnet-beta.solana.com/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 1,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xa348fd5a336ce630bde99910fae7cd1e75143fec9e4e5cbaf66081fe9a2c8390"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:38.849Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "nasa-aHR0cHM6",
+      "name": "nasa-mined-aHR0cHM6",
+      "provider": "nasa",
+      "url": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/CME?startDate=2026-03-05&endDate=2026-03-12",
+      "urlPattern": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/CME",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 47,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xdebf1672a9d116af2b5542aa9248bbb687d19c5901638a63cbd676189242d115"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:41.500Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "vercel-aHR0cHM6",
+      "name": "vercel-mined-aHR0cHM6",
+      "provider": "vercel",
+      "url": "https://reference-data-directory.vercel.app/feeds-ethereum-mainnet-arbitrum-1.json",
+      "urlPattern": "https://reference-data-directory.vercel.app/feeds-ethereum-mainnet-arbitrum-1.json",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 2467,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x5e504456c8adeb2e46ba3cfd686f19fb2f362d76edc6d73ccd87cdd63e42d789"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:41.810Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "haaretz-aHR0cHM6",
+      "name": "haaretz-mined-aHR0cHM6",
+      "provider": "haaretz",
+      "url": "https://www.haaretz.com/israel-news/armenia-recalls-ambassador-from-israel-over-arms-sales-to-azerbaijan-1.9202125",
+      "urlPattern": "https://www.haaretz.com/israel-news/armenia-recalls-ambassador-from-israel-over-arms-sales-to-azerbaijan-1.9202125",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 841,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:42.475Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "ibtimes-aHR0cHM6",
+      "name": "ibtimes-mined-aHR0cHM6",
+      "provider": "ibtimes",
+      "url": "https://www.ibtimes.com/macron-promises-first-western-tanks-ukraine-3653535",
+      "urlPattern": "https://www.ibtimes.com/macron-promises-first-western-tanks-ukraine-3653535",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 254,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:43.405Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "foreignpolicy-aHR0cHM6",
+      "name": "foreignpolicy-mined-aHR0cHM6",
+      "provider": "foreignpolicy",
+      "url": "https://foreignpolicy.com/2023/02/08/ukraine-russia-counteroffensive-abrams-tanks-putin-war/",
+      "urlPattern": "https://foreignpolicy.com/2023/02/08/ukraine-russia-counteroffensive-abrams-tanks-putin-war/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 404,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:43.631Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "senate-aHR0cHM6",
+      "name": "senate-mined-aHR0cHM6",
+      "provider": "senate",
+      "url": "https://www.hawley.senate.gov/hawley-delivers-national-security-speech-china-and-ukraine-time-truth",
+      "urlPattern": "https://www.hawley.senate.gov/hawley-delivers-national-security-speech-china-and-ukraine-time-truth",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 149,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:44.774Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "cnn-aHR0cHM6",
+      "name": "cnn-mined-aHR0cHM6",
+      "provider": "cnn",
+      "url": "https://www.cnn.com/2025/04/06/middleeast/us-airstrikes-yemen-houthis-may-be-relishing-them-intl/index.html",
+      "urlPattern": "https://www.cnn.com/2025/04/06/middleeast/us-airstrikes-yemen-houthis-may-be-relishing-them-intl/index.html",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 3569,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:46.148Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "gdeltproject-aHR0cHM6",
+      "name": "gdeltproject-mined-aHR0cHM6",
+      "provider": "gdeltproject",
+      "url": "https://api.gdeltproject.org/api/v2/doc/doc?query=court+ruling+supreme+court+legal+decision&mode=ToneChart&format=json",
+      "urlPattern": "https://api.gdeltproject.org/api/v2/doc/doc?query=court+ruling+supreme+court+legal+decision",
+      "topics": [
+        "geopolitics",
+        "global-events"
+      ],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 40,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2debaf351fc9d241d7fa0f1703c8a88a1fc44afbc727ebe12559920732367f25"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:49.603Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "mahendrarajah-aHR0cHM6",
+      "name": "mahendrarajah-mined-aHR0cHM6",
+      "provider": "mahendrarajah",
+      "url": "https://mahendrarajah.com/2025/09/15/satellites/",
+      "urlPattern": "https://mahendrarajah.com/2025/09/15/satellites/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 62,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:50.178Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "hotnews-aHR0cHM6",
+      "name": "hotnews-mined-aHR0cHM6",
+      "provider": "hotnews",
+      "url": "https://hotnews.ro/nicusor-dan-anunta-in-scurt-timp-deciziile-csat-dupa-ce-sua-au-cerut-sa-trimita-in-romania-avioane-si-trupe-suplimentare-2190932",
+      "urlPattern": "https://hotnews.ro/nicusor-dan-anunta-in-scurt-timp-deciziile-csat-dupa-ce-sua-au-cerut-sa-trimita-in-romania-avioane-si-trupe-suplimentare-2190932",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 269,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:50.568Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "gbnews-aHR0cHM6",
+      "name": "gbnews-mined-aHR0cHM6",
+      "provider": "gbnews",
+      "url": "https://www.gbnews.com/news/us-officials-spies-rescued-iraq-raf",
+      "urlPattern": "https://www.gbnews.com/news/us-officials-spies-rescued-iraq-raf",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 533,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:51.408Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "hypurrscan-aHR0cHM6",
+      "name": "hypurrscan-mined-aHR0cHM6",
+      "provider": "hypurrscan",
+      "url": "https://hypurrscan.io/address/0x44743b2972fa6932df4f6ae79557afc160b1bfb2",
+      "urlPattern": "https://hypurrscan.io/address/0x44743b2972fa6932df4f6ae79557afc160b1bfb2",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 2,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x490473c0a40337a123492d69a412fb5dae4b90f615f96737041c4fe3eb2f05d6"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:51.587Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "usgs-aHR0cHM6",
+      "name": "usgs-mined-aHR0cHM6",
+      "provider": "usgs",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=-50&maxlatitude=20&minlongitude=140&maxlongitude=180&minmagnitude=5.0&orderby=time&limit=10",
+      "urlPattern": "https://earthquake.usgs.gov/fdsnws/event/1/query",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 8,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2aa44f9ab58a3723c3a3fc5385cc8304d09f265ab0545b84ea16405f9d8a6f71"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:53.360Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "thespacedevs-aHR0cHM6",
+      "name": "thespacedevs-mined-aHR0cHM6",
+      "provider": "thespacedevs",
+      "url": "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=5&format=json",
+      "urlPattern": "https://ll.thespacedevs.com/2.2.0/launch/upcoming/",
+      "topics": [
+        "space",
+        "science",
+        "launches"
+      ],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 25,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xdebf1672a9d116af2b5542aa9248bbb687d19c5901638a63cbd676189242d115"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "active",
+      "rating": {
+        "overall": 50,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:54.898Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "promotedAt": "2026-03-21T04:58:31.492887Z"
+      }
+    },
+    {
+      "id": "mempool-aHR0cHM6",
+      "name": "mempool-mined-aHR0cHM6",
+      "provider": "mempool",
+      "url": "https://mempool.space/api/v1/mining/hashrate/3d",
+      "urlPattern": "https://mempool.space/api/v1/mining/hashrate/3d",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 0,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xb52a7ee877209c2b0a2110ea8ae835c52809e45be30cac2f1be6567758397227"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:27:55.144Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "edoo-aHR0cHM6",
+      "name": "edoo-mined-aHR0cHM6",
+      "provider": "edoo",
+      "url": "https://fb.edoo.gg",
+      "urlPattern": "https://fb.edoo.gg/",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 200,
+      "responseFormat": "html",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xd58e8528cd9585dab850733ee92255ae84fe28d8d44543a8e39b95cf098fd329"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:33.732Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "npr-aHR0cHM6",
+      "name": "npr-mined-aHR0cHM6",
+      "provider": "npr",
+      "url": "https://feeds.npr.org/1004/rss.xml",
+      "urlPattern": "https://feeds.npr.org/1004/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 13,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xa5017a2673f67397b000ce094d7b327c65e7da7f0588e82d778d893349a05bc5"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.024Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "theguardian-aHR0cHM6",
+      "name": "theguardian-mined-aHR0cHM6",
+      "provider": "theguardian",
+      "url": "https://www.theguardian.com/world/rss",
+      "urlPattern": "https://www.theguardian.com/world/rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 149,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x5bf26bbb1d95e7b2ded9dff6fc31d9c8e4d25730a88b4b72592adb1b9904da25"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.269Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "dw-aHR0cHM6",
+      "name": "dw-mined-aHR0cHM6",
+      "provider": "dw",
+      "url": "https://rss.dw.com/xml/rss-en-all",
+      "urlPattern": "https://rss.dw.com/xml/rss-en-all",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 80,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xefce9a0e02cabcd70a52c1e510def16e118024b9689416e326250963761c18ce"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.819Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "france24-aHR0cHM6",
+      "name": "france24-mined-aHR0cHM6",
+      "provider": "france24",
+      "url": "https://www.france24.com/en/rss",
+      "urlPattern": "https://www.france24.com/en/rss",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 27,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x47e95145a563b43d3b8d9662ac68e765f8835eeb3fe660e782ef5c235bed3028"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:34.989Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "un-aHR0cHM6",
+      "name": "un-mined-aHR0cHM6",
+      "provider": "un",
+      "url": "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+      "urlPattern": "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 35,
+      "responseFormat": "rss",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x2780d537148e3fc5ded43ce79de4a26ef5a64037e49b86be6373bbba20fbc35e"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:35.194Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "propublica-aHR0cHM6",
+      "name": "propublica-mined-aHR0cHM6",
+      "provider": "propublica",
+      "url": "https://www.propublica.org/feeds/propublica/main",
+      "urlPattern": "https://www.propublica.org/feeds/propublica/main",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 528,
+      "responseFormat": "xml",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0xa2cf6a76d286f56ee6efabe802f77b0fc289c5e35e0feb11d4e5913752ec2e49"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:35.851Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
+      }
+    },
+    {
+      "id": "pypi-aHR0cHM6",
+      "name": "pypi-mined-aHR0cHM6",
+      "provider": "pypi",
+      "url": "https://pypi.org/pypi/anthropic/json",
+      "urlPattern": "https://pypi.org/pypi/anthropic/json",
+      "topics": [],
+      "domainTags": [],
+      "tlsn_safe": false,
+      "dahr_safe": true,
+      "max_response_kb": 228,
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": [
+          "0x6a1104179536c23247730e3905cee5f68db432d67ec16c2db8a0d611b3b5554b"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "archived",
+      "rating": {
+        "overall": 0,
+        "uptime": 0,
+        "relevance": 0,
+        "freshness": 0,
+        "sizeStability": 0,
+        "engagement": 0,
+        "trust": 0,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-20T19:39:36.529Z",
+        "discoveredBy": "feed-mine",
+        "statusChangedAt": "2026-03-21T04:58:31.492887Z",
+        "archivedReason": "curation-2026-03-21"
       }
     },
     {
@@ -9149,7 +12693,7 @@
         "discoveredBy": "manual"
       },
       "adapter": {
-        "operation": "ticker-price"
+        "operation": "ticker-24hr"
       }
     }
   ]
