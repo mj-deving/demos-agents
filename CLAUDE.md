@@ -12,7 +12,7 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Agent definitions, 
 - **SDK:** `@kynesyslabs/demosdk` v2.11.4 (import `/websdk` subpath directly)
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `src/lib/llm-provider.ts` (Claude CLI, OpenAI API, OpenAI-compatible, any CLI)
-- **Testing:** vitest (`npm test`). 1208 tests across 82 suites. All code changes must include tests.
+- **Testing:** vitest (`npm test`). 1234 tests across 83 suites. All code changes must include tests.
 - **Credential path:** `~/.config/demos/credentials` (XDG, mode 600). Legacy `.env` fallback. `--env` flag overrides.
 
 ## Project Structure
@@ -24,7 +24,7 @@ See `docs/project-structure.md` for the full tree. Key boundaries:
 - **`connectors/`** — SDK isolation (@kynesyslabs/demosdk bridge).
 - **`config/`** — Source catalog (`config/sources/catalog.json`) and strategies (`config/strategies/base-loop.yaml`).
 - **Two loop modes:** `cli/session-runner.ts` (cron, 8-phase) and `cli/event-runner.ts` (long-lived, reactive).
-- **Claim-driven attestation:** `src/lib/claim-extraction.ts` (Phase 1), `src/lib/attestation-planner.ts` (Phase 3 planner + Phase 4 verifier, portable), `src/actions/attestation-executor.ts` (Phase 3 executor, platform-bound). YAML specs declare `claimTypes` + `extractionPath` per operation. Entity resolution: `ASSET_MAP` (21 crypto) + `MACRO_ENTITY_MAP` (15 macro: GDP, unemployment, inflation, debt, earthquake, etc.) in `attestation-policy.ts`. `buildSurgicalUrl` uses `adapter.operation` to filter to the correct spec operation per source. Auth guard: specs with `auth.mode !== "none"` return null from `buildSurgicalUrl` to prevent API key leakage in on-chain attestation URLs.
+- **Claim-driven attestation:** `src/lib/claim-extraction.ts` (Phase 1), `src/lib/attestation-planner.ts` (Phase 3 planner + Phase 4 verifier, portable), `src/actions/attestation-executor.ts` (Phase 3 executor, platform-bound). YAML specs declare `claimTypes` + `extractionPath` per operation. Entity resolution: `ASSET_MAP` (21 crypto) + `MACRO_ENTITY_MAP` (15 macro: GDP, unemployment, inflation, debt, earthquake, etc.) in `attestation-policy.ts`. `buildSurgicalUrl` uses `adapter.operation` to filter to the correct spec operation per source, and `extractUrlParams` flows source URL parameters into the build context (claim-derived vars override). Auth guard: specs with `auth.mode !== "none"` return null from `buildSurgicalUrl` to prevent API key leakage in on-chain attestation URLs. Source routing uses scored selection (health + recency penalty + provider diversity) with fallback candidates.
 - **Reputation plugins:** `src/plugins/reputation/` — `EthosPlugin` (Ethos Network on-chain reputation scores, 24h TTL cache).
 - **Pipeline docs:** `docs/loop-heuristics.md` — single source of truth for scan→gate→publish, agent differentiation, constitutional rules, source discovery.
 
