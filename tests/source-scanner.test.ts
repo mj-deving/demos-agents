@@ -13,9 +13,11 @@ import {
   type ScanIntent,
   type SourceScanResult,
   type SourceScanOptions,
+  type TopicSuggestion,
   deriveIntentsFromTopics,
   selectSourcesByIntent,
   signalsToSuggestions,
+  mergeAndDedup,
 } from "../src/lib/source-scanner.js";
 
 import type { SourceRecordV2, SourceIndex, AgentSourceView, AgentName } from "../src/lib/sources/catalog.js";
@@ -353,5 +355,68 @@ describe("signalsToSuggestions", () => {
 
     const suggestions = signalsToSuggestions(signals, 0);
     expect(suggestions[0].category).toBe("ANALYSIS");
+  });
+});
+
+// ── mergeAndDedup ─────────────────────────────────────
+
+describe("mergeAndDedup", () => {
+  it("ISC-23: places source suggestions first", () => {
+    const feedSuggestions: TopicSuggestion[] = [
+      { topic: "ethereum defi", category: "ANALYSIS", reason: "feed scan" },
+    ];
+    const sourceSuggestions: TopicSuggestion[] = [
+      { topic: "bitcoin price", category: "ANALYSIS", reason: "source scan signal" },
+    ];
+
+    const merged = mergeAndDedup(feedSuggestions, sourceSuggestions);
+    expect(merged.length).toBe(2);
+    // Source suggestions should be first
+    expect(merged[0].topic).toBe("bitcoin price");
+    expect(merged[1].topic).toBe("ethereum defi");
+  });
+
+  it("ISC-24: deduplicates overlapping topics", () => {
+    const feedSuggestions: TopicSuggestion[] = [
+      { topic: "bitcoin markets", category: "ANALYSIS", reason: "feed" },
+    ];
+    const sourceSuggestions: TopicSuggestion[] = [
+      { topic: "bitcoin price", category: "ANALYSIS", reason: "source" },
+    ];
+
+    const merged = mergeAndDedup(feedSuggestions, sourceSuggestions);
+    // "bitcoin" overlaps — source version wins (appears first)
+    expect(merged.length).toBe(1);
+    expect(merged[0].reason).toBe("source");
+  });
+
+  it("keeps both when topics have no token overlap", () => {
+    const feedSuggestions: TopicSuggestion[] = [
+      { topic: "gdp growth", category: "ANALYSIS", reason: "feed" },
+    ];
+    const sourceSuggestions: TopicSuggestion[] = [
+      { topic: "bitcoin price", category: "ANALYSIS", reason: "source" },
+    ];
+
+    const merged = mergeAndDedup(feedSuggestions, sourceSuggestions);
+    expect(merged.length).toBe(2);
+  });
+
+  it("handles empty source suggestions gracefully", () => {
+    const feedSuggestions: TopicSuggestion[] = [
+      { topic: "bitcoin", category: "ANALYSIS", reason: "feed" },
+    ];
+
+    const merged = mergeAndDedup(feedSuggestions, []);
+    expect(merged.length).toBe(1);
+  });
+
+  it("handles empty feed suggestions gracefully", () => {
+    const sourceSuggestions: TopicSuggestion[] = [
+      { topic: "bitcoin", category: "ANALYSIS", reason: "source" },
+    ];
+
+    const merged = mergeAndDedup([], sourceSuggestions);
+    expect(merged.length).toBe(1);
   });
 });

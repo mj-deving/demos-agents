@@ -85,6 +85,17 @@ import {
   selectSourceForTopicV2,
   type AgentSourceView,
 } from "../src/lib/sources/index.js";
+import {
+  runSourceScan,
+  deriveIntentsFromTopics,
+  mergeAndDedup,
+  signalsToSuggestions,
+  type TopicSuggestion as SourceTopicSuggestion,
+} from "../src/lib/source-scanner.js";
+import {
+  loadBaselines,
+  saveBaselines,
+} from "../src/lib/signal-detection.js";
 
 // ── Constants ──────────────────────────────────────
 
@@ -823,6 +834,7 @@ async function runAudit(state: SessionState, flags: RunnerFlags): Promise<void> 
 // ── SCAN Phase ─────────────────────────────────────
 
 async function runScan(state: SessionState, flags: RunnerFlags): Promise<void> {
+  // Mode 1: Feed scan (existing — subprocess)
   const args = ["--agent", flags.agent, "--json", "--env", flags.env];
   const result = await runToolAndParse("cli/scan-feed.ts", args, "scan-feed.ts");
 
@@ -830,6 +842,51 @@ async function runScan(state: SessionState, flags: RunnerFlags): Promise<void> {
   const pph = result.activity?.posts_per_hour ?? "?";
   const gapCount = result.gaps?.topics?.length || 0;
   phaseResult(`${level} activity (${pph} posts/hr) | ${gapCount} gap topics found`);
+
+  // Mode 2: Source scan (NEW — inline, non-fatal)
+  try {
+    const topics = agentConfig.topics ?? { primary: [], secondary: [] };
+    const intents = deriveIntentsFromTopics(topics);
+
+    if (intents.length > 0) {
+      const sourceView = getSourceView();
+      const baselinePath = resolve(homedir(), ".config", "demos", `baselines-${flags.agent}.json`);
+      const baselineStore = loadBaselines(baselinePath);
+
+      const scanResult = await runSourceScan(sourceView, intents, baselineStore, {
+        maxSources: 10,
+        minSignalStrength: 0.3,
+        dryRun: flags.dryRun,
+      });
+
+      // Convert signals to session-runner TopicSuggestions
+      const sourceSuggestions = scanResult.signals
+        .filter(s => s.strength >= 0.3)
+        .map(s => ({
+          topic: s.evidence.topics?.[0] ?? s.summary,
+          category: s.rule.type === "anti-signal" ? "OPINION" : "ANALYSIS",
+          reason: `source-scan: ${s.summary} (strength ${s.strength.toFixed(2)})`,
+        }));
+
+      // Store source scan results alongside feed scan
+      result.sourceSignals = {
+        signalCount: scanResult.signals.length,
+        sourcesFetched: scanResult.sourcesFetched,
+        baselinesUpdated: scanResult.baselinesUpdated,
+        suggestions: sourceSuggestions,
+      };
+
+      // Save updated baselines
+      if (!flags.dryRun && scanResult.baselinesUpdated > 0) {
+        saveBaselines(baselinePath, baselineStore);
+      }
+
+      info(`Source scan: ${scanResult.sourcesFetched} sources fetched, ${scanResult.signals.length} signals detected`);
+    }
+  } catch (err: any) {
+    // Source scan failure is non-fatal — log and continue
+    info(`Source scan error (non-fatal): ${err.message}`);
+  }
 
   completePhase(state, "scan", result);
 }
@@ -1160,7 +1217,14 @@ function extractTopicsFromScan(
           reason: `topic-index pioneer (${item.reasons.slice(0, 3).join(", ")})`,
         });
       }
-      if (topics.length > 0) return topics;
+      if (topics.length > 0) {
+        // Merge source-scan suggestions for pioneer mode too
+        const sourceSignals = scan.sourceSignals?.suggestions;
+        if (Array.isArray(sourceSignals) && sourceSignals.length > 0) {
+          return mergeAndDedup(topics, sourceSignals).slice(0, 3);
+        }
+        return topics;
+      }
     } else {
       const sv = getSourceView();
       const expandUsed = new Set<string>();
@@ -1267,6 +1331,13 @@ function extractTopicsFromScan(
         t.topic = expanded;
         expandedUsed.add(expanded.toLowerCase());
       }
+    }
+
+    // Merge source-scan suggestions (Phase 4 — source-first priority)
+    const sourceSignals = scan.sourceSignals?.suggestions;
+    if (Array.isArray(sourceSignals) && sourceSignals.length > 0) {
+      const merged = mergeAndDedup(topics, sourceSignals);
+      return merged.slice(0, 3); // Max 3 per strategy
     }
 
     return topics.slice(0, 3); // Max 3 per strategy

@@ -11,7 +11,15 @@
 import type { SourceRecordV2, AgentSourceView } from "./sources/catalog.js";
 import type { EvidenceEntry } from "./sources/providers/types.js";
 import type { FetchSourceResult } from "./sources/fetch.js";
-import type { DetectedSignal, SignalRule } from "./signal-detection.js";
+import { fetchSource } from "./sources/fetch.js";
+import { getProviderAdapter } from "./sources/providers/index.js";
+import {
+  detectSignals,
+  updateBaseline,
+  type DetectedSignal,
+  type SignalRule,
+  type BaselineStore,
+} from "./signal-detection.js";
 
 // ── Types ─────────────────────────────────────────────
 
@@ -172,4 +180,159 @@ export function signalsToSuggestions(
       priority: s.strength + 0.5, // +0.5 bonus over feed-derived suggestions
       attestationCost: 0, // Data already fetched
     }));
+}
+
+// ── TopicSuggestion (session-runner compatible) ──────
+
+/**
+ * A topic suggestion compatible with session-runner's TopicSuggestion type.
+ * Used by mergeAndDedup to produce a unified suggestion list.
+ */
+export interface TopicSuggestion {
+  topic: string;
+  category: string;
+  reason: string;
+  replyTo?: { txHash: string; author: string; text: string };
+}
+
+// ── Topic Tokenization ───────────────────────────────
+
+function tokenize(text: string): Set<string> {
+  return new Set(
+    text.toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length >= 2)
+  );
+}
+
+// ── Merge and Dedup ──────────────────────────────────
+
+/**
+ * Merge feed-scan and source-scan suggestions, deduplicating by topic token overlap.
+ * Source suggestions appear first (attestation is free).
+ *
+ * Dedup logic: if two suggestions share any token (from tokenizing their topic),
+ * the first one wins. Since source suggestions are placed first, they win ties.
+ */
+export function mergeAndDedup(
+  feedSuggestions: TopicSuggestion[],
+  sourceSuggestions: TopicSuggestion[],
+): TopicSuggestion[] {
+  const merged: TopicSuggestion[] = [];
+  const seenTokens = new Set<string>();
+
+  // Source suggestions first (free attestation priority)
+  for (const suggestion of [...sourceSuggestions, ...feedSuggestions]) {
+    const tokens = tokenize(suggestion.topic);
+    // Check if any token was already seen
+    let isDuplicate = false;
+    for (const token of tokens) {
+      if (seenTokens.has(token)) {
+        isDuplicate = true;
+        break;
+      }
+    }
+    if (isDuplicate) continue;
+
+    // Mark all tokens as seen
+    for (const token of tokens) {
+      seenTokens.add(token);
+    }
+    merged.push(suggestion);
+  }
+
+  return merged;
+}
+
+// ── Source Scan Orchestration ─────────────────────────
+
+/**
+ * Run a full source scan across all intents.
+ *
+ * For each intent: selects sources from the catalog, fetches data via adapters,
+ * detects signals (threshold + change), updates baselines, and produces suggestions.
+ *
+ * This is the library equivalent of cli/source-scan.ts — called inline from
+ * session-runner.ts instead of as a subprocess.
+ */
+export async function runSourceScan(
+  sourceView: AgentSourceView,
+  intents: ScanIntent[],
+  baselineStore: BaselineStore,
+  options: {
+    maxSources?: number;
+    minSignalStrength?: number;
+    dryRun?: boolean;
+  } = {},
+): Promise<SourceScanResult> {
+  const maxSources = options.maxSources ?? 10;
+  const minSignalStrength = options.minSignalStrength ?? 0.3;
+
+  const allSignals: DetectedSignal[] = [];
+  let totalFetched = 0;
+  let totalBaselinesUpdated = 0;
+  let sourcesUsed = 0;
+
+  for (const intent of intents) {
+    const sources = selectSourcesByIntent(intent, sourceView);
+
+    for (const source of sources) {
+      if (sourcesUsed >= maxSources) break;
+
+      try {
+        const fetchResult = await fetchSource(source.url, source);
+        if (!fetchResult.ok || !fetchResult.response) continue;
+
+        totalFetched++;
+        sourcesUsed++;
+
+        // Parse via adapter
+        const adapter = getProviderAdapter(source.provider);
+        let entries: EvidenceEntry[] = [];
+        if (adapter && adapter.supports(source)) {
+          const parsed = adapter.parseResponse(source, fetchResult.response);
+          entries = parsed.entries;
+        }
+        if (entries.length === 0) continue;
+
+        // Detect signals
+        const signals = detectSignals(entries, intent.signals, baselineStore, {
+          source,
+          fetchResult,
+          fetchedAt: new Date().toISOString(),
+          minSignalStrength,
+        });
+        if (signals.length > 0) {
+          allSignals.push(...signals);
+        }
+
+        // Update baselines
+        for (const entry of entries) {
+          if (!entry.metrics) continue;
+          for (const [metricKey, rawValue] of Object.entries(entry.metrics)) {
+            const value = typeof rawValue === "string" ? parseFloat(rawValue) : rawValue;
+            if (isNaN(value)) continue;
+            updateBaseline(baselineStore, source.id, metricKey, value, new Date().toISOString());
+            totalBaselinesUpdated++;
+          }
+        }
+      } catch {
+        // Non-fatal — skip this source and continue
+        continue;
+      }
+    }
+
+    if (sourcesUsed >= maxSources) break;
+  }
+
+  allSignals.sort((a, b) => b.strength - a.strength);
+
+  const suggestions = options.dryRun
+    ? []
+    : signalsToSuggestions(allSignals, minSignalStrength);
+
+  return {
+    signals: allSignals,
+    suggestions,
+    sourcesFetched: totalFetched,
+    baselinesUpdated: totalBaselinesUpdated,
+  };
 }
