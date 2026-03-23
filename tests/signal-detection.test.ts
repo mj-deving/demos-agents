@@ -21,6 +21,8 @@ import {
   type StalenessConfig,
   type BaselineObservation,
   detectSignals,
+  detectAntiSignals,
+  confirmAntiSignals,
   loadBaselines,
   saveBaselines,
   updateBaseline,
@@ -35,6 +37,7 @@ import {
 import type { EvidenceEntry } from "../src/lib/sources/providers/types.js";
 import type { SourceRecordV2 } from "../src/lib/sources/catalog.js";
 import type { FetchSourceResult } from "../src/lib/sources/fetch.js";
+import type { ExtractedClaim } from "../src/lib/claim-extraction.js";
 
 // ── Test Helpers ──────────────────────────────────────
 
@@ -874,5 +877,200 @@ describe("resolveDomain", () => {
   it("unknown tags", () => {
     expect(resolveDomain(["ai"])).toBe("unknown");
     expect(resolveDomain([])).toBe("unknown");
+  });
+});
+
+// ── Anti-Signal Detection ────────────────────────────
+
+describe("anti-signal detection", () => {
+  function makeClaim(overrides: Partial<ExtractedClaim> = {}): ExtractedClaim {
+    return {
+      text: "BTC at $70,000",
+      type: "price",
+      entities: ["Bitcoin"],
+      value: 70000,
+      unit: "USD",
+      ...overrides,
+    };
+  }
+
+  const ctx = {
+    source: makeSource({ id: "src-1" }),
+    fetchResult: makeFetchResult(),
+    fetchedAt: new Date().toISOString(),
+  };
+
+  it("ISC-1: detectAntiSignals is exported and callable", () => {
+    expect(typeof detectAntiSignals).toBe("function");
+  });
+
+  it("ISC-2: matches claims to entries via entity-topic overlap (case-insensitive)", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+    // Entry topic "bitcoin" should match claim entity "Bitcoin"
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 60000 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("ISC-3: divergence >10% triggers anti-signal", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+    // Source shows 60000, divergence = (60000-70000)/70000 * 100 = -14.3%
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 60000 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(1);
+    expect(signals[0].rule.type).toBe("anti-signal");
+  });
+
+  it("ISC-4: divergence at exactly 10% does NOT trigger", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 100 })];
+    // Source shows 110, divergence = (110-100)/100 * 100 = +10% exactly
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 110 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(0);
+  });
+
+  it("ISC-5: strength = |divergence| / 10 - 1", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 100 })];
+    // Source shows 130, divergence = 30%
+    // strength = 30 / 10 - 1 = 2.0
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 130 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(1);
+    expect(signals[0].strength).toBeCloseTo(2.0, 5);
+  });
+
+  it("ISC-6: summary includes entity, claim value, source value, divergence", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 60000 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(1);
+    expect(signals[0].summary).toContain("Bitcoin");
+    expect(signals[0].summary).toContain("70000");
+    expect(signals[0].summary).toContain("60000");
+    expect(signals[0].summary).toContain("%");
+  });
+
+  it("ISC-7: skips claims with null/undefined/non-numeric value", () => {
+    const claims = [
+      makeClaim({ entities: ["Bitcoin"], value: undefined }),
+      makeClaim({ entities: ["Ethereum"], value: undefined, text: "ETH trending" }),
+    ];
+    const entries = [makeEntry({ topics: ["bitcoin", "ethereum"], metrics: { price: 60000 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(0);
+  });
+
+  it("ISC-8: handles zero claim value without division-by-zero", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 0 })];
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 100 } })];
+    // Should not throw, should skip (can't compute meaningful divergence from zero)
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(0);
+  });
+
+  it("ISC-9: no entity overlap means no anti-signal", () => {
+    const claims = [makeClaim({ entities: ["Solana"], value: 200 })];
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 100 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(0);
+  });
+
+  it("negative divergence detected symmetrically", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+    // Source shows 50000, divergence = (50000-70000)/70000 = -28.6%
+    const entries = [makeEntry({ topics: ["bitcoin"], metrics: { price: 50000 } })];
+    const signals = detectAntiSignals(entries, claims, ctx);
+    expect(signals).toHaveLength(1);
+    expect(signals[0].changePercent).toBeLessThan(0);
+  });
+});
+
+// ── Cross-Source Confirmation ────────────────────────
+
+describe("cross-source confirmation", () => {
+  function makeClaim(overrides: Partial<ExtractedClaim> = {}): ExtractedClaim {
+    return {
+      text: "BTC at $70,000",
+      type: "price",
+      entities: ["Bitcoin"],
+      value: 70000,
+      unit: "USD",
+      ...overrides,
+    };
+  }
+
+  it("ISC-10: confirmed=true when 2+ sources agree on anti-signal", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+
+    // Two different sources both show lower price
+    const source1 = makeSource({ id: "src-1", name: "Source 1" });
+    const source2 = makeSource({ id: "src-2", name: "Source 2" });
+
+    const entries1 = [makeEntry({ topics: ["bitcoin"], metrics: { price: 60000 } })];
+    const entries2 = [makeEntry({ topics: ["bitcoin"], metrics: { price: 61000 } })];
+
+    const signals1 = detectAntiSignals(entries1, claims, {
+      source: source1,
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+    const signals2 = detectAntiSignals(entries2, claims, {
+      source: source2,
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+
+    const bySource = new Map<string, typeof signals1>();
+    bySource.set("src-1", signals1);
+    bySource.set("src-2", signals2);
+
+    const confirmed = confirmAntiSignals(bySource);
+    expect(confirmed.length).toBeGreaterThanOrEqual(1);
+    expect(confirmed.some(s => s.confirmed === true)).toBe(true);
+  });
+
+  it("single source does NOT confirm anti-signal", () => {
+    const claims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+    const source1 = makeSource({ id: "src-1", name: "Source 1" });
+    const entries1 = [makeEntry({ topics: ["bitcoin"], metrics: { price: 60000 } })];
+    const signals1 = detectAntiSignals(entries1, claims, {
+      source: source1,
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+
+    const bySource = new Map<string, typeof signals1>();
+    bySource.set("src-1", signals1);
+
+    const confirmed = confirmAntiSignals(bySource);
+    // All signals should have confirmed=false
+    expect(confirmed.every(s => s.confirmed === false)).toBe(true);
+  });
+
+  it("different entities from different sources do NOT cross-confirm", () => {
+    const btcClaims = [makeClaim({ entities: ["Bitcoin"], value: 70000 })];
+    const ethClaims = [makeClaim({ entities: ["Ethereum"], value: 4000 })];
+
+    const source1 = makeSource({ id: "src-1" });
+    const source2 = makeSource({ id: "src-2" });
+
+    const signals1 = detectAntiSignals(
+      [makeEntry({ topics: ["bitcoin"], metrics: { price: 60000 } })],
+      btcClaims,
+      { source: source1, fetchResult: makeFetchResult(), fetchedAt: new Date().toISOString() },
+    );
+    const signals2 = detectAntiSignals(
+      [makeEntry({ topics: ["ethereum"], metrics: { price: 3000 } })],
+      ethClaims,
+      { source: source2, fetchResult: makeFetchResult(), fetchedAt: new Date().toISOString() },
+    );
+
+    const bySource = new Map<string, typeof signals1>();
+    bySource.set("src-1", signals1);
+    bySource.set("src-2", signals2);
+
+    const confirmed = confirmAntiSignals(bySource);
+    // None should be confirmed — different entities
+    expect(confirmed.every(s => s.confirmed === false)).toBe(true);
   });
 });

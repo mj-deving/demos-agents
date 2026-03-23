@@ -20,6 +20,7 @@ import { dirname } from "node:path";
 import type { EvidenceEntry } from "./sources/providers/types.js";
 import type { SourceRecordV2 } from "./sources/catalog.js";
 import type { FetchSourceResult } from "./sources/fetch.js";
+import type { ExtractedClaim } from "./claim-extraction.js";
 
 // ── Constants ─────────────────────────────────────────
 
@@ -37,6 +38,9 @@ const MAD_FLOOR = 0.001;
 
 /** MAD multiplier for outlier detection */
 const MAD_MULTIPLIER = 3;
+
+/** Anti-signal divergence threshold (%) — must be strictly greater */
+const ANTI_SIGNAL_DIVERGENCE_THRESHOLD = 10;
 
 /** Window time horizons for baseline ring buffers */
 const WINDOW_KEYS = ["1h", "4h", "24h"] as const;
@@ -105,6 +109,10 @@ export interface DetectedSignal {
   evidence: EvidenceEntry;
   /** The raw fetch result (for free attestation in later phases) */
   fetchResult: FetchSourceResult;
+  /** Claim entity name for anti-signals (avoids parsing from summary) */
+  entity?: string;
+  /** Cross-source confirmation for anti-signals (undefined = unevaluated, true/false = evaluated) */
+  confirmed?: boolean;
 }
 
 /**
@@ -565,4 +573,127 @@ function detectChange(
   }
 
   return null;
+}
+
+// ── Anti-Signal Detection (Phase 3) ──────────────────
+
+/** Anti-signal context — reuses DetectionContext fields needed for anti-signals */
+export type AntiSignalContext = Pick<DetectionContext, "source" | "fetchResult" | "fetchedAt">;
+
+/**
+ * Detect anti-signals: source data that contradicts recent feed claims.
+ *
+ * For each claim with a numeric value, compares against matching source
+ * entry metrics. If divergence exceeds 10%, produces an anti-signal.
+ *
+ * Entity matching is case-insensitive substring match between
+ * claim.entities and entry.topics.
+ */
+export function detectAntiSignals(
+  entries: EvidenceEntry[],
+  claims: ExtractedClaim[],
+  ctx: AntiSignalContext,
+): DetectedSignal[] {
+  // Pre-filter: only numeric claims with non-zero values
+  const numericClaims = claims.filter(
+    c => typeof c.value === "number" && c.value !== 0,
+  );
+  if (numericClaims.length === 0) return [];
+
+  // Pre-filter: only entries with metrics
+  const metricEntries = entries.filter(e => e.metrics);
+  if (metricEntries.length === 0) return [];
+
+  const antiSignals: DetectedSignal[] = [];
+
+  for (const claim of numericClaims) {
+    // Pre-lowercase claim entities once per claim
+    const claimEntitiesLower = claim.entities.map(e => e.toLowerCase());
+
+    for (const entry of metricEntries) {
+      // Pre-lowercase entry topics once per entry (safe: metricEntries is stable)
+      const topicsLower = entry.topics.map(t => t.toLowerCase());
+
+      // Entity-topic overlap (case-insensitive substring)
+      const entityMatch = claimEntitiesLower.some(entity =>
+        topicsLower.some(topic =>
+          topic.includes(entity) || entity.includes(topic)
+        )
+      );
+      if (!entityMatch) continue;
+
+      // Compare each metric against the claim value
+      for (const [metricKey, metricVal] of Object.entries(entry.metrics!)) {
+        const sourceValue = parseMetric(metricVal);
+        if (isNaN(sourceValue)) continue;
+
+        const divergence = ((sourceValue - claim.value!) / Math.abs(claim.value!)) * 100;
+
+        if (Math.abs(divergence) > ANTI_SIGNAL_DIVERGENCE_THRESHOLD) {
+          const strength = Math.abs(divergence) / ANTI_SIGNAL_DIVERGENCE_THRESHOLD - 1;
+          const entityName = claim.entities[0] ?? "unknown";
+          antiSignals.push({
+            source: ctx.source,
+            rule: { type: "anti-signal", metric: metricKey },
+            strength,
+            currentValue: sourceValue,
+            baselineValue: claim.value,
+            changePercent: divergence,
+            summary: `Feed claims ${entityName} at ${claim.value}, source shows ${sourceValue} (${divergence > 0 ? "+" : ""}${divergence.toFixed(1)}% divergence)`,
+            evidence: entry,
+            fetchResult: ctx.fetchResult,
+            entity: entityName.toLowerCase(),
+          });
+        }
+      }
+    }
+  }
+
+  // Sort by strength descending
+  antiSignals.sort((a, b) => b.strength - a.strength);
+  return antiSignals;
+}
+
+/**
+ * Cross-source confirmation for anti-signals.
+ *
+ * Groups anti-signals by claim entity (first entity, lowercased) + divergence direction.
+ * Marks `confirmed=true` when 2+ independent sources agree on the same
+ * entity + direction (both show source < claim, or both show source > claim).
+ *
+ * Returns a flat array of all anti-signals with `confirmed` field set.
+ */
+export function confirmAntiSignals(
+  signalsBySource: Map<string, DetectedSignal[]>,
+): DetectedSignal[] {
+  // Group by entity + direction across sources
+  const groups = new Map<string, { sourceId: string; signal: DetectedSignal }[]>();
+
+  for (const [sourceId, signals] of signalsBySource) {
+    for (const signal of signals) {
+      if (signal.rule.type !== "anti-signal") continue;
+      if (signal.changePercent == null) continue;
+
+      const direction = signal.changePercent > 0 ? "up" : "down";
+      const entity = signal.entity ?? "unknown";
+      const key = `${entity}:${direction}`;
+
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push({ sourceId, signal });
+    }
+  }
+
+  // Mark confirmed when 2+ distinct sources agree
+  const allSignals: DetectedSignal[] = [];
+
+  for (const entries of groups.values()) {
+    const distinctSources = new Set(entries.map(e => e.sourceId));
+    const isConfirmed = distinctSources.size >= 2;
+
+    for (const { signal } of entries) {
+      allSignals.push({ ...signal, confirmed: isConfirmed });
+    }
+  }
+
+  return allSignals;
 }
