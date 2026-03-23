@@ -275,6 +275,10 @@ const CONVERGENCE_MIN_SOURCES = 3;
  * Calculate z-score for a value against a set of observations.
  * Uses MAD (median absolute deviation) as robust scale estimator.
  * Returns null if fewer than MIN_ZSCORE_SAMPLES observations.
+ *
+ * Note: This is an unscaled MAD z-score (no 1.4826 consistency constant).
+ * The ZSCORE_THRESHOLD of 2.5 is calibrated to this formula. To compare
+ * with conventional modified z-scores, multiply by 1.4826.
  */
 export function calculateZScore(
   value: number,
@@ -803,7 +807,16 @@ export function detectConvergence(
   for (const [key, { sourceIds, signals }] of groups) {
     if (sourceIds.size < CONVERGENCE_MIN_SOURCES) continue;
 
-    const avgChange = signals.reduce((sum, s) => sum + (s.changePercent ?? 0), 0) / signals.length;
+    // Average one value per source (take strongest signal per source to avoid double-counting)
+    const perSource = new Map<string, number>();
+    for (const signal of signals) {
+      const sid = signal.source.id;
+      const pct = signal.changePercent ?? 0;
+      if (!perSource.has(sid) || Math.abs(pct) > Math.abs(perSource.get(sid)!)) {
+        perSource.set(sid, pct);
+      }
+    }
+    const avgChange = [...perSource.values()].reduce((sum, v) => sum + v, 0) / perSource.size;
     const metric = key.split(":")[0];
     const strength = sourceIds.size / CONVERGENCE_MIN_SOURCES;
 
