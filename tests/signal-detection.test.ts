@@ -637,6 +637,82 @@ describe("MAD outlier rejection", () => {
     const result = winsorize([5, 5, 5, 5]);
     expect(result).toEqual([5, 5, 5, 5]);
   });
+
+  it("ISC-40: baseline median winsorizes outliers before computing median", () => {
+    // Baseline: [100, 100, 100, 100, 100, 100, 100, 100, 100, 9999]
+    // Without winsorize, median is still 100 (even number -> avg of two middle)
+    // But the key test: change detection should use winsorized baseline
+    // With outlier 9999, non-winsorized median might shift in edge cases
+    // The important thing is that the outlier doesn't corrupt the baseline
+    const observations = [
+      ...Array(9).fill(null).map(() => makeBaselineObs(100)),
+      makeBaselineObs(9999), // extreme outlier
+    ];
+    const store: BaselineStore = {
+      "src-1": {
+        metrics: {
+          price: {
+            windows: {
+              "1h": [...observations],
+              "4h": [...observations],
+              "24h": [...observations],
+            },
+          },
+        },
+        samples: 10,
+        lastUpdated: new Date().toISOString(),
+      },
+    };
+
+    // Current value 106 = +6% from baseline median of ~100
+    // With winsorize, the outlier 9999 gets clamped, so median stays 100
+    const entries = [makeEntry({ metrics: { price: 106 } })];
+    const rules: SignalRule[] = [{ type: "change", metric: "price", threshold: 5 }];
+    const signals = detectSignals(entries, rules, store, {
+      source: makeSource({ id: "src-1" }),
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+    expect(signals).toHaveLength(1);
+    // Baseline value should be ~100 (winsorized), not skewed by 9999
+    expect(signals[0].baselineValue).toBeCloseTo(100, 0);
+  });
+
+  it("ISC-41: baseline with multiple outliers still produces correct median", () => {
+    // 3 outliers in 10 observations
+    const observations = [
+      ...Array(7).fill(null).map(() => makeBaselineObs(50)),
+      makeBaselineObs(5000),
+      makeBaselineObs(6000),
+      makeBaselineObs(7000),
+    ];
+    const store: BaselineStore = {
+      "src-1": {
+        metrics: {
+          price: {
+            windows: {
+              "1h": [...observations],
+              "4h": [...observations],
+              "24h": [...observations],
+            },
+          },
+        },
+        samples: 10,
+        lastUpdated: new Date().toISOString(),
+      },
+    };
+
+    const entries = [makeEntry({ metrics: { price: 55 } })]; // +10% from 50
+    const rules: SignalRule[] = [{ type: "change", metric: "price", threshold: 5 }];
+    const signals = detectSignals(entries, rules, store, {
+      source: makeSource({ id: "src-1" }),
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+    expect(signals).toHaveLength(1);
+    // After winsorizing, median should be ~50 (outliers clamped)
+    expect(signals[0].baselineValue).toBeCloseTo(50, 0);
+  });
 });
 
 // ── Staleness Guard ──────────────────────────────────

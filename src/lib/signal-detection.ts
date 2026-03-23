@@ -363,7 +363,9 @@ function getBaselineMedian(
   if (observations.length < MIN_BASELINE_SAMPLES) return null;
 
   const values = observations.map(o => o.value);
-  const sorted = [...values].sort((a, b) => a - b);
+  // Winsorize to reject outliers (MAD-based) before computing median
+  const cleaned = values.length >= 3 ? winsorize(values) : values;
+  const sorted = [...cleaned].sort((a, b) => a - b);
   return median(sorted);
 }
 
