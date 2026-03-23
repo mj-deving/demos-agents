@@ -2798,7 +2798,7 @@ Respond with ONLY a JSON array of types, one per finding. Example: ["CODE-FIX","
       jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
     // Strip PAI mode headers (claude --print may wrap output in PAI format)
-    const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+    const jsonMatch = jsonStr.match(/\[[\s\S]*?\]/);
     if (jsonMatch) {
       jsonStr = jsonMatch[0];
     }
