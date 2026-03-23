@@ -89,8 +89,6 @@ import {
   runSourceScan,
   deriveIntentsFromTopics,
   mergeAndDedup,
-  signalsToSuggestions,
-  type TopicSuggestion as SourceTopicSuggestion,
 } from "../src/lib/source-scanner.js";
 import {
   loadBaselines,
@@ -860,8 +858,8 @@ async function runScan(state: SessionState, flags: RunnerFlags): Promise<void> {
       });
 
       // Convert signals to session-runner TopicSuggestions
+      // (signals already filtered by minSignalStrength in runSourceScan)
       const sourceSuggestions = scanResult.signals
-        .filter(s => s.strength >= 0.3)
         .map(s => ({
           topic: s.evidence.topics?.[0] ?? s.summary,
           category: s.rule.type === "anti-signal" ? "OPINION" : "ANALYSIS",
