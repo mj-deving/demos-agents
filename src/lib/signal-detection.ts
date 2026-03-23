@@ -257,6 +257,41 @@ export function winsorize(values: number[]): number[] {
   return values.map(v => Math.max(lower, Math.min(upper, v)));
 }
 
+// ── Z-Score (Phase 5) ────────────────────────────────
+
+/** Minimum observations before z-score activates (cold-start guard) */
+const MIN_ZSCORE_SAMPLES = 15;
+
+/** Default z-score threshold for significance */
+const ZSCORE_THRESHOLD = 2.5;
+
+/** Minimum |changePercent| for convergence inclusion */
+const CONVERGENCE_MAGNITUDE_THRESHOLD = 1;
+
+/** Minimum distinct sources for convergence */
+const CONVERGENCE_MIN_SOURCES = 3;
+
+/**
+ * Calculate z-score for a value against a set of observations.
+ * Uses MAD (median absolute deviation) as robust scale estimator.
+ * Returns null if fewer than MIN_ZSCORE_SAMPLES observations.
+ */
+export function calculateZScore(
+  value: number,
+  observations: BaselineObservation[],
+): number | null {
+  if (observations.length < MIN_ZSCORE_SAMPLES) return null;
+
+  const values = observations.map(o => o.value);
+  const cleaned = winsorize(values);
+  const sorted = [...cleaned].sort((a, b) => a - b);
+  const med = median(sorted);
+  const mad = calculateMAD(cleaned);
+  const effectiveMAD = Math.max(mad, MAD_FLOOR);
+
+  return (value - med) / effectiveMAD;
+}
+
 // ── Baseline Persistence ──────────────────────────────
 
 /**
@@ -353,44 +388,52 @@ function pruneOldEntries(store: BaselineStore): void {
 // ── Baseline Querying ─────────────────────────────────
 
 /**
- * Get the median value from the 24h window for a source metric.
+ * Get observations for a source metric from a specific window.
+ * Returns empty array if not found.
+ */
+function getBaselineObservations(
+  store: BaselineStore | null,
+  sourceId: string,
+  metricKey: string,
+  window: typeof WINDOW_KEYS[number] = "24h",
+): BaselineObservation[] {
+  if (!store) return [];
+  const entry = store[sourceId];
+  if (!entry) return [];
+  const metricData = entry.metrics[metricKey];
+  if (!metricData) return [];
+  return metricData.windows[window];
+}
+
+/**
+ * Get the median value from a window for a source metric.
  * Returns null if fewer than MIN_BASELINE_SAMPLES observations.
+ * Winsorizes outliers (MAD-based) before computing median.
  */
 function getBaselineMedian(
   store: BaselineStore | null,
   sourceId: string,
   metricKey: string,
+  window: typeof WINDOW_KEYS[number] = "24h",
 ): number | null {
-  if (!store) return null;
-  const entry = store[sourceId];
-  if (!entry) return null;
-  const metricData = entry.metrics[metricKey];
-  if (!metricData) return null;
-
-  const observations = metricData.windows["24h"];
+  const observations = getBaselineObservations(store, sourceId, metricKey, window);
   if (observations.length < MIN_BASELINE_SAMPLES) return null;
 
   const values = observations.map(o => o.value);
-  // Winsorize to reject outliers (MAD-based) before computing median
   const cleaned = values.length >= 3 ? winsorize(values) : values;
   const sorted = [...cleaned].sort((a, b) => a - b);
   return median(sorted);
 }
 
 /**
- * Count total observations across all windows for a metric.
+ * Count observations in the 24h window for a metric.
  */
 function getBaselineSampleCount(
   store: BaselineStore | null,
   sourceId: string,
   metricKey: string,
 ): number {
-  if (!store) return 0;
-  const entry = store[sourceId];
-  if (!entry) return 0;
-  const metricData = entry.metrics[metricKey];
-  if (!metricData) return 0;
-  return metricData.windows["24h"].length;
+  return getBaselineObservations(store, sourceId, metricKey, "24h").length;
 }
 
 // ── Signal Detection Engine ───────────────────────────
@@ -543,10 +586,12 @@ function detectChange(
   getCachedMedian: (sourceId: string, metricKey: string) => number | null,
 ): DetectedSignal | null {
   const sourceId = ctx.source.id;
-  const sampleCount = getBaselineSampleCount(baselineStore, sourceId, metricKey);
+
+  // Fetch observations once — used for sample count, median, and z-score
+  const observations = getBaselineObservations(baselineStore, sourceId, metricKey, "24h");
 
   // N>=3 requirement
-  if (sampleCount < MIN_BASELINE_SAMPLES) return null;
+  if (observations.length < MIN_BASELINE_SAMPLES) return null;
 
   const baselineMedian = getCachedMedian(sourceId, metricKey);
   if (baselineMedian == null) return null;
@@ -555,8 +600,29 @@ function detectChange(
   if (baselineMedian === 0) return null;
 
   const changePct = ((current - baselineMedian) / Math.abs(baselineMedian)) * 100;
-  const changeThreshold = rule.threshold ?? config.changeThreshold;
 
+  // Phase 5: Z-score adaptive threshold when 15+ samples available
+  // Falls back to fixed threshold for cold-start (3-14 samples)
+  const zScore = calculateZScore(current, observations);
+
+  if (zScore !== null && Math.abs(zScore) >= ZSCORE_THRESHOLD) {
+    // Z-score triggered — use z-score-based strength
+    const strength = Math.abs(zScore) / ZSCORE_THRESHOLD - 1;
+    return {
+      source: ctx.source,
+      rule: { ...rule, metric: metricKey },
+      strength,
+      currentValue: current,
+      baselineValue: baselineMedian,
+      changePercent: changePct,
+      summary: `${metricKey} changed ${changePct > 0 ? "+" : ""}${changePct.toFixed(1)}% (${baselineMedian} → ${current}, z=${zScore.toFixed(1)})`,
+      evidence: entry,
+      fetchResult: ctx.fetchResult,
+    };
+  }
+
+  // Cold-start fallback: fixed threshold (3-14 samples, or z-score below threshold)
+  const changeThreshold = rule.threshold ?? config.changeThreshold;
   if (Math.abs(changePct) >= changeThreshold) {
     const strength = Math.abs(changePct) / changeThreshold - 1;
     return {
@@ -696,4 +762,64 @@ export function confirmAntiSignals(
   }
 
   return allSignals;
+}
+
+// ── Cross-Source Convergence (Phase 5) ───────────────
+
+/**
+ * Detect when multiple independent sources show the same directional move
+ * for the same metric. Stronger signal than any single source alone.
+ *
+ * Groups signals by metric + direction across sources. Requires:
+ * - 3+ distinct sources agreeing on direction
+ * - Each signal must have |changePercent| >= 1% (magnitude guard against broken APIs)
+ *
+ * Strength = sourceCount / 3 (3 sources = 1.0, 6 = 2.0).
+ */
+export function detectConvergence(
+  signalsBySource: Map<string, DetectedSignal[]>,
+): DetectedSignal[] {
+  // Group by metric + direction, tracking distinct sources
+  const groups = new Map<string, { sourceIds: Set<string>; signals: DetectedSignal[] }>();
+
+  for (const [sourceId, signals] of signalsBySource) {
+    for (const signal of signals) {
+      if (signal.changePercent == null) continue;
+      // Magnitude guard: ignore tiny changes (broken API returning zeros)
+      if (Math.abs(signal.changePercent) < CONVERGENCE_MAGNITUDE_THRESHOLD) continue;
+
+      const direction = signal.changePercent > 0 ? "up" : "down";
+      const key = `${signal.rule.metric}:${direction}`;
+
+      if (!groups.has(key)) groups.set(key, { sourceIds: new Set(), signals: [] });
+      const group = groups.get(key)!;
+      group.sourceIds.add(sourceId);
+      group.signals.push(signal);
+    }
+  }
+
+  const convergenceSignals: DetectedSignal[] = [];
+
+  for (const [key, { sourceIds, signals }] of groups) {
+    if (sourceIds.size < CONVERGENCE_MIN_SOURCES) continue;
+
+    const avgChange = signals.reduce((sum, s) => sum + (s.changePercent ?? 0), 0) / signals.length;
+    const metric = key.split(":")[0];
+    const strength = sourceIds.size / CONVERGENCE_MIN_SOURCES;
+
+    // Use the first signal as a template for source/evidence/fetchResult
+    const template = signals[0];
+    convergenceSignals.push({
+      source: template.source,
+      rule: { type: "convergence", metric },
+      strength,
+      currentValue: avgChange,
+      summary: `${sourceIds.size} sources agree: ${metric} ${avgChange > 0 ? "+" : ""}${avgChange.toFixed(1)}% (convergence)`,
+      evidence: template.evidence,
+      fetchResult: template.fetchResult,
+    });
+  }
+
+  convergenceSignals.sort((a, b) => b.strength - a.strength);
+  return convergenceSignals;
 }

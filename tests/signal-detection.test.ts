@@ -23,6 +23,8 @@ import {
   detectSignals,
   detectAntiSignals,
   confirmAntiSignals,
+  detectConvergence,
+  calculateZScore,
   loadBaselines,
   saveBaselines,
   updateBaseline,
@@ -1072,5 +1074,174 @@ describe("cross-source confirmation", () => {
     const confirmed = confirmAntiSignals(bySource);
     // None should be confirmed — different entities
     expect(confirmed.every(s => s.confirmed === false)).toBe(true);
+  });
+});
+
+// ── Z-Score Calculation ──────────────────────────────
+
+describe("z-score calculation", () => {
+  it("ISC-20: z-score correct for known values", () => {
+    // Values: [10, 10, 10, 10, 10] → median=10, MAD=0, effectiveMAD=MAD_FLOOR
+    // z-score of 15 = (15-10)/MAD_FLOOR = very large
+    const obs = Array(15).fill(null).map(() => makeBaselineObs(10));
+    const z = calculateZScore(15, obs);
+    expect(z).not.toBeNull();
+    expect(z!).toBeGreaterThan(0);
+  });
+
+  it("ISC-20: z-score for value at median is 0", () => {
+    const obs = Array(15).fill(null).map((_, i) => makeBaselineObs(100 + (i % 5)));
+    const values = obs.map(o => o.value);
+    const sorted = [...values].sort((a, b) => a - b);
+    const med = sorted[Math.floor(sorted.length / 2)];
+    const z = calculateZScore(med, obs);
+    expect(z).not.toBeNull();
+    expect(z!).toBeCloseTo(0, 1);
+  });
+
+  it("ISC-4: returns null when fewer than 15 observations", () => {
+    const obs = Array(14).fill(null).map(() => makeBaselineObs(100));
+    const z = calculateZScore(110, obs);
+    expect(z).toBeNull();
+  });
+
+  it("ISC-3: MAD_FLOOR prevents division by zero", () => {
+    // All identical values → MAD=0, but MAD_FLOOR prevents div-by-zero
+    const obs = Array(20).fill(null).map(() => makeBaselineObs(50));
+    const z = calculateZScore(51, obs);
+    expect(z).not.toBeNull();
+    expect(Number.isFinite(z!)).toBe(true);
+  });
+});
+
+// ── Cold-Start Z-Score Integration ───────────────────
+
+describe("cold-start z-score in change detection", () => {
+  function makeStoreWithNSamples(
+    sourceId: string,
+    metricKey: string,
+    count: number,
+    baseValue: number,
+  ): BaselineStore {
+    const observations = Array.from({ length: count }, (_, i) =>
+      makeBaselineObs(baseValue + (i % 3) - 1) // slight variation around baseValue
+    );
+    return {
+      [sourceId]: {
+        metrics: {
+          [metricKey]: {
+            windows: { "1h": [...observations], "4h": [...observations], "24h": [...observations] },
+          },
+        },
+        samples: count,
+        lastUpdated: new Date().toISOString(),
+      },
+    };
+  }
+
+  it("ISC-21/ISC-6: <15 samples uses fixed threshold (5% crypto default)", () => {
+    // 10 samples → cold-start → fixed threshold
+    const store = makeStoreWithNSamples("src-1", "price", 10, 100);
+    const entries = [makeEntry({ metrics: { price: 106 } })]; // +6% from ~100
+    const rules: SignalRule[] = [{ type: "change", metric: "price" }]; // no threshold → domain default 5%
+    const signals = detectSignals(entries, rules, store, {
+      source: makeSource({ id: "src-1", domainTags: ["crypto"] }),
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+    expect(signals).toHaveLength(1); // 6% > 5% fixed threshold
+  });
+
+  it("ISC-21/ISC-5: 15+ samples uses z-score threshold", () => {
+    // 20 samples of very stable data (all ~100), then value at 103
+    // With fixed 5% threshold, 3% wouldn't trigger
+    // But with z-score on very stable data, 3% is a huge z-score → should trigger
+    const store = makeStoreWithNSamples("src-1", "price", 20, 100);
+    const entries = [makeEntry({ metrics: { price: 103 } })]; // only +3%
+    const rules: SignalRule[] = [{ type: "change", metric: "price" }];
+    const signals = detectSignals(entries, rules, store, {
+      source: makeSource({ id: "src-1", domainTags: ["crypto"] }),
+      fetchResult: makeFetchResult(),
+      fetchedAt: new Date().toISOString(),
+    });
+    // Z-score should catch this even though 3% < 5% fixed threshold
+    expect(signals).toHaveLength(1);
+  });
+});
+
+// ── Cross-Source Convergence ─────────────────────────
+
+describe("cross-source convergence", () => {
+  function makeChangeSignal(sourceId: string, metric: string, changePct: number): DetectedSignal {
+    return {
+      source: makeSource({ id: sourceId, name: `Source ${sourceId}` }),
+      rule: { type: "change", metric, threshold: 5 },
+      strength: Math.abs(changePct) / 5 - 1,
+      currentValue: 100 + changePct,
+      baselineValue: 100,
+      changePercent: changePct,
+      summary: `${metric} changed ${changePct > 0 ? "+" : ""}${changePct.toFixed(1)}%`,
+      evidence: makeEntry({ metrics: { [metric]: 100 + changePct } }),
+      fetchResult: makeFetchResult(),
+    };
+  }
+
+  it("ISC-22: 3 sources triggers convergence, 2 does not", () => {
+    const bySource = new Map<string, DetectedSignal[]>();
+    bySource.set("src-1", [makeChangeSignal("src-1", "price", 10)]);
+    bySource.set("src-2", [makeChangeSignal("src-2", "price", 12)]);
+
+    // 2 sources → no convergence
+    const result2 = detectConvergence(bySource);
+    expect(result2).toHaveLength(0);
+
+    // Add 3rd source
+    bySource.set("src-3", [makeChangeSignal("src-3", "price", 8)]);
+    const result3 = detectConvergence(bySource);
+    expect(result3).toHaveLength(1);
+    expect(result3[0].rule.type).toBe("convergence");
+  });
+
+  it("ISC-18: strength = sourceCount / 3", () => {
+    const bySource = new Map<string, DetectedSignal[]>();
+    bySource.set("src-1", [makeChangeSignal("src-1", "price", 10)]);
+    bySource.set("src-2", [makeChangeSignal("src-2", "price", 12)]);
+    bySource.set("src-3", [makeChangeSignal("src-3", "price", 8)]);
+
+    const result = detectConvergence(bySource);
+    expect(result[0].strength).toBeCloseTo(1.0, 5); // 3/3 = 1.0
+  });
+
+  it("ISC-23: excludes signals with |changePercent| < 1%", () => {
+    const bySource = new Map<string, DetectedSignal[]>();
+    bySource.set("src-1", [makeChangeSignal("src-1", "price", 0.5)]); // <1%
+    bySource.set("src-2", [makeChangeSignal("src-2", "price", 0.3)]); // <1%
+    bySource.set("src-3", [makeChangeSignal("src-3", "price", 0.8)]); // <1%
+
+    const result = detectConvergence(bySource);
+    expect(result).toHaveLength(0); // All below magnitude threshold
+  });
+
+  it("ISC-19: summary shows source count, metric, direction, avg %", () => {
+    const bySource = new Map<string, DetectedSignal[]>();
+    bySource.set("src-1", [makeChangeSignal("src-1", "price", 10)]);
+    bySource.set("src-2", [makeChangeSignal("src-2", "price", 12)]);
+    bySource.set("src-3", [makeChangeSignal("src-3", "price", 8)]);
+
+    const result = detectConvergence(bySource);
+    expect(result[0].summary).toContain("3");
+    expect(result[0].summary).toContain("price");
+    expect(result[0].summary).toContain("+");
+  });
+
+  it("opposite directions do NOT converge", () => {
+    const bySource = new Map<string, DetectedSignal[]>();
+    bySource.set("src-1", [makeChangeSignal("src-1", "price", 10)]);  // up
+    bySource.set("src-2", [makeChangeSignal("src-2", "price", -10)]); // down
+    bySource.set("src-3", [makeChangeSignal("src-3", "price", 8)]);   // up
+
+    const result = detectConvergence(bySource);
+    // Only 2 sources agree on "up" → no convergence
+    expect(result).toHaveLength(0);
   });
 });
