@@ -54,7 +54,11 @@ export function normalizeDescription(desc: string): string {
   return desc
     .replace(/^(?:Q[1-4]|S\d+):\s*/i, "")
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    // Strip hex hashes (8+ chars) for fuzzy dedup of outperformer observations
+    .replace(/\b[0-9a-f]{8,}\b/g, "X")
+    // Strip numeric values (e.g., "13.0rx", "+12rx", "8.7") for calibration dedup
+    .replace(/[+-]?\d+(?:\.\d+)?(?:rx|%|ms|s|kb|mb)?\b/g, "N");
 }
 
 /**
@@ -83,7 +87,7 @@ export function isDuplicate(
 /** EMA smoothing factor — how much weight to give the latest error */
 const EMA_ALPHA = 0.3;
 /** Hard floor for calibration offset */
-const OFFSET_MIN = -5;
+const OFFSET_MIN = -15;
 /** Hard ceiling for calibration offset */
 const OFFSET_MAX = 15;
 

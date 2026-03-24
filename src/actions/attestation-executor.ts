@@ -26,6 +26,11 @@ export interface ExecutionResult {
 
 // ── Execution ─────────────────────────────────────
 
+export interface ExecutionOptions {
+  /** Agent attestation policy — when "dahr_only", forces DAHR regardless of planner/size. */
+  attestationMode?: "dahr_only" | "tlsn_preferred" | "tlsn_only";
+}
+
 /**
  * Execute an attestation plan sequentially.
  *
@@ -33,11 +38,15 @@ export interface ExecutionResult {
  * 1. Acquire rate limit token using candidate.rateLimitBucket
  * 2. Try TLSN if small enough, fall back to DAHR
  * 3. Skip on rate-limit denial, log observation
+ *
+ * Respects agent attestation policy: dahr_only forces DAHR for all candidates.
  */
 export async function executeAttestationPlan(
   plan: AttestationPlan,
   demos: Demos,
+  options?: ExecutionOptions,
 ): Promise<ExecutionResult> {
+  const mode = options?.attestationMode ?? "dahr_only";
   const allCandidates = [plan.primary, ...plan.secondary];
   const results: AttestResult[] = [];
   const skipped: SurgicalCandidate[] = [];
@@ -58,10 +67,14 @@ export async function executeAttestationPlan(
       }
     }
 
-    // Use planner's method choice (respects budget limits), fall back to size-based
-    const useTlsn = candidate.plannedMethod
-      ? candidate.plannedMethod === "TLSN"
-      : candidate.estimatedSizeBytes <= TLSN_MAX_SIZE_BYTES;
+    // Respect agent attestation policy first, then planner's method choice, then size-based
+    const useTlsn = mode === "dahr_only"
+      ? false
+      : mode === "tlsn_only"
+        ? true
+        : candidate.plannedMethod
+          ? candidate.plannedMethod === "TLSN"
+          : candidate.estimatedSizeBytes <= TLSN_MAX_SIZE_BYTES;
 
     try {
       let result: AttestResult;

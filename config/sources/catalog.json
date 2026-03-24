@@ -11946,7 +11946,7 @@
       "id": "defillama-tvl-compound",
       "name": "defillama-tvl",
       "provider": "defillama",
-      "url": "https://api.llama.fi/tvl/compound",
+      "url": "https://api.llama.fi/tvl/compound-finance",
       "urlPattern": "api.llama.fi/tvl",
       "topics": [
         "defi",

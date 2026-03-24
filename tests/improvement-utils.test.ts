@@ -48,7 +48,7 @@ describe("normalizeDescription", () => {
   });
 
   it("strips Q3: prefix and lowercases", () => {
-    expect(normalizeDescription("Q3: Outperformed by +12rx")).toBe("outperformed by +12rx");
+    expect(normalizeDescription("Q3: Outperformed by +12rx")).toBe("outperformed by N");
   });
 
   it("strips Q4: prefix and lowercases", () => {
@@ -57,6 +57,7 @@ describe("normalizeDescription", () => {
 
   it("strips S{N}: prefix and lowercases", () => {
     expect(normalizeDescription("S16: Reply flag is --reply-to")).toBe("reply flag is --reply-to");
+    // S16: prefix is stripped first, then no remaining numbers to strip
   });
 
   it("trims whitespace and lowercases", () => {
@@ -68,11 +69,27 @@ describe("normalizeDescription", () => {
   });
 
   it("only strips first prefix (not nested)", () => {
-    expect(normalizeDescription("Q1: Q2: double prefix")).toBe("q2: double prefix");
+    expect(normalizeDescription("Q1: Q2: double prefix")).toBe("qN: double prefix");
   });
 
   it("case-insensitive prefix matching", () => {
     expect(normalizeDescription("q1: lowercase prefix")).toBe("lowercase prefix");
+  });
+
+  it("strips numeric values for fuzzy dedup", () => {
+    expect(normalizeDescription("systematic over-prediction by 13.0rx — update calibration offset"))
+      .toBe(normalizeDescription("systematic over-prediction by 10.6rx — update calibration offset"));
+  });
+
+  it("strips numeric values but preserves semantic meaning", () => {
+    const a = normalizeDescription("over-prediction by 8.7rx — update calibration offset");
+    const b = normalizeDescription("under-prediction by 4.0rx — update calibration offset");
+    expect(a).not.toBe(b); // different semantic meaning preserved
+  });
+
+  it("strips hash-like values (outperformer observations)", () => {
+    expect(normalizeDescription("Q3: 762eba88 outperformed by +12rx (ANALYSIS)"))
+      .toBe(normalizeDescription("Q3: e79258d2 outperformed by +10rx (ANALYSIS)"));
   });
 });
 
@@ -134,6 +151,24 @@ describe("isDuplicate", () => {
     const result = isDuplicate(items, "Applied finding");
     expect(result.duplicate).toBe(true);
   });
+
+  it("detects duplicate when only numeric values differ (calibration)", () => {
+    const items = [makeItem({ description: "Systematic over-prediction by 13.0rx — update calibration offset" })];
+    const result = isDuplicate(items, "Systematic over-prediction by 10.6rx — update calibration offset");
+    expect(result.duplicate).toBe(true);
+  });
+
+  it("detects duplicate when only hash and number differ (outperformers)", () => {
+    const items = [makeItem({ description: "Q3: 762eba88 outperformed by +12rx (ANALYSIS)" })];
+    const result = isDuplicate(items, "Q3: e79258d2 outperformed by +10rx (ANALYSIS)");
+    expect(result.duplicate).toBe(true);
+  });
+
+  it("does not false-positive on semantically different descriptions", () => {
+    const items = [makeItem({ description: "DAHR posts underperforming" })];
+    const result = isDuplicate(items, "Reply threads outperform top-level posts");
+    expect(result.duplicate).toBe(false);
+  });
 });
 
 // ── emaCalibrationOffset ────────────────────────────
@@ -157,10 +192,11 @@ describe("emaCalibrationOffset", () => {
     expect(result).toBe(OFFSET_MAX);
   });
 
-  it("enforces lower bound", () => {
-    // new = 0.3 * (-100) + 0.7 * (-4) = -30 + -2.8 = -32.8 → clamped to -5
+  it("enforces lower bound at -15", () => {
+    // new = 0.3 * (-100) + 0.7 * (-4) = -30 + -2.8 = -32.8 → clamped to -15
     const result = emaCalibrationOffset(-4, -100);
     expect(result).toBe(OFFSET_MIN);
+    expect(OFFSET_MIN).toBe(-15);
   });
 
   it("converges toward stable error over multiple iterations", () => {

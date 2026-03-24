@@ -2407,7 +2407,9 @@ async function runPublishAutonomous(
           const claimPlan = buildAttestationPlan(claims, sourceView, agentConfig, declarativeAdapters, usageTracker);
           if (claimPlan) {
             info(`Claim plan: ${1 + claimPlan.secondary.length} attestations (${claimPlan.unattested.length} unattested), est ${claimPlan.estimatedCost} DEM`);
-            const execution = await executeAttestationPlan(claimPlan, demos);
+            const execution = await executeAttestationPlan(claimPlan, demos, {
+              attestationMode: agentConfig.attestation.defaultMode,
+            });
             if (execution.results.length > 0) {
               const allCandidates = [claimPlan.primary, ...claimPlan.secondary];
               const verifications = verifyAttestedValues(execution.results, allCandidates);

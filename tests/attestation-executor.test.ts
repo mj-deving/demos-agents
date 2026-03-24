@@ -109,12 +109,27 @@ describe("executeAttestationPlan", () => {
       secondary: [makeCandidate({ url: "https://other.com", rateLimitBucket: "other", plannedMethod: "DAHR" })],
     });
 
-    const result = await executeAttestationPlan(plan, {} as any);
+    const result = await executeAttestationPlan(plan, {} as any, { attestationMode: "tlsn_preferred" });
 
     expect(result.results).toHaveLength(2);
     // Primary uses TLSN (plannedMethod), secondary uses DAHR (plannedMethod)
     expect(attestTlsn).toHaveBeenCalledTimes(1);
     expect(attestDahr).toHaveBeenCalledTimes(1);
+  });
+
+  it("forces DAHR when attestationMode is dahr_only, ignoring plannedMethod", async () => {
+    const { executeAttestationPlan } = await import("../src/actions/attestation-executor.js");
+
+    const plan = makePlan({
+      primary: makeCandidate({ plannedMethod: "TLSN", estimatedSizeBytes: 1024 }),
+      secondary: [makeCandidate({ url: "https://other.com", rateLimitBucket: "other", plannedMethod: "TLSN" })],
+    });
+
+    const result = await executeAttestationPlan(plan, {} as any, { attestationMode: "dahr_only" });
+
+    expect(result.results).toHaveLength(2);
+    expect(attestTlsn).not.toHaveBeenCalled();
+    expect(attestDahr).toHaveBeenCalledTimes(2);
   });
 
   it("uses candidate.rateLimitBucket for rate limiting", async () => {
@@ -141,13 +156,13 @@ describe("executeAttestationPlan", () => {
     expect(result.skipped).toHaveLength(1);
   });
 
-  it("falls back to DAHR on TLSN failure", async () => {
+  it("falls back to DAHR on TLSN failure (tlsn_preferred mode)", async () => {
     const { executeAttestationPlan } = await import("../src/actions/attestation-executor.js");
 
     attestTlsn.mockRejectedValue(new Error("TLSN unavailable"));
 
     const plan = makePlan();
-    const result = await executeAttestationPlan(plan, {} as any);
+    const result = await executeAttestationPlan(plan, {} as any, { attestationMode: "tlsn_preferred" });
 
     expect(result.results).toHaveLength(1);
     expect(attestTlsn).toHaveBeenCalledTimes(1);
@@ -180,7 +195,7 @@ describe("executeAttestationPlan", () => {
 
     expect(result.results).toHaveLength(0);
     expect(result.failed).toHaveLength(1);
-    // DAHR called twice: once for TLSN fallback, once for retry
+    // DAHR called twice: once initial (dahr_only), once retry
     expect(attestDahr).toHaveBeenCalledTimes(2);
   }, 10000);
 
