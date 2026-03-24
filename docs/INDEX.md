@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-21 | **SDK:** 2.11.4 | **Tests:** 78 suites, 1139 passing | **Agents:** 6 defined, 3 publishing
+**Last updated:** 2026-03-24 | **SDK:** 2.11.4 | **Tests:** 87 suites, 1355 passing | **Agents:** 6 defined, 3 publishing
 
 ---
 
@@ -16,18 +16,19 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - 3 agents actively publishing to SuperColony (sentinel, crawler, pioneer)
 - 20 plugins (9 session loop + 3 SC API + 4 omniweb real + 4 omniweb scaffold→silent-fail)
 - Event-driven reactive loop alongside cron
-- TLSN + DAHR attestation pipeline functional
+- TLSN + DAHR attestation pipeline functional (TLSN deactivated 2026-03-21, DAHR primary)
 - Post-quantum wallet signing available (Falcon via Demos SDK)
 - CCI identity queries wired (RPC-direct, bypassing NAPI crash in abstraction barrel)
-- Web2 identity linking CLI (proof gen, Twitter/GitHub linking, identity query)
-- Feed-mining CLI (extract source URLs from other agents' attestations → add to catalog)
-- Claim-driven attestation (Phases 1-4): extract claims from post text → build surgical URLs → attest per-claim → verify values
+- Claim-driven attestation (Phases 1-4): extract claims → surgical URLs → attest per-claim → verify values
+- **Intent-driven signal detection pipeline (Phases 1-5 COMPLETE):** threshold/change/z-score detection, anti-signals with cross-source confirmation, source scanning CLI, session loop integration, convergence detection
+- **Session transcript (H2 SHIPPED):** append-only JSONL event logger, phase metrics, query CLI
+- **Operational hardening:** SourceUsageTracker, attestation retry with backoff, anti-signal double-fetch verification
 
 **Where we're going:**
-- Session-runner wiring for claim-driven attestation (insert between match and publish)
+- Collect transcript data (10-20 sessions) to evaluate H3 (protocol phases) and H1 (LLM ordering)
+- Quality score correlation study using transcript + quality-data JSONL
 - CCI identity as root → Agent Auth Protocol as session auth layer
 - Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy
-- Feed-mining for source discovery, dynamic topic expansion
 
 ---
 
@@ -67,7 +68,7 @@ What Demos offers vs what we use. **Updated each session.**
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
 | [loop-heuristics.md](loop-heuristics.md) | `current` | 2026-03-20 | **Single source of truth** for SCAN→GATE→PUBLISH pipeline, agent differentiation, 8 constitutional rules |
-| [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (78 suites now). Missing claim-attestation files. |
+| [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (87 suites now). Missing signal-detection, transcript, source-scanner files. |
 | [omniweb-agent-architecture.md](omniweb-agent-architecture.md) | `stale` | 2026-03-18 | Two-tier agent model. References omniweb-runner.ts which doesn't exist. Aspirational, not current. |
 | [agent-workspace.md](agent-workspace.md) | `reference` | 2026-03-17 | YAML agent config format spec. agents/ directory exists but format not fully enforced by loader yet. |
 
@@ -86,6 +87,8 @@ What Demos offers vs what we use. **Updated each session.**
 |----------|--------|---------|---------|
 | [attestation-reference.md](attestation-reference.md) | `current` | 2026-03-14 | TLSN + DAHR design constraints, performance drift, pipeline detail |
 | [claim-driven-attestation-spec.md](claim-driven-attestation-spec.md) | `current` | 2026-03-21 | Claim-driven attestation design spec (Phases 1-4). Codex-reviewed. |
+| [design-intent-driven-scanning.md](design-intent-driven-scanning.md) | `complete` | 2026-03-24 | Intent-driven source scanning (Phases 1-5). Council-reviewed. All phases implemented. |
+| [design-session-transcript.md](design-session-transcript.md) | `complete` | 2026-03-24 | Session transcript H2. Council-validated (4×3 rounds) + Codex plan review (8 findings). Implemented. |
 | [sdk-exploration-results.md](sdk-exploration-results.md) | `current` | 2026-03-18 | StorageProgram / DemosWork / L2PS blocker diagnosis. SDK 2.11.2 (now 2.11.4, blockers likely unchanged) |
 | [TLSN-Report-KyneSys-2026-03-14.md](TLSN-Report-KyneSys-2026-03-14.md) | `current` | 2026-03-14 | MPC-TLS proxy relay failure diagnosis — KyneSys infrastructure issue |
 
@@ -93,7 +96,7 @@ What Demos offers vs what we use. **Updated each session.**
 
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
-| [roadmap-unified.md](roadmap-unified.md) | `stale` | 2026-03-20 | 7-phase plan: Phases 1-5 complete, Phase 6 blocked, Phase 7 systematic SDK integration. Phase 5 status not updated in file. |
+| [roadmap-unified.md](roadmap-unified.md) | `stale` | 2026-03-20 | 7-phase plan: Phases 1-5 complete, Phase 6 blocked, Phase 7 systematic SDK integration. Superseded by signal detection + transcript work. |
 | [roadmap-skill-dojo-local.md](roadmap-skill-dojo-local.md) | `current` | 2026-03-20 | Course correction: extract Skill Dojo as local SDK-direct implementations |
 | [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `complete` | 2026-03-20 | Skill loader + manifest design. Codex-reviewed. Implemented: Phase 0 (hook internalization) + Phase 5 (loadExtensions). |
 
@@ -102,6 +105,49 @@ What Demos offers vs what we use. **Updated each session.**
 ## Session Changelog
 
 Most recent first. Each entry captures what changed, what was learned, what's next.
+
+### 2026-03-24 — Session Transcript (H2) Shipped
+
+**Theme:** Observability — append-only JSONL event logger for session replay, correlation, and fine-tuning.
+
+**Delivered:**
+- **Council debate (4×3)** on 5 mini-swe-agent hypotheses. Unanimous: H2 first, H4/H5 rejected.
+- **Design doc** (`design-session-transcript.md`) with Codex plan review (8 findings addressed).
+- **Transcript module** (`src/lib/transcript.ts`): emit/read/prune, schema v1 with versioning.
+- **Session-runner integration** — 6 emit points (session-start/complete, phase-start/complete/error).
+- **Phase metrics extraction** — per-phase data/metrics with verified result paths.
+- **Query CLI** (`cli/transcript-query.ts`) — latency bars, aggregates, --pretty/--json.
+- **Retroactive Codex review** of Steps 1+2 (workflow violation caught and corrected).
+
+**Tests:** 87 suites, 1355 passing (up from 86/1341)
+**Commits:** 6 (transcript module + wiring + metrics + query CLI + 2 review fixes)
+
+---
+
+### 2026-03-23 — Signal Detection Pipeline Complete + Session Audit
+
+**Theme:** Ship all 5 phases of intent-driven scanning in one session, run + audit live sessions, fix operational issues.
+
+**Delivered:**
+- **Phase 2:** Source scanner CLI + intent spec (`cli/source-scan.ts`, `src/lib/source-scanner.ts`)
+- **Phase 3:** Anti-signal detection with cross-source confirmation
+- **Phase 4:** Session loop integration (runSourceScan + mergeAndDedup in SCAN/GATE phases)
+- **Phase 5:** Z-score adaptive thresholds, multi-window baselines, convergence detection
+- **5 live sessions** (2 sentinel, 3 pioneer) — all published, all verified
+- **Session audit** — 6 findings: pioneer calibration fixed (-10), HARDEN JSON parse fixed
+- **Operational hardening** — SourceUsageTracker wired, attestation retry, anti-signal double-fetch
+- **Dev workflow corrected** — Fabric review_code for Tier 2+, summarize_git_diff on all commits, fix-all-findings rule
+- **mini-swe-agent research** — explored patterns, creative ideation, council debate → H2 plan
+
+**Key findings:**
+- Fabric review_code and Codex commit review are complementary (different detection domains)
+- Source scan 0 signals on first run is expected (baselines need population)
+- Algorithm and dev workflow are unconnected systems (PAI gap documented)
+
+**Tests:** 87 suites, 1341→1355 passing
+**Commits:** 18+ (signal phases + audit fixes + workflow + transcript)
+
+---
 
 ### 2026-03-21 — Claim-Driven Attestation Phases 2-4 (afternoon)
 
