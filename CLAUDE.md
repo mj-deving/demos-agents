@@ -12,7 +12,7 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Agent definitions, 
 - **SDK:** `@kynesyslabs/demosdk` v2.11.4 (import `/websdk` subpath directly)
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `src/lib/llm-provider.ts` (Claude CLI, OpenAI API, OpenAI-compatible, any CLI)
-- **Testing:** vitest (`npm test`). 1341 tests across 86 suites. All code changes must include tests.
+- **Testing:** vitest (`npm test`). 1355 tests across 87 suites. All code changes must include tests.
 - **Credential path:** `~/.config/demos/credentials` (XDG, mode 600). Legacy `.env` fallback. `--env` flag overrides.
 
 ## Project Structure
@@ -73,6 +73,11 @@ npx tsx cli/feed-mine.ts --agent sentinel --dry-run --start-offset 10000
 npx tsx cli/source-scan.ts --agent sentinel --pretty
 npx tsx cli/source-scan.ts --agent sentinel --intent "check crypto for big moves" --pretty
 npx tsx cli/source-scan.ts --agent sentinel --domain crypto --dry-run --pretty
+
+# Session transcript query (H2 observability)
+npx tsx cli/transcript-query.ts --agent sentinel --pretty          # all transcripts
+npx tsx cli/transcript-query.ts --agent sentinel --last 5 --pretty # last 5 sessions
+npx tsx cli/transcript-query.ts --agent sentinel --session 42 --json
 
 # Scheduled runs
 bash scripts/scheduled-run.sh                 # all 3 agents + lifecycle
