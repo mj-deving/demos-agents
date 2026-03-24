@@ -1,6 +1,6 @@
 # Session Transcript (H2) — Design Document
 
-> **Status:** Council-validated design (not yet implemented)
+> **Status:** Implemented (Steps 1-5 complete)
 > **Date:** 2026-03-24
 > **Author:** PAI Council session (4 perspectives × 3 rounds)
 > **Depends on:** Existing session-runner.ts phase boundaries

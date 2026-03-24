@@ -179,13 +179,12 @@ describe("pruneOldTranscripts", () => {
     writeFileSync(oldFile, "old\n");
     writeFileSync(newFile, "new\n");
 
-    // Backdate the old file's mtime
+    // Backdate the old file's mtime (sync to avoid race condition)
     const oldTime = new Date();
     oldTime.setDate(oldTime.getDate() - 31);
-    const { utimes } = require("node:fs");
-    utimes(oldFile, oldTime, oldTime, () => {});
+    const { utimesSync } = require("node:fs");
+    utimesSync(oldFile, oldTime, oldTime);
 
-    // Small delay for utimes to take effect
     pruneOldTranscripts(tmpDir, 30);
 
     expect(existsSync(oldFile)).toBe(false);
