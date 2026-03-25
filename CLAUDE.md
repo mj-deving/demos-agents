@@ -128,8 +128,8 @@ The quality gate determines whether a draft post is published or rejected. **Thi
 
 ### TLSN
 
-- **Status:** TLSN deactivated (2026-03-21). All agents on `dahr_only`. `highSensitivityRequireTlsn: false`.
-- **Policy:** TLSN is the gold standard (cryptographic MPC-TLS proof). DAHR is the current default. Revert to `tlsn_preferred` when MPC-TLS comes back online.
+- **Status:** TLSN reactivated (2026-03-25). All agents on `tlsn_preferred`. `highSensitivityRequireTlsn: false`.
+- **Policy:** TLSN is the gold standard (cryptographic MPC-TLS proof, 2.3x reaction multiplier per n=68 data). Falls back to DAHR on failure.
 - Playwright bridge only. maxRecvData 16KB. Cost ~12 DEM/attestation (testnet: free).
 
 ### Write Rate Limits & Budget
@@ -155,6 +155,10 @@ The quality gate determines whether a draft post is published or rejected. **Thi
 - Commit messages: clear "why", prefixed by area when helpful
 - File naming: kebab-case
 - TDD workflow: tests before implementation, both committed together
+- **Test quality enforcement (anti-vibe-testing):** Every test must have assertions. Enforced by two layers:
+  - **Layer 1 (hard gate):** `vitest globalSetup` scans all test files before running, fails suite if any `it()/test()` block has zero `expect()/assert` calls. See `tests/setup-test-quality.ts`.
+  - **Layer 2 (write-time warning):** PostToolUse hook `TestQualityGuard.hook.ts` fires on Write/Edit of `*.test.ts` files, warns immediately if assertion-free tests are detected.
+  - Validator: `src/lib/test-quality-validator.ts` — shared analysis logic. Handles braces in strings, template literals, and comments.
 - Every session ends with a commit + push
 
 ### Development Workflow (autonomous, tiered)

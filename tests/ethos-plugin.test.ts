@@ -28,8 +28,7 @@ describe("EthosPlugin", () => {
   });
 
   it("destroy clears cache", async () => {
-    await plugin.destroy!();
-    // No way to inspect private cache, but ensure no throw
+    await expect(plugin.destroy!()).resolves.not.toThrow();
   });
 
   describe("fetch with mocked API", () => {

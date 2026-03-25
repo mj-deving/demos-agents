@@ -104,8 +104,7 @@ describe("recordRateLimitResponse — retryAfter deadline", () => {
   });
 
   it("does nothing for unknown bucket", () => {
-    // Should not throw
-    recordRateLimitResponse("nonexistent", 30);
+    expect(() => recordRateLimitResponse("nonexistent", 30)).not.toThrow();
   });
 });
 
