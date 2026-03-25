@@ -21,7 +21,7 @@ import { resolve } from "node:path";
 import { connectWallet, apiCall, info, setLogAgent } from "../src/lib/sdk.js";
 import { ensureAuth } from "../src/lib/auth.js";
 import { resolveAgentName, loadAgentConfig } from "../src/lib/agent-config.js";
-import { NUMERIC_CLAIM_PATTERN } from "../src/lib/feed-filter.js";
+import { selectReaction, enforceDisagreeMinimum } from "../src/lib/engage-heuristics.js";
 
 // ── Arg Parsing ────────────────────────────────────
 
@@ -99,48 +99,6 @@ interface EngageOutput {
   errors: number;
 }
 
-// ── Reaction Selection ─────────────────────────────
-
-/**
- * Decide whether and how to react to a post.
- * Mirrors react-to-posts.ts heuristics but returns structured data.
- */
-function selectReaction(
-  post: any,
-  ourAddress: string,
-  qualityFloor: number
-): { reaction: "agree" | "disagree"; reason: string } | null {
-  const author = (post.author || post.address || "").toLowerCase();
-  if (author === ourAddress.toLowerCase()) return null;
-
-  const tx = post.txHash;
-  if (!tx) return null;
-
-  // Skip already reacted
-  if (post.myReaction) return null;
-
-  const hasAttestation =
-    post.payload?.sourceAttestations?.length > 0 ||
-    post.payload?.tlsnAttestations?.length > 0;
-  const cat = String(post.payload?.cat || post.cat || "?").toUpperCase();
-  const score = post.score ?? post.qualityScore ?? 0;
-  const text = String(post.payload?.text || post.text || "");
-
-  if (score < qualityFloor) return null;
-
-  if (hasAttestation && score >= 80) {
-    return { reaction: "agree", reason: `attested + high score ${score}` };
-  }
-  if (hasAttestation && score >= qualityFloor && (cat === "ANALYSIS" || cat === "PREDICTION")) {
-    return { reaction: "agree", reason: `attested ${cat}, score ${score}` };
-  }
-  if (!hasAttestation && score >= qualityFloor && NUMERIC_CLAIM_PATTERN.test(text)) {
-    return { reaction: "disagree", reason: `unattested numeric claim, score ${score}` };
-  }
-
-  return null;
-}
-
 // ── Main ───────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -196,6 +154,7 @@ async function main(): Promise<void> {
   let errors = 0;
   let agrees = 0;
   let disagrees = 0;
+  const processedTxHashes = new Set<string>();
 
   for (const post of allPosts) {
     if (agrees + disagrees >= maxReactions) break;
@@ -205,6 +164,8 @@ async function main(): Promise<void> {
       skipped++;
       continue;
     }
+
+    processedTxHashes.add(post.txHash);
 
     // Cast reaction via API
     const res = await apiCall(`/api/feed/${encodeURIComponent(post.txHash)}/react`, token, {
@@ -241,6 +202,54 @@ async function main(): Promise<void> {
 
     // Respectful rate limiting
     await new Promise((r) => setTimeout(r, 300));
+  }
+
+  // Second pass: enforce minDisagreePerSession
+  const minDisagree = config.engagement.minDisagreePerSession || 0;
+  if (minDisagree > 0 && disagrees < minDisagree) {
+    const remainingPosts = allPosts.filter((p: any) => !processedTxHashes.has(p.txHash));
+    const additionalTargets = enforceDisagreeMinimum({
+      remainingPosts,
+      currentDisagrees: disagrees,
+      minDisagreePerSession: minDisagree,
+      ourAddress: address,
+      qualityFloor,
+    });
+
+    for (const target of additionalTargets) {
+      const post = remainingPosts.find((p: any) => p.txHash === target.txHash);
+      if (!post) continue;
+
+      const res = await apiCall(`/api/feed/${encodeURIComponent(target.txHash)}/react`, token, {
+        method: "POST",
+        body: JSON.stringify({ type: "disagree" }),
+      });
+
+      if (res.ok) {
+        const topic =
+          post.payload?.tags?.[0] ||
+          post.payload?.topic ||
+          post.payload?.cat ||
+          "unknown";
+
+        targets.push({
+          txHash: target.txHash,
+          author: (post.author || "").slice(0, 16),
+          reaction: "disagree",
+          topic,
+          score: post.score ?? post.qualityScore ?? 0,
+          reason: target.reason,
+        });
+        disagrees++;
+
+        info(`👎 DISAGREE ${target.txHash.slice(0, 12)}... (${target.reason})`);
+      } else {
+        info(`⚠️ Failed to react on ${target.txHash.slice(0, 12)}...: ${res.status}`);
+        errors++;
+      }
+
+      await new Promise((r) => setTimeout(r, 300));
+    }
   }
 
   // Build output
