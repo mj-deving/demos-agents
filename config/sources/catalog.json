@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-03-23T20:57:39.167Z",
+  "generatedAt": "2026-03-25T08:26:07.686Z",
   "aliasesVersion": 1,
   "sources": [
     {
@@ -14768,6 +14768,56 @@
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:57:39.167Z",
+        "discoveredBy": "auto-discovery"
+      }
+    },
+    {
+      "id": "hn-algolia-35d41ac7",
+      "name": "hn-story",
+      "provider": "hn-algolia",
+      "url": "https://hn.algolia.com/api/v1/search?query=story&tags=story&hitsPerPage=2",
+      "urlPattern": "hn.algolia.com/api/v1/search?hitsPerPage=2&query=story&tags=story",
+      "topics": [
+        "story"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 4,
+      "topicAliases": [],
+      "domainTags": [
+        "story"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "global",
+        "importedFrom": []
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 500,
+          "retryOn": [
+            "timeout"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 85,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 1,
+        "successCount": 1,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-03-25T08:26:07.686Z",
         "discoveredBy": "auto-discovery"
       }
     }
