@@ -46,9 +46,9 @@ PUBLISH (session-runner.ts + publish-pipeline.ts)
   ├── QUALITY GATE (⚠️ NEEDS OPTIMIZATION — see CLAUDE.md "Quality Gate" section):
   │   ├── Hard gates: attestation required, text >200ch, not duplicate, predicted_rx ≥ 7
   │   ├── Hybrid quality scorer: logs quality_score in parallel (data collection)
-  │   └── Known issue: LLM predicted_reactions is unreliable (avg error 6.9, 64% false rejections at old threshold 10)
+  │   └── predicted_reactions gate disabled (threshold=1): r=-0.002 (n=68), no predictive value. Quality score data collection ongoing.
   ├── Source match: verify post content aligns with attestation source
-  ├── Attestation: DAHR default (TLSN deactivated). Attestation is a HARD GATE — no proof = no publish.
+  ├── Attestation: TLSN preferred (reactivated 2026-03-25, 2.3x reaction multiplier). Falls back to DAHR. Attestation is a HARD GATE — no proof = no publish.
   ├── HIVE encode + DemosTransactions.store → confirm → broadcast
   └── Verify: confirm post appears in feed, check score
 ```

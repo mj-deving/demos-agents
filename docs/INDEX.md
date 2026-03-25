@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-24 | **SDK:** 2.11.4 | **Tests:** 87 suites, 1355 passing | **Agents:** 6 defined, 3 publishing
+**Last updated:** 2026-03-25 | **SDK:** 2.11.4 | **Tests:** 89 suites, 1383 passing | **Agents:** 6 defined, 3 publishing
 
 ---
 
@@ -16,17 +16,23 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - 3 agents actively publishing to SuperColony (sentinel, crawler, pioneer)
 - 20 plugins (9 session loop + 3 SC API + 4 omniweb real + 4 omniweb scaffold→silent-fail)
 - Event-driven reactive loop alongside cron
-- TLSN + DAHR attestation pipeline functional (TLSN deactivated 2026-03-21, DAHR primary)
+- TLSN + DAHR attestation pipeline functional (TLSN reactivated 2026-03-25, `tlsn_preferred` mode — 2.3x reaction multiplier per n=68 data)
 - Post-quantum wallet signing available (Falcon via Demos SDK)
 - CCI identity queries wired (RPC-direct, bypassing NAPI crash in abstraction barrel)
 - Claim-driven attestation (Phases 1-4): extract claims → surgical URLs → attest per-claim → verify values
 - **Intent-driven signal detection pipeline (Phases 1-5 COMPLETE):** threshold/change/z-score detection, anti-signals with cross-source confirmation, source scanning CLI, session loop integration, convergence detection
 - **Session transcript (H2 SHIPPED):** append-only JSONL event logger, phase metrics, query CLI
 - **Operational hardening:** SourceUsageTracker, attestation retry with backoff, anti-signal double-fetch verification
+- **Correlation analysis (n=68):** `predicted_reactions` gate disabled (r=-0.002, no predictive value). Quality gate threshold 7→1.
+- **Attestation policy enforcement:** Executor respects `dahr_only`/`tlsn_preferred`/`tlsn_only`; claim-driven path no longer bypasses policy.
+- **Test quality enforcement (anti-vibe-testing):** Two-layer gate prevents assertion-free tests — vitest globalSetup (hard gate) + PostToolUse hook (write-time warning).
+- **Improvement dedup:** Fuzzy normalization strips numeric values and hex hashes, preventing 60+ duplicate improvements per agent.
+- **Source URL resolution:** `buildCandidates` extracts URL params from static source URLs, broadcasts to operation variable aliases.
 
 **Where we're going:**
-- Collect transcript data (10-20 sessions) to evaluate H3 (protocol phases) and H1 (LLM ordering)
-- Quality score correlation study using transcript + quality-data JSONL
+- Monitor TLSN attestation success rates now that it's reactivated
+- Continue collecting quality_score data (12 entries, need 20+ with actuals for meaningful correlation)
+- H3/H1 deferred indefinitely (n=2 sessions showed no phase coupling waste, publish latency is blockchain, not orchestration)
 - CCI identity as root → Agent Auth Protocol as session auth layer
 - Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy
 
@@ -41,7 +47,7 @@ What Demos offers vs what we use. **Updated each session.**
 | **Wallet + Transactions** | `websdk` | ✅ Active | PQC (Falcon/ML-DSA) added 2026-03-20 |
 | **SuperColony API** | `websdk` + fetch | ✅ Active | Feed, publish, react, tip — all working |
 | **DAHR Attestation** | `websdk` (proxy) | ✅ Active | Primary attestation method |
-| **TLSN Attestation** | `tlsnotary` | ✅ Active | MPC-TLS, Playwright bridge. KyneSys proxy intermittent |
+| **TLSN Attestation** | `tlsnotary` | ✅ Active | MPC-TLS, Playwright bridge. Reactivated 2026-03-25, `tlsn_preferred`. 2.3x reaction multiplier. |
 | **Cross-Chain Identity** | `abstraction` | ⚠️ RPC-direct | `Identities` class SIGSEGV on import (NAPI crash). RPC calls work. |
 | **Web2 Identity Linking** | `abstraction` | ⚠️ Blocked | Same NAPI crash. SDK methods exist for Twitter/GitHub/Discord/Telegram |
 | **ZK Identity** | `encryption/zK` | 🔲 Not started | Groth16 ZK-SNARKs for privacy-preserving attestation. Available in SDK. |
@@ -68,7 +74,7 @@ What Demos offers vs what we use. **Updated each session.**
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
 | [loop-heuristics.md](loop-heuristics.md) | `current` | 2026-03-20 | **Single source of truth** for SCAN→GATE→PUBLISH pipeline, agent differentiation, 8 constitutional rules |
-| [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (87 suites now). Missing signal-detection, transcript, source-scanner files. |
+| [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (89 suites now). Missing signal-detection, transcript, source-scanner, test-quality-validator files. |
 | [omniweb-agent-architecture.md](omniweb-agent-architecture.md) | `stale` | 2026-03-18 | Two-tier agent model. References omniweb-runner.ts which doesn't exist. Aspirational, not current. |
 | [agent-workspace.md](agent-workspace.md) | `reference` | 2026-03-17 | YAML agent config format spec. agents/ directory exists but format not fully enforced by loader yet. |
 
@@ -105,6 +111,32 @@ What Demos offers vs what we use. **Updated each session.**
 ## Session Changelog
 
 Most recent first. Each entry captures what changed, what was learned, what's next.
+
+### 2026-03-24/25 — Correlation Analysis, TLSN Reactivation, Test Quality Enforcement
+
+**Theme:** Data-driven tuning — run sessions, collect data, let evidence drive decisions. Anti-vibe-testing enforcement.
+
+**Delivered:**
+- **7 bugs fixed:** attestation policy bypass (claim path ignored `dahr_only`), `tlsn_only` silent fallback, improvement dedup (exact→fuzzy), EMA bounds (-5→-15), DefiLlama URL (`compound`→`compound-finance`), defi preflight URL mismatch (declarative engine ignored source URL), CLI empty output retry.
+- **Correlation analysis (n=68):** `predicted_reactions` has zero correlation with actuals (r=-0.002). TLSN 14.0 vs DAHR 6.1 avg reactions (2.3x). ANALYSIS 8.9 vs QUESTION 5.0 avg (1.8x). Threshold lowered 7→1.
+- **TLSN reactivated:** MPC-TLS back online (diagnostic confirmed). All agents switched to `tlsn_preferred`.
+- **Test quality enforcement:** Two-layer anti-vibe-testing gate (vitest globalSetup + PostToolUse hook). Validator handles braces in strings/templates/comments. 2 genuinely assertion-free tests fixed.
+- **Improvement cleanup:** 115 stale items purged, fuzzy dedup prevents re-accumulation (normalizes numeric values + hex hashes).
+- **H3/H1 evaluation:** Implement neither — phases are causally coupled, publish latency is blockchain (52% of session time), not orchestration. Council recommendation stands.
+- **Transcripts validated:** H2 JSONL pipeline confirmed working, query CLI operational.
+- **12 quality_score data points** collected (6 sentinel, 6 pioneer) — past threshold for future analysis.
+
+**Key findings:**
+- The LLM cannot predict social dynamics (6.0rx systematic over-prediction)
+- Attestation type is the strongest engagement signal, not content quality
+- "Markdown instructions are suggestions; code modules are laws" — structural enforcement beats prompt-based rules
+- URL param extraction needs broadcast to ALL operation variable aliases, not just the named variable
+- Improvement dedup fails when numbers change between sessions ("over-prediction by 13.0rx" ≠ "10.6rx")
+
+**Tests:** 89 suites, 1383 passing (up from 87/1355, +28 tests)
+**Commits:** 10 pushed to main
+
+---
 
 ### 2026-03-24 — Session Transcript (H2) Shipped
 
