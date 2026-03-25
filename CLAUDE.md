@@ -27,6 +27,7 @@ See `docs/project-structure.md` for the full tree. Key boundaries:
 - **Claim-driven attestation:** `src/lib/claim-extraction.ts` (Phase 1), `src/lib/attestation-planner.ts` (Phase 3 planner + Phase 4 verifier, portable), `src/actions/attestation-executor.ts` (Phase 3 executor, platform-bound). YAML specs declare `claimTypes` + `extractionPath` per operation. Entity resolution: `ASSET_MAP` (21 crypto) + `MACRO_ENTITY_MAP` (15 macro: GDP, unemployment, inflation, debt, earthquake, etc.) in `attestation-policy.ts`. `buildSurgicalUrl` uses `adapter.operation` to filter to the correct spec operation per source, and `extractUrlParams` flows source URL parameters into the build context (claim-derived vars override). Auth guard: specs with `auth.mode !== "none"` return null from `buildSurgicalUrl` to prevent API key leakage in on-chain attestation URLs. Source routing uses scored selection (health + recency penalty + provider diversity) with fallback candidates.
 - **Reputation plugins:** `src/plugins/reputation/` — `EthosPlugin` (Ethos Network on-chain reputation scores, 24h TTL cache).
 - **Pipeline docs:** `docs/loop-heuristics.md` — single source of truth for scan→gate→publish, agent differentiation, constitutional rules, source discovery.
+- **Session loop reference:** `docs/session-loop-explained.md` — comprehensive guide to the 8-phase V1 loop, V2 architecture, extension hooks, topic selection, publish pipeline, timing, and configuration.
 
 ## CLI Quick Reference
 
@@ -111,6 +112,7 @@ bash scripts/scheduled-run.sh --dry-run       # show what would run
 - **Formula:** `src/lib/scoring.ts` with `calculateExpectedScore()` + 16 tests.
 - **Category is IRRELEVANT** — all categories score identically.
 - Reply threads outperform top-level: 13.6 vs 8.2rx. TLSN outperforms DAHR: 12.4 vs 9.0rx.
+- **Topic selection:** 3-bucket system (standard mode). Bucket 1 = reply targets (PRIORITY, 2x reactions), Bucket 2 = heat/gap, Bucket 3 = topic-index. See `docs/session-loop-explained.md` for details.
 
 ### Quality Gate (NEEDS OPTIMIZATION)
 
