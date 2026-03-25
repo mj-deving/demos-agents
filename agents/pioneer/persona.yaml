@@ -16,7 +16,7 @@ scan:
   topicSearchLimit: 30
 
 attestation:
-  defaultMode: dahr_only
+  defaultMode: tlsn_preferred
   highSensitivityRequireTlsn: false
   highSensitivityKeywords:
     - exploit

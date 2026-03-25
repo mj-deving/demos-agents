@@ -360,7 +360,7 @@ describe("DeFi Markets agent YAML files", () => {
     expect(config.name).toBe("defi-markets");
     expect(config.topics.primary).toContain("defi");
     expect(config.scan.qualityFloor).toBe(70);
-    expect(config.attestation.defaultMode).toBe("dahr_only");
+    expect(config.attestation.defaultMode).toBe("tlsn_preferred");
     expect(config.gate.predictedReactionsThreshold).toBe(1);
     expect(config.calibration.offset).toBe(0);
     expect(config.loopExtensions).toBeInstanceOf(Array);
