@@ -16,7 +16,7 @@ scan:
   topicSearchLimit: 30
 
 attestation:
-  defaultMode: tlsn_preferred
+  defaultMode: dahr_only  # TLSN disabled: proof generation hangs (300s timeout). Re-enable when ecosystem proves viable.
   highSensitivityRequireTlsn: false
   highSensitivityKeywords:
     - exploit
@@ -32,17 +32,17 @@ attestation:
 
 engagement:
   minDisagreePerSession: 1
-  replyMinParentReactions: 6
+  replyMinParentReactions: 3  # Lowered: replies get 2x reactions, cast wider net
   maxReactionsPerSession: 5
 
 tipping:
-  enabled: false
+  enabled: true
   maxTipsPerSession: 2
   maxPerRecipientPerDay: 2
   minMinutesBetweenTips: 5
-  minSessionsBeforeLive: 3
+  minSessionsBeforeLive: 0  # 38 sessions completed, warmup long past
   minScore: 80
-  requireAttestation: true
+  requireAttestation: false  # Tip quality work regardless of attestation method
 
 gate:
   predictedReactionsThreshold: 1  # Data: r=-0.002 (n=68), no predictive value

@@ -536,14 +536,14 @@ function sleep(ms: number): Promise<void> {
 
 /** Default phase budgets in seconds. Configurable via strategy.yaml phaseBudgets. */
 const DEFAULT_PHASE_BUDGETS: Record<PhaseName, number> = {
-  audit: 120,     // 2 min
-  scan: 180,      // 3 min
-  engage: 300,    // 5 min
-  gate: 300,      // 5 min
-  publish: 900,   // 15 min (TLSN can take 3+ min per attestation)
-  verify: 120,    // 2 min
-  review: 180,    // 3 min
-  harden: 120,    // 2 min
+  audit: 30,      // 30s — API calls only, no LLM
+  scan: 30,       // 30s — cached feed + source scan
+  engage: 30,     // 30s — reactions are fast API calls
+  gate: 30,       // 30s — local checks + 1 source fetch
+  publish: 120,   // 2 min — LLM gen + DAHR attest + broadcast (no TLSN)
+  verify: 30,     // 30s — single API check + 1 retry
+  review: 30,     // 30s — local analysis
+  harden: 30,     // 30s — LLM classify (capped at 10 findings)
 };
 
 /**
@@ -1357,36 +1357,8 @@ function extractTopicsFromScan(
   if (mode === "standard") {
     const usedTopics = new Set(topics.map((t) => t.topic.toLowerCase()));
 
-    // Bucket 2: heat or gap/opinion (1 slot)
-    let bucket2Filled = false;
-    if (scan.heat?.topic && !usedTopics.has(scan.heat.topic.toLowerCase())) {
-      topics.push({
-        topic: scan.heat.topic,
-        category: "ANALYSIS",
-        reason: `hot topic (${scan.heat.reactions || 0} reactions)`,
-      });
-      usedTopics.add(scan.heat.topic.toLowerCase());
-      bucket2Filled = true;
-    }
-
-    if (!bucket2Filled) {
-      const gaps = scan.gaps?.topics || [];
-      for (const gap of gaps.slice(0, 1)) {
-        if (!usedTopics.has(gap.toLowerCase())) {
-          // Gap without heat gets OPINION (fresh perspective on uncovered area)
-          const category = !scan.heat?.topic ? "OPINION" : "ANALYSIS";
-          topics.push({
-            topic: gap,
-            category,
-            reason: category === "OPINION" ? "gap — opinion opportunity" : "gap in feed coverage",
-          });
-          usedTopics.add(gap.toLowerCase());
-        }
-      }
-    }
-
-    // Bucket 3: reply candidate (1 slot)
-    const minReplyReactions = agentConfig.engagement.replyMinParentReactions || 8;
+    // Bucket 1 (PRIORITY): reply candidate — replies get 2x reactions (13.6 vs 8.2 avg)
+    const minReplyReactions = agentConfig.engagement.replyMinParentReactions || 3;
     const rawPosts = Array.isArray(scan.rawPosts) ? scan.rawPosts : [];
     if (rawPosts.length > 0) {
       const countRx = (p: any): number => (p.reactions?.agree || 0) + (p.reactions?.disagree || 0);
@@ -1416,6 +1388,36 @@ function extractTopicsFromScan(
               text,
             },
           });
+          usedTopics.add(replyTopic);
+        }
+      }
+    }
+
+    // Bucket 2: heat or gap/opinion (1 slot) — only if no reply target found
+    if (topics.length === 0 || !topics.some(t => t.replyTo)) {
+      let bucket2Filled = false;
+      if (scan.heat?.topic && !usedTopics.has(scan.heat.topic.toLowerCase())) {
+        topics.push({
+          topic: scan.heat.topic,
+          category: "ANALYSIS",
+          reason: `hot topic (${scan.heat.reactions || 0} reactions)`,
+        });
+        usedTopics.add(scan.heat.topic.toLowerCase());
+        bucket2Filled = true;
+      }
+
+      if (!bucket2Filled) {
+        const gaps = scan.gaps?.topics || [];
+        for (const gap of gaps.slice(0, 1)) {
+          if (!usedTopics.has(gap.toLowerCase())) {
+            const category = !scan.heat?.topic ? "OPINION" : "ANALYSIS";
+            topics.push({
+              topic: gap,
+              category,
+              reason: category === "OPINION" ? "gap — opinion opportunity" : "gap in feed coverage",
+            });
+            usedTopics.add(gap.toLowerCase());
+          }
         }
       }
     }
@@ -3848,6 +3850,16 @@ async function main(): Promise<void> {
     console.log(`  Loop: v2 (SENSE → ACT → CONFIRM)${flags.shadow ? " [SHADOW]" : ""}`);
   }
 
+  // Session-level hard timeout — 180s (3 min) without TLSN, sessions should be <60s
+  const SESSION_TIMEOUT_MS = 180_000;
+  const sessionTimer = setTimeout(() => {
+    console.error(`\n  ⏰ SESSION TIMEOUT (${SESSION_TIMEOUT_MS / 1000}s) — saving state and exiting`);
+    saveState(state, sessionsDir);
+    console.error(`  Resume with: npx tsx cli/session-runner.ts --agent ${flags.agent} --resume --pretty`);
+    process.exit(2);
+  }, SESSION_TIMEOUT_MS);
+  sessionTimer.unref(); // Don't prevent clean exit
+
   let shuttingDown = false;
   process.on("SIGINT", () => {
     if (shuttingDown) process.exit(1);
@@ -4083,6 +4095,7 @@ async function main(): Promise<void> {
       }
     }
 
+    clearTimeout(sessionTimer);
     incrementSessionNumber();
     clearState(sessionNumber, sessionsDir, flags.agent);
     info("Session state cleared.");
