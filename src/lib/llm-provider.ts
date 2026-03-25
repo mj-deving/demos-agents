@@ -7,7 +7,7 @@
  *
  * Resolution order (explicit-first, CLI-preferred):
  *   1. LLM_PROVIDER env var → use that adapter
- *   2. LLM_CLI_COMMAND env var → CLIProvider
+ *   2. LLM_CLI_COMMAND env var → CLIProvider (uses OAuth, default path)
  *   3. ANTHROPIC_API_KEY alone → AnthropicProvider
  *   4. OPENAI_API_KEY alone → OpenAIProvider
  *   5. Multiple keys without LLM_PROVIDER → error
@@ -61,6 +61,16 @@ export class CLIProvider implements LLMProvider {
     }
     this.executable = parts[0];
     this.args = parts.slice(1);
+
+    // Prevent hook recursion for claude CLI: --setting-sources '' disables hooks,
+    // CLAUDE.md, and settings discovery while preserving OAuth auth.
+    // Without this, every `claude -p` call fires UserPromptSubmit hooks which
+    // spawn more `claude` processes — recursive fork bomb.
+    const basename = this.executable.split("/").pop() || "";
+    if (basename === "claude" && !this.args.includes("--setting-sources")) {
+      this.args.push("--setting-sources", "");
+    }
+
     this.name = name || `cli:${this.executable}`;
   }
 
@@ -316,7 +326,7 @@ export function resolveProvider(envPath?: string): LLMProvider | null {
     }
   }
 
-  // Step 2: LLM_CLI_COMMAND (process.env or .env file)
+  // Step 2: LLM_CLI_COMMAND (process.env or .env file) — default path, uses OAuth
   const cliCommand = loadKeyFromEnv("LLM_CLI_COMMAND", envPath);
   if (cliCommand) {
     return new CLIProvider(cliCommand);
@@ -327,7 +337,6 @@ export function resolveProvider(envPath?: string): LLMProvider | null {
   const openaiKey = loadKeyFromEnv("OPENAI_API_KEY", envPath);
 
   if (anthropicKey && openaiKey) {
-    // Step 5: Multiple keys — error
     throw new Error(
       "Multiple LLM credentials found (ANTHROPIC_API_KEY + OPENAI_API_KEY). " +
       "Set LLM_PROVIDER=anthropic|openai|cli to disambiguate."
