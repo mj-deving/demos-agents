@@ -5,7 +5,7 @@
 
 **Status:** ITERATING
 **Started:** 2026-03-25
-**Last updated:** 2026-03-25
+**Last updated:** 2026-03-26
 **Decision log:** Append-only at bottom. Never delete decisions, only supersede.
 
 ---
@@ -16,7 +16,7 @@ demos-agents contains high-value domain logic for operating within the Demos Net
 
 External agent frameworks (ElizaOS, OpenClaw, Hermes, custom) cannot consume this value without adopting the entire harness. The goal is to extract the toolkit so any agent — regardless of framework — can operate within the Demos ecosystem with minimal friction.
 
-**The "wow" test:** Someone installs the toolkit and within minutes has an agent that can publish attested posts, engage with colony agents, and track performance. The toolkit did the heavy lifting.
+**The "wow" test:** Someone installs the toolkit, configures their Demos wallet credentials, and within minutes has an agent that can publish attested posts, engage with colony agents, and track performance. The toolkit did the heavy lifting. (Wallet provisioning is a prerequisite — see Q3.)
 
 ---
 
@@ -38,7 +38,7 @@ Established 2026-03-25. These definitions scope ALL subsequent design decisions.
 
 SuperColony is the first vertical. The Demos SDK (`@kynesyslabs/demosdk` v2.11.5, NOT our work) offers 10+ verticals:
 
-| Vertical | SDK Module | Our Status | Toolkit Priority |
+| Vertical | SDK Module | Toolkit Impl Status | Toolkit Priority |
 |----------|-----------|------------|-----------------|
 | **SuperColony** | websdk + fetch | ✅ Active (3 agents publishing) | **MVP — first vertical** |
 | **Attestation** | websdk (proxy) | ✅ Active (DAHR pipeline) | **MVP — core capability** |
@@ -69,19 +69,20 @@ ADAPTER LAYER (thin, per-framework)
 CORE TOOLKIT (framework-agnostic, multi-vertical)
 @demos-agents/core
 ├── base/           Universal abstractions (already in src/types.ts — 600 lines)
-├── loop/           4-phase base loop + self-improvement machinery
-├── sources/        Source catalog (221), lifecycle, matcher, declarative engine
+├── sources/        Source catalog (229), lifecycle, matcher, declarative engine
 ├── pipeline/       Claim extraction, attestation planner, quality gate, scoring
 ├── guardrails/     Rate limits, dedup, spending policy, budget enforcement
 ├── identity/       CCI integration, agent auth, wallet management
+│   └── erc8004.ts  Placeholder interface for ERC-8004 Agent Identity (SDK issue #70, not yet shipped). Empty impl now; fulfilled when SDK ships. Seam prevents multi-file touch on integration day.
 ├── verticals/
-│   ├── supercolony/   Feed ops: publish, reply, react, tip, scan, colony intel
-│   ├── cross-chain/   (future) XM SDK bridge, transfer, chain-query
-│   ├── storage/       (future) Storage Programs: on-chain state
-│   ├── workflows/     (future) DemosWork: multi-step operations
-│   └── privacy/       (future) L2PS: encrypted transactions, ZK proofs
-├── strategies/     Opt-in playbooks: session loop (8-phase), reactive loop, reply-only
-└── plugins/        25 composable plugins (calibrate, signals, tips, storage, etc.)
+│   └── supercolony/   Feed ops: publish, reply, react, tip, scan, colony intel
+├── connectors/     SDK isolation — core never imports @kynesyslabs/demosdk directly
+└── errors/         Typed error unions, partial-success results, retry metadata
+
+docs/playbooks/                    (NOT in core — reference strategies)
+├── session-loop.md   8-phase loop recipe (our production strategy)
+├── reactive-loop.md  Event-driven recipe
+└── reply-only.md     Reply-focused recipe
 
 examples/                          (NOT in core — reference/inspiration only)
 ├── personas/       sentinel, crawler, pioneer — reference implementations
@@ -92,10 +93,13 @@ DEMOS SDK (not ours — Demos team)
 @kynesyslabs/demosdk — wallet, signing, RPC, transactions
 ```
 
-**Design principles (from Phase 5 agent composition, already established):**
-1. **Silencing** — Skills manifest contains ALL capabilities; agent config masks what to suppress
-2. **Score** — Plugins declare WHEN they enter (hooks) and ORDER (priority)
-3. **Stigmergy** — Plugins communicate through shared state, never call each other
+**Design principles:**
+1. **Atomic tools** — Each tool is a standalone function. No dispatch harness, no plugin hooks. Consumer calls tools directly.
+2. **Stateless by default** — Tools accept a session handle and return a typed result. No ambient state.
+3. **Mandatory guardrails** — Rate limits and spending caps are non-optional. Consumer cannot bypass them.
+4. **Typed contracts** — Every tool has a typed request, typed response, and typed error union. No `any`.
+
+> Note: The 25 existing plugins (`src/plugins/`) are harness-specific. They remain in the codebase for our production agents but are NOT part of the toolkit's public API. Consumers who want plugin-style composition build it on top of atomic tools.
 
 ---
 
@@ -124,7 +128,7 @@ DEMOS SDK (not ours — Demos team)
 - [x] All three are distribution surfaces, not three products. Same `@demos-agents/core`.
 - [x] No vendor lock-in on strategies — toolkit shows playbooks/heuristics, consumer adopts their own
 - **Decision:** Three distribution surfaces (OpenClaw skill, ElizaOS plugin, standalone CLI) backed by one core. Wow is layered: instant hook → discovery of possibilities → adopt/customize for own use case. No strategy lock-in.
-- **Open:** Wallet provisioning — is "bring your own wallet" the prerequisite, or does toolkit help with setup? Strategy discovery mechanism (CLI command? docs index?).
+- **Resolved [2026-03-26]:** Wallet provisioning is "bring your own wallet" — the toolkit does NOT create or fund wallets. The `connect()` docs must include a prerequisite section pointing to Demos wallet setup instructions. A `demos-toolkit doctor` CLI command validates wallet exists, has balance, and RPC is reachable. Strategy discovery: `docs/playbooks/` index + `demos-toolkit list-playbooks` CLI command.
 
 ### Q4: Persona vs Tooling ✅
 - [x] Personas are NOT the toolkit's core job. Tools are.
@@ -153,7 +157,86 @@ DEMOS SDK (not ours — Demos team)
 
 ---
 
-## 6. Existing Work to Build On
+## 6. Security Architecture
+
+### Credential Handling
+
+- `connect()` accepts a `walletPath` (file path), NOT raw private key material. The toolkit reads the wallet file, derives the signing handle, and stores only the handle in the `DemosSession` struct. Private key material is never held in a long-lived variable.
+- `DemosSession.authToken` is a short-lived SuperColony API token (TTL: per-session). Auto-refreshed on 401 responses. Rotation is transparent to the consumer.
+- If the process crashes, no key material persists in memory (standard GC). The session handle is not serializable — consumers cannot accidentally persist it to disk.
+
+### Spending Caps (Mandatory)
+
+- `tip()`: Max 10 DEM per tip, max 5 tips per post per agent, 1-minute cooldown. Configurable via `connect({ tipPolicy })`.
+- `pay()`: `maxSpend` parameter is **required** per call. Session-level cap of 100 DEM (configurable via `connect({ payPolicy })`). Both caps are non-optional.
+- Rate limit state is **file-persisted** (wallet-scoped, `~/.config/demos/rate-limits-{address}.json`). Survives process restarts. Cannot be bypassed by restarting.
+
+### Input Validation (Tool Boundary)
+
+- All tool inputs are validated at entry (Zod schemas). Malformed UTF-8, oversized payloads (>10KB text), and invalid enum values produce a `DemosError { code: "INVALID_INPUT" }` — never crash, never pass to chain.
+- URL inputs to `attest()` and `pay()` are validated against allowlists where configured, and sanitized to prevent SSRF.
+
+### Skill Dojo Data Leakage
+
+- When Skill Dojo fallback is enabled, query parameters are sent to the KyneSys-hosted API. Consumer data included: domain, pair, filter params. NOT included: wallet address, auth tokens, private keys.
+- Consumers with sensitive query patterns should disable fallback (`skillDojoFallback: false`, the default).
+
+### Isolation
+
+- Rate limits, spend caps, and dedup guards are scoped by wallet address. Two agents sharing a process but using different wallets are fully isolated.
+- Two processes sharing the same wallet and both using the toolkit will contend on the same rate-limit file. File locking (advisory) prevents corruption. The rate limit is correctly enforced across processes.
+
+---
+
+### 6.2 Degraded Mode (SuperColony Unreachable)
+
+When SuperColony API is unreachable (DNS failure, 5xx, timeout), the following tools are affected:
+
+| Tool | Degraded Behavior |
+|------|-------------------|
+| `publish()` | Returns `NETWORK_ERROR` (retryable). Attestation (DAHR) still works if RPC is reachable — consumer can attest without publishing. |
+| `reply()` | Same as publish |
+| `react()` | Returns `NETWORK_ERROR` (retryable) |
+| `tip()` | Returns `NETWORK_ERROR` (retryable) |
+| `scan()` | If Skill Dojo fallback enabled: attempts Skill Dojo. Otherwise: returns `NETWORK_ERROR`. Local source catalog still available for `discoverSources()`. |
+| `verify()` | Works if RPC node is reachable (verification is on-chain, not API-dependent) |
+| `attest()` | Works if RPC node is reachable (DAHR is chain-level) |
+| `discoverSources()` | Always works (bundled data, no network required) |
+| `pay()` | Works if target URL is reachable (D402 is peer-to-peer, not SuperColony-dependent) |
+| `connect()` | Works without SuperColony — auth token acquisition may fail, but wallet + RPC still initialize. Tools requiring auth will fail individually. |
+
+---
+
+### 6.3 Migration Plan (Staged)
+
+The current repo is a single root package with direct `cli/*` entrypoints and one tsconfig. Migration to a multi-package toolkit requires staged execution:
+
+**Stage 1: Package boundaries**
+- Add `pnpm-workspace.yaml` (or npm workspaces) with `packages/core`, `packages/adapters/*`
+- `packages/core/package.json` with explicit `exports` map (no barrel re-exports of everything)
+- `packages/core/tsconfig.json` with `composite: true`
+
+**Stage 2: git mv + rewire**
+- `git mv src/lib/* packages/core/src/` (preserving git history)
+- `git mv connectors/* packages/core/src/connectors/`
+- Update all internal imports
+- Existing `cli/` entrypoints become consumers of `@demos-agents/core` (import from package, not relative)
+
+**Stage 3: Adapter packages**
+- `packages/adapters/openclaw/` — SKILL.md + scripts calling core
+- `packages/adapters/eliza/` — Action/Provider/Evaluator wrappers
+- `packages/adapters/cli/` — standalone CLI entry points
+
+**Stage 4: Cross-package tests**
+- Integration tests that import from `@demos-agents/core` (not relative paths)
+- Adapter tests that verify each adapter correctly translates core tool results
+- Compatibility shim: existing `cli/` scripts still work during transition (re-export from core)
+
+**Risk mitigation:** Each stage is a separate PR. Tests must pass after each stage. No big-bang migration.
+
+---
+
+## 7. Existing Work to Build On (pre-toolkit)
 
 **Already generic (from codebase exploration 2026-03-25):**
 - `src/types.ts` — FrameworkPlugin, Action, DataProvider, Evaluator, EventPlugin (600 lines, universal)
@@ -175,7 +258,7 @@ DEMOS SDK (not ours — Demos team)
 
 ---
 
-## 7. Skill Design Principles (from research)
+## 8. Tool and Adapter Design Principles (from research)
 
 Source: [mgechev/skills-best-practices](https://github.com/mgechev/skills-best-practices), OpenClaw docs, ElizaOS core
 
@@ -200,9 +283,9 @@ skill-name/
 
 ---
 
-## 8. Integration Targets (Researched)
+## 9. Integration Targets (Researched)
 
-### 8.1 OpenClaw (First-Class — Marius uses it)
+### 9.1 OpenClaw (First-Class — Marius uses it)
 
 **Source:** [docs.openclaw.ai/tools/skills](https://docs.openclaw.ai/tools/skills)
 
@@ -218,7 +301,7 @@ skill-name/
 
 **Our adapter surface:** SKILL.md (<500 lines) + scripts/ (CLI wrappers calling core) + references/ (schemas, source catalog excerpt)
 
-### 8.2 ElizaOS (First-Class — Web3 Native)
+### 9.2 ElizaOS (First-Class — Web3 Native)
 
 **Source:** ElizaOS monorepo core types + plugin-starter + plugin-bootstrap + registry
 
@@ -287,7 +370,7 @@ interface Plugin {
 
 **What we have that ElizaOS doesn't:** Attestation hard gate, source catalog/lifecycle, claim extraction pipeline, scoring/quality system. These are our differentiated value.
 
-### 8.3 AgentSkills / Hermes (Generic)
+### 9.3 AgentSkills / Hermes (Generic)
 
 - **Format:** Markdown skill files following agentskills.io spec
 - **Distribution:** Git / local directory
@@ -295,7 +378,7 @@ interface Plugin {
 
 ---
 
-## 8. Research Needed
+## 10. Research Needed
 
 - [x] **R1:** ElizaOS plugin architecture — full report at `MEMORY/WORK/20260326-elizaos-plugin-architecture-research/research-report.md`. Action/Provider/Evaluator interfaces, plugin-bootstrap (16 providers, 13 actions), web3 plugin patterns, registry model.
 - [x] **R2:** OpenClaw skill system — SKILL.md format, ClawHub distribution, config injection, gating. Plus mgechev/skills-best-practices (progressive disclosure, deterministic scripts, flat structure).
@@ -304,40 +387,89 @@ interface Plugin {
 
 ---
 
-## 9. MVP Tool Surface (from R3 Vertical Mapping)
+## 11. MVP Tool Surface (from R3 Vertical Mapping)
 
 ### Active Verticals (MVP)
 
-| Tool | Vertical | Params → Return | Internal Complexity |
-|------|----------|----------------|-------------------|
-| `connect(credentials)` | Core | wallet path → session handle | Wallet + auth + session |
-| `publish(draft)` | SuperColony | text, category, tags → txHash | 6-step: claims→attest→tx→confirm→broadcast |
-| `reply(parentTx, text)` | SuperColony | txHash + text → txHash | Same as publish + reply threading |
-| `react(txHash, type)` | SuperColony | txHash + agree/disagree → success | API auth + rate check |
-| `tip(txHash, amount)` | SuperColony | txHash + DEM amount → txHash | Spending policy + tx |
-| `scan(options?)` | SuperColony | filters → Post[] + opportunities | Feed fetch + source catalog + filtering |
-| `verify(txHash)` | SuperColony | txHash → confirmed or not | Indexer lookup + retries |
-| `attest(url)` | Attestation | URL → responseHash + txHash | DAHR proxy relay |
-| `discoverSources(domain?)` | Attestation | domain filter → ranked sources | 229 sources, health, matching |
-| `pay(url, amount?)` | D402 Payments | URL → Response (auto-pay on 402) | D402Client.handlePaymentRequired() |
+#### Tool Contracts
 
-### Mandatory Middleware
+Each tool accepts a `DemosSession` handle (returned by `connect()`) and returns a typed `ToolResult<T>` or throws a typed `DemosError`.
 
-| Guard | Scope | Cannot Opt Out |
-|-------|-------|----------------|
-| Rate limit | 15 posts/day, 5/hour, wallet-scoped | Protects from API ban |
+```typescript
+// Session handle — opaque struct, not raw credentials
+interface DemosSession {
+  readonly walletAddress: string;   // derived, never the private key
+  readonly authToken: string;       // SuperColony API auth (short-lived, auto-refreshed)
+  readonly rpcUrl: string;          // resolved RPC endpoint
+  readonly algorithm: string;       // signing algorithm (falcon|ml-dsa|ed25519)
+  // Internal: wallet handle for signing. Never exposed to consumer.
+}
+
+// All tools return this envelope
+interface ToolResult<T> {
+  ok: boolean;
+  data?: T;                         // present when ok=true
+  error?: DemosError;               // present when ok=false
+  provenance: {
+    path: "local" | "skill-dojo";   // which execution path produced this result
+    latencyMs: number;
+    attestation?: { txHash: string; responseHash: string };
+  };
+}
+
+// Typed error union — consumer can switch on `code`
+interface DemosError {
+  code: "RATE_LIMITED" | "AUTH_FAILED" | "ATTEST_FAILED" | "TX_FAILED"
+      | "CONFIRM_TIMEOUT" | "DUPLICATE" | "INVALID_INPUT" | "NETWORK_ERROR"
+      | "SPEND_LIMIT" | "PARTIAL_SUCCESS";
+  message: string;
+  retryable: boolean;
+  detail?: {
+    step?: string;                  // which pipeline step failed (e.g. "confirm")
+    txHash?: string;                // if tx was broadcast but not confirmed
+    partialData?: unknown;          // if partial success (attested but not broadcast)
+  };
+}
+```
+
+#### Tool Surface
+
+| Tool | Vertical | Request | Response | Internal Complexity |
+|------|----------|---------|----------|-------------------|
+| `connect(opts)` | Core | `{ walletPath: string; rpcUrl?: string; algorithm?: string }` → `DemosSession` | Session handle (opaque, short-lived auth, auto-refreshed). Lifetime: until `disconnect()` or process exit. Passed explicitly to every tool call. | Wallet load + auth + config resolution |
+| `publish(session, draft)` | SuperColony | `{ text: string; category: string; tags?: string[]; confidence?: number }` → `ToolResult<{ txHash: string }>` | Typed result with provenance | 6-step: claims→attest→tx→confirm→broadcast. On confirm timeout: returns PARTIAL_SUCCESS with txHash. |
+| `reply(session, opts)` | SuperColony | `{ parentTxHash: string; text: string; category?: string }` → `ToolResult<{ txHash: string }>` | Same as publish | Wrapper around `publish()` with reply threading. Single internal pipeline — changes to publish flow automatically apply to reply. |
+| `react(session, opts)` | SuperColony | `{ txHash: string; type: "agree" \| "disagree" }` → `ToolResult<{ success: boolean }>` | Typed result | API auth + rate check |
+| `tip(session, opts)` | SuperColony | `{ txHash: string; amount: number }` → `ToolResult<{ txHash: string }>` | Typed result | Spending cap enforced (max per-tip, max per-session). Returns SPEND_LIMIT error if exceeded. |
+| `scan(session, opts?)` | SuperColony | `{ domain?: string; limit?: number; filters?: object }` → `ToolResult<{ posts: Post[]; opportunities: Opportunity[] }>` | Typed result with provenance (local vs Skill Dojo) | Feed fetch + source catalog + filtering |
+| `verify(session, opts)` | SuperColony | `{ txHash: string }` → `ToolResult<{ confirmed: boolean; blockHeight?: number }>` | Typed result | Indexer lookup + retries [3,5,10]s. Returns CONFIRM_TIMEOUT after retries exhausted. |
+| `attest(session, opts)` | Attestation | `{ url: string; claimType?: string }` → `ToolResult<{ responseHash: string; txHash: string }>` | Typed result | DAHR proxy relay. Auth guard: specs with `auth.mode !== "none"` reject to prevent API key leakage on-chain. |
+| `discoverSources(session?, opts?)` | Attestation | `{ domain?: string; matchThreshold?: number }` → `ToolResult<Source[]>` | Typed result (no session required — read-only) | 229 sources, scored selection, health filtering |
+| `pay(session, opts)` | D402 Payments | `{ url: string; method?: string; headers?: Record<string,string>; body?: unknown; maxSpend?: number; asset?: string }` → `ToolResult<{ response: Response; receipt?: { txHash: string; amount: number } }>` | Typed result with payment receipt | D402 challenge/response: initial request → 402 → extract payment details → validate payee + amount against maxSpend cap → gasless d402_payment tx → retry original request with proof. Idempotency: same URL+method within 60s returns cached result. |
+
+### Mandatory Guardrails
+
+| Guard | Scope | Cannot Opt Out | Persistence |
+|-------|-------|----------------|-------------|
+| Write rate limit | 15 posts/day, 5/hour, wallet-scoped | Protects from API ban | File-persisted (survives restart) |
+| Spend cap (tip) | Max 10 DEM/tip, max 5 tips/post | Protects wallet balance | File-persisted |
+| Spend cap (pay) | `maxSpend` per-call (required), max 100 DEM/session | Protects wallet balance | In-session + file-persisted |
+| Dedup guard | 24h window, text-hash based | Prevents duplicate posts | File-persisted |
+| 429/backoff | Exponential backoff on API 429s, max 3 retries | Auto-retry, then surface error | In-memory |
 
 ### Data Assets (Bundled)
 
-| Asset | Size | Updates |
-|-------|------|---------|
-| Source catalog | 229 sources, ~15K lines JSON | Ships with toolkit version |
-| Attestation specs | 38 specs, 27 with claimTypes | Ships with toolkit version |
-| Entity maps | ASSET_MAP (21 crypto) + MACRO_MAP (15 macro) | Ships with toolkit version |
-| Prediction market specs | Polymarket (3 ops) + Kalshi (3 ops) | Ships with toolkit version |
-| Quality heuristics | Scoring rules, calibration patterns | Documented, consumer customizes |
+| Asset | Size | Updates | Consumer Override |
+|-------|------|---------|-------------------|
+| Source catalog | 229 sources, ~15K lines JSON | Ships with toolkit version | `connect({ sourceCatalogPath })` loads custom catalog. Merge mode: consumer sources override bundled by ID. |
+| Attestation specs | 38 specs, 27 with claimTypes | Ships with toolkit version | Additional specs directory via `connect({ specsDir })` |
+| Entity maps | ASSET_MAP (21 crypto) + MACRO_MAP (15 macro) | Ships with toolkit version. Extended by PR. Consumer can extend locally via `connect({ entityMaps })` | Merge mode: consumer maps extend bundled |
+| Prediction market specs | Polymarket (3 ops) + Kalshi (3 ops) | Ships with toolkit version | Same as attestation specs |
+| Quality heuristics | Scoring rules, calibration patterns | Documented, consumer customizes | Consumer implements own scorer or uses bundled defaults. Quality gate disabled by default (threshold=1). |
 
-### Blocked/Future Verticals (Scaffold Only)
+### Blocked/Future Verticals (NOT shipped in MVP)
+
+Future verticals are tracked here but NOT scaffolded as empty directories in the published package. They are added to `core/verticals/` only when implementation begins.
 
 | Vertical | Status | Blocker | When Ready |
 |----------|--------|---------|------------|
@@ -348,26 +480,26 @@ interface Plugin {
 | L2PS Privacy | ❌ Blocked | SDK Buffer polyfill | P3 — KyneSys fix |
 | Encrypted Messaging | 🔲 Not started | None known | P3 |
 | ZK Identity | 🔲 Not started | None known | P3 |
-| Skill Dojo | ✅ Active | 5 req/hr rate limit | Data provider layer, not vertical |
+| Skill Dojo | ✅ Active | 5 req/hr rate limit | Opt-in fallback layer, not a vertical |
 
 ---
 
-## 10. Skill Dojo Parity Analysis
+## 12. Skill Dojo Parity Analysis
 
 ### What Skill Dojo Actually Is
 
-Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers behind a hosted REST API (`POST /api/execute`). Each "skill" is a deterministic function: receive params → call SDK/external API → optionally DAHR attest → return data + proof. Zero LLM, zero reasoning, zero memory.
+Skill Dojo is a hosted REST API providing 15 parameterized SDK wrappers with optional DAHR attestation (`POST /api/execute`). It contains no LLM or agent reasoning — each "skill" is a deterministic function: receive params → call SDK/external API → optionally DAHR attest → return data + proof.
 
-**Decision [2026-03-26]:** Replicate Skill Dojo locally as "best of all" implementation. Skill Dojo API remains as optional seamless fallback. Local path has no rate limit + more control. Consumer never knows which path runs.
+**Decision [2026-03-26, updated]:** Replicate Skill Dojo locally as "best of all" implementation. Skill Dojo API is an **opt-in** fallback (disabled by default). Consumer explicitly enables it via `connect({ skillDojoFallback: true })`. When enabled, `provenance.path` in every `ToolResult` indicates which path produced the result. Rationale: local and Skill Dojo paths have materially different privacy, quota, auth, latency, and proof provenance characteristics — hiding this violates the thin-wrapper principle.
 
 ### Skill-by-Skill Comparison
 
 | # | Skill Dojo Skill | What It Does (Server-Side) | Our Local Implementation | Gap | Diff Notes |
 |---|---|---|---|---|---|
-| 1 | `defi-agent` (order-book) | Fetches Binance `api/v3/depth` + DAHR attests response | Source catalog has Binance. `declarative-engine.ts` fetches + parses via YAML spec. `publish-pipeline.ts` does DAHR. | **None** | Our path is richer: claim extraction, quality gate, multi-source attestation plan. Skill Dojo returns raw order book; we extract specific claims and attest surgically. **Our local is better.** |
+| 1 | `defi-agent` (order-book) | Fetches Binance `api/v3/depth` + DAHR attests response | Source catalog has Binance. `declarative-engine.ts` fetches + parses via YAML spec. `publish-pipeline.ts` does DAHR. | **None** | Our path is richer: claim extraction, quality gate, multi-source attestation plan. Skill Dojo returns raw order book; we extract specific claims and attest surgically. **Local path has higher fidelity.** |
 | 2 | `defi-agent` (liquidity) | Queries Uniswap V3 / Raydium pool data | Not in source catalog | **Small** | Add Uniswap V3 subgraph + Raydium API as source specs. Declarative engine handles it. |
 | 3 | `defi-agent` (bridge-swap) | Rubic bridge quotes | Not implemented | **Medium** | Rubic API integration. Maps to cross-chain vertical. |
-| 4 | `prediction-market-agent` | Polymarket + Kalshi API + DAHR attest | ✅ DONE (2026-03-26) — polymarket.yaml (3 ops) + kalshi.yaml (3 ops) + 4 catalog entries | **None** | Polymarket gamma-api + Kalshi trade-api/v2 specs shipped. Same DAHR flow. **Our local matches Skill Dojo.** |
+| 4 | `prediction-market-agent` | Polymarket + Kalshi API + DAHR attest | ✅ DONE (2026-03-26) — polymarket.yaml (3 ops) + kalshi.yaml (3 ops) + 4 catalog entries | **None** | Polymarket gamma-api + Kalshi trade-api/v2 specs shipped. Same DAHR flow. **Local path matches Skill Dojo.** |
 | 5 | `address-monitoring-agent` | `nodeCall` + chain RPC balance/tx queries | Not implemented | **Medium** | Need `nodeCall` wrapper for Demos chain + chain RPC adapters. XM SDK has the primitives. |
 | 6 | `network-monitor-agent` | `nodeCall` health + ethers.js mempool | Not implemented | **Medium** | Need nodeCall health queries + ethers provider for EVM mempool. |
 | 7 | `chain-operations-agent` | XM SDK unified balance/sign/transfer (9 chains) | XM SDK available, untested on testnet | **Validation** | SDK is imported. Need to validate each chain works on testnet. Core code exists. |
@@ -424,38 +556,53 @@ Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers beh
 **Phase 4 (when unblocked):** Replicate skill 8
 - multi-step-operations → DemosWork SDK (after ESM fix)
 
-### Seamless Fallback Architecture
+### Opt-In Fallback Architecture
 
 ```typescript
-// Consumer calls:
-const data = await demos.tools.scan({ domain: "defi", pair: "ETH/USDT" });
+// Consumer enables fallback explicitly:
+const session = await demos.connect({
+  walletPath: "~/.config/demos/credentials",
+  skillDojoFallback: true,  // opt-in, default false
+});
+
+const result = await demos.tools.scan(session, { domain: "defi", pair: "ETH/USDT" });
+// result.provenance.path === "local" | "skill-dojo"
+// Consumer always knows which path produced the result
 
 // Internally:
-async function scan(params) {
+async function scan(session, params): Promise<ToolResult<ScanData>> {
+  const start = Date.now();
+
   // 1. Try local path first (no rate limit, richer processing)
   try {
     const localResult = await localProviders.fetch(params);
-    if (localResult.ok) return localResult;
+    if (localResult.ok) {
+      return { ok: true, data: localResult.data, provenance: { path: "local", latencyMs: Date.now() - start } };
+    }
   } catch (localErr) {
-    log.warn("Local fetch failed, trying Skill Dojo fallback", localErr);
+    log.warn("Local fetch failed", localErr);
   }
 
-  // 2. Fall back to Skill Dojo API (rate limited, simpler)
-  if (skillDojoClient.canExecute()) {
+  // 2. Fall back to Skill Dojo API only if consumer opted in
+  if (session.skillDojoFallback && skillDojoClient.canExecute()) {
     const remoteResult = await skillDojoClient.execute(mapToSkillId(params), params);
-    if (remoteResult.ok) return normalizeResult(remoteResult);
+    if (remoteResult.ok) {
+      return { ok: true, data: normalizeResult(remoteResult), provenance: { path: "skill-dojo", latencyMs: Date.now() - start } };
+    }
   }
 
-  // 3. Both failed
-  throw new Error("No data source available");
+  // 3. Both failed — typed error, not generic throw
+  return { ok: false, error: { code: "NETWORK_ERROR", message: "No data source available", retryable: true }, provenance: { path: "local", latencyMs: Date.now() - start } };
 }
 ```
 
-The consumer never sees the routing. Local is tried first (faster, no limit). Skill Dojo is transparent fallback. Results are normalized to the same shape regardless of path.
+Local path is always tried first (faster, no rate limit, higher fidelity). Skill Dojo is opt-in fallback. `provenance.path` makes the execution path visible to the consumer. Note: Skill Dojo sends query parameters to a third-party API — consumers with sensitive data (wallet addresses, private transactions) should leave fallback disabled.
 
 ---
 
-## 11. Iteration Log
+## 13. Iteration Log
+
+> Note: The iteration log is narrative (what happened per session). The decision log (section 14) is authoritative (what was decided). When they overlap, the decision log is canonical.
 
 ### 2026-03-25 — Session 1: Vision Established
 - Taxonomy defined (framework vs harness vs toolkit)
@@ -527,9 +674,41 @@ The consumer never sees the routing. Local is tried first (faster, no limit). Sk
 
 **Participants:** Marius + Claude + 3 parallel research agents
 
+### 2026-03-26 — Session 6: Dual Design Review + All Findings Fixed
+- **Codex design review (GPT-5.4):** 3 HIGH, 5 MEDIUM, 1 LOW findings
+- **Fabric `review_design` (Sonnet):** 8 sections, critical findings across security, architecture, document readability
+- **Zero overlap validates dual-review approach:** Codex caught architectural boundary violations + interface gaps (codebase-grounded). Fabric caught security absence, data management, document structure (structured lens).
+- **All 23 findings addressed in design doc:**
+  - C1: Removed loop/strategies/plugins from core diagram. Plugins noted as harness-only, not toolkit API.
+  - C2: Full typed contracts — DemosSession, ToolResult<T>, DemosError with typed error codes.
+  - C3: pay() enriched with challenge/response, maxSpend, idempotency, receipts.
+  - C4: New Security Architecture section (credentials, spending caps, input validation, data leakage, isolation).
+  - C5: Skill Dojo fallback changed from seamless/invisible to opt-in with provenance visibility.
+  - C6: All 10 tool signatures now have typed request/response/error.
+  - I1-I9: Rate-limit expansion, migration plan, error semantics, wallet provisioning, no empty scaffolds, degraded mode, data overrides, ERC-8004 placeholder, reply as publish wrapper.
+  - L1-L8: Section numbering fixed, wow test scoped, column headers, informal register, decision log drift.
+- **2 decisions superseded:** "Personas in-scope" and "Consumer never sees which path runs."
+- **Design doc status remains ITERATING** — ready for implementation after this commit.
+
+**Participants:** Marius + Claude + Codex (GPT-5.4) + Fabric review_design (Sonnet)
+
 ---
 
-## 12. Decision Log
+## 14. Glossary
+
+| Term | Meaning |
+|------|---------|
+| **Vertical** | A Demos SDK capability domain (SuperColony, Attestation, D402, Cross-Chain, etc.) |
+| **Distribution surface** | A consumer framework target (OpenClaw, ElizaOS, CLI) |
+| **Tool** | An atomic function in the toolkit API (e.g. `publish()`, `attest()`) |
+| **Adapter** | A thin translation layer mapping toolkit tools to a specific framework's interface |
+| **Playbook** | A documented recipe of tool calls (e.g. "8-phase session loop") — opt-in, not enforced |
+| **Session handle** | An opaque `DemosSession` struct returned by `connect()`, passed to all tool calls |
+| **Provenance** | Metadata on a `ToolResult` indicating which execution path and attestation produced the result |
+
+---
+
+## 15. Decision Log
 
 > Append-only. Format: `[DATE] DECISION: statement. REASON: why. SUPERSEDES: what (if any).`
 
@@ -541,7 +720,7 @@ The consumer never sees the routing. Local is tried first (faster, no limit). Sk
 
 [2026-03-25] DECISION: demos-sdk (@kynesyslabs/demosdk) is NOT our work. We build the high-value layer on top. REASON: Avoid scope confusion. We're an adoption wrapper, not an SDK competitor.
 
-[2026-03-25] DECISION: Personas are in-scope for the toolkit. REASON: They define scoped strategies + tool selection. An OpenClaw agent importing the skill still needs persona selection.
+[2026-03-25] ~~DECISION: Personas are in-scope for the toolkit. REASON: They define scoped strategies + tool selection.~~ SUPERSEDED by Q4 resolution below — personas are example/reference only, not part of core toolkit API.
 
 [2026-03-25] DECISION: Do not implement until design questions Q1-Q6 are answered. REASON: Premature implementation creates architectural debt.
 
@@ -559,11 +738,13 @@ The consumer never sees the routing. Local is tried first (faster, no limit). Sk
 
 [2026-03-25] DECISION: Zero loops in the toolkit. MVP = atomic tools + rate-limit guard. REASON: Council debate (4/4 convergence). Prior art (Stripe, Composio, MCP) confirms toolkits ship tools not loops. Consumer's agent already has a loop — imposing another creates impedance mismatch.
 
-[2026-03-25] DECISION: MVP tool surface: connect(), publish(), scan(), verify(), react(), tip(), discoverSources() + mandatory rate-limit middleware. REASON: Engineer's "four functions and a constraint" principle. publish() hides 6-step chain internally. Complexity is internal, API is clean.
+[2026-03-25] DECISION: MVP tool surface: connect(), publish(), scan(), verify(), react(), tip(), discoverSources() + mandatory rate-limit middleware. REASON: Engineer's "four functions and a constraint" principle. publish() hides 6-step chain internally. Complexity is internal, API is clean. SUPERSEDED by 2026-03-26 additions below (reply, attest, pay added).
 
 [2026-03-26] DECISION: Replicate Skill Dojo locally as "best of all" version. Skill Dojo API as seamless fallback. REASON: Skill Dojo is 15 parameterized SDK wrappers, not AI. Our local path is already better for 2/15 skills (no rate limit, claim extraction, quality gate). Local-first eliminates 5 req/hr shared constraint. SUPERSEDES: earlier framing of Skill Dojo as "data provider layer" — it's actually an alternative execution path for the same operations we do locally.
 
-[2026-03-26] DECISION: Seamless routing: local-first → Skill Dojo fallback → normalized result. Consumer never sees which path runs. REASON: Transparency. Same result shape regardless of path. Local is faster + no rate limit. Skill Dojo is zero-setup convenience for consumers who can't run SDK locally.
+[2026-03-26] ~~DECISION: Seamless routing: local-first → Skill Dojo fallback → normalized result. Consumer never sees which path runs.~~ SUPERSEDED by design review finding below — hiding execution path violates thin-wrapper principle.
+
+[2026-03-26] DECISION: Skill Dojo fallback is opt-in (disabled by default). Consumer enables via `connect({ skillDojoFallback: true })`. When enabled, `provenance.path` in every `ToolResult` shows "local" or "skill-dojo". REASON: Local and Skill Dojo paths have materially different privacy, quota, auth, latency, and proof provenance characteristics. Hiding this contradicts the thin-wrapper goal. Consumers with sensitive data should not unknowingly route through a third-party API. SUPERSEDES: seamless routing decision above.
 
 [2026-03-26] DECISION: Add pay() to MVP tool surface — D402 client auto-pay on HTTP 402. REASON: D402 Payment Protocol is complete in SDK v2.11.5 (gasless d402_payment tx, Express middleware, auto-retry). Enables agents to access paid data sources and monetize services. ~20 lines client integration. SUPERSEDES: D402 was not considered in prior MVP scope (undocumented module, discovered via source code reading).
 
@@ -574,3 +755,17 @@ The consumer never sees the routing. Local is tried first (faster, no limit). Sk
 [2026-03-26] DECISION: Storage Programs deferred from MVP, keep wrappers ready. REASON: SDK is mature (granular JSON ops, binary, group ACL, 1MB limit). Our storage-client.ts and storage-plugin.ts wrap it. But RPC nodes return "Unknown message" — KyneSys hasn't deployed server-side handlers. Confirmed still broken in v2.11.5.
 
 [2026-03-26] DECISION: TLSN remains disabled. tlsn-component offers no alternative path. REASON: All three approaches (our Playwright bridge, tlsn-component iframe, SDK TLSNotary) share identical tlsn-js WASM engine. The hang is in the KyneSys notary server, not our code. Fix requires KyneSys infrastructure work or testing against a reference notary.
+
+[2026-03-26] DECISION: Typed tool contracts — every tool returns `ToolResult<T>` with provenance metadata, throws `DemosError` with typed error codes. REASON: Codex + Fabric design review (9 findings). Placeholder signatures are not implementable contracts. Typed envelopes enable adapter translation and consumer error handling. SUPERSEDES: prior MVP tool table with string-level "Params → Return" descriptions.
+
+[2026-03-26] DECISION: Security architecture added — credential handling, spending caps, input validation, data leakage controls, multi-process isolation. REASON: Fabric design review identified complete absence of security section. A toolkit handling wallet credentials and blockchain transactions requires explicit security contracts.
+
+[2026-03-26] DECISION: Remove `loop/`, `strategies/`, `plugins/` from core package. Loops → `docs/playbooks/`. Plugins remain in codebase for production agents but NOT in toolkit public API. REASON: Codex + Fabric both flagged contradiction with Q5 zero-loops decision. Plugins require a dispatch harness; atomic toolkit has no harness. SUPERSEDES: architecture diagram showing loop/strategies/plugins in @demos-agents/core.
+
+[2026-03-26] DECISION: Wallet provisioning is "bring your own wallet" — toolkit does NOT create or fund wallets. `demos-toolkit doctor` CLI validates prerequisites. REASON: Fabric flagged unresolved wallet provisioning blocking wow test. Simplest resolution: document prerequisite, provide diagnostic tool.
+
+[2026-03-26] DECISION: Staged migration plan (4 PRs: package boundaries → git mv → adapters → cross-package tests). REASON: Codex flagged migration risk understated for single-root-package → workspace transition. Each stage is a separate PR with green tests.
+
+[2026-03-26] DECISION: Future verticals (cross-chain, storage, workflows, privacy) are NOT scaffolded as empty directories. Added to `core/verticals/` only when implementation begins. REASON: Fabric flagged empty scaffold dirs confuse consumers of published package.
+
+[2026-03-26] DECISION: MVP tool surface finalized at 10 tools: connect, publish, reply, react, tip, scan, verify, attest, discoverSources, pay. Plus 5 mandatory guardrails: write rate limit, spend cap (tip), spend cap (pay), dedup guard, 429/backoff. SUPERSEDES: all prior partial MVP tool lists.
