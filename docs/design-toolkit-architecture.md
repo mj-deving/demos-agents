@@ -383,7 +383,7 @@ Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers beh
 | **Easy to add locally** | 2 | prediction-market, defi-agent (liquidity) |
 | **Needs new implementation** | 3 | address-monitoring, network-monitor, bridge-swap |
 | **Needs testnet validation** | 5 | chain-operations + 4 chain-specific ops |
-| **Both paths broken** | 1 | tlsnotary-attestation (infra issue) |
+| **Both Phase 2 broken** | 1 | tlsnotary-attestation — Phase 1 (token) works everywhere, Phase 2 (MPC-TLS WASM proof) fails everywhere. Notary handshake issue, not our code. |
 | **Blocked on SDK** | 1 | multi-step-operations (ESM bug) |
 | **N/A** | 1 | demos-wallet (browser only) |
 
