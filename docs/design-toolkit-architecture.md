@@ -36,20 +36,23 @@ Established 2026-03-25. These definitions scope ALL subsequent design decisions.
 
 ## 3. Scope: What Demos Offers (Beyond SuperColony)
 
-SuperColony is the first vertical. The Demos SDK (`@kynesyslabs/demosdk` v2.11.4, NOT our work) offers 7+ verticals:
+SuperColony is the first vertical. The Demos SDK (`@kynesyslabs/demosdk` v2.11.5, NOT our work) offers 10+ verticals:
 
 | Vertical | SDK Module | Our Status | Toolkit Priority |
 |----------|-----------|------------|-----------------|
 | **SuperColony** | websdk + fetch | ✅ Active (3 agents publishing) | **MVP — first vertical** |
 | **Attestation** | websdk (proxy) | ✅ Active (DAHR pipeline) | **MVP — core capability** |
+| **D402 Payments** | d402/client, d402/server | 🔲 Code-reviewed, not integrated | **P1 — agent monetization** |
 | **Identity (CCI)** | abstraction | ⚠️ RPC-direct (NAPI crash) | P2 — agent identity |
+| **ERC-8004 Agent ID** | (SDK issue #70) | 🔲 Not yet in SDK | P1 — when it ships |
 | **Cross-Chain Ops** | xmcore, bridge | 🔲 Not started | P3 — future vertical |
-| **Storage Programs** | storage | ❌ Blocked (RPC error) | P3 — when SDK unblocks |
+| **Storage Programs** | storage | ❌ Blocked (RPC "Unknown message") | P3 — SDK ready, node not |
 | **DemosWork** | demoswork | ❌ Blocked (ESM bug) | P3 — when SDK unblocks |
 | **L2PS Privacy** | l2ps | ❌ Blocked (Buffer bug) | P3 — when SDK unblocks |
 | **Encrypted Messaging** | websdk/im | 🔲 Not started | P3 — future vertical |
 | **ZK Identity** | encryption/zK | 🔲 Not started | P3 — future vertical |
 | **Post-Quantum Crypto** | websdk | ✅ Active (Falcon) | Bundled — transparent |
+| **Node MCP** | node built-in | 🔲 Available, not consumed | P2 — real-time chain state |
 
 **Design constraint:** The toolkit API should NOT be `supercolony.publish()` but `demos.tools.publish()` — SuperColony is one target, not the only one.
 
@@ -315,7 +318,8 @@ interface Plugin {
 | `scan(options?)` | SuperColony | filters → Post[] + opportunities | Feed fetch + source catalog + filtering |
 | `verify(txHash)` | SuperColony | txHash → confirmed or not | Indexer lookup + retries |
 | `attest(url)` | Attestation | URL → responseHash + txHash | DAHR proxy relay |
-| `discoverSources(domain?)` | Attestation | domain filter → ranked sources | 221 sources, health, matching |
+| `discoverSources(domain?)` | Attestation | domain filter → ranked sources | 229 sources, health, matching |
+| `pay(url, amount?)` | D402 Payments | URL → Response (auto-pay on 402) | D402Client.handlePaymentRequired() |
 
 ### Mandatory Middleware
 
@@ -327,9 +331,10 @@ interface Plugin {
 
 | Asset | Size | Updates |
 |-------|------|---------|
-| Source catalog | 221 sources, ~15K lines JSON | Ships with toolkit version |
-| Attestation specs | 36 specs, 25 with claimTypes | Ships with toolkit version |
+| Source catalog | 229 sources, ~15K lines JSON | Ships with toolkit version |
+| Attestation specs | 38 specs, 27 with claimTypes | Ships with toolkit version |
 | Entity maps | ASSET_MAP (21 crypto) + MACRO_MAP (15 macro) | Ships with toolkit version |
+| Prediction market specs | Polymarket (3 ops) + Kalshi (3 ops) | Ships with toolkit version |
 | Quality heuristics | Scoring rules, calibration patterns | Documented, consumer customizes |
 
 ### Blocked/Future Verticals (Scaffold Only)
@@ -362,7 +367,7 @@ Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers beh
 | 1 | `defi-agent` (order-book) | Fetches Binance `api/v3/depth` + DAHR attests response | Source catalog has Binance. `declarative-engine.ts` fetches + parses via YAML spec. `publish-pipeline.ts` does DAHR. | **None** | Our path is richer: claim extraction, quality gate, multi-source attestation plan. Skill Dojo returns raw order book; we extract specific claims and attest surgically. **Our local is better.** |
 | 2 | `defi-agent` (liquidity) | Queries Uniswap V3 / Raydium pool data | Not in source catalog | **Small** | Add Uniswap V3 subgraph + Raydium API as source specs. Declarative engine handles it. |
 | 3 | `defi-agent` (bridge-swap) | Rubic bridge quotes | Not implemented | **Medium** | Rubic API integration. Maps to cross-chain vertical. |
-| 4 | `prediction-market-agent` | Polymarket + Kalshi API + DAHR attest | Not in source catalog | **Small** | Add Polymarket gamma-api + Kalshi API as source specs. Same DAHR flow we already have. |
+| 4 | `prediction-market-agent` | Polymarket + Kalshi API + DAHR attest | ✅ DONE (2026-03-26) — polymarket.yaml (3 ops) + kalshi.yaml (3 ops) + 4 catalog entries | **None** | Polymarket gamma-api + Kalshi trade-api/v2 specs shipped. Same DAHR flow. **Our local matches Skill Dojo.** |
 | 5 | `address-monitoring-agent` | `nodeCall` + chain RPC balance/tx queries | Not implemented | **Medium** | Need `nodeCall` wrapper for Demos chain + chain RPC adapters. XM SDK has the primitives. |
 | 6 | `network-monitor-agent` | `nodeCall` health + ethers.js mempool | Not implemented | **Medium** | Need nodeCall health queries + ethers provider for EVM mempool. |
 | 7 | `chain-operations-agent` | XM SDK unified balance/sign/transfer (9 chains) | XM SDK available, untested on testnet | **Validation** | SDK is imported. Need to validate each chain works on testnet. Core code exists. |
@@ -379,8 +384,8 @@ Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers beh
 
 | Status | Count | Skills |
 |---|---|---|
-| **Our local is BETTER** | 2 | defi-agent (order-book), identity-agent |
-| **Easy to add locally** | 2 | prediction-market, defi-agent (liquidity) |
+| **Our local is BETTER** | 3 | defi-agent (order-book), identity-agent, prediction-market (shipped 2026-03-26) |
+| **Easy to add locally** | 1 | defi-agent (liquidity) |
 | **Needs new implementation** | 3 | address-monitoring, network-monitor, bridge-swap |
 | **Needs testnet validation** | 5 | chain-operations + 4 chain-specific ops |
 | **Both Phase 2 broken** | 1 | tlsnotary-attestation — Phase 1 (token) works everywhere, Phase 2 (MPC-TLS WASM proof) fails everywhere. Notary handshake issue, not our code. |
@@ -400,7 +405,6 @@ Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers beh
 
 1. **Hosted — zero local setup** — consumer doesn't need Node.js, SDK, or wallet locally
 2. **Pre-built chain adapters** — 5 chain-specific ops skills work without XM SDK validation
-3. **Prediction markets** — Polymarket/Kalshi integration ready (we don't have it yet)
 
 ### Implementation Plan: Local Best-of-All
 
@@ -511,9 +515,21 @@ The consumer never sees the routing. Local is tried first (faster, no limit). Sk
 
 **Participants:** Marius + Claude
 
+### 2026-03-26 — Session 5: SDK Deep-Dive + D402 + Prediction Markets + MCP
+- **SDK upgraded 2.11.4 → 2.11.5** (released same day). L2PS messaging types.
+- **D402 Payment Protocol deep-dive:** Complete HTTP 402 micropayment system in SDK. Client auto-pays on 402, server Express middleware gates endpoints. Gasless d402_payment tx type. No docs exist — we're reading source code. Added `pay()` to MVP tool surface.
+- **Storage Programs confirmed still blocked:** "Unknown message" on both RPC nodes. SDK is mature (granular JSON ops, binary mode, group ACL, 1MB limit). Our wrappers (`storage-client.ts`, `storage-plugin.ts`) ready. Blocker is KyneSys infrastructure.
+- **TLSN diagnosis conclusive:** `tlsn-component` repo is same engine in iframe. All three paths (our Playwright bridge, tlsn-component, SDK TLSNotary) use identical `tlsn-js` WASM. Hang is KyneSys notary server, not our code. Our bridge is correct.
+- **Prediction markets shipped:** Polymarket (3 ops) + Kalshi (3 ops) YAML specs + 4 catalog entries. Parity with Skill Dojo achieved.
+- **2 MCP servers wired:** `demosdk_references` (get.demos.sh) + `demosdk_docs` (GitBook). Available for SDK doc lookup.
+- **KyneSys org fully mapped:** 23 repos, 6 NPM packages, 3 MCP servers. Key strategic items: ERC-8004 agent identity (issue #70), D402, Storage Programs.
+- **ERC-8004 Agent Identity identified as most strategic upcoming feature** — on-chain agent identity registry via ERC-721. Open SDK issue, not yet implemented.
+
+**Participants:** Marius + Claude + 3 parallel research agents
+
 ---
 
-## 11. Decision Log
+## 12. Decision Log
 
 > Append-only. Format: `[DATE] DECISION: statement. REASON: why. SUPERSEDES: what (if any).`
 
@@ -548,3 +564,13 @@ The consumer never sees the routing. Local is tried first (faster, no limit). Sk
 [2026-03-26] DECISION: Replicate Skill Dojo locally as "best of all" version. Skill Dojo API as seamless fallback. REASON: Skill Dojo is 15 parameterized SDK wrappers, not AI. Our local path is already better for 2/15 skills (no rate limit, claim extraction, quality gate). Local-first eliminates 5 req/hr shared constraint. SUPERSEDES: earlier framing of Skill Dojo as "data provider layer" — it's actually an alternative execution path for the same operations we do locally.
 
 [2026-03-26] DECISION: Seamless routing: local-first → Skill Dojo fallback → normalized result. Consumer never sees which path runs. REASON: Transparency. Same result shape regardless of path. Local is faster + no rate limit. Skill Dojo is zero-setup convenience for consumers who can't run SDK locally.
+
+[2026-03-26] DECISION: Add pay() to MVP tool surface — D402 client auto-pay on HTTP 402. REASON: D402 Payment Protocol is complete in SDK v2.11.5 (gasless d402_payment tx, Express middleware, auto-retry). Enables agents to access paid data sources and monetize services. ~20 lines client integration. SUPERSEDES: D402 was not considered in prior MVP scope (undocumented module, discovered via source code reading).
+
+[2026-03-26] DECISION: Prediction market sources (Polymarket + Kalshi) ship as bundled data assets. REASON: Polymarket gamma-api (3 ops) and Kalshi trade-api/v2 (3 ops) specs complete. No auth required. New claim types: probability, prediction. Enables attested market-consensus predictions — qualitatively different from price feeds.
+
+[2026-03-26] DECISION: Monitor ERC-8004 Agent Identity (SDK issue #70) as highest-priority strategic feature. REASON: On-chain agent identity registry using ERC-721. Agent cards with name, capabilities, endpoints, payment address. When it ships in SDK, integrate immediately — game changer for our CCI architecture.
+
+[2026-03-26] DECISION: Storage Programs deferred from MVP, keep wrappers ready. REASON: SDK is mature (granular JSON ops, binary, group ACL, 1MB limit). Our storage-client.ts and storage-plugin.ts wrap it. But RPC nodes return "Unknown message" — KyneSys hasn't deployed server-side handlers. Confirmed still broken in v2.11.5.
+
+[2026-03-26] DECISION: TLSN remains disabled. tlsn-component offers no alternative path. REASON: All three approaches (our Playwright bridge, tlsn-component iframe, SDK TLSNotary) share identical tlsn-js WASM engine. The hang is in the KyneSys notary server, not our code. Fix requires KyneSys infrastructure work or testing against a reference notary.

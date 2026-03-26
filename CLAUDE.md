@@ -9,7 +9,7 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Agent definitions, 
 ## Tech Stack
 
 - **Runtime:** Node.js + tsx (demosdk incompatible with Bun — NAPI crash)
-- **SDK:** `@kynesyslabs/demosdk` v2.11.4 (import `/websdk` subpath directly)
+- **SDK:** `@kynesyslabs/demosdk` v2.11.5 (import `/websdk` subpath directly; also has `/d402`, `/storage`, `/tlsnotary/service`)
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `src/lib/llm-provider.ts` (Claude CLI, OpenAI API, OpenAI-compatible, any CLI)
 - **Testing:** vitest (`npm test`). 1383 tests across 89 suites. All code changes must include tests.
