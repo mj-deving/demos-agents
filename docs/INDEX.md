@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-26 | **SDK:** 2.11.4 | **Tests:** 92 suites, 1418 passing | **Agents:** 6 defined, 3 publishing
+**Last updated:** 2026-03-26 | **SDK:** 2.11.4 | **Tests:** 94 suites, 1437 passing | **Agents:** 6 defined, 3 publishing | **Sources:** 229 catalog, 38 specs
 
 ---
 
@@ -29,10 +29,15 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - **Improvement dedup:** Fuzzy normalization strips numeric values and hex hashes, preventing 60+ duplicate improvements per agent.
 - **Source URL resolution:** `buildCandidates` extracts URL params from static source URLs, broadcasts to operation variable aliases.
 
+**Shipped 2026-03-26:**
+- **Speed fixes (5 optimizations, ~77s savings):** Removed --wait 15, skip indexer check, faster verify retries [3,5,10]s, harden findings cap at 10 (autonomous log-only), sense cache on V2 resume
+- **Colony intelligence foundation:** `src/lib/colony-intelligence.ts` — AgentProfile, RelationshipEdge, ColonySnapshot, analyzeColony(), persistence. Census script ready.
+- **Prediction market sources:** Polymarket (gamma-api) + Kalshi specs + 4 catalog entries. Claim types: probability, prediction.
+- **Dev workflow conclusion:** Quality review trial settled — run both `/simplify` (codebase-aware) + Fabric `review_code` (correctness/security). Zero finding overlap.
+
 **Where we're going:**
-- **Toolkit evolution (STRATEGIC):** Extract demos-agents from harness into framework-agnostic toolkit. Core domain logic + thin adapters for OpenClaw + ElizaOS. SuperColony first vertical, expand to all Demos SDK verticals. See `design-toolkit-architecture.md`.
-- **Colony intelligence:** Map feed, track agents, build relationship memory. Reply-first strategy + tipping enabled.
-- **Sub-1-minute sessions:** Remove --wait 15, skip indexer check, reduce verify retries, cap harden findings.
+- **Colony intelligence redesign:** Colony Mind 3-layer architecture (Map → Ledger → Pulse) from triple-lens analysis. 7 testable hypotheses. Blocked on colony census (supercolony.ai DNS down).
+- **Toolkit evolution (STRATEGIC):** Extract demos-agents from harness into framework-agnostic toolkit. Core domain logic + thin adapters for OpenClaw + ElizaOS. SuperColony first vertical. See `design-toolkit-architecture.md`.
 - Continue collecting quality_score data (17 entries, need 20+ with actuals for meaningful correlation)
 - CCI identity as root → Agent Auth Protocol as session auth layer
 - Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy (when SDK unblocks)
@@ -48,7 +53,7 @@ What Demos offers vs what we use. **Updated each session.**
 | **Wallet + Transactions** | `websdk` | ✅ Active | PQC (Falcon/ML-DSA) added 2026-03-20 |
 | **SuperColony API** | `websdk` + fetch | ✅ Active | Feed, publish, react, tip — all working |
 | **DAHR Attestation** | `websdk` (proxy) | ✅ Active | Primary attestation method |
-| **TLSN Attestation** | `tlsnotary` | ✅ Active | MPC-TLS, Playwright bridge. Reactivated 2026-03-25, `tlsn_preferred`. 2.3x reaction multiplier. |
+| **TLSN Attestation** | `tlsnotary` | ❌ Disabled | MPC-TLS proof hangs 300s. Zero ecosystem adoption (0/145 feed posts). All agents `dahr_only` since 2026-03-25. |
 | **Cross-Chain Identity** | `abstraction` | ⚠️ RPC-direct | `Identities` class SIGSEGV on import (NAPI crash). RPC calls work. |
 | **Web2 Identity Linking** | `abstraction` | ⚠️ Blocked | Same NAPI crash. SDK methods exist for Twitter/GitHub/Discord/Telegram |
 | **ZK Identity** | `encryption/zK` | 🔲 Not started | Groth16 ZK-SNARKs for privacy-preserving attestation. Available in SDK. |
