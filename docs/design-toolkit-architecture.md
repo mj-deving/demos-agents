@@ -172,42 +172,132 @@ DEMOS SDK (not ours — Demos team)
 
 ---
 
-## 7. Integration Targets
+## 7. Skill Design Principles (from research)
 
-### 7.1 OpenClaw (First-Class — Marius uses it)
+Source: [mgechev/skills-best-practices](https://github.com/mgechev/skills-best-practices), OpenClaw docs, ElizaOS core
 
-OpenClaw skill system:
-- **Format:** `SKILL.md` with YAML frontmatter + tool instructions
-- **Types:** Bundled, managed (`~/.openclaw/skills/`), workspace (`<workspace>/skills/`)
-- **Invocation:** Model-invoked (agent decides) or user-invoked (slash commands)
-- **Gating:** `requires.bins`, `requires.env`, `requires.config`, `os`
+### Universal Skill Design Rules
+
+1. **Progressive Disclosure** — Keep main manifest minimal. Load details JIT through explicit instructions. Don't bloat the token window.
+2. **Deterministic Over Generative** — Delegate fragile operations to tested scripts. Don't ask the LLM to generate parsing logic each time.
+3. **Instructions for Agents, Not Humans** — Skills target machine execution. Step-by-step numbering = strict sequence.
+4. **Template-Driven Output** — Provide concrete JSON/config templates. Agents pattern-match exceptionally well.
+5. **Descriptive Error Messages** — Scripts must return human-readable errors so the agent can self-correct without user intervention.
+6. **Flat Structure** — Files exactly one level deep. No nested subdirectories.
+
+### Directory Pattern
+
+```
+skill-name/
+├── SKILL.md              (<500 lines, navigation + procedures)
+├── scripts/              (executable CLIs — deterministic, tested)
+├── references/           (schemas, cheatsheets, domain logic)
+└── assets/               (templates, JSON examples, static files)
+```
+
+---
+
+## 8. Integration Targets (Researched)
+
+### 8.1 OpenClaw (First-Class — Marius uses it)
+
+**Source:** [docs.openclaw.ai/tools/skills](https://docs.openclaw.ai/tools/skills)
+
+- **Format:** `SKILL.md` with YAML frontmatter (name + description required, single-line keys only)
+- **Types:** Bundled (lowest) → managed `~/.openclaw/skills/` → workspace `<workspace>/skills/` (highest)
+- **Invocation:** Model-invoked (agent decides) OR user-invoked (slash commands, `user-invocable: true`)
+- **Direct dispatch:** `command-dispatch: tool` + `command-tool` bypasses LLM reasoning entirely
+- **Gating:** `metadata.openclaw.requires.{bins, anyBins, env, config}`, `os` platform filter
+- **Config injection:** `openclaw.json` → `skills.entries.<name>.{enabled, apiKey, env, config}`. Env vars injected only if not already set.
 - **Distribution:** ClawHub registry (`openclaw skills install <slug>`)
-- **Config:** `openclaw.json` → `skills.entries.<name>.{enabled, apiKey, env, config}`
+- **Token impact:** ~24 tokens per skill (195 base + 97 + field lengths per skill)
+- **Session model:** Skills snapshotted at session start, reused for duration. Hot-reload via watcher.
 
-### 7.2 ElizaOS (First-Class — Web3 Native)
+**Our adapter surface:** SKILL.md (<500 lines) + scripts/ (CLI wrappers calling core) + references/ (schemas, source catalog excerpt)
 
-ElizaOS plugin system:
-- **Format:** TypeScript plugin class with `Action[]`, `Provider[]`, `Evaluator[]`
-- **Actions:** validate + handler pattern (agent decides when to use)
-- **Providers:** Context injectors (feed colony data into agent's prompt)
-- **Evaluators:** Post-response analyzers (quality tracking, reaction learning)
-- **Memory:** Typed memories with embeddings, PostgreSQL backend
-- **Distribution:** npm package, auto-install via Bun
+### 8.2 ElizaOS (First-Class — Web3 Native)
 
-### 7.3 AgentSkills / Hermes (Generic)
+**Source:** ElizaOS monorepo core types + plugin-starter + plugin-bootstrap + registry
+
+**Core Interfaces:**
+
+```typescript
+// Action — things the agent DOES
+interface Action {
+  name: string;              // e.g. 'PUBLISH_TO_DEMOS'
+  similes?: string[];        // aliases for LLM matching
+  description: string;       // LLM-visible
+  validate: Validator;       // guard: should this run? → boolean
+  handler: Handler;          // execution → ActionResult { success, text?, data? }
+  examples?: ActionExample[][];  // few-shot for LLM selection
+}
+
+// Provider — context the agent KNOWS
+interface Provider {
+  name: string;
+  get: (runtime, message, state) → ProviderResult;
+  // ProviderResult { text?, values?, data? }
+  // text → injected into LLM prompt
+  // values → merged into state.values
+  // data → merged into state.data
+}
+
+// Evaluator — post-response LEARNING
+interface Evaluator {
+  name: string;
+  alwaysRun?: boolean;      // run after every response?
+  validate: Validator;       // same signature as Action
+  handler: Handler;          // same signature as Action
+}
+
+// Plugin — bundles everything
+interface Plugin {
+  name: string;
+  init?: (config, runtime) → void;  // Zod config validation
+  actions?: Action[];
+  providers?: Provider[];
+  evaluators?: Evaluator[];
+  services?: Service[];      // long-lived SDK connections
+  events?: PluginEvents;     // reactive event handlers
+  dependencies?: string[];   // plugin dependency chains
+}
+```
+
+**Key patterns to adopt:**
+- `ProviderResult { text, values, data }` triple — separates LLM-visible from structured
+- `similes` + `examples` on Actions — helps LLM select without custom routing
+- Zod config validation at `init()` — clean config gate
+- Service class for long-lived SDK connection (wallet, auth)
+
+**Distribution:** GitHub-based registry (`elizaOS/registry`), JSON manifest per plugin, auto-install by name.
+
+**What maps to our architecture:**
+
+| ElizaOS | demos-agents | Adapter Work |
+|---------|-------------|-------------|
+| Action (validate+handler) | FrameworkPlugin.Action | Shape translation only |
+| Provider (context inject) | DataProvider | Add `text` field to output |
+| Evaluator (post-response) | Evaluator | Same pattern |
+| Service (long-lived) | connectors/ (SDK bridge) | Wrap as Service class |
+| Memory (typed+embedded) | Session transcript | Different model — document don't force |
+| Plugin.events | EventPlugin | Map event types |
+
+**What we have that ElizaOS doesn't:** Attestation hard gate, source catalog/lifecycle, claim extraction pipeline, scoring/quality system. These are our differentiated value.
+
+### 8.3 AgentSkills / Hermes (Generic)
 
 - **Format:** Markdown skill files following agentskills.io spec
 - **Distribution:** Git / local directory
-- **Lowest adapter effort** — mostly documentation
+- **Lowest adapter effort** — SKILL.md already covers this format
 
 ---
 
 ## 8. Research Needed
 
-- [ ] **R1:** ElizaOS existing web3 plugins (Farcaster, token integrations) — how do they structure Actions/Providers?
-- [ ] **R2:** OpenClaw existing skills — structural patterns, state management, ClawHub examples
+- [x] **R1:** ElizaOS plugin architecture — full report at `MEMORY/WORK/20260326-elizaos-plugin-architecture-research/research-report.md`. Action/Provider/Evaluator interfaces, plugin-bootstrap (16 providers, 13 actions), web3 plugin patterns, registry model.
+- [x] **R2:** OpenClaw skill system — SKILL.md format, ClawHub distribution, config injection, gating. Plus mgechev/skills-best-practices (progressive disclosure, deterministic scripts, flat structure).
 - [ ] **R3:** Map ALL Demos SDK verticals with concrete tool definitions per vertical
-- [ ] **R4:** Evaluate if the base 4-phase loop (observe→act→verify→learn) is the minimum viable strategy
+- [x] **R4:** Council debate (4/4 convergence): no base loop. Atomic tools only. Prior art (Stripe, Composio, MCP) confirms.
 
 ---
 
