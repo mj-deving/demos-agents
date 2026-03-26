@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-25 | **SDK:** 2.11.4 | **Tests:** 89 suites, 1383 passing | **Agents:** 6 defined, 3 publishing
+**Last updated:** 2026-03-25 | **SDK:** 2.11.4 | **Tests:** 92 suites, 1418 passing | **Agents:** 6 defined, 3 publishing
 
 ---
 
@@ -16,7 +16,7 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - 3 agents actively publishing to SuperColony (sentinel, crawler, pioneer)
 - 20 plugins (9 session loop + 3 SC API + 4 omniweb real + 4 omniweb scaffold→silent-fail)
 - Event-driven reactive loop alongside cron
-- TLSN + DAHR attestation pipeline functional (TLSN reactivated 2026-03-25, `tlsn_preferred` mode — 2.3x reaction multiplier per n=68 data)
+- DAHR attestation pipeline functional. TLSN disabled 2026-03-25 — zero ecosystem adoption (0/145 feed posts), proof generation hangs 300s. All agents on `dahr_only`.
 - Post-quantum wallet signing available (Falcon via Demos SDK)
 - CCI identity queries wired (RPC-direct, bypassing NAPI crash in abstraction barrel)
 - Claim-driven attestation (Phases 1-4): extract claims → surgical URLs → attest per-claim → verify values
@@ -30,11 +30,12 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - **Source URL resolution:** `buildCandidates` extracts URL params from static source URLs, broadcasts to operation variable aliases.
 
 **Where we're going:**
-- Monitor TLSN attestation success rates now that it's reactivated
-- Continue collecting quality_score data (12 entries, need 20+ with actuals for meaningful correlation)
-- H3/H1 deferred indefinitely (n=2 sessions showed no phase coupling waste, publish latency is blockchain, not orchestration)
+- **Toolkit evolution (STRATEGIC):** Extract demos-agents from harness into framework-agnostic toolkit. Core domain logic + thin adapters for OpenClaw + ElizaOS. SuperColony first vertical, expand to all Demos SDK verticals. See `design-toolkit-architecture.md`.
+- **Colony intelligence:** Map feed, track agents, build relationship memory. Reply-first strategy + tipping enabled.
+- **Sub-1-minute sessions:** Remove --wait 15, skip indexer check, reduce verify retries, cap harden findings.
+- Continue collecting quality_score data (17 entries, need 20+ with actuals for meaningful correlation)
 - CCI identity as root → Agent Auth Protocol as session auth layer
-- Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy
+- Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy (when SDK unblocks)
 
 ---
 
@@ -73,6 +74,8 @@ What Demos offers vs what we use. **Updated each session.**
 
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
+| [design-toolkit-architecture.md](design-toolkit-architecture.md) | `iterating` | 2026-03-25 | **Framework-agnostic toolkit design.** Living doc — taxonomy, three-layer architecture, open questions, decision log. Do not implement until APPROVED. |
+| [session-loop-explained.md](session-loop-explained.md) | `current` | 2026-03-25 | Comprehensive session loop reference — 8-phase V1, V2 architecture, hooks, timing, bottlenecks |
 | [loop-heuristics.md](loop-heuristics.md) | `current` | 2026-03-20 | **Single source of truth** for SCAN→GATE→PUBLISH pipeline, agent differentiation, 8 constitutional rules |
 | [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (89 suites now). Missing signal-detection, transcript, source-scanner, test-quality-validator files. |
 | [omniweb-agent-architecture.md](omniweb-agent-architecture.md) | `stale` | 2026-03-18 | Two-tier agent model. References omniweb-runner.ts which doesn't exist. Aspirational, not current. |
@@ -111,6 +114,35 @@ What Demos offers vs what we use. **Updated each session.**
 ## Session Changelog
 
 Most recent first. Each entry captures what changed, what was learned, what's next.
+
+### 2026-03-25 — Agent Overhaul + Toolkit Architecture Vision
+
+**Theme:** Speed, engagement, strategic direction. TLSN disabled, reply-first, tipping enabled, toolkit vision established.
+
+**Delivered:**
+- **Hook recursion fix:** `claude -p` was spawning recursive hooks (14+ per call). Fix: `--setting-sources ''` in CLIProvider. Root cause: UserPromptSubmit hooks spawned nested `claude` processes.
+- **TLSN disabled:** Feed scan (145 posts) confirmed 0 TLSN attestations in ecosystem. `sourceAttestations` schema has no type field — TLSN invisible on-chain. All agents switched to `dahr_only`.
+- **Reply-first strategy:** Reply targets moved from Bucket 3 to Bucket 1 in topic selection. `replyMinParentReactions` lowered to 3 (from 6-8). 0/82 posts were replies before this change.
+- **Tipping enabled:** All agents, `minSessionsBeforeLive: 0`, `requireAttestation: false`.
+- **Session speed:** 180s hard timeout, phase budgets slashed (30s each, publish 120s). Hardened plan v2 reviewed by First Principles + Architect agents — 2 items removed (audit skip, LLM parallelism), 5 items added (--wait 15, scan cache, hook latency, subprocess overhead, async harden).
+- **minDisagreePerSession enforced:** Second-pass disagree scanner in engage.ts.
+- **Quality data txHash:** Moved logging post-publish, backfill script for matching actuals.
+- **A/B review trial logging:** CLI for tracking Fabric vs /simplify findings.
+- **Session loop docs:** Comprehensive `session-loop-explained.md` + HTML visual.
+- **Toolkit architecture vision:** demos-agents evolving from harness → framework-agnostic toolkit. Three-layer architecture (adapter → core → SDK). OpenClaw + ElizaOS as dual first-class targets. Design doc created (`design-toolkit-architecture.md`) with 6 open questions, decision log, iteration path.
+- **4 sessions run:** sentinel-44 (1 post, 12.8min), crawler-14 (2 posts, 71.8min → TLSN timeouts), pioneer-38 (1 post, 66.4min → TLSN timeouts). All verified.
+
+**Key findings:**
+- TLSN is dead in ecosystem — zero adoption, schema doesn't distinguish it from DAHR
+- `claude -p` recursive hook spawning was the root cause of LLM generation failures
+- Indexer health check (30s) + verify --wait 15 (15s) = 45s pure waste per post
+- Extension hooks run serially with up to 285s combined timeout — potential hidden bottleneck
+- 85% of generic abstraction work already exists in codebase (src/types.ts, plugins, sources)
+
+**Tests:** 92 suites, 1418 passing (up from 89/1383, +35 tests)
+**Commits:** 9 pushed to main
+
+---
 
 ### 2026-03-24/25 — Correlation Analysis, TLSN Reactivation, Test Quality Enforcement
 
