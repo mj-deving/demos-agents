@@ -347,7 +347,111 @@ interface Plugin {
 
 ---
 
-## 10. Iteration Log
+## 10. Skill Dojo Parity Analysis
+
+### What Skill Dojo Actually Is
+
+Skill Dojo is **NOT an AI agent system.** It's 15 parameterized SDK wrappers behind a hosted REST API (`POST /api/execute`). Each "skill" is a deterministic function: receive params → call SDK/external API → optionally DAHR attest → return data + proof. Zero LLM, zero reasoning, zero memory.
+
+**Decision [2026-03-26]:** Replicate Skill Dojo locally as "best of all" implementation. Skill Dojo API remains as optional seamless fallback. Local path has no rate limit + more control. Consumer never knows which path runs.
+
+### Skill-by-Skill Comparison
+
+| # | Skill Dojo Skill | What It Does (Server-Side) | Our Local Implementation | Gap | Diff Notes |
+|---|---|---|---|---|---|
+| 1 | `defi-agent` (order-book) | Fetches Binance `api/v3/depth` + DAHR attests response | Source catalog has Binance. `declarative-engine.ts` fetches + parses via YAML spec. `publish-pipeline.ts` does DAHR. | **None** | Our path is richer: claim extraction, quality gate, multi-source attestation plan. Skill Dojo returns raw order book; we extract specific claims and attest surgically. **Our local is better.** |
+| 2 | `defi-agent` (liquidity) | Queries Uniswap V3 / Raydium pool data | Not in source catalog | **Small** | Add Uniswap V3 subgraph + Raydium API as source specs. Declarative engine handles it. |
+| 3 | `defi-agent` (bridge-swap) | Rubic bridge quotes | Not implemented | **Medium** | Rubic API integration. Maps to cross-chain vertical. |
+| 4 | `prediction-market-agent` | Polymarket + Kalshi API + DAHR attest | Not in source catalog | **Small** | Add Polymarket gamma-api + Kalshi API as source specs. Same DAHR flow we already have. |
+| 5 | `address-monitoring-agent` | `nodeCall` + chain RPC balance/tx queries | Not implemented | **Medium** | Need `nodeCall` wrapper for Demos chain + chain RPC adapters. XM SDK has the primitives. |
+| 6 | `network-monitor-agent` | `nodeCall` health + ethers.js mempool | Not implemented | **Medium** | Need nodeCall health queries + ethers provider for EVM mempool. |
+| 7 | `chain-operations-agent` | XM SDK unified balance/sign/transfer (9 chains) | XM SDK available, untested on testnet | **Validation** | SDK is imported. Need to validate each chain works on testnet. Core code exists. |
+| 8 | `multi-step-operations-agent` | DemosWork batch/conditional workflows | DemosWork SDK exists, **blocked** (ESM import bug) | **Blocked** | Cannot replicate until KyneSys fixes the `baseoperation.js` barrel import. |
+| 9 | `identity-agent` | CCI create/resolve/link via Identities class | Working via RPC-direct workaround | **Small** | Our RPC path works. Skill Dojo calls same SDK. Ours bypasses NAPI crash via direct RPC. **Our local works, theirs may crash too.** |
+| 10 | `tlsnotary-attestation-agent` | TLSNotary MPC-TLS proof generation | Playwright bridge (`tlsn-playwright-bridge.ts`) | **Parity but both broken** | Both paths fail — our Playwright bridge times out at 300s, their hosted path likely has same infra issue (same notary node). Need to verify if Skill Dojo TLSN actually works. |
+| 11 | `solana-operations-agent` | XM SDK Solana adapter | XM SDK available, untested | **Validation** | Same SDK, just need testnet validation. |
+| 12 | `ton-operations-agent` | XM SDK TON adapter | XM SDK available, untested | **Validation** | Same as above. |
+| 13 | `near-operations-agent` | XM SDK NEAR adapter | XM SDK available, untested | **Validation** | Same as above. |
+| 14 | `bitcoin-operations-agent` | XM SDK Bitcoin adapter | XM SDK available, untested | **Validation** | Same as above. |
+| 15 | `cosmos-operations-agent` | XM SDK Cosmos/IBC adapter | XM SDK available, untested | **Validation** | Same as above. |
+
+### Summary
+
+| Status | Count | Skills |
+|---|---|---|
+| **Our local is BETTER** | 2 | defi-agent (order-book), identity-agent |
+| **Easy to add locally** | 2 | prediction-market, defi-agent (liquidity) |
+| **Needs new implementation** | 3 | address-monitoring, network-monitor, bridge-swap |
+| **Needs testnet validation** | 5 | chain-operations + 4 chain-specific ops |
+| **Both paths broken** | 1 | tlsnotary-attestation (infra issue) |
+| **Blocked on SDK** | 1 | multi-step-operations (ESM bug) |
+| **N/A** | 1 | demos-wallet (browser only) |
+
+### Where Our Local Path Is Better Than Skill Dojo
+
+1. **No 5 req/hr rate limit** — local calls are unlimited
+2. **Claim extraction** — we parse API responses into structured claims, Skill Dojo returns raw data
+3. **Multi-source attestation planning** — we attest specific claims across multiple sources, Skill Dojo attests one blob
+4. **Quality gate** — we score content before publishing, Skill Dojo has no quality layer
+5. **Source lifecycle** — we track source health and rotate, Skill Dojo uses hardcoded endpoints
+6. **Entity resolution** — we map "BTC" → "bitcoin" for correct API calls, Skill Dojo doesn't
+
+### Where Skill Dojo Is Better
+
+1. **Hosted — zero local setup** — consumer doesn't need Node.js, SDK, or wallet locally
+2. **Pre-built chain adapters** — 5 chain-specific ops skills work without XM SDK validation
+3. **Prediction markets** — Polymarket/Kalshi integration ready (we don't have it yet)
+
+### Implementation Plan: Local Best-of-All
+
+**Phase 1 (with MVP):** Replicate skills 1, 4, 9 locally (already mostly done)
+- defi-agent → existing source catalog + DAHR (DONE)
+- prediction-market → add Polymarket/Kalshi source specs (SMALL)
+- identity-agent → existing RPC workaround (DONE)
+
+**Phase 2:** Replicate skills 5, 6 locally
+- address-monitoring → nodeCall wrapper + chain RPC (MEDIUM)
+- network-monitor → nodeCall health + ethers mempool (MEDIUM)
+
+**Phase 3:** Validate chain operations (skills 7, 11-15)
+- Run testnet validation for each XM SDK chain adapter
+- Compare results with Skill Dojo output for parity
+
+**Phase 4 (when unblocked):** Replicate skill 8
+- multi-step-operations → DemosWork SDK (after ESM fix)
+
+### Seamless Fallback Architecture
+
+```typescript
+// Consumer calls:
+const data = await demos.tools.scan({ domain: "defi", pair: "ETH/USDT" });
+
+// Internally:
+async function scan(params) {
+  // 1. Try local path first (no rate limit, richer processing)
+  try {
+    const localResult = await localProviders.fetch(params);
+    if (localResult.ok) return localResult;
+  } catch (localErr) {
+    log.warn("Local fetch failed, trying Skill Dojo fallback", localErr);
+  }
+
+  // 2. Fall back to Skill Dojo API (rate limited, simpler)
+  if (skillDojoClient.canExecute()) {
+    const remoteResult = await skillDojoClient.execute(mapToSkillId(params), params);
+    if (remoteResult.ok) return normalizeResult(remoteResult);
+  }
+
+  // 3. Both failed
+  throw new Error("No data source available");
+}
+```
+
+The consumer never sees the routing. Local is tried first (faster, no limit). Skill Dojo is transparent fallback. Results are normalized to the same shape regardless of path.
+
+---
+
+## 11. Iteration Log
 
 ### 2026-03-25 — Session 1: Vision Established
 - Taxonomy defined (framework vs harness vs toolkit)
@@ -396,6 +500,17 @@ interface Plugin {
 
 **Participants:** Marius + Claude + Council (4 agents) + ElizaOS researcher
 
+### 2026-03-26 — Session 4: Skill Dojo Deconstruction + Parity Analysis
+- **Key discovery:** Skill Dojo is NOT an AI system — it's 15 parameterized SDK wrappers behind a REST API. Zero LLM, zero reasoning, zero memory. Each "skill" = receive params → SDK/API call → optional DAHR attest → return data.
+- **Decision: Replicate locally (option B+C).** Local "best of all" implementation + Skill Dojo API as seamless fallback. Consumer never sees routing.
+- **Parity analysis complete:** 15 skills mapped. 2 where our local is already better (DeFi order-book, identity). 2 easy to add (prediction markets, liquidity). 3 need new implementation (address monitoring, network monitor, bridge). 5 need testnet validation (chain ops). 1 both broken (TLSN). 1 blocked (DemosWork).
+- **Our local advantages over Skill Dojo:** No rate limit, claim extraction, multi-source attestation planning, quality gate, source lifecycle, entity resolution.
+- **Skill Dojo advantages:** Zero local setup, pre-built chain adapters, prediction market data ready.
+- **Seamless fallback architecture defined:** local-first → Skill Dojo fallback → normalized result shape.
+- **4-phase local replication plan:** Phase 1 (MVP, mostly done), Phase 2 (monitoring, medium), Phase 3 (chain validation), Phase 4 (when SDK unblocks).
+
+**Participants:** Marius + Claude
+
 ---
 
 ## 11. Decision Log
@@ -429,3 +544,7 @@ interface Plugin {
 [2026-03-25] DECISION: Zero loops in the toolkit. MVP = atomic tools + rate-limit guard. REASON: Council debate (4/4 convergence). Prior art (Stripe, Composio, MCP) confirms toolkits ship tools not loops. Consumer's agent already has a loop — imposing another creates impedance mismatch.
 
 [2026-03-25] DECISION: MVP tool surface: connect(), publish(), scan(), verify(), react(), tip(), discoverSources() + mandatory rate-limit middleware. REASON: Engineer's "four functions and a constraint" principle. publish() hides 6-step chain internally. Complexity is internal, API is clean.
+
+[2026-03-26] DECISION: Replicate Skill Dojo locally as "best of all" version. Skill Dojo API as seamless fallback. REASON: Skill Dojo is 15 parameterized SDK wrappers, not AI. Our local path is already better for 2/15 skills (no rate limit, claim extraction, quality gate). Local-first eliminates 5 req/hr shared constraint. SUPERSEDES: earlier framing of Skill Dojo as "data provider layer" — it's actually an alternative execution path for the same operations we do locally.
+
+[2026-03-26] DECISION: Seamless routing: local-first → Skill Dojo fallback → normalized result. Consumer never sees which path runs. REASON: Transparency. Same result shape regardless of path. Local is faster + no rate limit. Skill Dojo is zero-setup convenience for consumers who can't run SDK locally.
