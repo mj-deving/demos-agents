@@ -151,6 +151,22 @@ export const D402RequirementSchema = z.object({
   description: z.string().optional(),
 });
 
+// ── Catalog Entry Schema ─────────────────────────────
+
+/** Schema for source catalog entries — replaces inline Record<string, unknown> casts in discover-sources.ts */
+export const CatalogEntrySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+  domain: z.string().optional(),
+  domainTags: z.array(z.string()).optional(),
+  url: z.string().optional(),
+  status: z.string().optional(),
+  healthScore: z.number().optional(),
+  rating: z.object({ overall: z.number() }).optional(),
+}).passthrough();
+
+export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;
+
 // ── Validation Helper ────────────────────────────────
 
 /**

@@ -18,6 +18,7 @@ import { DemosSession } from "../session.js";
 import { FileStateStore } from "../state-store.js";
 import { createSdkBridge, AUTH_PENDING_TOKEN } from "../sdk-bridge.js";
 import { validateInput, ConnectOptionsSchema } from "../schemas.js";
+import { validateUrl } from "../url-validator.js";
 
 const DEFAULT_RPC_URL = "https://demosnode.discus.sh";
 const DEFAULT_ALGORITHM = "falcon";
@@ -45,6 +46,15 @@ export async function connect(opts: ConnectOptions): Promise<DemosSession> {
       "RPC URL must use HTTPS (set allowInsecureUrls for local dev)",
       false,
     );
+  }
+
+  // SSRF validation on apiBaseUrl — only for user-provided URLs (default is trusted)
+  const apiBaseUrl = opts.supercolonyApi ?? DEFAULT_SUPERCOLONY_API;
+  if (opts.supercolonyApi) {
+    const apiUrlCheck = await validateUrl(apiBaseUrl, { allowInsecure: opts.allowInsecureUrls });
+    if (!apiUrlCheck.valid) {
+      throw demosError("INVALID_INPUT", `SuperColony API URL blocked: ${apiUrlCheck.reason}`, false);
+    }
   }
 
   const walletPath = resolve(opts.walletPath.replace(/^~(?=$|\/)/, homedir()));
@@ -103,7 +113,6 @@ export async function connect(opts: ConnectOptions): Promise<DemosSession> {
     const stateStore = opts.stateStore ?? new FileStateStore();
 
     // Create SDK bridge (session-scoped, no module-level state)
-    const apiBaseUrl = opts.supercolonyApi ?? DEFAULT_SUPERCOLONY_API;
     const bridge = createSdkBridge(demos, apiBaseUrl, authToken);
 
     return new DemosSession({
@@ -259,7 +268,7 @@ async function authenticateFallback(address: string): Promise<string> {
   return AUTH_PENDING_TOKEN;
 }
 
-// Cached — container status is invariant per process
+// Process-invariant: container status cannot change during process lifetime. Cached for performance.
 let _isContainer: boolean | null = null;
 
 async function detectContainer(): Promise<boolean> {

@@ -10,7 +10,8 @@ import { readFile } from "node:fs/promises";
 import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, SourceStatus, ToolResult } from "../types.js";
 import { ok, err, demosError } from "../types.js";
 import { DemosSession } from "../session.js";
-import { validateInput, DiscoverSourcesOptionsSchema } from "../schemas.js";
+import { validateInput, DiscoverSourcesOptionsSchema, CatalogEntrySchema } from "../schemas.js";
+import type { CatalogEntry } from "../schemas.js";
 import { safeParse } from "../guards/state-helpers.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 
@@ -68,18 +69,20 @@ async function loadCatalog(catalogPath: string): Promise<Source[]> {
   const catalog = safeParse(raw) as Record<string, unknown>;
 
   const entries = Array.isArray(catalog) ? catalog : (catalog.sources ?? []) as unknown[];
-  const sources: Source[] = entries.map((entry: Record<string, unknown>) => ({
-    id: (entry.id as string) ?? "",
-    name: (entry.name as string) ?? (entry.id as string) ?? "",
-    domain: (entry.domain as string) ?? (Array.isArray(entry.domainTags) ? (entry.domainTags as string[])[0] : "unknown"),
-    url: (entry.url as string) ?? "",
-    status: normalizeStatus(entry.status as string),
-    healthScore: typeof entry.healthScore === "number"
-      ? entry.healthScore
-      : (entry.rating && typeof (entry.rating as Record<string, unknown>).overall === "number"
-        ? (entry.rating as Record<string, number>).overall
-        : undefined),
-  }));
+  const sources: Source[] = entries.map((raw: unknown) => {
+    const parsed = CatalogEntrySchema.safeParse(raw);
+    const entry: CatalogEntry = parsed.success ? parsed.data : (raw as CatalogEntry);
+    return {
+      id: entry.id ?? "",
+      name: entry.name ?? entry.id ?? "",
+      domain: entry.domain ?? (Array.isArray(entry.domainTags) ? entry.domainTags[0] : "unknown"),
+      url: entry.url ?? "",
+      status: normalizeStatus(entry.status),
+      healthScore: typeof entry.healthScore === "number"
+        ? entry.healthScore
+        : (entry.rating?.overall ?? undefined),
+    };
+  });
 
   catalogCache.set(catalogPath, sources);
   return sources;

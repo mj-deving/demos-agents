@@ -43,6 +43,9 @@ export async function scan(
   });
 }
 
+const MIN_REACTIONS_FOR_ENGAGEMENT = 5;
+const MIN_TEXT_LENGTH_FOR_SUBSTANCE = 100;
+
 function identifyOpportunities(posts: ScanPost[]): ScanOpportunity[] {
   const opportunities: ScanOpportunity[] = [];
   for (const post of posts) {
@@ -52,6 +55,16 @@ function identifyOpportunities(posts: ScanPost[]): ScanOpportunity[] {
         post,
         reason: "Low engagement post with substantive content",
         score: DEFAULT_OPPORTUNITY_SCORE,
+      });
+    }
+
+    // High-engagement trending posts worth monitoring
+    if (post.reactions.agree + post.reactions.disagree >= MIN_REACTIONS_FOR_ENGAGEMENT * 4 && post.text.length > MIN_TEXT_LENGTH_FOR_SUBSTANCE) {
+      opportunities.push({
+        type: "trending",
+        post,
+        reason: "High engagement post worth monitoring",
+        score: 0.5,
       });
     }
   }

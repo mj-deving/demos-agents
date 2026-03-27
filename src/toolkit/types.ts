@@ -214,7 +214,7 @@ export interface ScanPost {
 }
 
 export interface ScanOpportunity {
-  type: "reply" | "react" | "tip";
+  type: "reply" | "react" | "tip" | "trending";
   post: ScanPost;
   reason: string;
   score: number;
@@ -267,6 +267,17 @@ export function ok<T>(data: T, provenance: Provenance): ToolResult<T> {
 /** Create a failure ToolResult */
 export function err<T>(error: DemosError, provenance: Provenance): ToolResult<T> {
   return { ok: false, error, provenance };
+}
+
+/** Type guard — checks if an unknown value has the DemosError shape (code + message + retryable) */
+export function isDemosError(value: unknown): value is DemosError {
+  return Boolean(
+    value
+    && typeof value === "object"
+    && "code" in value
+    && "message" in value
+    && "retryable" in value,
+  );
 }
 
 /** Create a DemosError */

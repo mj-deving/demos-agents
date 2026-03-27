@@ -133,4 +133,7 @@ export {
   TipPolicySchema,
   PayPolicySchema,
   D402RequirementSchema,
+  CatalogEntrySchema,
 } from "./schemas.js";
+
+export type { CatalogEntry } from "./schemas.js";

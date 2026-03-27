@@ -67,6 +67,29 @@ describe("connect() validation", () => {
     });
   });
 
+  it("rejects supercolonyApi URL pointing to private IP (SSRF)", async () => {
+    const walletPath = createWalletFile(JSON.stringify({ address: "demos1test" }));
+
+    // 169.254.169.254 is the cloud metadata endpoint — must be blocked
+    await expect(
+      connect({ walletPath, supercolonyApi: "https://169.254.169.254" }),
+    ).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("SuperColony API URL blocked"),
+    });
+  });
+
+  it("rejects supercolonyApi URL using HTTP without allowInsecureUrls", async () => {
+    const walletPath = createWalletFile(JSON.stringify({ address: "demos1test" }));
+
+    await expect(
+      connect({ walletPath, supercolonyApi: "http://example.com" }),
+    ).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("SuperColony API URL blocked"),
+    });
+  });
+
   it("disconnect expires session and clears sensitive data", async () => {
     const { DemosSession } = await import("../../../src/toolkit/session.js");
     const { FileStateStore } = await import("../../../src/toolkit/state-store.js");

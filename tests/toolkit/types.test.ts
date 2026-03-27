@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { ok, err, demosError } from "../../src/toolkit/types.js";
+import { ok, err, demosError, isDemosError } from "../../src/toolkit/types.js";
 import type {
   DemosErrorCode,
   ToolResult,
@@ -68,6 +68,33 @@ describe("err helper", () => {
     expect(result.data).toBeUndefined();
     expect(result.error!.code).toBe("NETWORK_ERROR");
     expect(result.error!.retryable).toBe(true);
+  });
+});
+
+describe("isDemosError type guard", () => {
+  it("returns true for a DemosError object", () => {
+    const error = demosError("AUTH_FAILED", "Bad token", false);
+    expect(isDemosError(error)).toBe(true);
+  });
+
+  it("returns true for a plain object with the DemosError shape", () => {
+    expect(isDemosError({ code: "X", message: "Y", retryable: true })).toBe(true);
+  });
+
+  it("returns false for null", () => {
+    expect(isDemosError(null)).toBe(false);
+  });
+
+  it("returns false for a plain Error", () => {
+    expect(isDemosError(new Error("oops"))).toBe(false);
+  });
+
+  it("returns false for a string", () => {
+    expect(isDemosError("not an error")).toBe(false);
+  });
+
+  it("returns false for an object missing retryable", () => {
+    expect(isDemosError({ code: "X", message: "Y" })).toBe(false);
   });
 });
 
