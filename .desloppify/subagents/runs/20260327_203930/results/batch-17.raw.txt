@@ -1,0 +1,210 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 17,
+  "assessments": {"design_coherence": 79.5},
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "Tool files are tightly focused: react.ts (37 lines), attest.ts (65 lines), tip.ts (90 lines) — single responsibility is well respected",
+        "publish.ts: reply() duplicates session.touch() and start-time capture that withToolWrapper already handles — the wrapper is used for publish() but reply() manually re-implements the preamble before delegating to publish()",
+        "tip-spend-cap.ts: amount validation order is wrong — `amount > policy.maxPerTip` checked BEFORE `!Number.isFinite(amount)`. NaN > X is always false so the isFinite guard is never reached for NaN input; the per-tip cap check can silently pass for NaN (lines 36–46)",
+        "sdk-bridge.ts apiCall: catch block returns a default object `{ ok: false, status: 0, data: message }` rather than throwing — this is the silent failure flagged by the mechanical scanner. It is a deliberate design choice (apiCall never throws, callers check result.ok) but it hides network errors without any means for callers to distinguish 'server returned 0' from 'network down'",
+        "state-helpers.ts: appendEntry() is a thin wrapper over checkAndAppend() with a hardcoded `() => null` — this is fine structurally but async functions without await (appendEntry calls checkAndAppend which does await) — both flagged async functions in state-helpers.ts actually do await internally via their delegated calls; the concern signal may be about the function signatures themselves being async",
+        "connect.ts: fetchFromSkillDojo in scan.ts takes _session, _limit, _domain parameters (all prefixed with underscore = unused) but is a real async function that immediately throws — this is a placeholder/stub, the async without await is intentional pending implementation",
+        "tip.ts cyclomatic complexity: the function has multiple branches (RPC try/catch, feed API fallback, multiple error paths) but all branches serve a single responsibility (resolve recipient + transfer). The branching is inherent to the fallback design, not mixing concerns.",
+        "Magic numbers: DAY_MS = 24*60*60*1000 repeated in dedup-guard.ts, pay-receipt-log.ts (WEEK_MS), pay-spend-cap.ts, tip-spend-cap.ts, write-rate-limit.ts, session.ts — six files with independent time-window constants. No shared time constants file.",
+        "dedup-guard.ts exports both checkAndRecordDedup (newer unified API) and checkDedup + recordPublish (backward compat split API) — two parallel APIs for the same operation; publish.ts still calls the split API (checkDedup + recordPublish separately)"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The toolkit has strong single-responsibility discipline at the file level: each tool file does one thing and delegates correctly to guards and bridges. The main structural weaknesses are a repeated time-constant pattern across six guard files (no shared constants module), a split vs. unified API in dedup-guard.ts that leaves publish.ts using the deprecated two-call pattern, and reply() in publish.ts re-implementing withToolWrapper preamble before delegating to publish().",
+      "score_rationale": "The score reflects a solid foundation with focused tool files but penalizes the repeated DAY_MS magic-number pattern, the dual-API dedup interface (backward compat API used in production code), and the reply() duplication. These are structural improvements that would reduce cognitive load and risk, not cosmetic issues. A codebase at 80+ needs to address systemic patterns, not just individual files."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_reply_wrapper_bypass",
+      "summary": "reply() in publish.ts manually re-implements withToolWrapper preamble before calling publish()",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "Lines 66–78: reply() calls `session.touch()`, captures `start = Date.now()`, calls validateInput manually, returns err() with localProvenance — all of which withToolWrapper already handles",
+        "publish() uses withToolWrapper correctly; reply() does not, creating inconsistency in how errors are wrapped and how onToolCall is notified",
+        "reply() calls publish() which calls withToolWrapper again — session.touch() is called twice per reply operation"
+      ],
+      "suggestion": "Wrap reply() with withToolWrapper or remove the manual preamble and call publish() directly after input validation, letting publish's withToolWrapper handle timing and observer notification. Alternatively, extract the input-validation-and-delegate pattern into a shared helper.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "26f0d2a43f4b64b5",
+      "reasoning": "The flagged async-without-await in publish.ts is the executePublishPipeline helper which does await; the concern is not applicable here. The real issue is the wrapper bypass described above."
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_dedup_split_api_in_production",
+      "summary": "publish.ts uses deprecated two-call dedup API instead of the unified checkAndRecordDedup",
+      "related_files": ["src/toolkit/tools/publish.ts", "src/toolkit/guards/dedup-guard.ts"],
+      "evidence": [
+        "dedup-guard.ts exports checkAndRecordDedup (lines 31–52) as the unified check+record API and marks checkDedup + recordPublish as '(backward compat)'",
+        "publish.ts lines 32–37: calls checkDedup() (check only), then later lines 43–46: calls recordDedupPublish() separately — two lock acquisitions instead of one",
+        "The unified checkAndRecordDedup API was specifically designed to avoid the double-lock overhead that the production code still incurs"
+      ],
+      "suggestion": "In publish.ts, replace the separate checkDedup + recordDedupPublish calls with a single checkAndRecordDedup(store, walletAddress, text, true) call at the record point. This reduces lock acquisitions and uses the intended production API.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_magic_number_day_ms",
+      "summary": "DAY_MS = 24*60*60*1000 magic number duplicated across six guard files",
+      "related_files": [
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/pay-spend-cap.ts",
+        "src/toolkit/guards/tip-spend-cap.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/pay-receipt-log.ts",
+        "src/toolkit/session.ts"
+      ],
+      "evidence": [
+        "dedup-guard.ts line 13: `const DAY_MS = 24 * 60 * 60 * 1000;`",
+        "pay-spend-cap.ts line 13: same",
+        "tip-spend-cap.ts line 12: same",
+        "write-rate-limit.ts line 14: same",
+        "pay-receipt-log.ts line 11: `const WEEK_MS = 7 * 24 * 60 * 60 * 1000;` — derived from same pattern",
+        "session.ts line 28: `const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;` — same pattern for minutes"
+      ],
+      "suggestion": "Add a `src/toolkit/guards/time-constants.ts` exporting `DAY_MS`, `HOUR_MS`, `WEEK_MS`, `MINUTE_MS`. Import from there in all guard files. This is a mechanical improvement that eliminates six parallel definitions of the same value.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "193400e1a8dc7bbc"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_sdk_bridge_silent_failure",
+      "summary": "apiCall() catch block returns default object instead of throwing — error type is indistinguishable from a server-returned 0 status",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Lines 241–244: `catch (err) { ... return { ok: false, status: 0, data: message }; }` — network errors and DNS failures all produce status: 0",
+        "Callers cannot distinguish between 'server returned HTTP 0' (impossible) and 'network unavailable' — both look identical",
+        "The design intent (apiCall never throws) is documented implicitly but the status: 0 convention is undocumented"
+      ],
+      "suggestion": "Document the `status: 0` convention explicitly in the SdkBridge interface JSDoc for apiCall: 'status: 0 indicates a transport-level failure (network error, DNS failure) — not an HTTP response'. Alternatively, add a `networkError?: boolean` field to ApiCallResult to disambiguate.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "3965224138dd1f19"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_state_helpers_async_stubs",
+      "summary": "Two functions in state-helpers.ts are declared async but contain no await — they return Promises only via delegation",
+      "related_files": ["src/toolkit/guards/state-helpers.ts"],
+      "evidence": [
+        "appendEntry() is declared async but its body is `await checkAndAppend(...)` — actually does await, concern signal may be a false positive",
+        "sleep() returns `new Promise(...)` and is not async — not flagged",
+        "On re-inspection: appendEntry does await. The mechanical 'async without await' signal for state-helpers.ts appears to be a false positive."
+      ],
+      "suggestion": "No change needed — appendEntry correctly awaits checkAndAppend. Dismiss this signal.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "f7ee1138317edb85",
+      "reasoning": "appendEntry in state-helpers.ts does `await checkAndAppend(...)` — it is correctly async. The mechanical signal appears to have fired on function signature analysis without seeing the await in the body."
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_scan_stub_async",
+      "summary": "fetchFromSkillDojo in scan.ts is declared async but immediately throws without awaiting anything",
+      "related_files": ["src/toolkit/tools/scan.ts"],
+      "evidence": [
+        "Lines 98–101: `async function fetchFromSkillDojo(_session, _limit, _domain) { throw new Error('Skill Dojo integration pending'); }` — async wrapper around a synchronous throw",
+        "The async wrapper is unnecessary — a synchronous throw from an async function produces a rejected Promise, same as returning Promise.reject()"
+      ],
+      "suggestion": "Either remove the `async` keyword (a synchronous throw from a non-async function called from an async context still rejects the calling await), or keep async with a comment explaining it will gain awaits when Skill Dojo is wired.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "9c14840d40c65d85"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_connect_async_no_await",
+      "summary": "fetchFromSkillDojo in connect.ts: async disconnect() is synchronous — no awaitable operations",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "Line 129: `export function disconnect(session: DemosSession): void` — actually NOT async, correct",
+        "On re-inspection: connect.ts does not have an async function without await. The concern fingerprint 7601f9a299ecdb78 may refer to a different pattern.",
+        "Reviewing the file: authenticateFallback() has a try/catch with `catch { /* auth module may not be available */ }` — the catch silently swallows errors and returns AUTH_PENDING_TOKEN. This is intentional fallback behavior."
+      ],
+      "suggestion": "No change to async pattern needed. The authenticateFallback silent catch is intentional — consider a brief comment explaining why swallowing is safe here.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "7601f9a299ecdb78",
+      "reasoning": "connect.ts does not contain a clearly problematic async-without-await. authenticateFallback is async and does await loadAuthCache. The concern signal appears to be a false positive."
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dc_tip_nan_check_order",
+      "summary": "tip-spend-cap.ts checks amount > maxPerTip before isFinite — NaN bypasses per-tip cap silently",
+      "related_files": ["src/toolkit/guards/tip-spend-cap.ts"],
+      "evidence": [
+        "Line 36: `if (amount > policy.maxPerTip)` — NaN > anything is false, so this guard is skipped for NaN",
+        "Line 44: `if (!Number.isFinite(amount) || amount <= 0)` — NaN is caught here, but only after the per-tip cap check already passed silently",
+        "Result: NaN input passes the per-tip max check, then correctly fails the isFinite check. Not a security bypass (still errors), but the per-tip cap check order is logically wrong."
+      ],
+      "suggestion": "Move the isFinite check to line 36 (before the maxPerTip comparison): `if (!Number.isFinite(amount) || amount <= 0) { return demosError(...) }` then `if (amount > policy.maxPerTip) { ... }`. The concern fingerprint a63dcd976228b7cc is for tip.ts complexity — the complexity is inherent to the fallback design and not a design problem.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "a63dcd976228b7cc",
+      "reasoning": "tip.ts has high cyclomatic complexity but all branches serve a single responsibility: resolve recipient address with RPC fallback to feed API. The branching is inherent to the fallback design pattern, not a mixing of concerns."
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Backward compatibility wrappers (checkDedup/recordPublish) were added but production callers were not migrated to the unified API",
+      "Time constants defined locally in each guard file — no shared constants module because guards were developed incrementally"
+    ],
+    "likely_symptoms": [
+      "dc_dedup_split_api_in_production",
+      "dc_nan_check_order"
+    ],
+    "possible_false_positives": [
+      "dc_state_helpers_async_stubs",
+      "dc_connect_async_no_await"
+    ]
+  },
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Tool files respect single responsibility well",
+          "description": "Each tool file (react.ts, attest.ts, tip.ts, verify.ts) is tightly scoped to one operation and delegates correctly to guards and bridges. Files are small (37–95 lines) with clear entry points.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Backward compat split API not yet migrated",
+          "description": "dedup-guard.ts exposes both a unified checkAndRecordDedup and a deprecated checkDedup+recordPublish pair. Production code (publish.ts) still uses the deprecated two-call pattern, defeating the design intent of atomic check-and-record.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

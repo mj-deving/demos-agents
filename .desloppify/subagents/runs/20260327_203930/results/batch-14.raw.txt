@@ -1,0 +1,105 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 14,
+  "assessments": {"incomplete_migration": 76.0},
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "Grep for deprecated/DEPRECATED/TODO.*migrat/TODO.*legacy in src/toolkit finds only: SourceStatus type includes 'deprecated' as a valid enum value (domain term, not a migration marker); discover-sources.ts excludes sources with status 'deprecated' from results — these are data values, not code migration markers",
+        "Six backward-compat guard functions (checkDedup, recordPublish, checkWriteRateLimit, recordWrite, checkTipSpendCap, recordTip) are labeled '// backward compat' in source and exported in index.ts. The new checkAndRecord* API coexists with the old check*/record* API — old+new coexistence pattern",
+        "No @deprecated JSDoc annotations on the backward-compat functions — consumers cannot discover these are intended to be removed",
+        "scan.ts: fetchFromSkillDojo() has 'TODO(skill-dojo): wire to Skill Dojo API fallback' and always throws 'Skill Dojo integration pending'. session.skillDojoFallback configuration option exists in DemosSession and ConnectOptions — feature scaffold present but integration is TODO",
+        "publish.ts: '// TODO(toolkit-mvp): integrate SDK bridge — claims → DAHR → tx → confirm → broadcast' — but looking at the actual code, this appears above executePublishPipeline which IS fully implemented. The TODO comment may be stale (the pipeline does execute DAHR + tx + confirm)",
+        "No JS/TS mixed files — all TypeScript",
+        "No axios/fetch coexistence, no moment/dayjs coexistence, no old+new framework patterns",
+        "connect.ts: mnemonic-only wallet returns AUTH_PENDING_TOKEN ('mnemonic wallet files are not yet supported') — partial implementation with explicit error, not silent degradation",
+        "packages/core/ (PR1 barrel) re-exports from src/toolkit/ — intentional active migration per CLAUDE.md, not stale shim"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "incomplete_migration": {
+      "dimension_character": "The main incomplete-migration signal is the guard API: six backward-compat check/record functions coexist with the new checkAndRecord* functions in the exported surface, with no @deprecated annotations to signal removal intent to consumers. A secondary signal is the Skill Dojo integration — the fallback path, config option, and DemosSession field all exist but fetchFromSkillDojo always throws. The publish.ts TODO comment appears stale — the pipeline is implemented.",
+      "score_rationale": "Score 76: no JS/TS mix, no framework migration, no deprecated-but-still-called symbols. The guard backward-compat coexistence is real but bounded — six functions in three files, clearly labeled. Held below 80 by the missing @deprecated annotations on the backward-compat exports (consumers have no signal) and the Skill Dojo always-throw stub which leaves infrastructure that suggests more work than is actually planned."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "im-guard-no-deprecated-annotation",
+      "summary": "Six backward-compat guard functions lack @deprecated JSDoc — consumers cannot discover these are intended for removal",
+      "related_files": ["src/toolkit/guards/dedup-guard.ts", "src/toolkit/guards/write-rate-limit.ts", "src/toolkit/guards/tip-spend-cap.ts", "src/toolkit/index.ts"],
+      "evidence": [
+        "checkDedup: '/** Check if text is a duplicate (backward compat) */' — no @deprecated",
+        "checkWriteRateLimit: '/** Check if a write is allowed (backward compat) */' — no @deprecated",
+        "checkTipSpendCap: '/** Check if a tip is allowed (backward compat) */' — no @deprecated",
+        "All six are exported in index.ts alongside the new checkAndRecord* functions with no usage guidance",
+        "TypeScript's @deprecated JSDoc causes IDEs to strikethrough usages and warn callers — absence means no migration pressure"
+      ],
+      "suggestion": "Add /** @deprecated Use checkAndRecordDedup() instead */ to checkDedup and recordPublish; /** @deprecated Use checkAndRecordWrite() instead */ to checkWriteRateLimit and recordWrite; /** @deprecated Use checkAndRecordTip() instead */ to checkTipSpendCap and recordTip. This creates IDE-level migration pressure without a breaking change.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "im-skill-dojo-always-throws",
+      "summary": "fetchFromSkillDojo() always throws 'Skill Dojo integration pending' but the fallback infrastructure (session.skillDojoFallback, config option, error handling) is fully wired",
+      "related_files": ["src/toolkit/tools/scan.ts", "src/toolkit/session.ts", "src/toolkit/types.ts"],
+      "evidence": [
+        "scan.ts: async function fetchFromSkillDojo(_session, _limit, _domain): throw new Error('Skill Dojo integration pending')",
+        "DemosSession.skillDojoFallback: boolean field — always set, always available",
+        "ConnectOptions.skillDojoFallback: accepted in connect() and stored",
+        "scan.ts: if (session.skillDojoFallback) { try { const posts = await fetchFromSkillDojo(...) } catch { console.warn(...) } } — fallback infrastructure exists but the stub always fails",
+        "The feature flag creates the impression of a working fallback; callers who set skillDojoFallback: true get a warning log on every scan call without explanation"
+      ],
+      "suggestion": "Either: (a) remove skillDojoFallback from ConnectOptions/DemosSession and the scan.ts branch until the integration is real — cleaner surface; or (b) add a TODO comment with a tracking issue reference in fetchFromSkillDojo so the stub is clearly marked as planned work, not a degraded feature.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "im-stale-publish-todo",
+      "summary": "publish.ts has a TODO comment that may be stale — the pipeline it references is already implemented",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "'// TODO(toolkit-mvp): integrate SDK bridge — claims → DAHR → tx → confirm → broadcast'",
+        "The very next line: 'const txHash = await executePublishPipeline(session, draft)'",
+        "executePublishPipeline does perform DAHR attestation, publishHivePost (store→confirm→broadcast), and returns txHash",
+        "The TODO comment implies the integration is missing when it is present"
+      ],
+      "suggestion": "Remove the TODO comment — the pipeline is implemented. If claim extraction (Phase 1 in the session loop) is not yet wired here, add a specific TODO: '// TODO(claims): wire claim extraction before attestation — currently skips claim-derived URL parameters'.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Guard API migration was done incrementally: checkAndRecord* added, old names kept as backward-compat, but deprecation annotations never added and callers never updated",
+      "Skill Dojo stub left in place because session config field and error handling were added first — stub was supposed to be temporary but has no deprecation/removal signal"
+    ]
+  },
+  "context_updates": {
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "No JS/TS mixed files or framework migration signals",
+          "description": "The toolkit is pure TypeScript with no mixed-type modules, no moment/axios/old-framework patterns. The only incomplete-migration signal is the guard API coexistence and Skill Dojo stub.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Skill Dojo always-throw stub with live config wiring",
+          "description": "session.skillDojoFallback and ConnectOptions.skillDojoFallback are fully wired, but fetchFromSkillDojo always throws. Callers who set the flag get a confusing warning log on every scan without knowing integration is pending.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

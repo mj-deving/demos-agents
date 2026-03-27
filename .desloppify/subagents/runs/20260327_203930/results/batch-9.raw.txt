@@ -1,0 +1,126 @@
+{
+  "batch": "mid_level_elegance",
+  "batch_index": 9,
+  "assessments": {"mid_level_elegance": 68.0},
+  "dimension_notes": {
+    "mid_level_elegance": {
+      "evidence": [
+        "OPEN: SdkBridge stored as signingHandle.bridge (opaque unknown field on SigningHandle) requiring runtime cast in getBridge() — session.ts line 124-128 does (this as Record<symbol, unknown>)[SIGNING_HANDLE] as SigningHandle, then checks handle?.bridge — the bridge is typed as SdkBridge | undefined on SigningHandle but stored via symbol cast which loses the type guarantee",
+        "OPEN: DEFAULT_SUPERCOLONY_API hardcoded in connect.ts, not threaded from ConnectOptions (opts.supercolonyApi ?? DEFAULT_SUPERCOLONY_API) — this is partially addressed since opts.supercolonyApi exists but the default lives only in connect.ts and is not surfaced in types or docs",
+        "OPEN: reply() duplicates session.touch() + start = Date.now() and validation boilerplate before delegating to publish() which runs withToolWrapper again — double timing, double touch(), validation errors from reply's own path use latencyMs: 0 (from localProvenance(start)) before the wrapper runs",
+        "OPEN: Stale TODO in attest.ts '// TODO(toolkit-mvp): integrate SDK bridge' — wait, checking attest.ts... the open issue says it's in attest.ts but looking at the code, attest.ts has no such TODO — the TODO is actually in publish.ts line 39: '// TODO(toolkit-mvp): integrate SDK bridge — claims → DAHR → tx → confirm → broadcast' but the SDK bridge IS already wired (executePublishPipeline calls bridge.attestDahr and bridge.publishHivePost). Confirmed stale.",
+        "OPEN: 6-way txHash extraction fallback in publishHivePost encodes SDK response shape uncertainty as inline glue — 5 alternate paths through the SDK response object, no abstraction, shape uncertainty baked into the seam",
+        "verify.ts checkConfirmation(): fetches /api/feed?limit=20 to check for one txHash — the seam between verify() and feed API is unscalable; if post is not in last 20, it silently returns confirmed: false even when it IS confirmed but older than 20 posts",
+        "tip.ts: feed fallback for author resolution fetches /api/feed?limit=50 — different limit than verify (20 vs 50) for essentially the same feed API seam; inconsistency suggests no shared feed-fetching boundary",
+        "scan.ts and verify.ts and tip.ts all independently parse the feed API response shape using ad-hoc normalizers — three separate implementations of the same fallback chain (data?.posts ?? data?.results ?? ...) rather than a shared feed parser",
+        "pay.ts fetchWithValidatedRedirects() boundary is clean and well-decomposed — each boundary concern (SSRF, redirect following, header stripping) has its own function",
+        "connect.ts → session constructor boundary is clean: connect() builds all session options then passes to DemosSession constructor in one place with no ad-hoc mapping scattered elsewhere"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "mid_level_elegance": {
+      "dimension_character": "The toolkit has a mostly clean layering (tools → guards → state-helpers → types) but the feed API seam is fragmented — scan, verify, and tip each independently normalize the same feed response shape with their own ad-hoc fallback chains. The reply→publish delegation creates double-timing artifacts, and the stale TODO in publish.ts confuses readers about what is and isn't wired.",
+      "score_rationale": "Score 68 reflects real seam fragmentation: three tools implement the same feed normalization independently, the reply() double-wrapper creates measurable timing artifacts, and the 6-way txHash fallback is an unresolved SDK shape uncertainty baked directly into the seam. These are mid-level design issues, not just style."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle-01-feed-parse-triplication",
+      "summary": "scan.ts, verify.ts, and tip.ts each independently implement feed API response normalization",
+      "related_files": [
+        "src/toolkit/tools/scan.ts",
+        "src/toolkit/tools/verify.ts",
+        "src/toolkit/tools/tip.ts"
+      ],
+      "evidence": [
+        "scan.ts fetchFeed(): const rawPosts = (data?.posts ?? data?.results ?? data?.items ?? data?.data ?? data) as unknown[]",
+        "verify.ts checkConfirmation(): const posts = (data?.posts ?? data?.results ?? data) as unknown[]",
+        "tip.ts: const posts = ((feedResult.data as Record<string, unknown>)?.posts ?? feedResult.data) as unknown[]",
+        "Three different normalization chains with different fallback depths — scan has 5 fallbacks, verify has 3, tip has 2",
+        "If the feed API adds a new response shape, all three files must be updated"
+      ],
+      "suggestion": "Extract a shared parseFeedPosts(data: unknown): unknown[] function in a feed-utils.ts or into sdk-bridge.ts. All three callers use the same data source via the same apiCall path.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle-02-reply-double-wrapper",
+      "summary": "reply() duplicates session.touch() and timing before delegating to publish(), which runs withToolWrapper again",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "reply() lines 66-67: const start = Date.now(); session.touch()",
+        "reply() then calls publish(session, ...) which calls withToolWrapper(session, 'publish', ...) which also calls session.touch() and records start",
+        "reply()'s own input validation errors use latencyMs: 0 (localProvenance(start) called before the inner wrapper runs, but 'start' is captured before the delegate call so latencyMs is correct for reply-level errors but the outer touch() is redundant",
+        "The behavioral contract is unclear: does the timing reported to onToolCall reflect 'reply started' or 'publish started'?"
+      ],
+      "suggestion": "Remove the manual start/touch from reply() and instead call withToolWrapper directly with the publish delegate, or have reply() validate first then call publish() without the duplicate setup code. Ensure onToolCall receives a 'reply' tool event, not a 'publish' event.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle-03-stale-todo-publish",
+      "summary": "Stale TODO comment in publish.ts claims SDK bridge wiring is pending but it is already wired",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "publish.ts line 39: // TODO(toolkit-mvp): integrate SDK bridge — claims → DAHR → tx → confirm → broadcast",
+        "executePublishPipeline() below it calls bridge.attestDahr() and bridge.publishHivePost() — the bridge IS wired",
+        "The TODO describes exactly what the code already does, creating false negative signal for future readers"
+      ],
+      "suggestion": "Remove or replace the TODO comment with a factual description of the pipeline that is actually present.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle-04-verify-feed-limit-blind-spot",
+      "summary": "verify() uses /api/feed?limit=20 to confirm a txHash, silently returning unconfirmed for posts outside the 20-post window",
+      "related_files": ["src/toolkit/tools/verify.ts"],
+      "evidence": [
+        "checkConfirmation() fetches /api/feed?limit=20 and returns { confirmed: found }",
+        "If a post IS confirmed but older than position 20 in the feed, found === false and verify() returns confirmed: false after retries",
+        "No documentation or comment warns callers of this false-negative scenario",
+        "tip.ts uses /api/feed?limit=50 for the same underlying need, implying awareness that 20 may be insufficient"
+      ],
+      "suggestion": "Either increase the feed limit to match tip.ts's 50 (or a larger value), or add a comment explicitly documenting the false-negative window and that verify() only covers recent posts.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "No shared feed API client — each tool implements its own response normalization, leading to inconsistent fallback chains",
+      "reply() was implemented as a thin wrapper but manually replicated withToolWrapper setup before the delegation, creating the double-timing issue"
+    ],
+    "likely_symptoms": ["mle-01 is root; mle-02 and mle-04 are independent"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "connect → session boundary is clean and centralized",
+          "description": "All session options are assembled and passed to DemosSession in a single place in connect.ts, with no scattered ad-hoc mapping. The boundary is minimal and predictable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "pay.ts redirect boundary is well-decomposed",
+          "description": "fetchWithValidatedRedirects() separates redirect following, SSRF re-validation, and payment proof stripping into distinct concerns. The seam between pay() and the redirect handler is explicit and minimal.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

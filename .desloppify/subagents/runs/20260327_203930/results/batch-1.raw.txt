@@ -1,0 +1,96 @@
+{
+  "batch": "cross_module_architecture",
+  "batch_index": 1,
+  "assessments": {"cross_module_architecture": 71.5},
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "connect.ts lines 232,254: two dynamic imports of '../../lib/auth.js' (connectSdk + authenticateFallback) — toolkit tool reaching into app lib layer, crossing architectural boundary",
+        "discover-sources.ts line 20: module-level 'const catalogCache = new Map<string, Source[]>()' — shared mutable process state across all sessions, not scoped per DemosSession",
+        "pay.ts line 18-23: D402RequirementSchema defined locally in pay.ts — schema ownership lives in schemas.ts per stated design but this internal schema is inline",
+        "sdk-bridge.ts line 130-131: closure-scoped 'cachedTxModule' and 'cachedD402Client' vars — contained within factory closure so not truly module-level, acceptable",
+        "connect.ts line 262: module-level '_isContainer' cache var — single boolean, legitimate per-process invariant, benign",
+        "tool-wrapper.ts: clean fan-in point, no boundary violations",
+        "guards/ layer: all guards import only from '../types.js' and './state-helpers.js' — clean intra-layer deps",
+        "index.ts: well-curated barrel, exports are intentional and documented",
+        "No circular imports detected — tools import session+types, session imports types, guards import types+state-helpers",
+        "session.ts imports SdkBridge type from sdk-bridge.ts — type-only import, acceptable"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The toolkit has a well-defined layered architecture (types → session/state-store → guards → tools → index) with no circular dependencies and clean guard-layer isolation. Two confirmed open issues represent genuine boundary violations: the auth.js dynamic import reaches outside the toolkit boundary into src/lib, and the module-level catalog Map creates shared process state that bypasses the session-scoped design contract.",
+      "score_rationale": "The architecture is solid for a new subsystem — no cycles, intentional facades, clear separation of guards and tools. Two persistent open defects prevent a higher score: the auth.js cross-boundary import (confirmed pre-existing, still open) and the process-level catalog cache that breaks the per-session isolation contract that DemosSession was specifically designed to provide. These are module-level issues, not local nits, so they hold the score in the low-70s rather than the 80s."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "arch_auth_boundary_cross",
+      "summary": "connect.ts dynamically imports src/lib/auth.js — toolkit tool crossing into app lib layer",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "Line 232: const { ensureAuth } = await import('../../lib/auth.js')",
+        "Line 254: const { loadAuthCache } = await import('../../lib/auth.js')",
+        "The toolkit is designed as framework-agnostic; importing from src/lib couples it to the application layer"
+      ],
+      "suggestion": "Extract the auth operations needed by connect.ts (ensureAuth, loadAuthCache) into a toolkit-internal auth adapter, or accept auth token as a parameter to connect() and push the ensureAuth call to the caller. This keeps the toolkit self-contained.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "arch_catalog_module_state",
+      "summary": "Module-level mutable Map cache in discover-sources.ts creates shared process state",
+      "related_files": ["src/toolkit/tools/discover-sources.ts"],
+      "evidence": [
+        "Line 20: const catalogCache = new Map<string, Source[]>() — declared at module scope",
+        "DemosSession was designed to provide per-session isolation; module-level cache leaks across sessions",
+        "If two sessions use different sourceCatalogPath values in the same process, the first one wins permanently"
+      ],
+      "suggestion": "Move the cache inside DemosSession (e.g., a lazy Map<string, Source[]> on the session object) or use a WeakMap keyed by session. The catalog is per-path and static, so a process-level path→sources Map is defensible IF paths never conflict — add a clear comment documenting this constraint and that the cache is intentionally process-scoped.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Toolkit was refactored from app code incrementally — auth coupling is a residue of that history",
+      "Catalog cache was added for performance without considering the multi-session isolation invariant"
+    ],
+    "likely_symptoms": ["arch_auth_boundary_cross and arch_catalog_module_state share a root cause: incremental extraction without full boundary enforcement"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Guards layer has clean intra-layer deps",
+          "description": "All guards import only from '../types.js' and './state-helpers.js' with no upward or lateral violations — the guard sublayer has correct dependency direction.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No circular imports in toolkit",
+          "description": "Full import graph shows no cycles: types → (no deps), session → types+sdk-bridge, guards → types+state-helpers, tools → session+types+guards+url-validator+schemas, index → all. Clean DAG.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "sdk-bridge closure caches are session-scoped",
+          "description": "cachedTxModule and cachedD402Client in sdk-bridge.ts live in the factory closure, not at module scope — each createSdkBridge() call gets its own cache. Not a shared-state issue.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

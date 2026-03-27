@@ -1,0 +1,88 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 16,
+  "assessments": {"initialization_coupling": 88.0},
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "connect.ts uses lazy import for Demos SDK: `const { Demos } = await import('@kynesyslabs/demosdk/websdk')` — no module-level SDK state mutation",
+        "sdk-bridge.ts uses closure-scoped lazy loaders for TxModule and D402Client: `let cachedTxModule: TxModule | null = null` — session-scoped, not module-global",
+        "state-store.ts: `DEFAULT_STATE_DIR = resolve(homedir(), '.config', 'demos')` computed at import time using `homedir()` — this is a module-level constant derived from a system call",
+        "connect.ts: `_isContainer: boolean | null = null` — module-level mutable singleton for container detection; cached per process but shared across all sessions in the same process",
+        "connect.ts: `DEFAULT_RPC_URL`, `DEFAULT_ALGORITHM`, `DEFAULT_SUPERCOLONY_API` are module-level string constants — these are truly static and safe",
+        "state-helpers.ts: `GUARD_LOCK_TTL_MS = 5000` is a module-level constant — static value, safe",
+        "session.ts: `INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000` computed at import time — static multiplication, safe",
+        "No circular import dependencies detected — guards import from types.ts and state-helpers.ts only; tools import from guards and session; no cycles",
+        "No DB connections or network calls at module scope — all network activity deferred to function bodies",
+        "FileStateStore.dirEnsured flag is instance-level, not module-level — no shared state across sessions"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "initialization_coupling": {
+      "dimension_character": "The toolkit is architecturally clean for initialization coupling: SDK imports are lazy, bridge state is session-scoped via closures, and guard state is instance-scoped. The two genuine issues are the module-level `_isContainer` mutable singleton in connect.ts (shared across sessions in the same process) and the `DEFAULT_STATE_DIR` computed from `homedir()` at import time (fragile in environments that override HOME after module load).",
+      "score_rationale": "The codebase scores well above average. The lazy import pattern is used correctly and consistently, there are no import-time network calls or DB connections, and the module-level constants are largely static literals. Two issues (mutable `_isContainer` singleton and import-time `homedir()` call) prevent a higher score but are minor in impact since `homedir()` is effectively invariant at runtime and `_isContainer` is a read-only cache after first population."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "ic_container_singleton",
+      "summary": "Module-level mutable `_isContainer` singleton shared across all sessions in the same process",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "Line 262: `let _isContainer: boolean | null = null;` — module-level mutable variable",
+        "detectContainer() sets `_isContainer = result` — first call wins; subsequent calls skip detection even if environment changes",
+        "In tests or multi-session scenarios, the cached value from a prior container-environment detection persists across all future calls in the same process lifetime"
+      ],
+      "suggestion": "Move `_isContainer` into a module-scoped lazy promise (`let _containerPromise: Promise<boolean> | null = null`) so detection is still cached once but race conditions are eliminated. Or accept this as intentional (container status IS invariant per process) and add a comment explaining it is process-scoped by design.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "ic_homedir_import_time",
+      "summary": "`DEFAULT_STATE_DIR` computed from `homedir()` at module load time — fragile if HOME changes",
+      "related_files": ["src/toolkit/state-store.ts"],
+      "evidence": [
+        "Line 17: `const DEFAULT_STATE_DIR = resolve(homedir(), '.config', 'demos');` — `homedir()` called at module scope",
+        "In test environments or sandboxed processes that manipulate HOME after import, the constant captures the wrong directory",
+        "The constant is used as the default in FileStateStore constructor — callers who rely on the default in test isolation may get surprising paths"
+      ],
+      "suggestion": "Move the homedir resolution into FileStateStore constructor body: `this.dir = dir ?? resolve(homedir(), '.config', 'demos');`. This defers evaluation to construction time so test overrides (process.env.HOME) take effect.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Caching pattern for container detection chose module-level variable for simplicity — acceptable trade-off given container status is truly invariant per process",
+      "DEFAULT_STATE_DIR as module constant is a common Node.js pattern that can bite in test environments"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "Lazy SDK import pattern used consistently",
+          "description": "All SDK imports (Demos, DemosTransactions, D402Client, ensureAuth) are deferred to function bodies via dynamic import(). This is a deliberate design choice documented in sdk-bridge.ts and connect.ts comments to avoid module-level side effects from the SDK's crypto polyfills.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Session-scoped bridge state via closures",
+          "description": "sdk-bridge.ts uses closure-local variables (cachedTxModule, cachedD402Client) rather than module-level globals. Each createSdkBridge() call gets its own independent cache, preventing state leakage between sessions.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

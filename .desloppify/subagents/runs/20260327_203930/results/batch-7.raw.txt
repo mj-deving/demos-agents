@@ -1,0 +1,73 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {"dependency_health": 82.0},
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "package.json production dependencies: @anthropic-ai/sdk, @kynesyslabs/demosdk, proper-lockfile, yaml, zod — 5 production deps, all appear load-bearing",
+        "@anthropic-ai/sdk is listed as a production dependency but toolkit code uses only LLM provider abstraction (llm-provider.ts); toolkit itself imports nothing from @anthropic-ai/sdk directly — verify if it's only used in CLI/session-runner",
+        "proper-lockfile used for filesystem locking in state-store.ts — it's a focused single-purpose library, justified",
+        "yaml used for config parsing (persona YAML, strategy YAML) — single purpose, no duplication",
+        "zod used for input validation in schemas.ts — focused, no competing validation library",
+        "@kynesyslabs/demosdk is the core network SDK — non-substitutable",
+        "No evidence of multiple libraries for same purpose (no axios+fetch, no moment+dayjs patterns)",
+        "playwright is in devDependencies — test/build tool, skip per rubric",
+        "No circular imports visible from the module structure: tools/ → guards/ → types, no back-edges observed",
+        "@auth/agent in devDependencies — purpose unclear for a demos-agents toolkit, but it's a dev dep so skip per rubric",
+        "Lazy SDK imports in connect.ts and sdk-bridge.ts avoid module-level side effects — good pattern",
+        "D402Client imported lazily inside sdk-bridge.ts payD402() — prevents transitive dep bloat at module load time"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "medium"
+    }
+  },
+  "dimension_judgment": {
+    "dependency_health": {
+      "dimension_character": "The production dependency set is lean (5 packages) with no duplication — each serves a distinct purpose. Lazy SDK imports prevent transitive dep loading at startup. The one uncertain item is @anthropic-ai/sdk appearing as a production dep while toolkit source files show no direct imports from it, suggesting it may be misclassified (should be a dev or CLI-only dep).",
+      "score_rationale": "Score 82 reflects a clean, intentional dependency set with no obvious waste or duplication. The @anthropic-ai/sdk production classification is the primary concern — if it is only used in CLI scripts and not the toolkit library itself, it bloats the production bundle for consumers. Without confirming all import paths, confidence is medium."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "dh-01-anthropic-sdk-prod-classification",
+      "summary": "@anthropic-ai/sdk in production dependencies but toolkit source has no direct imports from it",
+      "related_files": ["package.json", "src/lib/llm-provider.ts"],
+      "evidence": [
+        "package.json lists @anthropic-ai/sdk as a production dependency (not devDependencies)",
+        "src/toolkit/ source files show zero imports of @anthropic-ai/sdk — all LLM access is through llm-provider.ts abstraction",
+        "If @anthropic-ai/sdk is only consumed in CLI scripts (session-runner, etc.) and not in the library code, it should be a dev dependency or listed separately for CLI-only context",
+        "Consumers importing the toolkit via @demos-agents/core would pull in @anthropic-ai/sdk transitively without needing it"
+      ],
+      "suggestion": "Audit whether @anthropic-ai/sdk is imported by any src/ file that is part of the published package output. If it is CLI-only, move to devDependencies or a separate CLI package to avoid forcing it on library consumers.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Production vs devDependencies boundary blurs when a repo has both library code (src/toolkit) and CLI scripts (cli/) in the same package.json"],
+    "likely_symptoms": ["dh-01 is a packaging concern that becomes a real issue only when @demos-agents/core is published — not urgent today but should be resolved before PR2"],
+    "possible_false_positives": ["@anthropic-ai/sdk may be imported by some src/ file not covered in this review — medium confidence reflects this"]
+  },
+  "context_updates": {
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Lean 5-dep production set with no duplication",
+          "description": "The toolkit uses exactly one library per concern: zod for validation, proper-lockfile for FS locking, yaml for config, demosdk for network, anthropic for LLM. No competing libraries exist for any purpose.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Lazy SDK imports prevent startup bloat",
+          "description": "connect.ts and sdk-bridge.ts use dynamic import() for the Demos SDK and D402Client, preventing transitive dep loading at module load time. This is intentional and correctly structured.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

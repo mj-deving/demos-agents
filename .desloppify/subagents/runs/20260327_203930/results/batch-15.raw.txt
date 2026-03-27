@@ -1,0 +1,77 @@
+{
+  "batch": "package_organization",
+  "batch_index": 15,
+  "assessments": {"package_organization": 84.0},
+  "dimension_notes": {
+    "package_organization": {
+      "evidence": [
+        "Three directories: src/toolkit/ (7 files, 1423 LOC, avg fan-in 7.0), src/toolkit/tools/ (10 files, 1286 LOC, avg fan-in 1.7), src/toolkit/guards/ (7 files, 668 LOC, avg fan-in 3.0) — three-tier layout maps cleanly to: core types/infrastructure, operation tools, guard middleware",
+        "Coupling matrix shows clean layering: tools/ → toolkit/ (34 edges), guards/ → toolkit/ (7 edges), toolkit/ → tools/ (9 edges, all from index.ts re-exports) — no reciprocal or downstream-to-upstream violations",
+        "All root-level toolkit/ files have fan-in ≥ 5 (types.ts=21, session.ts=11, schemas.ts=10, state-helpers.ts=10, tool-wrapper.ts=8) — these are genuinely core, correctly placed",
+        "url-validator.ts: fan-in 3 (from tools/attest.ts, tools/pay.ts, tools/publish.ts) — could plausibly move to guards/ since it is a validation guard, not core infrastructure. However it is also a peer dependency of sdk-bridge.ts conceptually.",
+        "sdk-bridge.ts: fan-in 2 (session.ts imports type, connect.ts creates) — low fan-in for a core file; but it is the SDK abstraction layer and belongs in toolkit/ as infrastructure, not tools/",
+        "state-store.ts: fan-in 2 (types.ts type, index.ts export) — low fan-in but it is a core implementation of the StateStore interface, correctly placed in toolkit/",
+        "tools/tool-wrapper.ts: fan-in 8 — all from sibling tools/ files. It is correctly placed as a shared tool utility.",
+        "No flat directory overload: largest dir is tools/ at 10 files — boundary, not overloaded",
+        "No ambiguous folder naming — guards/, tools/, toolkit/ root all have clear responsibilities",
+        "Directory profiles show clean fan-out: tools/ imports from toolkit/ (34) and guards/ (7), guards/ imports from toolkit/ (7) — no cross-cutting or unexpected edges",
+        "packages/core/ in root (PR1 barrel) re-exports from src/toolkit/ — an active migration scaffold, not an organization defect"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "url-validator.ts placement is debatable (fan-in 3, used only by tools/ but lives in toolkit/ root alongside core types); no hard defect but a mild affinity mismatch"
+    }
+  },
+  "dimension_judgment": {
+    "package_organization": {
+      "dimension_character": "The three-directory layout maps clearly to domain responsibilities: types/infrastructure in toolkit/, operations in tools/, guard middleware in guards/. Coupling flows unidirectionally (tools → toolkit, guards → toolkit, tools → guards) with no reciprocal edges. All high-fan-in files are correctly placed. The only mild misfit is url-validator.ts (fan-in 3, used exclusively by tools/), which shares more affinity with guards/ than with the core types in toolkit/.",
+      "score_rationale": "Score 84: clean three-tier layout, correct placement of all high-fan-in core files, no flat-directory overload, no ambiguous naming. Held from 90+ by url-validator.ts sitting in toolkit/ with fan-in 3 when its only consumers are in tools/ and its behavior (SSRF validation) is conceptually guard-layer work."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "package_organization",
+      "identifier": "po-url-validator-placement",
+      "summary": "url-validator.ts lives in toolkit/ root but has fan-in 3, all from tools/ — its affinity is guards/ not core infrastructure",
+      "related_files": ["src/toolkit/url-validator.ts", "src/toolkit/tools/attest.ts", "src/toolkit/tools/pay.ts", "src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "url-validator.ts fan-in: 3 importers, all in src/toolkit/tools/ (attest.ts, pay.ts, publish.ts)",
+        "url-validator.ts content: SSRF blocklist validation + DNS resolution + createPinnedFetch — this is guard-layer behavior (defense, not core data contract)",
+        "No importer in src/toolkit/ root (types.ts, session.ts, etc.) or src/toolkit/guards/ imports it directly",
+        "guards/ directory contains dedup-guard, write-rate-limit, tip-spend-cap, pay-spend-cap — all similarly defense-oriented guards",
+        "Moving to guards/ would co-locate SSRF guard with other guards and break no boundary rules (guards → toolkit/ edges already exist)"
+      ],
+      "suggestion": "Staged reorg: (1) move url-validator.ts to src/toolkit/guards/url-validator.ts; (2) update the 3 import paths in attest.ts, pay.ts, publish.ts from '../url-validator.js' to '../guards/url-validator.js'; (3) update index.ts export from './url-validator.js' to './guards/url-validator.js'; (4) run npm test to validate. Validation: grep -r 'url-validator' src/toolkit/ should show 0 results in toolkit/ root after move.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "url-validator.ts was likely placed in toolkit/ root early in development before the guards/ directory pattern was established, and was never moved as the guard pattern matured"
+    ],
+    "possible_false_positives": [
+      "sdk-bridge.ts and state-store.ts both have fan-in ≤ 2 but are correctly placed as infrastructure — low fan-in alone is not a misplacement signal for infrastructure files"
+    ]
+  },
+  "context_updates": {
+    "package_organization": {
+      "add": [
+        {
+          "header": "Clean three-tier unidirectional coupling",
+          "description": "tools/ → toolkit/ → (types, guards) with no reciprocal edges. The coupling matrix confirms boundary integrity across all 24 files. This is a strong organizational property.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "url-validator.ts has guards/ affinity but lives in toolkit/ root",
+          "description": "SSRF validation is guard-layer behavior and url-validator.ts is only imported by tools/. Placement in toolkit/ root is a mild mismatch that could be resolved by moving it to guards/.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

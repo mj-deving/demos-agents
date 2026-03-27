@@ -1,0 +1,92 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {"abstraction_fitness": 74.0},
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "SdkBridge interface has a single concrete implementation (createSdkBridge factory), but justifiably acts as an SDK isolation shell against volatile external dependency — skip rule applies",
+        "StateStore interface has one concrete implementation (FileStateStore) with test mocks, but the interface enables meaningful substitution (in-memory for tests, file for production) — skip rule applies",
+        "discoverSources() accepts DemosSession but only uses session.sourceCatalogPath from it; the full session object is passed purely to satisfy withToolWrapper's signature, not because it needs auth/wallet/state",
+        "withToolWrapper wraps fn() but the 'start' parameter it passes in is used throughout — providing timing context rather than pass-through; this is legitimate behavior",
+        "reply() duplicates session.touch() + start = Date.now() from withToolWrapper, then delegates to publish() which runs withToolWrapper again — double timing overhead is the existing open issue, not a pure pass-through",
+        "attest() wrapper executeDahrAttestation() is a 2-line private function that only calls bridge.attestDahr and maps the result shape; the extraction adds naming ceremony without behavior",
+        "discoverSources() manually calls session.touch() inside withToolWrapper callback, but the open issue notes it replicates boilerplate; the session parameter is over-wide for what the function actually needs",
+        "DiscoverSourcesOptionsSchema uses z.object().optional() — the schema returns the schema object itself as optional, not the inner fields; callers pass opts?: DiscoverSourcesOptions and the schema wraps the full object as optional, which is correct but unusual"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "sub_axes": {
+        "abstraction_leverage": 78.0,
+        "indirection_cost": 72.0,
+        "interface_honesty": 80.0,
+        "delegation_density": 70.0,
+        "definition_directness": 68.0,
+        "type_discipline": 76.0
+      }
+    }
+  },
+  "dimension_judgment": {
+    "abstraction_fitness": {
+      "dimension_character": "The toolkit uses interfaces (SdkBridge, StateStore) that genuinely earn their indirection — both provide SDK isolation and test substitution. The main fitness issue is that several tools accept DemosSession when they only need 1-2 fields from it, and one tiny private function (executeDahrAttestation) adds naming ceremony without behavior. The still-open discoverSources boilerplate replication is the most concrete gap.",
+      "score_rationale": "Score 74 reflects solid interface design with a few localized over-wide parameter surfaces and one ceremony-only private extraction. The open discoverSources issue plus executeDahrAttestation's lack of added behavior are real but not pervasive. Scores above 80 require clean parameter minimality across the board."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "af-01-execute-dahr-ceremony",
+      "summary": "executeDahrAttestation is a 2-line private that only maps bridge.attestDahr output with no added behavior",
+      "related_files": ["src/toolkit/tools/attest.ts"],
+      "evidence": [
+        "executeDahrAttestation(session, opts) calls bridge.attestDahr(opts.url, 'GET') and returns { responseHash, txHash } — zero logic beyond field extraction",
+        "The extraction is not reused anywhere; attest() is the only caller",
+        "Naming ceremony: a private helper named executeDahrAttestation implies complex behavior that isn't present"
+      ],
+      "suggestion": "Inline the two lines into attest() directly. The private function adds naming overhead without behavioral value.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "af-02-discover-sources-session-overwide",
+      "summary": "discoverSources() accepts full DemosSession but only uses session.sourceCatalogPath from it",
+      "related_files": ["src/toolkit/tools/discover-sources.ts"],
+      "evidence": [
+        "discoverSources(session, opts) uses session only for session.sourceCatalogPath — a single optional string field",
+        "The function is documented as 'Read-only, no session required (optional — for custom catalog path)'",
+        "withToolWrapper requires DemosSession, which forces the full session object even though the tool has no auth, wallet, or state dependencies",
+        "This is the still-open issue: discoverSources manually replicates withToolWrapper boilerplate for a session-optional tool"
+      ],
+      "suggestion": "Either accept catalogPath?: string directly (bypassing withToolWrapper for this read-only tool), or define a minimal interface containing only sourceCatalogPath to make the dependency explicit.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["withToolWrapper's DemosSession requirement forces all tools to accept over-wide session objects even when session is only needed for one field"],
+    "likely_symptoms": ["af-02-discover-sources-session-overwide is a direct symptom of withToolWrapper's rigid signature"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "SdkBridge interface earns its indirection",
+          "description": "SdkBridge has a single production implementation but isolates the volatile @kynesyslabs/demosdk external dependency — tests inject mock bridges without any SDK present. This is intentional public API typing per the skip rule.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "StateStore interface earns substitution value",
+          "description": "FileStateStore is the only production implementation but the interface enables the entire test suite to run with in-memory stores. Without it, every guard test would require the filesystem.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

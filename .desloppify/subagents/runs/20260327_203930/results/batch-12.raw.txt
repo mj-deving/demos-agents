@@ -1,0 +1,73 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 12,
+  "assessments": {"authorization_consistency": 72.0},
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "All network-touching tools (attest, publish/executePublishPipeline, pay) apply URL allowlist enforcement + SSRF validation in a consistent pattern before any request — three-layer model: Zod schema → allowlist → SSRF DNS blocklist",
+        "attest.ts: allowlist check returns err(); publish.ts/executePublishPipeline: allowlist check throws demosError(); pay.ts: allowlist check returns err() — inconsistent error escape path for the same guard at the same layer (two of three use err, one throws)",
+        "session.urlAllowlist is stored in DemosSession.urlAllowlist (public readonly field) and IS consumed in attest.ts, publish.ts, and pay.ts — the previously-flagged 'dead allowlist' issue appears to be resolved",
+        "scan() and react() make apiCall() with auth token but have no allowlist/SSRF guard — apiCall() is restricted to relative paths (absolute URL guard in sdk-bridge.ts), which is the correct mitigation for internal API calls",
+        "verify() calls bridge.apiCall() with no allowlist check — same relative-path-only restriction applies, consistent with scan/react",
+        "discoverSources() reads from local file system only — no network calls, no auth needed; correctly exempted",
+        "connect() enforces HTTPS on rpcUrl; SSRF blocklist not applied to rpcUrl — intentional (RPC node is pre-configured trusted infrastructure, not user-supplied URL)",
+        "AUTH_PENDING_TOKEN sentinel prevents Authorization header leakage when auth has not completed — consistently checked in sdk-bridge apiCall()",
+        "No permission strings as magic literals — error codes and policy fields are typed enums/interfaces"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "authorization_consistency": {
+      "dimension_character": "The toolkit applies a consistent three-layer URL security model across all external-URL operations (Zod → allowlist → SSRF). The primary defect is the inconsistent escape path for allowlist violations: publish.ts throws demosError() while attest.ts and pay.ts return err() — breaking the expectation that the same guard produces the same code path across sibling tools. The urlAllowlist dead-wire issue from prior reviews appears resolved.",
+      "score_rationale": "Score 72: the security model is coherent and consistently applied to the right operations. The allowlist throw-vs-return inconsistency is real but localized to one of three call sites. The previously-flagged dead allowlist field is no longer dead. Held below 80 because the escape-path inconsistency is a real contract inconsistency at a security boundary — callers of withToolWrapper catch throws and convert them, but the different path means the behavior is accidental rather than designed."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "auth-allowlist-throw-vs-return",
+      "summary": "URL allowlist violation in publish.ts throws demosError() while attest.ts and pay.ts return err() — inconsistent escape path for the same guard",
+      "related_files": ["src/toolkit/tools/publish.ts", "src/toolkit/tools/attest.ts", "src/toolkit/tools/pay.ts"],
+      "evidence": [
+        "publish.ts executePublishPipeline(): if (!session.urlAllowlist.some(...)) { throw demosError('INVALID_INPUT', ...) }",
+        "attest.ts: if (!session.urlAllowlist.some(...)) { return err(demosError('INVALID_INPUT', ...), localProvenance(start)) }",
+        "pay.ts: if (!session.urlAllowlist.some(...)) { return err(demosError('INVALID_INPUT', ...), localProvenance(start)) }",
+        "The throw in publish.ts is caught by withToolWrapper and converted to a ToolResult err — so the observable behavior is the same, but the inconsistency is an invitation to break the invariant when executePublishPipeline is refactored"
+      ],
+      "suggestion": "Change executePublishPipeline's allowlist check to throw demosError (already does) — this is fine since it is an internal function caught by withToolWrapper. Alternatively, standardize all three to return err() by extracting the allowlist+SSRF block into a shared helper that returns DemosError | null, then apply it in the withToolWrapper closure in all three tools.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "publish.ts allowlist check lives inside executePublishPipeline (an internal helper) rather than in the withToolWrapper closure, so the throw path was used as a shortcut — consistent with the function's throw-based design"
+    ],
+    "possible_false_positives": [
+      "The 'urlAllowlist stored but never consumed' issue from prior reviews — current code clearly shows it is consumed in attest.ts, publish.ts, and pay.ts"
+    ]
+  },
+  "context_updates": {
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "urlAllowlist is actively consumed in all three URL tools",
+          "description": "The previously-flagged issue that urlAllowlist was stored but never consumed by validateUrl is resolved. attest.ts, publish.ts, and pay.ts all check session.urlAllowlist before calling validateUrl. The open issue in the batch prompt is no longer accurate.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Allowlist error path inconsistent: throw vs return err",
+          "description": "publish.ts throws demosError() on allowlist violation (inside executePublishPipeline, caught by withToolWrapper) while attest.ts and pay.ts return err() directly. Observable behavior is the same but the pattern diverges at a security boundary.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

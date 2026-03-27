@@ -1,0 +1,132 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {"naming_quality": 76.5},
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "Tool names match their operations precisely: publish, reply, react, tip, scan, verify, attest, discoverSources, pay — no generic verbs",
+        "Guard function names clearly state intent: checkWriteRateLimit, recordWrite, checkDedup, recordPublish, checkTipSpendCap, recordTip, checkPaySpendCap, recordPayment",
+        "checkAndRecordWrite, checkAndRecordDedup, checkAndRecordTip — accurately describe the atomic check-and-record operation",
+        "reservePaySpend — accurately describes the reservation semantics different from simple check/record",
+        "withToolWrapper — 'wrapper' is generic but the JSDoc explains what it wraps. Acceptable given it's an internal implementation utility",
+        "withBackoff — accurate, describes the retry behavior",
+        "localProvenance — 'local' is domain vocabulary (ProvenancePath enum), name is precise",
+        "safeParse — accurately describes safe JSON parsing with prototype pollution protection",
+        "checkAndAppend, appendEntry — precise, describe the exact operation",
+        "stateKey — clear: constructs state keys",
+        "loadState — clear: loads and parses state",
+        "GUARD_LOCK_TTL_MS — clear constant naming",
+        "Backward-compat aliases: checkDedup/recordPublish, checkWriteRateLimit/recordWrite, checkTipSpendCap/recordTip — the old names are accurate but create dual naming surface. 'recordPublish' in dedup-guard.ts is slightly misleading — it records a dedup hash, not the publish event itself. The canonical location for 'recordPublish' semantics is publish.ts which calls recordDedupPublish (aliased).",
+        "publish.ts line 12: import alias 'recordPublish as recordDedupPublish' — the consumer correctly renames to clarify, but the export name from dedup-guard.ts is still 'recordPublish' which sounds like it belongs in publish.ts",
+        "checkPayReceipt / recordPayReceipt — clear, accurate",
+        "makeIdempotencyKey — clear, precise",
+        "executePublishPipeline — 'execute' is somewhat generic but 'pipeline' is domain vocabulary here; acceptable",
+        "fetchFeed, fetchFromSkillDojo — clear directional names",
+        "identifyOpportunities — 'identify' is slightly generic but the context (scan opportunities) makes the intent clear",
+        "connectSdk — name says what it does, accurate",
+        "parseWallet — accurate",
+        "authenticateFallback — clear, describes the fallback auth path",
+        "detectContainer — accurate",
+        "createPinnedFetch — precise, 'pinned' is security domain vocabulary",
+        "checkBlockedIp, checkBlockedIpv4 — accurate",
+        "sanitizeUrl — accurate",
+        "createSdkBridge — accurate factory name",
+        "getTxModule (closure in sdk-bridge) — 'get' prefix with lazy init is a minor mismatch; 'get' usually implies simple access, but this does async lazy loading. Could be 'loadTxModule'",
+        "AUTH_PENDING_TOKEN constant — 'PENDING' accurately describes the sentinel state"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The backward-compat alias 'recordPublish' in dedup-guard.ts is a name/behavior mismatch — it records a dedup hash not a publish event. The dual naming surface (checkDedup/checkAndRecordDedup, etc.) is the primary issue reducing score. getTxModule uses 'get' prefix for an async lazy loader."
+    }
+  },
+  "dimension_judgment": {
+    "naming_quality": {
+      "dimension_character": "Naming is generally strong — tool names are domain-precise, guard names clearly state the check/record/cap semantics, and helper functions have descriptive names throughout. The primary issue is the backward-compat alias surface: 'recordPublish' in dedup-guard.ts is a name/behavior mismatch (it records a dedup hash, not a publish event), and the dual check/checkAndRecord naming creates ambiguity about the preferred API.",
+      "score_rationale": "Above average overall — no generic 'handle', 'process', 'do' verbs in public APIs, boolean names are accurate, no isX() returning non-boolean. Score held to mid-70s by the recordPublish mismatch (minor but real), the dual checkX/checkAndRecordX naming surface (open prior issue, confirmed still present), and the getTxModule async-loader naming inconsistency. These are real naming quality issues, not nits."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "name_record_publish_mismatch",
+      "summary": "recordPublish in dedup-guard.ts records a dedup hash, not a publish event — name/behavior mismatch",
+      "related_files": ["src/toolkit/guards/dedup-guard.ts", "src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "dedup-guard.ts line 64: 'export async function recordPublish(store, walletAddress, text)' — records a SHA-256 hash of text for dedup tracking",
+        "The function does NOT record that a publish happened — that is recordWrite's job in write-rate-limit.ts",
+        "publish.ts line 12: 'import { checkDedup, recordPublish as recordDedupPublish }' — the consumer must alias it to 'recordDedupPublish' to clarify the actual semantics",
+        "The alias at the call site reveals that the exported name is misleading"
+      ],
+      "suggestion": "Rename the export to 'recordDedupHash' or 'recordDedupEntry' in dedup-guard.ts. The backward-compat alias 'recordPublish' should point to the renamed function. Update the import alias in publish.ts to use the new name directly.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "backward_compat_naming_debt"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "name_guard_dual_surface",
+      "summary": "Backward-compat guard aliases (checkDedup, checkWriteRateLimit, checkTipSpendCap) create dual naming surface alongside current checkAndRecord* names",
+      "related_files": [
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/tip-spend-cap.ts",
+        "src/toolkit/index.ts"
+      ],
+      "evidence": [
+        "Three guards each export both old (checkDedup, recordPublish) and new (checkAndRecordDedup) names",
+        "index.ts exports all of them without deprecation markers",
+        "A consumer reading index.ts cannot determine which API is preferred",
+        "The 'check' prefix on old names is ambiguous — it does not indicate whether a record is also written"
+      ],
+      "suggestion": "Add @deprecated JSDoc to backward-compat aliases. Consider a code comment in index.ts grouping exports into 'preferred' and 'backward-compat (deprecated)' sections.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "backward_compat_naming_debt"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "name_get_tx_module_async",
+      "summary": "getTxModule uses 'get' prefix for async lazy loader — get implies sync access",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "sdk-bridge.ts line 132: 'async function getTxModule(): Promise<TxModule>' — performs async dynamic import on first call",
+        "'get' prefix conventionally implies synchronous property access or cheap retrieval",
+        "This is an async lazy loader — 'loadTxModule' or 'resolveTxModule' would better signal the async lazy-init semantics"
+      ],
+      "suggestion": "Rename to 'loadTxModule' within the closure scope. This is internal to createSdkBridge (not exported) so the rename has no public impact.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Backward-compat naming debt: old check/record API names were retained when the unified checkAndRecord* pattern was introduced, without a deprecation strategy",
+      "recordPublish name was chosen for caller readability but the actual function is a guard concern, not a publish concern"
+    ],
+    "likely_symptoms": ["name_guard_dual_surface is the confirmed open issue from prior review — still present"],
+    "possible_false_positives": ["name_get_tx_module_async is low-impact (internal function) and may not warrant fixing"]
+  },
+  "context_updates": {
+    "naming_quality": {
+      "add": [
+        {
+          "header": "Tool names are domain-precise, no generic verbs",
+          "description": "All 10 public tool functions (publish, reply, react, tip, scan, verify, attest, discoverSources, pay, connect/disconnect) use domain vocabulary that matches their operation without generic verbs like 'handle' or 'process'.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard naming accurately distinguishes check vs record",
+          "description": "The new checkAndRecord* pattern, appendEntry, checkAndAppend, and reservePaySpend all use names that accurately describe atomic vs split semantics. The issue is the legacy aliases that coexist, not the new names.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

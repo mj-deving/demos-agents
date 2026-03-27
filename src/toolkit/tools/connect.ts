@@ -27,6 +27,10 @@ const DEFAULT_SUPERCOLONY_API = "https://www.supercolony.ai";
  * Connect to the Demos network and create a session handle.
  *
  * Flow: verify wallet file → parse credentials → connect SDK → authenticate → return session.
+ *
+ * @throws {DemosError} On auth failure, bad permissions, symlink, invalid wallet.
+ * Unlike other toolkit tools which return ToolResult, connect/disconnect use
+ * throw/void semantics because they manage session lifecycle, not tool operations.
  */
 export async function connect(opts: ConnectOptions): Promise<DemosSession> {
   // Zod schema validation — shape/type only (FS/HTTPS checks remain below)
@@ -231,8 +235,9 @@ async function connectSdk(
     try {
       const { ensureAuth } = await import("../../lib/auth.js");
       authToken = await ensureAuth(demos, address);
-    } catch {
+    } catch (authErr) {
       // Auth may fail if SuperColony API is down — return pending token
+      console.warn("[demos-toolkit] Auth failed, using pending token:", (authErr as Error).message);
       authToken = AUTH_PENDING_TOKEN;
     }
 

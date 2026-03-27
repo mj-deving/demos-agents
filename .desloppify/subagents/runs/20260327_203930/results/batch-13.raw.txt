@@ -1,0 +1,108 @@
+{
+  "batch": "ai_generated_debt",
+  "batch_index": 13,
+  "assessments": {"ai_generated_debt": 71.0},
+  "dimension_notes": {
+    "ai_generated_debt": {
+      "evidence": [
+        "Guards (dedup-guard, write-rate-limit, tip-spend-cap) expose both checkAndRecord* (combined) and separate check*/record* pairs — the separate pairs are explicitly labeled '// backward compat' and are pass-throughs to checkAndRecord*. These are not domain helpers; they add naming ceremony around a one-liner delegation.",
+        "recordPublish in dedup-guard.ts does NOT use checkAndRecord* — it re-implements the same hash+appendEntry logic (hash = hashText(text); key = stateKey(...); appendEntry(...)) that checkAndRecordDedup already contains. Duplication is real and identified by the open issue.",
+        "checkAndAppend inline comments in state-helpers.ts: '// Prune old entries', '// Check condition', '// Append entry if provided', '// Always persist pruned state' — these restate what the next 1-3 lines do with zero additional insight.",
+        "state-store.ts lock(): 'const { open: openFile } = await import(\"node:fs/promises\");' — dynamic import of a node:fs/promises method used for a single await call. Could be a top-level import but is inside lock() body for unclear reasons.",
+        "sdk-bridge.ts publishHivePost() inline comment: '// Construct HIVE post object' above 'const hivePost: Record<string, unknown> = {' — restates what is obvious from the declaration.",
+        "connect.ts connectSdk(): comment '// Connect wallet with algorithm selection' above 4 lines that clearly connect with an algorithm — restating comment.",
+        "No nosy debug logging found — no entry/exit logs on every function. The console.warn calls present are at genuine failure/fallback boundaries (tip.ts feed fallback, scan.ts skill-dojo fallback, state-helpers.ts corruption detection).",
+        "No pass-through wrapper functions with zero added logic found beyond the backward-compat cases in guards.",
+        "No docstring bloat on trivial functions — most docstrings are 1-liners on non-trivial operations.",
+        "The backward-compat wrappers (checkDedup, recordPublish, checkWriteRateLimit, recordWrite, checkTipSpendCap, recordTip) are all exported in index.ts — they surface to consumers as real API, not internal helpers."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "dimension": "ai_generated_debt",
+    "dimension_character": "The codebase is largely clean of AI-generated debt patterns: no nosy debug logging, no docstring bloat on trivial functions, no defensive overengineering at non-boundary points. The primary debt is in the guard layer: three pairs of backward-compat pass-through wrappers add naming ceremony without behavior, and recordPublish duplicates hash+appendEntry logic that checkAndRecordDedup already encapsulates. A secondary pattern of restate-the-obvious inline comments appears in state-helpers.ts and sdk-bridge.ts.",
+    "score_rationale": "Score 71: the codebase avoids the noisiest AI-debt patterns. Held below 80 by the confirmed duplication in recordPublish (same hash+append logic appears twice in the same file) and the systemic restate comments in state-helpers.ts. The backward-compat wrappers are six exported no-op delegations — real API surface debt."
+  },
+  "issues": [
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "agt-record-publish-duplication",
+      "summary": "recordPublish() re-implements hash+appendEntry logic already encapsulated in checkAndRecordDedup() — duplication in same file",
+      "related_files": ["src/toolkit/guards/dedup-guard.ts"],
+      "evidence": [
+        "checkAndRecordDedup: const hash = hashText(text); ... appendEntry via checkAndAppend",
+        "recordPublish: const hash = hashText(text); const key = stateKey('dedup', walletAddress); await appendEntry(..., { timestamp: Date.now(), hash })",
+        "The same hash+key+append logic appears twice — recordPublish should be a one-liner: checkAndRecordDedup(store, walletAddress, text, true)"
+      ],
+      "suggestion": "Replace recordPublish body with: return void checkAndRecordDedup(store, walletAddress, text, true); — removes the duplication while preserving the void return type for the public API.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "guard_backward_compat_debt"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "agt-restate-comments-state-helpers",
+      "summary": "checkAndAppend has four consecutive restate comments that echo the next line without adding insight",
+      "related_files": ["src/toolkit/guards/state-helpers.ts"],
+      "evidence": [
+        "'// Prune old entries' above 'state.entries = state.entries.filter(...)'",
+        "'// Check condition' above 'const errorMsg = check(state, now)'",
+        "'// Append entry if provided' above 'if (newEntry) { state.entries.push(newEntry) }'",
+        "'// Always persist pruned state (prevents unbounded growth on check-only paths)' — this one has a why-comment embedded in parentheses but the header still restates"
+      ],
+      "suggestion": "Remove the first three comments entirely. Keep the fourth comment but rephrase to only the parenthetical insight: '// Persist even on check-only paths — prevents unbounded entry growth'.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "agt-backward-compat-exported-noops",
+      "summary": "Six backward-compat pass-through guard functions are exported in index.ts as real API, adding naming ceremony without behavior",
+      "related_files": ["src/toolkit/guards/dedup-guard.ts", "src/toolkit/guards/write-rate-limit.ts", "src/toolkit/guards/tip-spend-cap.ts", "src/toolkit/index.ts"],
+      "evidence": [
+        "checkDedup: return checkAndRecordDedup(store, walletAddress, text, false)",
+        "recordPublish: duplicated logic (separate issue above)",
+        "checkWriteRateLimit: return checkAndRecordWrite(store, walletAddress, false)",
+        "recordWrite: calls appendEntry directly — not a one-liner delegation",
+        "checkTipSpendCap: return checkAndRecordTip(store, walletAddress, postTxHash, amount, policy, false)",
+        "recordTip: calls appendEntry directly — not a pure delegation",
+        "index.ts exports checkDedup, recordPublish, checkWriteRateLimit, recordWrite, checkTipSpendCap, recordTip as public API alongside the new checkAndRecord* functions",
+        "All labeled '// backward compat' in source"
+      ],
+      "suggestion": "Evaluate whether external consumers actually use the old names. If only internal callers, deprecate with @deprecated JSDoc and plan removal in next major version. If no external consumers, remove the backward-compat wrappers and update callers to use checkAndRecord* directly.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "guard_backward_compat_debt"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Guard API was refactored to checkAndRecord* (combined check+record) but old separate check/record functions were preserved as backward-compat instead of updating all callers — creating permanent debt in the exported surface"
+    ],
+    "likely_symptoms": ["agt-backward-compat-exported-noops and agt-record-publish-duplication likely share the same root cause — guard API migration was never completed"]
+  },
+  "context_updates": {
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "No nosy debug logging or docstring bloat present",
+          "description": "All console.warn calls are at genuine failure/fallback boundaries. Docstrings are proportionate to function complexity. These AI-debt patterns are absent from the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard backward-compat wrappers are exported API surface debt",
+          "description": "Six pass-through or near-pass-through backward-compat functions are exported in index.ts alongside the new checkAndRecord* functions. The guard migration was never completed, creating six unnecessary entries in the public API.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

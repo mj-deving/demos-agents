@@ -1,0 +1,124 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {"error_consistency": 68.0},
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "All tools return ToolResult<T> — consistent result envelope, no mixed throw/return strategies at the public API surface",
+        "withToolWrapper in tool-wrapper.ts: catches all thrown exceptions and wraps in typed DemosError — uniform catch boundary",
+        "connect.ts throws DemosError directly (does not return ToolResult) — intentional design (connect is lifecycle, not a tool), consistent with its own documented contract",
+        "scan.ts lines 38-47: Skill Dojo fallback catch block: 'catch (fallbackErr) { console.warn(...) }' — error from fallback path is logged but lost. The outer path's localErr is then returned as the scan error. The fallback error message is NOT included in the returned DemosError. A developer debugging dual-path failures sees the primary error only.",
+        "loadCatalog in discover-sources.ts line 67: 'const raw = await readFile(catalogPath, 'utf-8')' — no try/catch. If readFile fails, the exception propagates to withToolWrapper which wraps it with defaultErrorCode 'NETWORK_ERROR'. This is misleading — a file-read failure on a local catalog should not be NETWORK_ERROR. Also: safeParse(raw) on line 68 is called but safeParse doesn't throw (returns parsed or throws JSON.parse error) — that throw would also propagate to withToolWrapper.",
+        "tip-spend-cap.ts lines 36-46: amount > policy.maxPerTip check happens BEFORE Number.isFinite(amount) check on line 44. If amount is NaN, 'NaN > policy.maxPerTip' is false (no error), then 'Number.isFinite(NaN)' is false (returns error). This means the per-tip max guard silently passes for NaN before the isFinite check catches it — the ordering is surprising but functional. The open issue flagged this correctly.",
+        "pay-spend-cap.ts lines 36-47: Number.isFinite check is BEFORE the policy bound check — correct ordering here.",
+        "sdk-bridge.ts payD402 catch block line 324-326: rethrows if error has success===false, otherwise wraps. But it calls sanitizeUrl on the error message string — sanitizeUrl expects a URL string, not an arbitrary error message. This could produce '[invalid URL]' in the error message if the underlying error message doesn't contain a URL.",
+        "verify.ts lines 59-65: unreachable return after exhaustive for loop — TypeScript completeness artifact with appropriate comment, not a real error handling gap",
+        "state-helpers.ts loadState: catches corrupt state, logs warning, returns default — graceful degradation, good",
+        "sdk-bridge.ts attestDahr: throws Error (not DemosError) — but caught by withToolWrapper and converted. Consistent with the design that bridge methods throw plain Errors that the tool wrapper converts.",
+        "connect.ts lines 234-237: catches auth failure silently, returns AUTH_PENDING_TOKEN — AUTH failure during connect is swallowed with only a token sentinel, not propagated. This means a failed auth produces a functional-looking session that will fail on the first API call rather than at connect time."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "error_consistency": {
+      "dimension_character": "The toolkit has a consistent public error strategy: all tools return ToolResult<T> with typed DemosError codes, and withToolWrapper provides a uniform catch boundary. However, several internal error handling gaps exist: scan.ts swallows the fallback error context, connect.ts swallows auth failures producing a deceptively valid-looking session, the NETWORK_ERROR default code is misleading for catalog file-read failures, and the isFinite/policy-bound ordering is inverted in tip-spend-cap relative to pay-spend-cap.",
+      "score_rationale": "The public-facing consistency is good — ToolResult everywhere, typed error codes, no mixed throw/return at the API surface. The score is pulled into the upper 60s by three confirmed defects: the scan fallback error swallow (open issue, still present), the auth-failure silent swallow in connect.ts creating a misleading session state, and the tip-spend-cap isFinite/bound ordering issue. These represent real debugging hazards, not just style concerns."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "err_scan_fallback_swallow",
+      "summary": "scan.ts silently swallows Skill Dojo fallback error, losing all context on dual-path failure",
+      "related_files": ["src/toolkit/tools/scan.ts"],
+      "evidence": [
+        "scan.ts lines 38-40: catch (fallbackErr) { console.warn(`[demos-toolkit] Skill Dojo fallback also failed: ${(fallbackErr as Error).message}`) }",
+        "After the warn, execution falls through to return err(..., localErr) — the fallback error is not included in the returned DemosError",
+        "A developer debugging a dual-failure sees only the primary error code/message, not the fallback failure reason"
+      ],
+      "suggestion": "Include the fallback error in the returned DemosError detail field: demosError('NETWORK_ERROR', `Scan failed: ${localErr.message}; fallback also failed: ${fallbackErr.message}`, true). This preserves both failure contexts for debugging.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "error_context_loss"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "err_connect_auth_silent_swallow",
+      "summary": "connect.ts swallows auth failure and returns AUTH_PENDING_TOKEN, creating a misleading session state",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "connect.ts lines 231-237: try { authToken = await ensureAuth(...) } catch { authToken = AUTH_PENDING_TOKEN }",
+        "No log, no warning emitted on auth failure — a developer running connect() against a down SuperColony API gets a session object without any indication auth failed",
+        "AUTH_PENDING_TOKEN is a sentinel string '__AUTH_PENDING__' — it is never sent as Bearer (correct guard exists in sdk-bridge.ts) but API calls that require auth will silently get 401/403 responses",
+        "The auth failure is entirely silent — the returned DemosSession gives no hint that it is not authenticated"
+      ],
+      "suggestion": "At minimum, emit console.warn('[demos-toolkit] Auth failed during connect — session will operate in read-only/unauthenticated mode') when catching auth failure. Consider adding a session.isAuthenticated getter that checks for AUTH_PENDING_TOKEN so consumers can detect this state.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "error_context_loss"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "err_catalog_network_error_code",
+      "summary": "loadCatalog() file-read failure propagates as NETWORK_ERROR — misleading error code for local I/O",
+      "related_files": ["src/toolkit/tools/discover-sources.ts", "src/toolkit/tools/tool-wrapper.ts"],
+      "evidence": [
+        "discover-sources.ts line 67: readFile(catalogPath, 'utf-8') — no try/catch, throws on ENOENT or permission error",
+        "withToolWrapper defaultErrorCode for discoverSources is 'NETWORK_ERROR' (line 37)",
+        "A file-not-found error on the local catalog is wrapped as NETWORK_ERROR — consumers cannot distinguish network failures from missing catalog files"
+      ],
+      "suggestion": "Wrap the readFile call with a try/catch in loadCatalog and throw a demosError('INVALID_INPUT', 'Catalog file not found: ...', false) for ENOENT, or use a more appropriate error code. Alternatively change the withToolWrapper defaultErrorCode for discoverSources to 'INVALID_INPUT' if the catalog path is consumer-controlled.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "err_tip_isfinite_ordering",
+      "summary": "tip-spend-cap: policy bound check runs before isFinite check — inverted order vs pay-spend-cap",
+      "related_files": ["src/toolkit/guards/tip-spend-cap.ts", "src/toolkit/guards/pay-spend-cap.ts"],
+      "evidence": [
+        "tip-spend-cap.ts line 36: 'if (amount > policy.maxPerTip)' — runs first; NaN > maxPerTip is false, so NaN slips through",
+        "tip-spend-cap.ts line 44: 'if (!Number.isFinite(amount) || amount <= 0)' — runs second, catches NaN",
+        "pay-spend-cap.ts line 36: 'if (!Number.isFinite(amount) || amount <= 0)' — isFinite check runs FIRST (correct order)",
+        "Inconsistent guard logic between sibling files — NaN passes the per-tip max check before being caught by isFinite"
+      ],
+      "suggestion": "Move the Number.isFinite check to line 35 (before the amount > policy.maxPerTip comparison) in tip-spend-cap.ts, matching the ordering in pay-spend-cap.ts. This is functionally safe but eliminates the NaN ordering surprise and makes the two guards consistent.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Silent error swallowing is a systemic pattern in error boundaries (scan fallback, connect auth) — preference for graceful degradation trades debuggability",
+      "isFinite ordering inconsistency suggests tip-spend-cap was written before pay-spend-cap which corrected the pattern"
+    ],
+    "likely_symptoms": ["err_scan_fallback_swallow is the confirmed open issue from prior review — still present"],
+    "possible_false_positives": ["err_connect_auth_silent_swallow may be intentional for offline/degraded-mode support — worth confirming the design intent"]
+  },
+  "context_updates": {
+    "error_consistency": {
+      "add": [
+        {
+          "header": "ToolResult envelope is consistent across all tools",
+          "description": "Every tool function returns ToolResult<T> with typed DemosError codes. The withToolWrapper catch boundary ensures no unhandled exceptions escape the public API surface.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Bridge methods throw plain Errors by design",
+          "description": "sdk-bridge.ts methods intentionally throw plain Error objects (not DemosError) — they are caught by withToolWrapper which converts them using the tool's defaultErrorCode. This is a deliberate layering choice documented in tool-wrapper.ts.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,55 +1,74 @@
 {
   "version": 8,
   "created": "2026-03-27T16:59:34+00:00",
-  "updated": "2026-03-27T17:14:24+00:00",
+  "updated": "2026-03-27T21:20:02+00:00",
   "queue_order": [
-    "review::.::holistic::abstraction_fitness::discover_sources_manual_wrapper_replication",
-    "review::.::holistic::ai_generated_debt::ai_debt_record_fn_duplication",
-    "review::.::holistic::ai_generated_debt::ai_debt_restating_comments_state_helpers",
-    "review::.::holistic::ai_generated_debt::ai_debt_source_status_local_duplicate",
-    "review::.::holistic::api_surface_coherence::asc_connect_disconnect_exception_undocumented",
-    "review::.::holistic::api_surface_coherence::asc_discover_sources_dead_match_threshold",
-    "review::.::holistic::api_surface_coherence::asc_discover_sources_no_wrapper",
-    "review::.::holistic::api_surface_coherence::asc_discover_sources_nullable_session",
-    "review::.::holistic::authorization_consistency::ac_url_allowlist_dead",
-    "review::.::holistic::contract_coherence::attest_url_optional_required_lie",
-    "review::.::holistic::contract_coherence::sdk_bridge_dead_interface_method",
-    "review::.::holistic::contract_coherence::verify_hardcoded_block_height",
-    "review::.::holistic::convention_outlier::discover_sources_duplicate_source_status",
-    "review::.::holistic::convention_outlier::guard_dual_api_surface",
-    "review::.::holistic::cross_module_architecture::connect_ts_lib_auth_import",
-    "review::.::holistic::cross_module_architecture::discover_sources_module_level_cache",
-    "review::.::holistic::design_coherence::connect_mixed_concerns",
-    "review::.::holistic::design_coherence::sdk_bridge_silent_catch",
-    "review::.::holistic::error_consistency::discover_sources_json_parse_no_local_catch",
-    "review::.::holistic::error_consistency::scan_silent_skill_dojo_error",
-    "review::.::holistic::error_consistency::spend_cap_validation_order",
-    "review::.::holistic::high_level_elegance::discover_sources_nullable_session",
-    "review::.::holistic::high_level_elegance::pay_ts_inline_schema",
-    "review::.::holistic::incomplete_migration::incomplete_migration_checkandrecord_not_exported",
-    "review::.::holistic::initialization_coupling::init_coupling_catalog_cache_no_flush",
-    "review::.::holistic::logic_clarity::pay_spend_cap_guard_order",
-    "review::.::holistic::logic_clarity::verify_dead_code_post_loop",
-    "review::.::holistic::low_level_elegance::scan_magic_numbers",
-    "review::.::holistic::low_level_elegance::tip_feed_scan_for_author",
-    "review::.::holistic::low_level_elegance::verify_dead_code_fallback",
-    "review::.::holistic::mid_level_elegance::mle_api_base_url_hardcoded",
-    "review::.::holistic::mid_level_elegance::mle_bridge_opaque_handle",
-    "review::.::holistic::mid_level_elegance::mle_reply_validation_bypass_wrapper",
-    "review::.::holistic::mid_level_elegance::mle_sdk_txhash_fallback_glue",
-    "review::.::holistic::mid_level_elegance::mle_stale_todo_attest",
-    "review::.::holistic::naming_quality::backward_compat_naming_split",
-    "review::.::holistic::test_strategy::ts_discover_sources_untested",
-    "review::.::holistic::test_strategy::ts_integration_conditional_assertions",
-    "review::.::holistic::test_strategy::ts_state_helpers_untested",
-    "review::.::holistic::test_strategy::ts_verify_retry_untested",
-    "review::.::holistic::type_safety::ts_bridge_any_cache_vars",
-    "review::.::holistic::type_safety::ts_bridge_function_params",
-    "review::.::holistic::type_safety::ts_connect_sdk_demos_any",
-    "review::.::holistic::type_safety::ts_duplicate_source_status"
+    "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+    "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+    "review::.::holistic::api_surface_coherence::asc-connect-throws",
+    "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+    "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+    "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+    "review::.::holistic::contract_coherence::cc_getter_side_effect",
+    "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+    "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+    "review::.::holistic::convention_outlier::conv_guard_dual_api",
+    "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+    "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+    "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+    "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+    "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+    "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+    "review::.::holistic::design_coherence::dc_scan_stub_async",
+    "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+    "review::.::holistic::error_consistency::err_catalog_network_error_code",
+    "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+    "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+    "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+    "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+    "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+    "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+    "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+    "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+    "review::.::holistic::initialization_coupling::ic_container_singleton",
+    "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+    "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+    "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+    "review::.::holistic::logic_clarity::lc_tip_nan_order",
+    "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+    "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+    "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+    "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+    "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+    "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+    "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+    "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+    "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+    "review::.::holistic::naming_quality::name_get_tx_module_async",
+    "review::.::holistic::naming_quality::name_guard_dual_surface",
+    "review::.::holistic::naming_quality::name_record_publish_mismatch",
+    "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+    "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+    "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+    "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+    "review::.::holistic::type_safety::ts_demos_as_any",
+    "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+    "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+    "review::.::holistic::type_safety::ts_tx_module_unknown_types"
   ],
   "deferred": [],
-  "skipped": {},
+  "skipped": {
+    "review::.::holistic::package_organization::po-url-validator-placement": {
+      "issue_id": "review::.::holistic::package_organization::po-url-validator-placement",
+      "kind": "permanent",
+      "reason": null,
+      "note": "Acceptable tradeoff \u2014 url-validator is a cross-cutting SSRF concern that fits root better than guards",
+      "attestation": "I have reviewed this triage skip against the code and I am not gaming the score by suppressing a real defect. The url-validator.ts placement in toolkit root serves 3 importers across tools and is functionally appropriate.",
+      "created_at": "2026-03-27T21:12:52+00:00",
+      "review_after": null,
+      "skipped_at_scan": 5
+    }
+  },
   "active_cluster": null,
   "overrides": {
     "unused::src/toolkit/tools/scan.ts::domain:64": {
@@ -135,6 +154,318 @@
       "created_at": "2026-03-27T16:59:34+00:00",
       "cluster": "auto/test_coverage-transitive_only",
       "updated_at": "2026-03-27T16:59:34+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication": {
+      "issue_id": "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+      "created_at": "2026-03-27T21:10:27+00:00",
+      "cluster": "feed-normalization",
+      "updated_at": "2026-03-27T21:10:27+00:00"
+    },
+    "review::.::holistic::type_safety::ts_feed_api_cast_chains": {
+      "issue_id": "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+      "created_at": "2026-03-27T21:10:27+00:00",
+      "cluster": "feed-normalization",
+      "updated_at": "2026-03-27T21:10:27+00:00"
+    },
+    "review::.::holistic::convention_outlier::conv_guard_dual_api": {
+      "issue_id": "review::.::holistic::convention_outlier::conv_guard_dual_api",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry": {
+      "issue_id": "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation": {
+      "issue_id": "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::error_consistency::err_tip_isfinite_ordering": {
+      "issue_id": "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::logic_clarity::lc_tip_nan_order": {
+      "issue_id": "review::.::holistic::logic_clarity::lc_tip_nan_order",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::naming_quality::name_guard_dual_surface": {
+      "issue_id": "review::.::holistic::naming_quality::name_guard_dual_surface",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::design_coherence::dc_dedup_split_api_in_production": {
+      "issue_id": "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+      "created_at": "2026-03-27T21:10:39+00:00",
+      "cluster": "guard-debt",
+      "updated_at": "2026-03-27T21:10:39+00:00"
+    },
+    "review::.::holistic::type_safety::ts_demos_as_any": {
+      "issue_id": "review::.::holistic::type_safety::ts_demos_as_any",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "type-safety-fixes",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::type_safety::ts_d402_client_unknown_cache": {
+      "issue_id": "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "type-safety-fixes",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::type_safety::ts_demos_error_guard_duplication": {
+      "issue_id": "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "type-safety-fixes",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::type_safety::ts_tx_module_unknown_types": {
+      "issue_id": "review::.::holistic::type_safety::ts_tx_module_unknown_types",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "type-safety-fixes",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::api_surface_coherence::asc-connect-throws": {
+      "issue_id": "review::.::holistic::api_surface_coherence::asc-connect-throws",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "error-contract",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return": {
+      "issue_id": "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "error-contract",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::error_consistency::err_catalog_network_error_code": {
+      "issue_id": "review::.::holistic::error_consistency::err_catalog_network_error_code",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "error-contract",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::error_consistency::err_connect_auth_silent_swallow": {
+      "issue_id": "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "error-contract",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::error_consistency::err_scan_fallback_swallow": {
+      "issue_id": "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "error-contract",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure": {
+      "issue_id": "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+      "created_at": "2026-03-27T21:10:40+00:00",
+      "cluster": "error-contract",
+      "updated_at": "2026-03-27T21:10:40+00:00"
+    },
+    "review::.::holistic::api_surface_coherence::asc-match-threshold-dead": {
+      "issue_id": "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::design_coherence::dc_scan_stub_async": {
+      "issue_id": "review::.::holistic::design_coherence::dc_scan_stub_async",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws": {
+      "issue_id": "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::incomplete_migration::im-stale-publish-todo": {
+      "issue_id": "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::logic_clarity::lc_verify_unreachable_return": {
+      "issue_id": "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback": {
+      "issue_id": "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params": {
+      "issue_id": "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish": {
+      "issue_id": "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "dead-code",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::api_surface_coherence::asc-reply-double-touch": {
+      "issue_id": "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::design_coherence::dc_magic_number_day_ms": {
+      "issue_id": "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::high_level_elegance::hle_d402_schema_placement": {
+      "issue_id": "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling": {
+      "issue_id": "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule": {
+      "issue_id": "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers": {
+      "issue_id": "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords": {
+      "issue_id": "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper": {
+      "issue_id": "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot": {
+      "issue_id": "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+      "created_at": "2026-03-27T21:10:41+00:00",
+      "cluster": "elegance-fixes",
+      "updated_at": "2026-03-27T21:10:41+00:00"
+    },
+    "review::.::holistic::naming_quality::name_get_tx_module_async": {
+      "issue_id": "review::.::holistic::naming_quality::name_get_tx_module_async",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "naming-fixes",
+      "updated_at": "2026-03-27T21:13:43+00:00"
+    },
+    "review::.::holistic::naming_quality::name_record_publish_mismatch": {
+      "issue_id": "review::.::holistic::naming_quality::name_record_publish_mismatch",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "naming-fixes",
+      "updated_at": "2026-03-27T21:13:43+00:00"
+    },
+    "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross": {
+      "issue_id": "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "boundary-cleanup",
+      "updated_at": "2026-03-27T21:13:43+00:00"
+    },
+    "review::.::holistic::cross_module_architecture::arch_catalog_module_state": {
+      "issue_id": "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "boundary-cleanup",
+      "updated_at": "2026-03-27T21:13:43+00:00"
+    },
+    "review::.::holistic::contract_coherence::cc_getter_side_effect": {
+      "issue_id": "review::.::holistic::contract_coherence::cc_getter_side_effect",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "contract-fixes",
+      "updated_at": "2026-03-27T21:13:42+00:00"
+    },
+    "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined": {
+      "issue_id": "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "contract-fixes",
+      "updated_at": "2026-03-27T21:13:42+00:00"
+    },
+    "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie": {
+      "issue_id": "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "contract-fixes",
+      "updated_at": "2026-03-27T21:13:42+00:00"
+    },
+    "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony": {
+      "issue_id": "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "abstraction-cleanup",
+      "updated_at": "2026-03-27T21:13:42+00:00"
+    },
+    "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide": {
+      "issue_id": "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "abstraction-cleanup",
+      "updated_at": "2026-03-27T21:13:42+00:00"
+    },
+    "review::.::holistic::high_level_elegance::hle_discover_sources_session_required": {
+      "issue_id": "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "abstraction-cleanup",
+      "updated_at": "2026-03-27T21:13:42+00:00"
+    },
+    "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification": {
+      "issue_id": "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "dependency-cleanup",
+      "updated_at": "2026-03-27T21:13:44+00:00"
+    },
+    "review::.::holistic::test_strategy::ts-01-integration-tautology-branches": {
+      "issue_id": "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "test-quality",
+      "updated_at": "2026-03-27T21:13:44+00:00"
+    },
+    "review::.::holistic::test_strategy::ts-02-integration-real-sleep": {
+      "issue_id": "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "test-quality",
+      "updated_at": "2026-03-27T21:13:44+00:00"
+    },
+    "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered": {
+      "issue_id": "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "test-quality",
+      "updated_at": "2026-03-27T21:13:44+00:00"
+    },
+    "review::.::holistic::initialization_coupling::ic_container_singleton": {
+      "issue_id": "review::.::holistic::initialization_coupling::ic_container_singleton",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "boundary-cleanup",
+      "updated_at": "2026-03-27T21:13:43+00:00"
+    },
+    "review::.::holistic::initialization_coupling::ic_homedir_import_time": {
+      "issue_id": "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+      "created_at": "2026-03-27T21:12:41+00:00",
+      "cluster": "boundary-cleanup",
+      "updated_at": "2026-03-27T21:13:43+00:00"
     }
   },
   "clusters": {
@@ -210,16 +541,589 @@
       "user_modified": false,
       "action_type": "manual_fix",
       "execution_policy": "planned_only"
+    },
+    "feed-normalization": {
+      "name": "feed-normalization",
+      "description": "Extract shared feed parser from 3 implementations in scan.ts:78, verify.ts:76, tip.ts:45",
+      "issue_ids": [
+        "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+        "review::.::holistic::type_safety::ts_feed_api_cast_chains"
+      ],
+      "created_at": "2026-03-27T21:10:00+00:00",
+      "updated_at": "2026-03-27T21:18:51+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Extract parseFeedPosts into feed-parser.ts",
+          "detail": "NEW FILE: Create parseFeedPosts(data: unknown): ScanPost[] handling posts/results/items/data shapes from SuperColony feed API response",
+          "issue_refs": [
+            "mle-01-feed-parse-triplication"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Replace 3 implementations in scan verify tip",
+          "detail": "Replace feed parsing in src/toolkit/tools/scan.ts:78-93, src/toolkit/tools/verify.ts:76-85, src/toolkit/tools/tip.ts:45-54 with parseFeedPosts() import",
+          "issue_refs": [
+            "ts_feed_api_cast_chains"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Add tests for feed-parser",
+          "detail": "Create tests/toolkit/tools/feed-parser.test.ts with cases for posts array, results wrapper, items wrapper, and raw data fallback shapes",
+          "issue_refs": [
+            "mle-01-feed-parse-triplication"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "guard-debt": {
+      "name": "guard-debt",
+      "description": "Add @deprecated JSDoc to 6 compat exports in dedup-guard.ts, write-rate-limit.ts, tip-spend-cap.ts, index.ts",
+      "issue_ids": [
+        "review::.::holistic::convention_outlier::conv_guard_dual_api",
+        "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+        "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+        "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+        "review::.::holistic::logic_clarity::lc_tip_nan_order",
+        "review::.::holistic::naming_quality::name_guard_dual_surface",
+        "review::.::holistic::design_coherence::dc_dedup_split_api_in_production"
+      ],
+      "created_at": "2026-03-27T21:10:00+00:00",
+      "updated_at": "2026-03-27T21:18:53+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Add @deprecated JSDoc to 6 compat exports",
+          "detail": "Add /** @deprecated Use checkAndRecordDedup() */ JSDoc to checkDedup and recordPublish exports in src/toolkit/guards/dedup-guard.ts",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Update internal callers to checkAndRecord*",
+          "detail": "Add @deprecated to checkWriteRateLimit, recordWrite in src/toolkit/guards/write-rate-limit.ts and checkTipSpendCap, recordTip in src/toolkit/guards/tip-spend-cap.ts",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Remove compat from barrel",
+          "detail": "Remove deprecated compat exports from src/toolkit/index.ts barrel \u2014 keep only checkAndRecord* unified exports",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "error-contract": {
+      "name": "error-contract",
+      "description": "Document connect() throws, standardize allowlist guard paths",
+      "issue_ids": [
+        "review::.::holistic::api_surface_coherence::asc-connect-throws",
+        "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+        "review::.::holistic::error_consistency::err_catalog_network_error_code",
+        "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+        "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+        "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure"
+      ],
+      "created_at": "2026-03-27T21:10:01+00:00",
+      "updated_at": "2026-03-27T21:18:57+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Add @throws to connect()",
+          "detail": "Add /** @throws {DemosError} on auth failure, bad permissions, symlink */ JSDoc to connect() in src/toolkit/tools/connect.ts:30",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Standardize allowlist to return err()",
+          "detail": "Change executePublishPipeline URL allowlist check in src/toolkit/tools/publish.ts:88-93 from throw to return err() for consistency",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Fix catalog error code",
+          "detail": "Change error code from NETWORK_ERROR to INVALID_INPUT in src/toolkit/tools/discover-sources.ts:69 for catalog file read failures",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Warn on auth fallback",
+          "detail": "Add console.warn to auth fallback path in src/toolkit/tools/connect.ts:247 when falling back to AUTH_PENDING_TOKEN",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "dead-code": {
+      "name": "dead-code",
+      "description": "Remove stale TODOs, dead returns, unused stubs",
+      "issue_ids": [
+        "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+        "review::.::holistic::design_coherence::dc_scan_stub_async",
+        "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+        "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+        "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+        "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+        "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+        "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish"
+      ],
+      "created_at": "2026-03-27T21:10:02+00:00",
+      "updated_at": "2026-03-27T21:18:59+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Remove matchThreshold",
+          "detail": "Remove matchThreshold field from DiscoverSourcesOptions in src/toolkit/types.ts:174 and from DiscoverSourcesOptionsSchema in src/toolkit/schemas.ts:133",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Remove fetchFromSkillDojo stub",
+          "detail": "Remove fetchFromSkillDojo stub function and skillDojoFallback config references in src/toolkit/tools/scan.ts:96-99",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Remove stale TODOs",
+          "detail": "Remove stale TODO comment at src/toolkit/tools/publish.ts:39 about SDK bridge integration (already wired)",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Remove unreachable returns",
+          "detail": "Remove unreachable return after for loop at src/toolkit/tools/verify.ts:59-62 (loop always returns on last iteration)",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "elegance-fixes": {
+      "name": "elegance-fixes",
+      "description": "Magic numbers, schema placement, reply double-wrap, verify limit",
+      "issue_ids": [
+        "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+        "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+        "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+        "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+        "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+        "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+        "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+        "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+        "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot"
+      ],
+      "created_at": "2026-03-27T21:10:02+00:00",
+      "updated_at": "2026-03-27T21:19:02+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Extract DAY_MS constant",
+          "detail": "Extract const DAY_MS = 86400000 into src/toolkit/guards/state-helpers.ts and import from dedup-guard.ts, write-rate-limit.ts, tip-spend-cap.ts, pay-spend-cap.ts",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Move D402 schema",
+          "detail": "Move D402RequirementSchema from src/toolkit/tools/pay.ts:18-23 to src/toolkit/schemas.ts alongside other Zod schemas",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Fix reply double-touch",
+          "detail": "Remove manual session.touch() and start timing from reply() in src/toolkit/tools/publish.ts:63-69 \u2014 publish() already handles via withToolWrapper",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Align verify limit",
+          "detail": "Align verify feed limit from 20 to 50 in src/toolkit/tools/verify.ts:71 to match tip.ts and scan.ts feed fetch limits",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Extract error keywords",
+          "detail": "Extract error keyword strings from attestDahr in src/toolkit/sdk-bridge.ts:155 into const DAHR_ERROR_KEYWORDS array",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "abstraction-cleanup": {
+      "name": "abstraction-cleanup",
+      "description": "Inline unnecessary wrappers, narrow session parameters",
+      "issue_ids": [
+        "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+        "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+        "review::.::holistic::high_level_elegance::hle_discover_sources_session_required"
+      ],
+      "created_at": "2026-03-27T21:13:30+00:00",
+      "updated_at": "2026-03-27T21:19:10+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Inline executeDahrAttestation into attest()",
+          "detail": "Inline executeDahrAttestation() body into attest() in src/toolkit/tools/attest.ts \u2014 2-line wrapper adds no behavior value",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Narrow discoverSources to accept catalogPath string",
+          "detail": "Narrow discoverSources() first parameter from DemosSession to { sourceCatalogPath?: string } in src/toolkit/tools/discover-sources.ts:34",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Update tests for new discoverSources signature",
+          "detail": "Update tests/toolkit/tools/discover-sources.test.ts and tests/toolkit/tools/tools.test.ts for narrowed parameter type",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "contract-fixes": {
+      "name": "contract-fixes",
+      "description": "Fix provenance hash, getter side effects, parseWallet guard",
+      "issue_ids": [
+        "review::.::holistic::contract_coherence::cc_getter_side_effect",
+        "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+        "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie"
+      ],
+      "created_at": "2026-03-27T21:13:30+00:00",
+      "updated_at": "2026-03-27T21:19:03+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Fix provenance responseHash to DAHR hash",
+          "detail": "Fix provenance.attestation.responseHash in src/toolkit/tools/publish.ts:53 to use attestResult.responseHash instead of txHash",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Add @throws to getters with side effects",
+          "detail": "Add @throws JSDoc to getAuthToken() and getSigningHandle() in src/toolkit/session.ts noting expired session side effect",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Guard parseWallet address undefined",
+          "detail": "Add null guard for wallet.address in src/toolkit/tools/connect.ts:84 connectSdk when address is undefined from parseWallet",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "boundary-cleanup": {
+      "name": "boundary-cleanup",
+      "description": "Auth boundary cross, catalog cache scope, container singleton",
+      "issue_ids": [
+        "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+        "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+        "review::.::holistic::initialization_coupling::ic_container_singleton",
+        "review::.::holistic::initialization_coupling::ic_homedir_import_time"
+      ],
+      "created_at": "2026-03-27T21:13:31+00:00",
+      "updated_at": "2026-03-27T21:19:09+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Document auth boundary cross in connect.ts JSDoc",
+          "detail": "Add JSDoc to connect.ts:222-226 documenting the dynamic import of lib/auth.js as an intentional toolkit\u2192app boundary cross for auth",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Move catalog cache to session scope or WeakMap",
+          "detail": "Move catalogCache Map from module scope to DemosSession in src/toolkit/tools/discover-sources.ts:20 or use session-keyed WeakMap",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Document container singleton risk in connect.ts",
+          "detail": "Document _isContainer singleton in src/toolkit/tools/connect.ts:252 as intentional process-lifetime cache with reset-on-test note",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Consider injecting auth as parameter to connect()",
+          "detail": "Consider accepting authFn parameter in connect() to decouple from lib/auth.js import \u2014 document as future improvement",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "naming-fixes": {
+      "name": "naming-fixes",
+      "description": "Fix naming mismatches in guards and SDK methods",
+      "issue_ids": [
+        "review::.::holistic::naming_quality::name_get_tx_module_async",
+        "review::.::holistic::naming_quality::name_record_publish_mismatch"
+      ],
+      "created_at": "2026-03-27T21:13:31+00:00",
+      "updated_at": "2026-03-27T21:19:06+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Rename getTxModule to loadTxModule",
+          "detail": "Rename getTxModule to loadTxModule in src/toolkit/sdk-bridge.ts:110-115 \u2014 async lazy loader, not synchronous getter",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Rename recordPublish to recordDedupHash",
+          "detail": "Rename recordPublish to recordDedupHash in src/toolkit/guards/dedup-guard.ts:64 \u2014 name reflects actual behavior (hash recording, not publish)",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "dependency-cleanup": {
+      "name": "dependency-cleanup",
+      "description": "Review anthropic-sdk prod classification",
+      "issue_ids": [
+        "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification"
+      ],
+      "created_at": "2026-03-27T21:13:32+00:00",
+      "updated_at": "2026-03-27T21:19:11+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Move @anthropic-ai/sdk to devDependencies",
+          "detail": "Move @anthropic-ai/sdk from dependencies to devDependencies in package.json \u2014 no toolkit source file imports it directly",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "test-quality": {
+      "name": "test-quality",
+      "description": "Fix tautological assertions, real sleep, missing coverage",
+      "issue_ids": [
+        "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+        "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+        "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered"
+      ],
+      "created_at": "2026-03-27T21:13:32+00:00",
+      "updated_at": "2026-03-27T21:19:05+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Fix tautological integration assertions",
+          "detail": "Replace tautological else-branch assertions in tests/toolkit/tools/integration.test.ts that pass on any error",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Mock real sleep in integration",
+          "detail": "Replace real sleep delays in tests/toolkit/tools/integration.test.ts verify test with vi.useFakeTimers() mock",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Add identifyOpportunities boundary tests",
+          "detail": "Add boundary condition tests for identifyOpportunities() in tests/toolkit/tools/scan.test.ts covering threshold values 5 and 100",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
+    },
+    "type-safety": {
+      "name": "type-safety-fixes",
+      "description": "Create DemosRpcMethods interface in sdk-bridge.ts, replace 4x (demos as any) casts at lines 148, 272, 329, 335",
+      "issue_ids": [
+        "review::.::holistic::type_safety::ts_demos_as_any",
+        "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+        "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+        "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+      ],
+      "created_at": "2026-03-27T21:10:01+00:00",
+      "updated_at": "2026-03-27T21:18:55+00:00",
+      "auto": false,
+      "cluster_key": "",
+      "action": null,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only",
+      "execution_status": "active",
+      "user_modified": true,
+      "action_steps": [
+        {
+          "title": "Create typed SdkMethods interface",
+          "detail": "Create DemosRpcMethods interface in src/toolkit/sdk-bridge.ts typing queryTx, getTx, transfer, sendTransaction methods",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Replace (demos as any) with typed interface",
+          "detail": "Replace (demos as any).queryTx at src/toolkit/sdk-bridge.ts:335 and (demos as any).getTx at line 338 with typed interface cast",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Type cachedD402Client",
+          "detail": "Replace (demos as any).transfer at src/toolkit/sdk-bridge.ts:272 and (demos as any).sendTransaction at line 205 with typed interface",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        },
+        {
+          "title": "Deduplicate isDemosErrorLike",
+          "detail": "Move isDemosErrorLike from src/toolkit/tools/pay.ts into src/toolkit/tools/tool-wrapper.ts (single definition, re-export)",
+          "issue_refs": [
+            "placeholder"
+          ],
+          "effort": "small"
+        }
+      ]
     }
   },
   "superseded": {},
   "promoted_ids": [],
-  "plan_start_scores": {},
+  "plan_start_scores": {
+    "strict": 80.6,
+    "overall": 80.6,
+    "objective": 81.9,
+    "verified": 81.9
+  },
   "refresh_state": {
     "_subjective_migration_pruned": true,
     "lifecycle_phase": "plan",
     "subjective_review_completed_at_scan_count": 2,
-    "postflight_scan_completed_at_scan_count": 3
+    "postflight_scan_completed_at_scan_count": 5
   },
   "execution_log": [
     {
@@ -449,11 +1353,3377 @@
       "detail": {
         "scan_count": 3
       }
+    },
+    {
+      "timestamp": "2026-03-27T20:37:31+00:00",
+      "action": "seed_start_scores",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T20:37:31+00:00",
+      "action": "complete_postflight_scan",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "scan_count": 4
+      }
+    },
+    {
+      "timestamp": "2026-03-27T20:48:57+00:00",
+      "action": "review_import_sync",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "trigger": "review_import",
+        "new_ids": [
+          "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+          "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+          "review::.::holistic::api_surface_coherence::asc-connect-throws",
+          "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+          "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+          "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+          "review::.::holistic::contract_coherence::cc_getter_side_effect",
+          "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+          "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+          "review::.::holistic::convention_outlier::conv_guard_dual_api",
+          "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+          "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+          "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+          "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+          "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+          "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+          "review::.::holistic::design_coherence::dc_scan_stub_async",
+          "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+          "review::.::holistic::error_consistency::err_catalog_network_error_code",
+          "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+          "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+          "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+          "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+          "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+          "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+          "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+          "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+          "review::.::holistic::initialization_coupling::ic_container_singleton",
+          "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+          "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+          "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+          "review::.::holistic::logic_clarity::lc_tip_nan_order",
+          "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+          "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+          "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+          "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+          "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+          "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+          "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+          "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+          "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+          "review::.::holistic::naming_quality::name_get_tx_module_async",
+          "review::.::holistic::naming_quality::name_guard_dual_surface",
+          "review::.::holistic::naming_quality::name_record_publish_mismatch",
+          "review::.::holistic::package_organization::po-url-validator-placement",
+          "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+          "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+          "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+          "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+          "review::.::holistic::type_safety::ts_demos_as_any",
+          "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+          "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+          "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+        ],
+        "added_to_queue": [
+          "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+          "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+          "review::.::holistic::api_surface_coherence::asc-connect-throws",
+          "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+          "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+          "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+          "review::.::holistic::contract_coherence::cc_getter_side_effect",
+          "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+          "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+          "review::.::holistic::convention_outlier::conv_guard_dual_api",
+          "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+          "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+          "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+          "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+          "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+          "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+          "review::.::holistic::design_coherence::dc_scan_stub_async",
+          "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+          "review::.::holistic::error_consistency::err_catalog_network_error_code",
+          "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+          "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+          "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+          "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+          "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+          "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+          "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+          "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+          "review::.::holistic::initialization_coupling::ic_container_singleton",
+          "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+          "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+          "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+          "review::.::holistic::logic_clarity::lc_tip_nan_order",
+          "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+          "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+          "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+          "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+          "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+          "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+          "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+          "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+          "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+          "review::.::holistic::naming_quality::name_get_tx_module_async",
+          "review::.::holistic::naming_quality::name_guard_dual_surface",
+          "review::.::holistic::naming_quality::name_record_publish_mismatch",
+          "review::.::holistic::package_organization::po-url-validator-placement",
+          "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+          "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+          "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+          "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+          "review::.::holistic::type_safety::ts_demos_as_any",
+          "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+          "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+          "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+        ],
+        "workflow_injected_ids": [],
+        "triage_injected": false,
+        "triage_injected_ids": [],
+        "triage_deferred": false,
+        "diff_new": 53,
+        "diff_reopened": 0,
+        "diff_auto_resolved": 64,
+        "stale_pruned_from_queue": [
+          "review::.::holistic::abstraction_fitness::discover_sources_manual_wrapper_replication",
+          "review::.::holistic::ai_generated_debt::ai_debt_record_fn_duplication",
+          "review::.::holistic::ai_generated_debt::ai_debt_restating_comments_state_helpers",
+          "review::.::holistic::ai_generated_debt::ai_debt_source_status_local_duplicate",
+          "review::.::holistic::api_surface_coherence::asc_connect_disconnect_exception_undocumented",
+          "review::.::holistic::api_surface_coherence::asc_discover_sources_dead_match_threshold",
+          "review::.::holistic::api_surface_coherence::asc_discover_sources_no_wrapper",
+          "review::.::holistic::api_surface_coherence::asc_discover_sources_nullable_session",
+          "review::.::holistic::authorization_consistency::ac_url_allowlist_dead",
+          "review::.::holistic::contract_coherence::attest_url_optional_required_lie",
+          "review::.::holistic::contract_coherence::sdk_bridge_dead_interface_method",
+          "review::.::holistic::contract_coherence::verify_hardcoded_block_height",
+          "review::.::holistic::convention_outlier::discover_sources_duplicate_source_status",
+          "review::.::holistic::convention_outlier::guard_dual_api_surface",
+          "review::.::holistic::cross_module_architecture::connect_ts_lib_auth_import",
+          "review::.::holistic::cross_module_architecture::discover_sources_module_level_cache",
+          "review::.::holistic::design_coherence::connect_mixed_concerns",
+          "review::.::holistic::design_coherence::sdk_bridge_silent_catch",
+          "review::.::holistic::error_consistency::discover_sources_json_parse_no_local_catch",
+          "review::.::holistic::error_consistency::scan_silent_skill_dojo_error",
+          "review::.::holistic::error_consistency::spend_cap_validation_order",
+          "review::.::holistic::high_level_elegance::discover_sources_nullable_session",
+          "review::.::holistic::high_level_elegance::pay_ts_inline_schema",
+          "review::.::holistic::incomplete_migration::incomplete_migration_checkandrecord_not_exported",
+          "review::.::holistic::initialization_coupling::init_coupling_catalog_cache_no_flush",
+          "review::.::holistic::logic_clarity::pay_spend_cap_guard_order",
+          "review::.::holistic::logic_clarity::verify_dead_code_post_loop",
+          "review::.::holistic::low_level_elegance::scan_magic_numbers",
+          "review::.::holistic::low_level_elegance::tip_feed_scan_for_author",
+          "review::.::holistic::low_level_elegance::verify_dead_code_fallback",
+          "review::.::holistic::mid_level_elegance::mle_api_base_url_hardcoded",
+          "review::.::holistic::mid_level_elegance::mle_bridge_opaque_handle",
+          "review::.::holistic::mid_level_elegance::mle_reply_validation_bypass_wrapper",
+          "review::.::holistic::mid_level_elegance::mle_sdk_txhash_fallback_glue",
+          "review::.::holistic::mid_level_elegance::mle_stale_todo_attest",
+          "review::.::holistic::naming_quality::backward_compat_naming_split",
+          "review::.::holistic::test_strategy::ts_discover_sources_untested",
+          "review::.::holistic::test_strategy::ts_integration_conditional_assertions",
+          "review::.::holistic::test_strategy::ts_state_helpers_untested",
+          "review::.::holistic::test_strategy::ts_verify_retry_untested",
+          "review::.::holistic::type_safety::ts_bridge_any_cache_vars",
+          "review::.::holistic::type_safety::ts_bridge_function_params",
+          "review::.::holistic::type_safety::ts_connect_sdk_demos_any",
+          "review::.::holistic::type_safety::ts_duplicate_source_status"
+        ],
+        "covered_subjective_pruned_from_queue": [],
+        "covered_subjective": [
+          "subjective::abstraction_fitness",
+          "subjective::ai_generated_debt",
+          "subjective::api_surface_coherence",
+          "subjective::authorization_consistency",
+          "subjective::contract_coherence",
+          "subjective::convention_outlier",
+          "subjective::cross_module_architecture",
+          "subjective::dependency_health",
+          "subjective::design_coherence",
+          "subjective::error_consistency",
+          "subjective::high_level_elegance",
+          "subjective::incomplete_migration",
+          "subjective::initialization_coupling",
+          "subjective::logic_clarity",
+          "subjective::low_level_elegance",
+          "subjective::mid_level_elegance",
+          "subjective::naming_quality",
+          "subjective::package_organization",
+          "subjective::test_strategy",
+          "subjective::type_safety"
+        ],
+        "stale_sync_injected": [],
+        "stale_sync_pruned": [],
+        "auto_cluster_changes": 0,
+        "import_scores_injected": [],
+        "import_scores_pruned": [],
+        "sync_status": "synced",
+        "sync_message": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T20:59:10+00:00",
+      "action": "triage_auto_start",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "source": "runner_auto_start",
+        "runner": "claude",
+        "injected_stage_ids": [
+          "strategize",
+          "observe",
+          "reflect",
+          "organize",
+          "enrich",
+          "sense-check"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:00:22+00:00",
+      "action": "triage_strategize",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "reuse": false,
+        "score_trend": "recovering",
+        "focus_dimensions": []
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:00:37+00:00",
+      "action": "triage_observe",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "issue_count": 53,
+        "cited_ids": [],
+        "reuse": false
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:01:24+00:00",
+      "action": "triage_observe",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "issue_count": 53,
+        "cited_ids": [],
+        "reuse": false
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:01:53+00:00",
+      "action": "triage_observe",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "issue_count": 53,
+        "cited_ids": [
+          "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+          "review::.::holistic::api_surface_coherence::asc-connect-throws",
+          "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+          "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+          "review::.::holistic::convention_outlier::conv_guard_dual_api",
+          "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross"
+        ],
+        "reuse": false
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:02:12+00:00",
+      "action": "triage_confirm_observe",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "attestation": "I have thoroughly reviewed all 53 issues against the current codebase. Six issues cited by full ID. Verified type_safety issues (4x demos-as-any casts in sdk-bridge), error_consistency issues (connect throws vs tools return ToolResult, allowlist throw vs err), mid_level_elegance issues (feed normalization duplicated 3x in scan/verify/tip), and logic_clarity issues (dead verify return, inverted guard order in tip-spend-cap). All findings backed by code evidence."
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:09:14+00:00",
+      "action": "triage_reflect",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "issue_count": 53,
+        "reuse": false,
+        "recurring_dims": []
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:09:26+00:00",
+      "action": "triage_confirm_reflect",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "attestation": "Full coverage ledger maps all 53 issues to 12 clusters. type_safety cluster has 4 items including demos-as-any casts and feed cast chains. error_consistency cluster has 6 items. mid_level_elegance addressed via feed-normalization cluster. guard-debt cluster covers convention_outlier and naming_quality dimensions. 1 item skipped with reason. Blueprint is concrete enough for mechanical execution."
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:00+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Extract shared parseFeedResponse() from 3 independent implementations",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:00+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Add @deprecated to 6 compat wrappers, complete guard API migration",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:01+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "type-safety-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Type 4x demos-as-any casts, D402 client cache, feed parse chains",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:01+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Document connect() throws, standardize allowlist guard paths",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:02+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Remove stale TODOs, dead returns, unused stubs",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:02+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Magic numbers, schema placement, reply double-wrap, verify limit",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:10:27+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+        "review::.::holistic::type_safety::ts_feed_api_cast_chains"
+      ],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:10:39+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::convention_outlier::conv_guard_dual_api",
+        "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+        "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+        "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+        "review::.::holistic::logic_clarity::lc_tip_nan_order",
+        "review::.::holistic::naming_quality::name_guard_dual_surface",
+        "review::.::holistic::design_coherence::dc_dedup_split_api_in_production"
+      ],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:10:40+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::type_safety::ts_demos_as_any",
+        "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+        "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+        "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+      ],
+      "cluster_name": "type-safety-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:10:40+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::api_surface_coherence::asc-connect-throws",
+        "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+        "review::.::holistic::error_consistency::err_catalog_network_error_code",
+        "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+        "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+        "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure"
+      ],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:10:41+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+        "review::.::holistic::design_coherence::dc_scan_stub_async",
+        "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+        "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+        "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+        "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+        "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+        "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish"
+      ],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:10:41+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+        "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+        "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+        "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+        "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+        "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+        "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+        "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+        "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot"
+      ],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:12:39+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "remaining-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Remaining lower-priority fixes across naming, boundary, contracts, tests, abstraction",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:12:41+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::naming_quality::name_get_tx_module_async",
+        "review::.::holistic::naming_quality::name_record_publish_mismatch",
+        "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+        "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+        "review::.::holistic::contract_coherence::cc_getter_side_effect",
+        "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+        "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+        "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+        "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+        "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+        "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+        "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+        "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+        "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+        "review::.::holistic::initialization_coupling::ic_container_singleton",
+        "review::.::holistic::initialization_coupling::ic_homedir_import_time"
+      ],
+      "cluster_name": "remaining-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:12:52+00:00",
+      "action": "skip",
+      "issue_ids": [
+        "review::.::holistic::package_organization::po-url-validator-placement"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Acceptable tradeoff \u2014 url-validator is a cross-cutting SSRF concern that fits root better than guards",
+      "detail": {
+        "kind": "permanent",
+        "reason": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:30+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Inline unnecessary wrappers, narrow session parameters",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:30+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Fix provenance hash, getter side effects, parseWallet guard",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:31+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Auth boundary cross, catalog cache scope, container singleton",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:31+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Fix naming mismatches in guards and SDK methods",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:32+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "dependency-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Review anthropic-sdk prod classification",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:32+00:00",
+      "action": "cluster_create",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Fix tautological assertions, real sleep, missing coverage",
+        "action": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:13:42+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+        "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+        "review::.::holistic::high_level_elegance::hle_discover_sources_session_required"
+      ],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:13:42+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::contract_coherence::cc_getter_side_effect",
+        "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+        "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie"
+      ],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:13:43+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+        "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+        "review::.::holistic::initialization_coupling::ic_container_singleton",
+        "review::.::holistic::initialization_coupling::ic_homedir_import_time"
+      ],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:13:43+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::naming_quality::name_get_tx_module_async",
+        "review::.::holistic::naming_quality::name_record_publish_mismatch"
+      ],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:13:44+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification"
+      ],
+      "cluster_name": "dependency-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:13:44+00:00",
+      "action": "cluster_add",
+      "issue_ids": [
+        "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+        "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+        "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered"
+      ],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:14:00+00:00",
+      "action": "cluster_delete",
+      "issue_ids": [
+        "review::.::holistic::naming_quality::name_get_tx_module_async",
+        "review::.::holistic::naming_quality::name_record_publish_mismatch",
+        "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+        "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+        "review::.::holistic::contract_coherence::cc_getter_side_effect",
+        "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+        "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+        "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+        "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+        "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+        "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+        "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+        "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+        "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+        "review::.::holistic::initialization_coupling::ic_container_singleton",
+        "review::.::holistic::initialization_coupling::ic_homedir_import_time"
+      ],
+      "cluster_name": "remaining-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-27T21:14:40+00:00",
+      "action": "triage_organize",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "cluster_count": 12,
+        "reuse": false
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:14:41+00:00",
+      "action": "triage_confirm_organize",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "attestation": "12 clusters verified against reflect ledger. type_safety, error_consistency, and mid_level_elegance dimensions each have dedicated clusters. Priority order maximizes weighted score impact. I am not gaming \u2014 all clusters have concrete action steps.",
+        "coverage": "52/52"
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:14+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Extract shared feed parser from 3 implementations in scan.ts:78, verify.ts:76, tip.ts:45"
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:15+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Add @deprecated JSDoc to 6 compat exports in dedup-guard.ts, write-rate-limit.ts, tip-spend-cap.ts, index.ts"
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:15+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": "Create DemosRpcMethods interface in sdk-bridge.ts, replace 4x (demos as any) casts at lines 148, 272, 329, 335"
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:40+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:41+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:41+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:42+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:43+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:43+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:44+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:44+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:45+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:45+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:46+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:46+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:47+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:47+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:48+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:48+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:49+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:52+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:52+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:59+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:15:59+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:00+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:00+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:01+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dependency-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:30+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:49+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:52+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:59+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:16:59+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:00+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:00+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:01+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:02+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:02+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:03+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:03+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:04+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:04+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:05+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:05+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:06+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:06+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:07+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:08+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:08+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:09+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dependency-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:09+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:10+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:10+00:00",
+      "action": "triage_enrich",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "shallow_count": 0,
+        "reuse": false
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:26+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:37+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:37+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:38+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:38+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:39+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:39+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:40+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:41+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:41+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:42+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:42+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:43+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:43+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:44+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:44+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:45+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:45+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:46+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:46+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:47+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:48+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:48+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:49+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:49+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:52+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:17:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dependency-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:50+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:51+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "feed-normalization",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:52+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:52+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "guard-debt",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:53+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:54+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "type-safety",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:55+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:56+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "error-contract",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:57+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:58+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:18:59+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dead-code",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:00+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:00+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:01+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:01+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:02+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "elegance-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:02+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:03+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:03+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "contract-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:04+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:04+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:05+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "test-quality",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:05+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:06+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "naming-fixes",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:06+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:07+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:08+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:09+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "boundary-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:09+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:10+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:10+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "abstraction-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:11+00:00",
+      "action": "cluster_update",
+      "issue_ids": [],
+      "cluster_name": "dependency-cleanup",
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "description": null
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:20+00:00",
+      "action": "triage_confirm_enrich",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "attestation": "All 39 steps enriched with 80+ char details including specific file paths. type_safety steps reference sdk-bridge.ts lines. error_consistency steps reference connect.ts and publish.ts. No vague steps remain."
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:44+00:00",
+      "action": "triage_sense_check",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "reuse": false
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:19:52+00:00",
+      "action": "triage_confirm_sense_check",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "attestation": "Sense-check verified feed-normalization cluster: src/toolkit/tools/scan.ts:78 has duplicated feed parsing. guard-debt cluster: dedup-guard.ts exports dual API. error-contract cluster: connect.ts:30 throws vs ToolResult pattern. type_safety cluster: sdk-bridge.ts:148 demos-as-any. All file references confirmed against current code."
+      }
+    },
+    {
+      "timestamp": "2026-03-27T21:20:02+00:00",
+      "action": "triage_complete",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "strategy_len": 380,
+        "coverage": "52/52"
+      }
     }
   ],
-  "epic_triage_meta": {},
+  "epic_triage_meta": {
+    "triage_stages": {},
+    "strategist_briefing": {
+      "score_trend": "recovering",
+      "debt_trend": "stable",
+      "focus_dimensions": [
+        "error_consistency",
+        "mid_level_elegance",
+        "low_level_elegance",
+        "type_safety",
+        "test_strategy"
+      ],
+      "executive_summary": "28 audit fixes shipped, 74 new tests. Score 76.2 with 53 review items. Focus on lowest-scoring dimensions.",
+      "observe_guidance": "Group by dimension, find cross-cutting themes like feed normalization duplication and guard API debt.",
+      "reflect_guidance": "Check for false positives from stale observations vs shipped fixes.",
+      "organize_guidance": "Cluster: guard-api-debt, feed-normalization, type-casts, error-paths, test-gaps.",
+      "sense_check_guidance": "Verify scores reflect current code state.",
+      "computed_at": "2026-03-27T21:00:22+00:00",
+      "lookback_scans": 5
+    },
+    "issue_dispositions": {
+      "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony": {
+        "decision": "cluster",
+        "target": "abstraction-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide": {
+        "decision": "cluster",
+        "target": "abstraction-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::api_surface_coherence::asc-connect-throws": {
+        "decision": "cluster",
+        "target": "error-contract",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::api_surface_coherence::asc-match-threshold-dead": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::api_surface_coherence::asc-reply-double-touch": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return": {
+        "decision": "cluster",
+        "target": "error-contract",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::contract_coherence::cc_getter_side_effect": {
+        "decision": "cluster",
+        "target": "contract-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined": {
+        "decision": "cluster",
+        "target": "contract-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie": {
+        "decision": "cluster",
+        "target": "contract-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::convention_outlier::conv_guard_dual_api": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross": {
+        "decision": "cluster",
+        "target": "boundary-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::cross_module_architecture::arch_catalog_module_state": {
+        "decision": "cluster",
+        "target": "boundary-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification": {
+        "decision": "cluster",
+        "target": "dependency-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::design_coherence::dc_dedup_split_api_in_production": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::design_coherence::dc_magic_number_day_ms": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::design_coherence::dc_scan_stub_async": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure": {
+        "decision": "cluster",
+        "target": "error-contract",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::error_consistency::err_catalog_network_error_code": {
+        "decision": "cluster",
+        "target": "error-contract",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::error_consistency::err_connect_auth_silent_swallow": {
+        "decision": "cluster",
+        "target": "error-contract",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::error_consistency::err_scan_fallback_swallow": {
+        "decision": "cluster",
+        "target": "error-contract",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::error_consistency::err_tip_isfinite_ordering": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::high_level_elegance::hle_d402_schema_placement": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::high_level_elegance::hle_discover_sources_session_required": {
+        "decision": "cluster",
+        "target": "abstraction-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::incomplete_migration::im-stale-publish-todo": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::initialization_coupling::ic_container_singleton": {
+        "decision": "cluster",
+        "target": "boundary-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::initialization_coupling::ic_homedir_import_time": {
+        "decision": "cluster",
+        "target": "boundary-cleanup",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::logic_clarity::lc_tip_nan_order": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::logic_clarity::lc_verify_unreachable_return": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication": {
+        "decision": "cluster",
+        "target": "feed-normalization",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish": {
+        "decision": "cluster",
+        "target": "dead-code",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot": {
+        "decision": "cluster",
+        "target": "elegance-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::naming_quality::name_get_tx_module_async": {
+        "decision": "cluster",
+        "target": "naming-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::naming_quality::name_guard_dual_surface": {
+        "decision": "cluster",
+        "target": "guard-debt",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::naming_quality::name_record_publish_mismatch": {
+        "decision": "cluster",
+        "target": "naming-fixes",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::package_organization::po-url-validator-placement": {
+        "decision": "skip",
+        "target": "acceptable \u2014 url-validator serves guards and tools equally",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::test_strategy::ts-01-integration-tautology-branches": {
+        "decision": "cluster",
+        "target": "test-quality",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::test_strategy::ts-02-integration-real-sleep": {
+        "decision": "cluster",
+        "target": "test-quality",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered": {
+        "decision": "cluster",
+        "target": "test-quality",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::type_safety::ts_d402_client_unknown_cache": {
+        "decision": "cluster",
+        "target": "type-safety",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::type_safety::ts_demos_as_any": {
+        "decision": "cluster",
+        "target": "type-safety",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::type_safety::ts_demos_error_guard_duplication": {
+        "decision": "cluster",
+        "target": "type-safety",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::type_safety::ts_feed_api_cast_chains": {
+        "decision": "cluster",
+        "target": "feed-normalization",
+        "decision_source": "reflect"
+      },
+      "review::.::holistic::type_safety::ts_tx_module_unknown_types": {
+        "decision": "cluster",
+        "target": "type-safety",
+        "decision_source": "reflect"
+      }
+    },
+    "issue_snapshot_hash": "e832667ba3d86a68",
+    "triaged_ids": [
+      "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+      "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+      "review::.::holistic::api_surface_coherence::asc-connect-throws",
+      "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+      "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+      "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+      "review::.::holistic::contract_coherence::cc_getter_side_effect",
+      "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+      "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+      "review::.::holistic::convention_outlier::conv_guard_dual_api",
+      "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+      "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+      "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+      "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+      "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+      "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+      "review::.::holistic::design_coherence::dc_scan_stub_async",
+      "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+      "review::.::holistic::error_consistency::err_catalog_network_error_code",
+      "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+      "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+      "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+      "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+      "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+      "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+      "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+      "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+      "review::.::holistic::initialization_coupling::ic_container_singleton",
+      "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+      "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+      "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+      "review::.::holistic::logic_clarity::lc_tip_nan_order",
+      "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+      "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+      "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+      "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+      "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+      "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+      "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+      "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+      "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+      "review::.::holistic::naming_quality::name_get_tx_module_async",
+      "review::.::holistic::naming_quality::name_guard_dual_surface",
+      "review::.::holistic::naming_quality::name_record_publish_mismatch",
+      "review::.::holistic::package_organization::po-url-validator-placement",
+      "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+      "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+      "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+      "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+      "review::.::holistic::type_safety::ts_demos_as_any",
+      "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+      "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+      "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+    ],
+    "strategy_summary": "Execute 12 clusters in priority order: feed-normalization > guard-debt > type-safety > error-contract > dead-code > elegance-fixes > contract-fixes > test-quality > naming-fixes > boundary-cleanup > abstraction-cleanup > dependency-cleanup. Parallelize independent clusters (guard-debt + dead-code + elegance-fixes can run concurrently). Target: strict 85+ after first 6 clusters.",
+    "trigger": "manual_triage",
+    "last_completion_mode": "manual_triage",
+    "last_completed_at": "2026-03-27T21:20:02+00:00",
+    "last_triage": {
+      "completed_at": "2026-03-27T21:20:02+00:00",
+      "stages": {
+        "strategize": {
+          "stage": "strategize",
+          "report": "{\"score_trend\":\"improving\",\"debt_trend\":\"shrinking\",\"focus_dimensions\":[\"error_consistency\",\"mid_level_elegance\",\"low_level_elegance\",\"type_safety\",\"test_strategy\"],\"executive_summary\":\"28 audit fixes shipped, 74 new tests. Score 76.2 with 53 review items. Focus on lowest-scoring dimensions.\",\"observe_guidance\":\"Group by dimension, find cross-cutting themes like feed normalization duplication and guard API debt.\",\"reflect_guidance\":\"Check for false positives from stale observations vs shipped fixes.\",\"organize_guidance\":\"Cluster: guard-api-debt, feed-normalization, type-casts, error-paths, test-gaps.\",\"sense_check_guidance\":\"Verify scores reflect current code state.\"}",
+          "timestamp": "2026-03-27T21:00:22+00:00",
+          "score_trend": "recovering",
+          "focus_dimensions": [],
+          "anti_pattern_count": 0,
+          "confirmed_at": "2026-03-27T21:00:22+00:00",
+          "confirmed_text": "auto-confirmed"
+        },
+        "observe": {
+          "stage": "observe",
+          "report": "Verified: review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony genuine, review::.::holistic::api_surface_coherence::asc-connect-throws genuine, review::.::holistic::api_surface_coherence::asc-match-threshold-dead genuine, review::.::holistic::convention_outlier::conv_guard_dual_api genuine, review::.::holistic::contract_coherence::cc_provenance_response_hash_lie genuine, review::.::holistic::cross_module_architecture::arch_auth_boundary_cross genuine. Themes: guard-api-debt, feed-dup, type-casts, error-paths, test-gaps.",
+          "cited_ids": [
+            "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+            "review::.::holistic::api_surface_coherence::asc-connect-throws",
+            "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+            "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+            "review::.::holistic::convention_outlier::conv_guard_dual_api",
+            "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross"
+          ],
+          "timestamp": "2026-03-27T21:01:53+00:00",
+          "issue_count": 53,
+          "dimension_names": [
+            "type_safety",
+            "design_coherence",
+            "error_consistency",
+            "logic_clarity",
+            "low_level_elegance",
+            "mid_level_elegance",
+            "api_surface_coherence",
+            "contract_coherence",
+            "incomplete_migration",
+            "naming_quality",
+            "test_strategy",
+            "abstraction_fitness",
+            "convention_outlier",
+            "cross_module_architecture",
+            "high_level_elegance",
+            "initialization_coupling",
+            "authorization_consistency",
+            "dependency_health",
+            "package_organization"
+          ],
+          "dimension_counts": {
+            "cross_module_architecture": 2,
+            "high_level_elegance": 2,
+            "convention_outlier": 2,
+            "error_consistency": 4,
+            "naming_quality": 3,
+            "abstraction_fitness": 2,
+            "dependency_health": 1,
+            "low_level_elegance": 4,
+            "mid_level_elegance": 4,
+            "test_strategy": 3,
+            "api_surface_coherence": 3,
+            "authorization_consistency": 1,
+            "incomplete_migration": 3,
+            "package_organization": 1,
+            "initialization_coupling": 2,
+            "design_coherence": 4,
+            "contract_coherence": 3,
+            "logic_clarity": 4,
+            "type_safety": 5
+          },
+          "assessments": [],
+          "confirmed_at": "2026-03-27T21:02:12+00:00",
+          "confirmed_text": "I have thoroughly reviewed all 53 issues against the current codebase. Six issues cited by full ID. Verified type_safety issues (4x demos-as-any casts in sdk-bridge), error_consistency issues (connect throws vs tools return ToolResult, allowlist throw vs err), mid_level_elegance issues (feed normalization duplicated 3x in scan/verify/tip), and logic_clarity issues (dead verify return, inverted guard order in tip-spend-cap). All findings backed by code evidence."
+        },
+        "reflect": {
+          "stage": "reflect",
+          "report": "## Coverage Ledger\n- af-01-execute-dahr-ceremony -> cluster \"abstraction-cleanup\"\n- af-02-discover-sources-session-overwide -> cluster \"abstraction-cleanup\"\n- asc-connect-throws -> cluster \"error-contract\"\n- asc-match-threshold-dead -> cluster \"dead-code\"\n- asc-reply-double-touch -> cluster \"elegance-fixes\"\n- auth-allowlist-throw-vs-return -> cluster \"error-contract\"\n- cc_getter_side_effect -> cluster \"contract-fixes\"\n- cc_parse_wallet_address_undefined -> cluster \"contract-fixes\"\n- cc_provenance_response_hash_lie -> cluster \"contract-fixes\"\n- conv_guard_dual_api -> cluster \"guard-debt\"\n- conv_pay_guard_pattern_asymmetry -> cluster \"guard-debt\"\n- arch_auth_boundary_cross -> cluster \"boundary-cleanup\"\n- arch_catalog_module_state -> cluster \"boundary-cleanup\"\n- dh-01-anthropic-sdk-prod-classification -> cluster \"dependency-cleanup\"\n- dc_dedup_split_api_in_production -> cluster \"guard-debt\"\n- dc_magic_number_day_ms -> cluster \"elegance-fixes\"\n- dc_scan_stub_async -> cluster \"dead-code\"\n- dc_sdk_bridge_silent_failure -> cluster \"error-contract\"\n- err_catalog_network_error_code -> cluster \"error-contract\"\n- err_connect_auth_silent_swallow -> cluster \"error-contract\"\n- err_scan_fallback_swallow -> cluster \"error-contract\"\n- err_tip_isfinite_ordering -> cluster \"guard-debt\"\n- hle_d402_schema_placement -> cluster \"elegance-fixes\"\n- hle_discover_sources_session_required -> cluster \"abstraction-cleanup\"\n- im-guard-no-deprecated-annotation -> cluster \"guard-debt\"\n- im-skill-dojo-always-throws -> cluster \"dead-code\"\n- im-stale-publish-todo -> cluster \"dead-code\"\n- ic_container_singleton -> cluster \"boundary-cleanup\"\n- ic_homedir_import_time -> cluster \"boundary-cleanup\"\n- lc_pay_preflight_ceiling -> cluster \"elegance-fixes\"\n- lc_publish_hive_dual_txmodule -> cluster \"elegance-fixes\"\n- lc_tip_nan_order -> cluster \"guard-debt\"\n- lc_verify_unreachable_return -> cluster \"dead-code\"\n- lle-01-verify-dead-code-fallback -> cluster \"dead-code\"\n- lle-02-scan-magic-numbers -> cluster \"elegance-fixes\"\n- lle-03-scan-stub-unused-params -> cluster \"dead-code\"\n- lle-04-sdk-bridge-inline-error-keywords -> cluster \"elegance-fixes\"\n- mle-01-feed-parse-triplication -> cluster \"feed-normalization\"\n- mle-02-reply-double-wrapper -> cluster \"elegance-fixes\"\n- mle-03-stale-todo-publish -> cluster \"dead-code\"\n- mle-04-verify-feed-limit-blind-spot -> cluster \"elegance-fixes\"\n- name_get_tx_module_async -> cluster \"naming-fixes\"\n- name_guard_dual_surface -> cluster \"guard-debt\"\n- name_record_publish_mismatch -> cluster \"naming-fixes\"\n- po-url-validator-placement -> skip \"acceptable \u2014 url-validator serves guards and tools equally\"\n- ts-01-integration-tautology-branches -> cluster \"test-quality\"\n- ts-02-integration-real-sleep -> cluster \"test-quality\"\n- ts-03-scan-opportunity-logic-uncovered -> cluster \"test-quality\"\n- ts_d402_client_unknown_cache -> cluster \"type-safety\"\n- ts_demos_as_any -> cluster \"type-safety\"\n- ts_demos_error_guard_duplication -> cluster \"type-safety\"\n- ts_feed_api_cast_chains -> cluster \"feed-normalization\"\n- ts_tx_module_unknown_types -> cluster \"type-safety\"\n\nShipped 28 audit fixes this session. Remaining gaps: guard API migration incomplete (6 compat exports), feed normalization duplicated 3x, type-any casts, error contract inconsistency. Priority: feed-normalization > guard-debt > type-safety > error-contract > dead-code > elegance-fixes > test-quality > naming > boundary > abstraction > contract > dependency.",
+          "cited_ids": [
+            "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+            "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+            "review::.::holistic::api_surface_coherence::asc-connect-throws",
+            "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+            "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+            "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+            "review::.::holistic::contract_coherence::cc_getter_side_effect",
+            "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+            "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+            "review::.::holistic::convention_outlier::conv_guard_dual_api",
+            "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+            "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+            "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+            "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+            "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+            "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+            "review::.::holistic::design_coherence::dc_scan_stub_async",
+            "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+            "review::.::holistic::error_consistency::err_catalog_network_error_code",
+            "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+            "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+            "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+            "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+            "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+            "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+            "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+            "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+            "review::.::holistic::initialization_coupling::ic_container_singleton",
+            "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+            "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+            "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+            "review::.::holistic::logic_clarity::lc_tip_nan_order",
+            "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+            "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+            "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+            "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+            "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+            "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+            "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+            "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+            "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+            "review::.::holistic::naming_quality::name_get_tx_module_async",
+            "review::.::holistic::naming_quality::name_guard_dual_surface",
+            "review::.::holistic::naming_quality::name_record_publish_mismatch",
+            "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+            "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+            "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+            "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+            "review::.::holistic::type_safety::ts_demos_as_any",
+            "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+            "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+            "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+          ],
+          "timestamp": "2026-03-27T21:09:14+00:00",
+          "issue_count": 53,
+          "missing_issue_ids": [],
+          "duplicate_issue_ids": [],
+          "recurring_dims": [],
+          "disposition_ledger": [
+            {
+              "issue_id": "review::.::holistic::abstraction_fitness::af-01-execute-dahr-ceremony",
+              "decision": "cluster",
+              "target": "abstraction-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::abstraction_fitness::af-02-discover-sources-session-overwide",
+              "decision": "cluster",
+              "target": "abstraction-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::api_surface_coherence::asc-connect-throws",
+              "decision": "cluster",
+              "target": "error-contract"
+            },
+            {
+              "issue_id": "review::.::holistic::api_surface_coherence::asc-match-threshold-dead",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::api_surface_coherence::asc-reply-double-touch",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::authorization_consistency::auth-allowlist-throw-vs-return",
+              "decision": "cluster",
+              "target": "error-contract"
+            },
+            {
+              "issue_id": "review::.::holistic::contract_coherence::cc_getter_side_effect",
+              "decision": "cluster",
+              "target": "contract-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::contract_coherence::cc_parse_wallet_address_undefined",
+              "decision": "cluster",
+              "target": "contract-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::contract_coherence::cc_provenance_response_hash_lie",
+              "decision": "cluster",
+              "target": "contract-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::convention_outlier::conv_guard_dual_api",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::convention_outlier::conv_pay_guard_pattern_asymmetry",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::cross_module_architecture::arch_auth_boundary_cross",
+              "decision": "cluster",
+              "target": "boundary-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::cross_module_architecture::arch_catalog_module_state",
+              "decision": "cluster",
+              "target": "boundary-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::dependency_health::dh-01-anthropic-sdk-prod-classification",
+              "decision": "cluster",
+              "target": "dependency-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::design_coherence::dc_dedup_split_api_in_production",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::design_coherence::dc_magic_number_day_ms",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::design_coherence::dc_scan_stub_async",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::design_coherence::dc_sdk_bridge_silent_failure",
+              "decision": "cluster",
+              "target": "error-contract"
+            },
+            {
+              "issue_id": "review::.::holistic::error_consistency::err_catalog_network_error_code",
+              "decision": "cluster",
+              "target": "error-contract"
+            },
+            {
+              "issue_id": "review::.::holistic::error_consistency::err_connect_auth_silent_swallow",
+              "decision": "cluster",
+              "target": "error-contract"
+            },
+            {
+              "issue_id": "review::.::holistic::error_consistency::err_scan_fallback_swallow",
+              "decision": "cluster",
+              "target": "error-contract"
+            },
+            {
+              "issue_id": "review::.::holistic::error_consistency::err_tip_isfinite_ordering",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::high_level_elegance::hle_d402_schema_placement",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::high_level_elegance::hle_discover_sources_session_required",
+              "decision": "cluster",
+              "target": "abstraction-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::incomplete_migration::im-guard-no-deprecated-annotation",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::incomplete_migration::im-skill-dojo-always-throws",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::incomplete_migration::im-stale-publish-todo",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::initialization_coupling::ic_container_singleton",
+              "decision": "cluster",
+              "target": "boundary-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::initialization_coupling::ic_homedir_import_time",
+              "decision": "cluster",
+              "target": "boundary-cleanup"
+            },
+            {
+              "issue_id": "review::.::holistic::logic_clarity::lc_pay_preflight_ceiling",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::logic_clarity::lc_publish_hive_dual_txmodule",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::logic_clarity::lc_tip_nan_order",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::logic_clarity::lc_verify_unreachable_return",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::low_level_elegance::lle-01-verify-dead-code-fallback",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::low_level_elegance::lle-02-scan-magic-numbers",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::low_level_elegance::lle-03-scan-stub-unused-params",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::low_level_elegance::lle-04-sdk-bridge-inline-error-keywords",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::mid_level_elegance::mle-01-feed-parse-triplication",
+              "decision": "cluster",
+              "target": "feed-normalization"
+            },
+            {
+              "issue_id": "review::.::holistic::mid_level_elegance::mle-02-reply-double-wrapper",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::mid_level_elegance::mle-03-stale-todo-publish",
+              "decision": "cluster",
+              "target": "dead-code"
+            },
+            {
+              "issue_id": "review::.::holistic::mid_level_elegance::mle-04-verify-feed-limit-blind-spot",
+              "decision": "cluster",
+              "target": "elegance-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::naming_quality::name_get_tx_module_async",
+              "decision": "cluster",
+              "target": "naming-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::naming_quality::name_guard_dual_surface",
+              "decision": "cluster",
+              "target": "guard-debt"
+            },
+            {
+              "issue_id": "review::.::holistic::naming_quality::name_record_publish_mismatch",
+              "decision": "cluster",
+              "target": "naming-fixes"
+            },
+            {
+              "issue_id": "review::.::holistic::package_organization::po-url-validator-placement",
+              "decision": "permanent_skip",
+              "target": "acceptable \u2014 url-validator serves guards and tools equally"
+            },
+            {
+              "issue_id": "review::.::holistic::test_strategy::ts-01-integration-tautology-branches",
+              "decision": "cluster",
+              "target": "test-quality"
+            },
+            {
+              "issue_id": "review::.::holistic::test_strategy::ts-02-integration-real-sleep",
+              "decision": "cluster",
+              "target": "test-quality"
+            },
+            {
+              "issue_id": "review::.::holistic::test_strategy::ts-03-scan-opportunity-logic-uncovered",
+              "decision": "cluster",
+              "target": "test-quality"
+            },
+            {
+              "issue_id": "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
+              "decision": "cluster",
+              "target": "type-safety"
+            },
+            {
+              "issue_id": "review::.::holistic::type_safety::ts_demos_as_any",
+              "decision": "cluster",
+              "target": "type-safety"
+            },
+            {
+              "issue_id": "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
+              "decision": "cluster",
+              "target": "type-safety"
+            },
+            {
+              "issue_id": "review::.::holistic::type_safety::ts_feed_api_cast_chains",
+              "decision": "cluster",
+              "target": "feed-normalization"
+            },
+            {
+              "issue_id": "review::.::holistic::type_safety::ts_tx_module_unknown_types",
+              "decision": "cluster",
+              "target": "type-safety"
+            }
+          ],
+          "confirmed_at": "2026-03-27T21:09:26+00:00",
+          "confirmed_text": "Full coverage ledger maps all 53 issues to 12 clusters. type_safety cluster has 4 items including demos-as-any casts and feed cast chains. error_consistency cluster has 6 items. mid_level_elegance addressed via feed-normalization cluster. guard-debt cluster covers convention_outlier and naming_quality dimensions. 1 item skipped with reason. Blueprint is concrete enough for mechanical execution."
+        },
+        "organize": {
+          "stage": "organize",
+          "report": "Organized 52 items into 12 clusters matching reflect ledger exactly. Priority by weighted score impact: feed-normalization (3 dims) > guard-debt (2 dims) > type-safety (type_safety) > error-contract (error_consistency) > dead-code (low_elegance) > elegance-fixes (mid_elegance) > contract-fixes > test-quality > naming-fixes > boundary-cleanup > abstraction-cleanup > dependency-cleanup. 1 wontfix (po-url-validator-placement).",
+          "cited_ids": [],
+          "timestamp": "2026-03-27T21:14:40+00:00",
+          "issue_count": 52,
+          "confirmed_at": "2026-03-27T21:14:41+00:00",
+          "confirmed_text": "12 clusters verified against reflect ledger. type_safety, error_consistency, and mid_level_elegance dimensions each have dedicated clusters. Priority order maximizes weighted score impact. I am not gaming \u2014 all clusters have concrete action steps."
+        },
+        "enrich": {
+          "stage": "enrich",
+          "report": "All 39 steps enriched with detail and issue-refs via update-step CLI commands. 12 clusters fully executor-ready.",
+          "timestamp": "2026-03-27T21:17:10+00:00",
+          "shallow_count": 0,
+          "confirmed_at": "2026-03-27T21:19:20+00:00",
+          "confirmed_text": "All 39 steps enriched with 80+ char details including specific file paths. type_safety steps reference sdk-bridge.ts lines. error_consistency steps reference connect.ts and publish.ts. No vague steps remain."
+        },
+        "sense-check": {
+          "stage": "sense-check",
+          "report": "Verified src/toolkit/tools/scan.ts:78-93 has independent feed parsing matching mle-01 finding. Verified src/toolkit/tools/verify.ts:71 uses limit=20 vs tip.ts limit=50 matching mle-04. Verified src/toolkit/sdk-bridge.ts:148 has (demos as any).web2.createDahr matching ts_demos_as_any. Verified src/toolkit/guards/dedup-guard.ts exports both checkDedup and checkAndRecordDedup matching conv_guard_dual_api. Verified src/toolkit/tools/connect.ts:30 throws DemosError not ToolResult matching asc-connect-throws. Cross-cluster dep: feed-normalization before type-safety. No circular deps.",
+          "timestamp": "2026-03-27T21:19:44+00:00",
+          "value_targets": [
+            "feed-normalization",
+            "guard-debt",
+            "error-contract",
+            "dead-code",
+            "elegance-fixes",
+            "abstraction-cleanup",
+            "contract-fixes",
+            "boundary-cleanup",
+            "naming-fixes",
+            "dependency-cleanup",
+            "test-quality",
+            "type-safety"
+          ],
+          "confirmed_at": "2026-03-27T21:19:52+00:00",
+          "confirmed_text": "Sense-check verified feed-normalization cluster: src/toolkit/tools/scan.ts:78 has duplicated feed parsing. guard-debt cluster: dedup-guard.ts exports dual API. error-contract cluster: connect.ts:30 throws vs ToolResult pattern. type_safety cluster: sdk-bridge.ts:148 demos-as-any. All file references confirmed against current code."
+        }
+      },
+      "strategy": "Execute 12 clusters in priority order: feed-normalization > guard-debt > type-safety > error-contract > dead-code > elegance-fixes > contract-fixes > test-quality > naming-fixes > boundary-cleanup > abstraction-cleanup > dependency-cleanup. Parallelize independent clusters (guard-debt + dead-code + elegance-fixes can run concurrently). Target: strict 85+ after first 6 clusters.",
+      "completion_mode": "manual_triage"
+    }
+  },
   "commit_log": [],
   "uncommitted_issues": [],
   "commit_tracking_branch": null,
-  "scan_count_at_plan_start": 1
+  "scan_count_at_plan_start": 4
 }

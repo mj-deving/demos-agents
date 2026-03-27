@@ -1,0 +1,89 @@
+{
+  "batch": "high_level_elegance",
+  "batch_index": 2,
+  "assessments": {"high_level_elegance": 74.0},
+  "dimension_notes": {
+    "high_level_elegance": {
+      "evidence": [
+        "src/toolkit/ structure: tools/, guards/, session.ts, state-store.ts, sdk-bridge.ts, schemas.ts, types.ts, url-validator.ts, index.ts — clear domain-aligned layout",
+        "index.ts: barrel export is well-documented with JSDoc listing all public APIs, small and intentional surface",
+        "discoverSources() signature: takes nullable/optional session (opts?: DiscoverSourcesOptions) — but session is the first required param; session is NOT optional. The open issue is that session is required but the function is documented as 'no session required (optional)' — the comment contradicts the code",
+        "discover-sources.ts line 33-36: function signature is 'async function discoverSources(session: DemosSession, opts?: DiscoverSourcesOptions)' — session is required (non-optional), breaking the uniform tool API contract that is satisfied by all other tools",
+        "pay.ts line 18-23: D402RequirementSchema defined locally — schema ownership belongs in schemas.ts per the file's own doc comment ('Zod input validation schemas for all toolkit tools') but D402RequirementSchema validates a 402 response body, not tool input. This is an internal validation schema, not a public tool input schema — the boundary is ambiguous",
+        "All tools follow a consistent pattern: (session: DemosSession, opts: XOptions) -> Promise<ToolResult<XResult>>",
+        "reply() in publish.ts is a thin wrapper that delegates to publish() — coherent ownership",
+        "CLAUDE.md and index.ts doc comments agree on the public API surface — contracts are trustworthy",
+        "guards/ is a well-defined sublayer with clear ownership",
+        "tool-wrapper.ts provides a uniform cross-cutting concern handler — good decomposition"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "high_level_elegance": {
+      "dimension_character": "The toolkit has clear domain-aligned decomposition: tools for operations, guards for policy enforcement, session for state, schemas for validation. The public surface exported from index.ts is curated and matches documentation. Two open issues create ownership blur: discoverSources() requiring session breaks the stated design that it needs no session, and D402RequirementSchema living in pay.ts rather than schemas.ts creates an implicit split in schema ownership.",
+      "score_rationale": "The overall structure is well above average for a new subsystem — domain boundaries are clear, decomposition localizes change, and the barrel export matches the stated design. Both open issues are real defects that reduce predictability for a new engineer: the discoverSources/session inconsistency means the 'uniform tool API' claim in index.ts JSDoc is false, and the schema split means a developer looking for 'all schemas' in schemas.ts will miss the D402 response validator. These hold the score to mid-70s."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "hle_discover_sources_session_required",
+      "summary": "discoverSources() requires session but is documented as not needing one, breaking uniform tool API",
+      "related_files": ["src/toolkit/tools/discover-sources.ts", "src/toolkit/index.ts"],
+      "evidence": [
+        "discover-sources.ts line 33: 'async function discoverSources(session: DemosSession, opts?: DiscoverSourcesOptions)' — session is required (not optional)",
+        "discover-sources.ts line 3: JSDoc says 'Read-only, no session required (optional — for custom catalog path)'",
+        "index.ts exports discoverSources without caveat — a consumer would not expect session to be required for a read-only catalog browse",
+        "All other tools require session because they perform network/chain ops — discoverSources being read-only but still requiring session creates an inconsistency"
+      ],
+      "suggestion": "Make session optional: 'session?: DemosSession'. Use session?.sourceCatalogPath when present, fall back to BUNDLED_CATALOG_PATH when absent. This makes the function signature match its stated contract and lets it be called without connect().",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "hle_d402_schema_placement",
+      "summary": "D402RequirementSchema defined in pay.ts breaks schemas.ts ownership boundary",
+      "related_files": ["src/toolkit/tools/pay.ts", "src/toolkit/schemas.ts"],
+      "evidence": [
+        "pay.ts line 18-23: D402RequirementSchema defined at file top — validates 402 response body shape",
+        "schemas.ts doc: 'Zod input validation schemas for all toolkit tools' — a developer looking for all toolkit schemas checks schemas.ts",
+        "The schema is not exported, so it's internal — but it's still a Zod validation concern that creates a split ownership signal"
+      ],
+      "suggestion": "Move D402RequirementSchema to schemas.ts as an unexported internal schema (or mark with a clear comment explaining why it lives in pay.ts rather than schemas.ts). Either consistently keep response-body schemas local to their tool files, or centralize all Zod schemas.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "discoverSources session requirement is a design drift — the intent was optional but implementation kept it required",
+      "D402RequirementSchema was added during D402 wiring without revisiting schema centralization policy"
+    ],
+    "likely_symptoms": ["hle_discover_sources_session_required is the open issue from prior review — still exists"],
+    "possible_false_positives": ["D402RequirementSchema may be intentionally local if the policy is that response-body schemas stay with their tools"]
+  },
+  "context_updates": {
+    "high_level_elegance": {
+      "add": [
+        {
+          "header": "Barrel export is curated and matches docs",
+          "description": "index.ts exports match the JSDoc summary and CLAUDE.md description of the public API. A new engineer can trust the barrel as an accurate contract.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "tool-wrapper.ts provides uniform cross-cutting concern",
+          "description": "All tools delegate timing, session.touch(), observer notification, and error wrapping to withToolWrapper — this single abstraction ensures uniform behavior without repetition.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 18,
+  "assessments": {"contract_coherence": 82.0},
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "ToolResult<T> contract is honored: every tool function returns ToolResult<T> and never throws to the caller (withToolWrapper catches and wraps exceptions)",
+        "SdkBridge interface accurately describes the bridge methods; createSdkBridge returns an object conforming to that interface with no extra undeclared methods",
+        "getSigningHandle() is named as a getter but is side-effect-free — only calls checkExpired() which is a read + potential state mutation (sets _expired=true). The getter name is slightly misleading for a method that has a side effect pathway.",
+        "getBridge() documents 'throws Error unless bridge is available' — this is consistent with the implementation which throws 'SDK bridge not available'",
+        "DemosSession.setAuthToken() is correctly named as a setter (mutates state) and marked as internal use",
+        "validateInput returns DemosError | null — null = success. This is documented in JSDoc but the name 'validateInput' returns null on success which is an unusual convention (most validators return a list or throw)",
+        "connect.ts: parseWallet() can return a WalletData where address is undefined (mnemonic-only path, lines 174–178). The return type is `WalletData` which has `address?: string` (optional). Callers downstream rely on `wallet.address` being present without null check.",
+        "SdkBridge.queryTransaction is declared optional (`queryTransaction?`) in the interface — callers must check bridge.queryTransaction before calling. tip.ts line 41 correctly does `if (bridge.queryTransaction)` before calling.",
+        "ApiCallResult.data is typed as `unknown` — this is correct since the shape varies by endpoint, but callers in scan.ts and verify.ts cast to Record<string, unknown> without any narrowing guard. The type annotation is honest but the contract implies callers will narrow.",
+        "publish.ts attestation result: `provenance.attestation: { txHash, responseHash: txHash }` — the responseHash is set to txHash (the post's transaction hash), not the DAHR responseHash. This is a contract lie: the Provenance type documents attestation.responseHash as the DAHR proof hash, not the publish txHash.",
+        "withToolWrapper: the function signature says it accepts `defaultErrorCode: 'TX_FAILED' | 'NETWORK_ERROR' | 'ATTEST_FAILED' | 'CONFIRM_TIMEOUT'` but the actual DemosErrorCode type has more codes. This is a constrained subset, not a lie — acceptable."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "contract_coherence": {
+      "dimension_character": "The toolkit's contracts are largely honest and consistently honored. The ToolResult envelope, SdkBridge interface, and guard return types all match their implementations. The two genuine contract violations are: (1) publish.ts sets provenance.attestation.responseHash to the post txHash rather than the DAHR proof hash, misrepresenting the provenance record; and (2) getSigningHandle()/getAuthToken() have side effects (checkExpired can mutate _expired=true) that their getter naming obscures.",
+      "score_rationale": "Strong foundation: no return type lies on public tools, withToolWrapper prevents unhandled throws from escaping, and optional methods (queryTransaction?) are correctly guarded at call sites. Two issues prevent 90+: the provenance attestation field lie in publish.ts is a real data integrity problem, and the getter-with-side-effects naming is a minor but genuine contract mismatch."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "cc_provenance_response_hash_lie",
+      "summary": "publish.ts sets provenance.attestation.responseHash to the post txHash, not the DAHR attestation response hash",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "Lines 48–55: `return ok<PublishResult>({ txHash }, { path: 'local', latencyMs: ..., attestation: { txHash, responseHash: txHash } })`",
+        "The Provenance type (types.ts line 46–50) documents `attestation.responseHash` as the DAHR proof hash — same field used by attest.ts which correctly sets `responseHash: result.responseHash`",
+        "executePublishPipeline() does return the DAHR attestResult (line 103) but the txHash is returned to publish() as just a string — the responseHash is lost by the time provenance is constructed",
+        "Consumers reading provenance.attestation.responseHash from a publish() result will get the post txHash rather than the DAHR cryptographic proof hash"
+      ],
+      "suggestion": "Return both txHash and responseHash from executePublishPipeline: `return { txHash: result.txHash, responseHash: attestResult.responseHash }`. Then populate provenance.attestation correctly: `attestation: { txHash, responseHash: attestResultHash }`.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "cc_getter_side_effect",
+      "summary": "getSigningHandle() and getAuthToken() are named as getters but have a side-effecting code path (checkExpired sets _expired=true)",
+      "related_files": ["src/toolkit/session.ts"],
+      "evidence": [
+        "Lines 110–113: getAuthToken() calls checkExpired() which can set `this._expired = true` (line 146)",
+        "Lines 116–119: getSigningHandle() same pattern",
+        "The `expired` getter (lines 143–150) also has the side effect of setting _expired=true on first expiry check",
+        "getter naming convention implies read-only observation; methods that can mutate state should be named differently or the side effect documented"
+      ],
+      "suggestion": "Add a JSDoc comment to getAuthToken() and getSigningHandle() noting they call checkExpired() which may mark the session as expired. Alternatively, rename to `requireAuthToken()` / `requireSigningHandle()` to signal that calling them enforces a precondition.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "cc_parse_wallet_address_undefined",
+      "summary": "parseWallet() can return WalletData with address=undefined; downstream connectSdk assumes address is present",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "WalletData interface (line 136): `address?: string` — optional",
+        "parseWallet() mnemonic path (lines 174–178) returns `{ mnemonic, signingHandle: content }` without setting address",
+        "connectSdk() (line 207): `if (!mnemonic && wallet.address)` — reads wallet.address in a conditional; if mnemonic is present but address is missing, connectWallet() returns the address (line 226)",
+        "Address is only used for auth token and session construction — the undefined case is handled, but the WalletData type allowing optional address makes the flow harder to reason about"
+      ],
+      "suggestion": "Split WalletData into two discriminated union variants: `MnemonicWallet { mnemonic: string; signingHandle: unknown }` and `AddressWallet { address: string; signingHandle: unknown }`. This makes the two code paths in connectSdk explicit and type-safe.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "executePublishPipeline was refactored to return only txHash (string) for simplicity but lost the DAHR responseHash in the process",
+      "WalletData was designed as a single shape to handle both wallet formats, trading type-safety for simplicity"
+    ],
+    "likely_symptoms": [
+      "cc_provenance_response_hash_lie"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "ToolResult contract enforced via withToolWrapper",
+          "description": "withToolWrapper catches all exceptions and wraps them as typed DemosErrors, ensuring the ToolResult<T> contract is always honored at the public API boundary. No tool function can throw to its caller.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SdkBridge interface accurately reflects implementation",
+          "description": "The SdkBridge interface and createSdkBridge implementation are in sync. Optional methods (queryTransaction) are correctly guarded at all call sites (tip.ts checks bridge.queryTransaction before invoking).",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

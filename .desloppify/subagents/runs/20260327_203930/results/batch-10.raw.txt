@@ -1,0 +1,139 @@
+{
+  "batch": "test_strategy",
+  "batch_index": 10,
+  "assessments": {"test_strategy": 72.0},
+  "dimension_notes": {
+    "test_strategy": {
+      "evidence": [
+        "OPEN: state-helpers.ts has 7 importers and is a shared locking primitive — confirmed tested: tests/toolkit/guards/state-helpers.test.ts exists with 176 lines covering stateKey, loadState, checkAndAppend, GUARD_LOCK_TTL_MS. This open issue appears RESOLVED.",
+        "OPEN: discover-sources.ts has no direct tests — checking... tests/toolkit/tools/discover-sources.test.ts EXISTS. Open issue appears RESOLVED.",
+        "OPEN: verify.ts retry logic has no targeted tests — tests/toolkit/tools/verify-timers.test.ts EXISTS and specifically mocks sleep to test retry behavior with 5 targeted tests. This open issue appears RESOLVED.",
+        "OPEN: Integration test assertions collapse to near-tautologies on DNS failure — confirmed still exists in tests/toolkit/tools/integration.test.ts: attest() and publish() tests have 'if (result.ok) { ... } else { expect(result.error).toBeDefined() }' — the else branch is a tautology (any failed result has a defined error), so the test provides no negative-path signal",
+        "verify-timers.test.ts correctly uses vi.mock to eliminate real sleep delays — good pattern",
+        "integration.test.ts verify() test has a 25000ms timeout (line 148) — real sleep still used here",
+        "tests/toolkit/tools/tip-chain-resolution.test.ts exists — covers the RPC-first author resolution path",
+        "tests/toolkit/tools/publish.test.ts exists — covers publish pipeline",
+        "tests/toolkit/tools/pay-d402.test.ts exists — covers D402 flow",
+        "tests/toolkit/security-hardening.test.ts exists — covers SSRF and security paths",
+        "No tests found for scan.ts identifyOpportunities() logic specifically — the magic number thresholds (5 reactions, 0.7 score, 100 chars) have no targeted unit test",
+        "react.ts has no dedicated unit test file — only tested via integration.test.ts which uses a mock bridge",
+        "The integration test's verify() case (line 139-150) still uses a 25000ms real sleep budget even though verify-timers.test.ts exists — integration test not updated to use mocked sleep",
+        "fetchFromSkillDojo stub in scan.ts is exercised in scan() fallback path — no test covers the Skill Dojo fallback path (which always throws 'integration pending')",
+        "connect.ts detectContainer() async logic is tested in tests/toolkit/tools/connect.test.ts presumably — this is a security-relevant code path"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "test_strategy": {
+      "dimension_character": "The toolkit has strong targeted test coverage for its core primitives (guards, state-helpers, verify retry, D402 payment) and avoids snapshot overuse entirely. The remaining gaps are: integration test assertions that degrade to tautologies on network failure branches, a 25s real-sleep timeout in an integration test that already has a mocked-sleep counterpart, and missing unit coverage for scan.ts opportunity scoring logic and react.ts.",
+      "score_rationale": "Score 72 reflects solid guard/primitive coverage and the correct use of mock-sleep for timing tests, offset by tautological else-branches in integration tests and uncovered logic in identifyOpportunities(). Three of the four open issues appear resolved by existing test files — the integration test assertion quality issue is the remaining real gap."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts-01-integration-tautology-branches",
+      "summary": "Integration test else-branches assert result.error is defined — tautologically true for any failed result",
+      "related_files": ["tests/toolkit/tools/integration.test.ts"],
+      "evidence": [
+        "attest() test (line 104-111): else branch: expect(result.error!.code).toBeDefined() — any non-ok result has a defined error by type contract",
+        "publish() test (line 175-179): else { expect(result.error).toBeDefined() } — same tautology",
+        "reply() test (line 194-197): else { expect(result.error!.code).not.toBe('INVALID_INPUT') } — slightly stronger but still accepts any other error code including TX_FAILED on real network",
+        "These if/else test structures provide zero signal on the failure path — they always pass regardless of what failed"
+      ],
+      "suggestion": "For tests that can hit DNS failure in CI, either: (1) use resolveOverride to inject a known-safe IP and make the happy path deterministic, or (2) split into two tests — one with a mocked bridge for the success path (deterministic), one that explicitly expects DNS failure error code.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts-02-integration-real-sleep",
+      "summary": "Integration test verify() case uses 25s real timeout even though mocked-sleep counterpart exists",
+      "related_files": ["tests/toolkit/tools/integration.test.ts", "tests/toolkit/tools/verify-timers.test.ts"],
+      "evidence": [
+        "integration.test.ts line 148: }, 25000) — 25 second test timeout for verify()",
+        "verify-timers.test.ts already tests retry logic with mocked sleep (instant)",
+        "The integration test for verify() adds latency without testing anything not already covered by verify-timers.test.ts",
+        "A 25s test in a suite slows CI and creates timeout fragility"
+      ],
+      "suggestion": "Replace the integration test's verify() real-sleep test with a mock-bridge version that doesn't need a long timeout. The 25s real-sleep budget was appropriate before verify-timers.test.ts existed but is now redundant.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts-03-scan-opportunity-logic-uncovered",
+      "summary": "identifyOpportunities() magic-number thresholds have no targeted unit tests",
+      "related_files": ["src/toolkit/tools/scan.ts", "tests/toolkit/tools/tools.test.ts"],
+      "evidence": [
+        "scan.ts identifyOpportunities() uses threshold of 5 reactions and score 0.7 with no named constants",
+        "No test file specifically exercises the boundary conditions: post with exactly 5 reactions, post with fewer than 5, post with text.length exactly 100 vs 99",
+        "The integration test for scan() only checks that posts.length > 0 and bridge.apiCall was called — no assertion on opportunities array content"
+      ],
+      "suggestion": "Add unit tests for identifyOpportunities() directly: test posts above/below each threshold, verify score value, verify posts with >= 5 reactions are not included.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts-04-open-issues-largely-resolved",
+      "summary": "Three of four previously flagged open test coverage issues are resolved by existing test files",
+      "related_files": [
+        "tests/toolkit/guards/state-helpers.test.ts",
+        "tests/toolkit/tools/discover-sources.test.ts",
+        "tests/toolkit/tools/verify-timers.test.ts"
+      ],
+      "evidence": [
+        "state-helpers.ts has direct tests in state-helpers.test.ts (176 lines, covers stateKey, loadState, checkAndAppend)",
+        "discover-sources.ts has tests in discover-sources.test.ts",
+        "verify.ts retry logic has mocked-sleep tests in verify-timers.test.ts covering all 3 delay values",
+        "Only the 'integration test tautology' issue remains open as a real gap"
+      ],
+      "suggestion": "Mark the three resolved open issues as closed. Only the integration test assertion quality (ts-01) is a genuine remaining gap in the test strategy.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "open-issue-state-helpers-no-tests",
+      "reasoning": "tests/toolkit/guards/state-helpers.test.ts provides direct coverage of all exported functions"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Integration tests written before mock-bridge patterns were established defaulted to real-network calls with tautological else-branches as fallback assertions",
+      "identifyOpportunities() was added as a helper function without companion unit tests"
+    ],
+    "likely_symptoms": ["ts-01 is the root issue; ts-02 and ts-03 are independent"],
+    "possible_false_positives": ["ts-04 is not a defect but a resolved-issue tracker"]
+  },
+  "context_updates": {
+    "test_strategy": {
+      "add": [
+        {
+          "header": "verify-timers.test.ts correctly uses vi.mock for sleep",
+          "description": "The verify retry timer tests use module-level vi.mock to replace sleep with an instant no-op, then verify exact sleep call counts and values. This is the correct pattern for testing time-dependent retry logic without real delays.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard tests cover boundary conditions precisely",
+          "description": "write-rate-limit, dedup-guard, tip-spend-cap, pay-spend-cap, and state-helpers all have direct unit tests that exercise the boundary conditions (limits at N-1, N, N+1). No snapshot tests exist in the toolkit test suite.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Three open test coverage issues now resolved",
+          "description": "state-helpers.ts, discover-sources.ts, and verify.ts retry logic all have dedicated test files created since the issues were opened. The previously flagged gaps no longer exist.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

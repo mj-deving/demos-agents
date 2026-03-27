@@ -1,0 +1,154 @@
+{
+  "batch": "type_safety",
+  "batch_index": 20,
+  "assessments": {"type_safety": 71.0},
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "sdk-bridge.ts: heavy use of `(demos as any)` — lines 151, 307, 332, 335. The Demos SDK type surface is incomplete/incorrect so `as any` casts are used to access `.web2.createDahr()`, `.transfer()`, `.queryTx()`, `.getTx()`. Each cast bypasses type checking for an entire expression chain.",
+        "sdk-bridge.ts: `cachedD402Client: unknown = null` at line 131 — typed as unknown, then cast to a structural type inline at line 321: `const client = cachedD402Client as { createPayment(req: unknown): Promise<unknown>; settle(payment: unknown): Promise<D402SettlementResult> }`. The cast is repeated at each use site rather than being declared as a typed interface.",
+        "sdk-bridge.ts payD402: `(e as any)?.success === false` at line 325 — uses any cast to check a discriminated property. Could use `isDemosErrorLike` pattern already defined in pay.ts.",
+        "connect.ts: `(this as Record<symbol, unknown>)[AUTH_TOKEN]` pattern for symbol-keyed storage — typed as `unknown` then cast back to `string` at return (line 112). This is a TypeScript limitation for symbol-keyed access, not avoidable without significant restructuring.",
+        "scan.ts: `result.data as Record<string, unknown>` (line 76), `rawPosts as unknown[]` (line 77), `p as Record<string, unknown>` (line 81), `(post.reactions as Record<string, unknown>)` (line 90) — five casts in fetchFeed() to handle the polymorphic feed API response. The casts are necessary given the dynamic API shape but provide no type safety for callers.",
+        "verify.ts: same pattern — `result.data as Record<string, unknown>` (line 78), `posts as unknown[]` (line 79), `p as Record<string, unknown>` (line 85). Three more unguarded casts.",
+        "tip.ts line 65: `((feedResult.data as Record<string, unknown>)?.posts ?? feedResult.data) as unknown[]` — cast chain with no guard. If the feed API changes shape, this silently produces undefined.",
+        "types.ts: `DemosError.detail.partialData` is typed as `unknown` — acceptable for an envelope type.",
+        "schemas.ts: `stateStore: z.any().optional()` and `onToolCall: z.any().optional()` in ConnectOptionsSchema — explicitly documented as 'runtime object — can't validate methods'. The z.any() is a correct admission of limitation.",
+        "tool-wrapper.ts line 43: `const isDemosError = e && typeof e === 'object' && 'code' in e && 'message' in e && 'retryable' in e` — structural type guard without a narrowing function. Same pattern repeated in pay.ts `isDemosErrorLike`. Two parallel structural guards for the same DemosError shape.",
+        "state-helpers.ts safeParse return type is `unknown` — correct; callers are responsible for narrowing. No type lie here.",
+        "connect.ts WalletData interface has `address?: string` and `signingHandle: unknown` — the signingHandle is typed as unknown throughout and never narrowed after assignment.",
+        "sdk-bridge.ts TxModule interface uses `unknown` for all parameter and return types of store/confirm/broadcast — this is an intentional wide type for SDK compatibility but means TypeScript cannot catch incorrect usage of the tx pipeline.",
+        "Compile-time type sync assertions in schemas.ts (lines 173–194) are a strong positive — bidirectional Zod/TypeScript sync prevents schema drift. This is above-average type safety infrastructure."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "type_safety": {
+      "dimension_character": "The toolkit has strong type safety at the API boundary (Zod schemas with compile-time sync assertions, typed ToolResult envelope, typed DemosError codes) but degrades significantly at the SDK integration layer. Heavy use of `as any` casts for Demos SDK access, `as Record<string, unknown>` casts for feed API responses, and inline structural type assertions for the D402 client create a wide untyped gap in the middle of the call stack. The casts are documented and often unavoidable given incomplete SDK types, but they cluster in high-traffic code paths.",
+      "score_rationale": "The score reflects real weakness: five files contain chains of cast-heavy code (sdk-bridge.ts, scan.ts, verify.ts, tip.ts, connect.ts) that provide minimal type safety between the entry validation and the result construction. The bidirectional Zod assertions in schemas.ts are exceptional and prevent score from going lower. The 71/100 score reflects 'type safety at edges, type soup in the middle' — a common pattern in SDK adapters but still a meaningful weakness."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_demos_as_any",
+      "summary": "`(demos as any)` casts used in four places in sdk-bridge.ts to access SDK methods with no type coverage",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Line 151: `(demos as any).web2.createDahr()` — entire DAHR flow runs untyped",
+        "Line 307: `(demos as any).transfer(to, amount, memo)` — DEM transfer untyped",
+        "Line 332: `(demos as any).queryTx(txHash)` — RPC query untyped",
+        "Line 335: `(demos as any).getTx(txHash)` — alternate RPC query untyped"
+      ],
+      "suggestion": "Create a typed shim interface `DemosExtended extends Demos { web2: { createDahr(): Promise<DahrProxy> }; transfer(to: string, amount: number, memo: string): Promise<{ hash?: string; txHash?: string }>; queryTx?(hash: string): Promise<{ sender?: string } | null>; getTx?(hash: string): Promise<{ sender?: string } | null>; }` and cast once at the top of createSdkBridge: `const sdk = demos as DemosExtended`. This confines the escape hatch to one location.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_d402_client_unknown_cache",
+      "summary": "`cachedD402Client` typed as `unknown` with repeated inline structural cast at each access",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Line 131: `let cachedD402Client: unknown = null`",
+        "Line 321: `const client = cachedD402Client as { createPayment(req: unknown): Promise<unknown>; settle(payment: unknown): Promise<D402SettlementResult> }` — inline cast repeated whenever the client is used",
+        "The structural type is not reused — if D402Client gains methods or changes signature, TypeScript won't catch callers"
+      ],
+      "suggestion": "Extract the structural type as a named interface: `interface D402ClientShape { createPayment(req: unknown): Promise<unknown>; settle(payment: unknown): Promise<D402SettlementResult>; }` and type the cache: `let cachedD402Client: D402ClientShape | null = null`. Cast once at assignment, not at each access.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_feed_api_cast_chains",
+      "summary": "Feed API response parsing in scan.ts and verify.ts uses unguarded cast chains — type errors would silently produce undefined",
+      "related_files": [
+        "src/toolkit/tools/scan.ts",
+        "src/toolkit/tools/verify.ts"
+      ],
+      "evidence": [
+        "scan.ts lines 76–95: five `as` casts with no runtime shape validation. If data?.posts is not an array, rawPosts falls back to `data` which also may not be an array — caught by the `!Array.isArray` guard on line 78, but inner fields (post.reactions, payload.text) are never validated",
+        "verify.ts lines 78–87: same pattern — `data as Record<string, unknown>`, `posts as unknown[]`",
+        "tip.ts line 65: `((feedResult.data as Record<string, unknown>)?.posts ?? feedResult.data) as unknown[]` — if the feed API returns a string or number, this produces unexpected behavior"
+      ],
+      "suggestion": "Extract a `parseFeedPosts(data: unknown): ScanPost[]` function with explicit runtime guards (Array.isArray at each level, typeof checks on fields). Share between scan.ts, verify.ts, and tip.ts. This centralizes the one place where feed API types are narrow, making future API changes visible.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_demos_error_guard_duplication",
+      "summary": "Structural DemosError type guard duplicated in tool-wrapper.ts and pay.ts — no shared type predicate",
+      "related_files": [
+        "src/toolkit/tools/tool-wrapper.ts",
+        "src/toolkit/tools/pay.ts"
+      ],
+      "evidence": [
+        "tool-wrapper.ts line 43: `const isDemosError = e && typeof e === 'object' && 'code' in e && 'message' in e && 'retryable' in e`",
+        "pay.ts lines 328–334: `function isDemosErrorLike(error: unknown): error is ReturnType<typeof demosError>` — a proper type predicate with the same structural check",
+        "Two implementations of the same guard: one is an inline expression, one is a named type predicate function. Only one narrows the type."
+      ],
+      "suggestion": "Move isDemosErrorLike to types.ts as an exported type predicate: `export function isDemosError(e: unknown): e is DemosError`. Import in tool-wrapper.ts and pay.ts. The inline check in tool-wrapper.ts should use the typed predicate to enable proper narrowing.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_tx_module_unknown_types",
+      "summary": "TxModule interface types all parameters and return values as `unknown` — SDK pipeline is completely untyped",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Lines 29–32: TxModule.store(data: Uint8Array, demos: Demos): Promise<unknown>; confirm(storeTx: unknown, ...): Promise<unknown>; broadcast(validity: unknown, ...): Promise<unknown>",
+        "Lines 279–281: storeTx, validity, result are all inferred as unknown, requiring `as any` casts to access fields like `validity?.response?.data?.transaction?.hash`",
+        "The chain of fallback hash extractions (lines 286–291) is entirely untyped — any field renaming in the SDK would silently return undefined"
+      ],
+      "suggestion": "Define a set of typed response shapes for the SDK transaction pipeline, even if partial: `interface StoreResult { /* whatever SDK returns */ }`, etc. Even `Record<string, unknown>` is better than `unknown` for chained property access. Alternatively, create a single typed extraction function `extractTxHash(result: unknown): string | undefined` that centralizes the hash extraction logic.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "SDK type definitions are incomplete — the Demos SDK does not export types for web2.createDahr, transfer, or query methods, forcing as-any casts",
+      "Feed API has polymorphic response shape across endpoints — structural casting is necessary but should be centralized",
+      "Guard type predicate defined ad hoc in pay.ts rather than promoted to types.ts"
+    ],
+    "likely_symptoms": [
+      "ts_feed_api_cast_chains",
+      "ts_demos_error_guard_duplication"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "type_safety": {
+      "add": [
+        {
+          "header": "Bidirectional Zod/TypeScript sync assertions in schemas.ts",
+          "description": "schemas.ts has forward and reverse compile-time type assertions (lines 173–194) that catch schema/interface drift. This is an above-average type safety technique that prevents the most common source of type lies in Zod-based validation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SDK adapter layer concentrates type escapes",
+          "description": "The `as any` casts are concentrated in sdk-bridge.ts (the SDK adapter layer) rather than scattered across business logic. This is an intentional isolation pattern — the escape hatch is contained. However, the adapter layer itself has no internal type safety.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Feed API response parsing lacks shared typed helper",
+          "description": "scan.ts, verify.ts, and tip.ts each independently parse the polymorphic feed API response using unguarded cast chains. No shared parseFeedPosts helper exists to centralize this inherently untyped boundary.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

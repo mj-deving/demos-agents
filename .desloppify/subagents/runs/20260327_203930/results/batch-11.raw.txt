@@ -1,0 +1,102 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {"api_surface_coherence": 67.0},
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "All 8 operation tools (publish, reply, react, tip, scan, verify, attest, discoverSources) share (session, opts) signature — consistent positional ordering",
+        "connect() returns DemosSession (throws on error); all other tools return Promise<ToolResult<T>> — two fundamentally different error contract shapes at the public surface",
+        "disconnect() is synchronous void; all other tools are async — breaks the async-only API shape without documentation in public types",
+        "discoverSources(session: DemosSession, opts?) — session is required (non-nullable); all other tools also require non-nullable session — the previously-flagged nullable-session issue appears resolved in current code",
+        "DiscoverSourcesOptions.matchThreshold is accepted and validated by schema (z.number().min(0).max(1)) but never used inside discoverSources() — silently ignored input with no error or warning",
+        "reply() duplicates session.touch() and start = Date.now() from withToolWrapper before delegating to publish() — double-touch side effect on every reply call",
+        "connect() has 14 parameters via ConnectOptions bag; no other tool exceeds 2 positional args — asymmetric complexity at the connect boundary",
+        "scan(), discoverSources() take optional opts (opts?) while publish(), attest(), pay() take required opts — inconsistent optionality across sibling tools",
+        "sync_async_mix flagged for tools/connect.ts and guards/state-helpers.ts — disconnect() is sync in an otherwise fully async module"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "api_surface_coherence": {
+      "dimension_character": "The toolkit's operation tools present a well-ordered, consistent (session, opts) calling convention with a uniform ToolResult<T> return envelope. The primary coherence break is at the session lifecycle boundary: connect() throws while all tools return ToolResult, and disconnect() is synchronous, creating two silent exceptions to the documented contract. A secondary defect is DiscoverSourcesOptions.matchThreshold being validated and accepted but silently discarded inside the function — a lying interface.",
+      "score_rationale": "Strong baseline from the 8 operation tools sharing one shape. Penalized meaningfully for connect/disconnect being undocumented exceptions to the async-ToolResult contract (every caller must special-case them), and for matchThreshold being a documented-but-dead parameter. The double-touch in reply() is a minor correctness issue. Score 67: solidly below 75 because the two lifecycle outliers are part of the primary public API surface, not edge cases."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc-connect-throws",
+      "summary": "connect() throws DemosError while all other tools return ToolResult — undocumented exception to the error contract",
+      "related_files": ["src/toolkit/tools/connect.ts", "src/toolkit/index.ts", "src/toolkit/types.ts"],
+      "evidence": [
+        "connect() signature: Promise<DemosSession> — throws on auth failure, symlink, bad permissions",
+        "Every other tool: Promise<ToolResult<T>> — error in result.error, never thrown",
+        "Index exports both connect and all tools under the same surface with no contract annotation distinguishing them",
+        "Comment in batch prompt confirms this is a known open issue: 'connect() and disconnect() break the async-ToolResult pattern without documenting the exception in public types'"
+      ],
+      "suggestion": "Add a JSDoc @throws annotation to connect() and a note in index.ts describing that connect/disconnect use throw/void semantics rather than ToolResult. Alternatively, wrap connect() to return ToolResult<DemosSession> for full surface uniformity.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc-match-threshold-dead",
+      "summary": "DiscoverSourcesOptions.matchThreshold accepted and schema-validated but never consumed inside discoverSources()",
+      "related_files": ["src/toolkit/tools/discover-sources.ts", "src/toolkit/types.ts", "src/toolkit/schemas.ts"],
+      "evidence": [
+        "DiscoverSourcesOptionsSchema: matchThreshold: z.number().min(0).max(1).optional()",
+        "discoverSources() body: no reference to opts.matchThreshold anywhere",
+        "Callers passing matchThreshold receive no error and no effect — silent lie in the public interface"
+      ],
+      "suggestion": "Either implement matchThreshold filtering (apply as a minimum healthScore threshold on returned sources) or remove the field from DiscoverSourcesOptions and its schema, and document in a TODO that fuzzy matching is planned.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc-reply-double-touch",
+      "summary": "reply() manually calls session.touch() and records start time, then delegates to publish() which calls withToolWrapper — double-touch on every reply",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "reply(): const start = Date.now(); session.touch(); ... return publish(session, {...})",
+        "publish() → withToolWrapper() → session.touch() again",
+        "session.lastActivity is overwritten twice per reply call; durationMs in onToolCall for the outer touch is discarded"
+      ],
+      "suggestion": "Remove the manual start/touch from reply(). Only validate input and delegate: const inputError = validateInput(...); if (inputError) return err(inputError, localProvenance(Date.now())); return publish(session, {...});",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "connect() was designed as a factory function predating the ToolResult pattern — the exception was never retrofitted",
+      "matchThreshold was added to the interface for future fuzzy-match filtering but the implementation was never completed"
+    ],
+    "likely_symptoms": ["asc-connect-throws may cause surprising uncaught exceptions in consumers wrapping all toolkit calls in result-style error handling"]
+  },
+  "context_updates": {
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "discoverSources session param is now non-nullable",
+          "description": "The previously flagged nullable-session issue is resolved in current code — discoverSources(session: DemosSession, opts?) matches the standard tool signature. The open issue in the batch prompt no longer reflects reality.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "matchThreshold field is a dead interface promise",
+          "description": "DiscoverSourcesOptions.matchThreshold is schema-validated and accepted but never used inside the function. Callers receive no error and no filtering effect, making it a lying contract.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}
