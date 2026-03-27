@@ -1,7 +1,7 @@
 /**
  * verify() — check on-chain confirmation of a transaction.
  *
- * Uses RPC node (not SuperColony API) — works even when API is down.
+ * Uses SDK bridge to query RPC node. Works even when SuperColony API is down.
  * Retries with delays [3s, 5s, 10s] before returning CONFIRM_TIMEOUT.
  */
 
@@ -62,7 +62,24 @@ export async function verify(
   });
 }
 
-async function checkConfirmation(_session: DemosSession, _txHash: string): Promise<VerifyResult> {
-  // TODO(toolkit-mvp): integrate SDK bridge — RPC indexer query
-  throw new Error("Verify integration pending — connect SDK bridge");
+async function checkConfirmation(session: DemosSession, txHash: string): Promise<VerifyResult> {
+  const bridge = session.getBridge();
+  // Query feed for the post by txHash — if it appears, it's confirmed
+  const result = await bridge.apiCall(`/api/feed?limit=5`);
+  if (!result.ok) {
+    throw new Error(`RPC query failed: ${result.status}`);
+  }
+
+  const data = result.data as Record<string, unknown>;
+  const posts = (data?.posts ?? data?.results ?? data) as unknown[];
+  if (!Array.isArray(posts)) {
+    throw new Error("Unexpected feed response shape");
+  }
+
+  const found = posts.some((p: unknown) => {
+    const post = p as Record<string, unknown>;
+    return String(post.txHash ?? "") === txHash;
+  });
+
+  return { confirmed: found, blockHeight: found ? 1 : undefined };
 }

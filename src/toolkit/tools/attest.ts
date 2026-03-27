@@ -48,10 +48,8 @@ export async function attest(
   });
 }
 
-async function executeDahrAttestation(_session: DemosSession, _opts: AttestOptions): Promise<AttestResult> {
-  // When SDK bridge is wired into session:
-  // const bridge = session.getBridge();
-  // const result = await bridge.attestDahr(opts.url, "GET");
-  // return { responseHash: result.responseHash, txHash: result.txHash };
-  throw new Error("Attest integration pending — connect SDK bridge to session");
+async function executeDahrAttestation(session: DemosSession, opts: AttestOptions): Promise<AttestResult> {
+  const bridge = session.getBridge();
+  const result = await bridge.attestDahr(opts.url, "GET");
+  return { responseHash: result.responseHash, txHash: result.txHash };
 }

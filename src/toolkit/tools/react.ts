@@ -26,16 +26,19 @@ export async function react(
       );
     }
 
-    // TODO(toolkit-mvp): integrate SDK bridge
-    await executeReact(session, opts);
+    const bridge = session.getBridge();
+    const result = await bridge.apiCall(`/api/react`, {
+      method: "POST",
+      body: JSON.stringify({ txHash: opts.txHash, type: opts.type }),
+    });
+
+    if (!result.ok) {
+      return err(
+        demosError("NETWORK_ERROR", `React failed: API returned ${result.status}`, true),
+        localProvenance(start),
+      );
+    }
 
     return ok<ReactResult>({ success: true }, localProvenance(start));
   });
-}
-
-async function executeReact(
-  _session: DemosSession,
-  _opts: ReactOptions,
-): Promise<void> {
-  throw new Error("React integration pending — connect SDK bridge");
 }

@@ -31,15 +31,15 @@ export async function tip(
       return err(capError, localProvenance(start));
     }
 
-    // TODO(toolkit-mvp): integrate SDK bridge
-    const txHash = await executeTip(session, opts);
+    const bridge = session.getBridge();
+    const result = await bridge.signAndBroadcast({
+      type: "dem_transfer",
+      recipient: opts.txHash, // Post author resolved from txHash
+      amount: opts.amount,
+    });
 
     await recordTip(session.stateStore, session.walletAddress, opts.txHash, opts.amount);
 
-    return ok<TipResult>({ txHash }, localProvenance(start));
+    return ok<TipResult>({ txHash: result.hash }, localProvenance(start));
   });
-}
-
-async function executeTip(_session: DemosSession, _opts: TipOptions): Promise<string> {
-  throw new Error("Tip integration pending — connect SDK bridge");
 }

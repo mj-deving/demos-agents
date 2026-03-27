@@ -1,7 +1,7 @@
 /**
  * scan() — fetch and analyze SuperColony feed posts.
  *
- * Supports local feed fetch and optional Skill Dojo fallback.
+ * Uses SDK bridge for local feed fetch. Optional Skill Dojo fallback.
  */
 
 import type { ScanOptions, ScanResult, ScanPost, ScanOpportunity, ToolResult } from "../types.js";
@@ -24,7 +24,6 @@ export async function scan(
       const opportunities = identifyOpportunities(posts);
       return ok<ScanResult>({ posts, opportunities }, localProvenance(start));
     } catch (localErr) {
-      // Fall back to Skill Dojo if enabled
       if (session.skillDojoFallback) {
         try {
           const posts = await fetchFromSkillDojo(session, limit, opts?.domain);
@@ -32,9 +31,7 @@ export async function scan(
             { posts, opportunities: identifyOpportunities(posts) },
             { path: "skill-dojo", latencyMs: Date.now() - start },
           );
-        } catch {
-          // Both failed — fall through to error
-        }
+        } catch { /* both failed */ }
       }
 
       return err(
@@ -60,11 +57,39 @@ function identifyOpportunities(posts: ScanPost[]): ScanOpportunity[] {
   return opportunities;
 }
 
-async function fetchFeed(_session: DemosSession, _limit: number, _domain?: string): Promise<ScanPost[]> {
-  // TODO(toolkit-mvp): integrate SDK bridge
-  throw new Error("Scan integration pending — connect SDK bridge");
+async function fetchFeed(session: DemosSession, limit: number, domain?: string): Promise<ScanPost[]> {
+  const bridge = session.getBridge();
+  const path = `/api/feed?limit=${limit}`;
+  const result = await bridge.apiCall(path);
+
+  if (!result.ok) {
+    throw new Error(`Feed API returned ${result.status}`);
+  }
+
+  // Normalize response — feed API returns various shapes
+  const data = result.data as Record<string, unknown>;
+  const rawPosts = (data?.posts ?? data?.results ?? data?.items ?? data?.data ?? data) as unknown[];
+  if (!Array.isArray(rawPosts)) return [];
+
+  return rawPosts.map((p: unknown) => {
+    const post = p as Record<string, unknown>;
+    const payload = (post.payload ?? post) as Record<string, unknown>;
+    return {
+      txHash: String(post.txHash ?? ""),
+      text: String(payload.text ?? ""),
+      category: String(payload.cat ?? payload.category ?? ""),
+      author: String(post.sender ?? post.author ?? ""),
+      timestamp: Number(post.timestamp ?? 0),
+      reactions: {
+        agree: Number((post.reactions as Record<string, unknown>)?.agree ?? 0),
+        disagree: Number((post.reactions as Record<string, unknown>)?.disagree ?? 0),
+      },
+      tags: Array.isArray(payload.tags) ? payload.tags.map(String) : [],
+    };
+  });
 }
 
 async function fetchFromSkillDojo(_session: DemosSession, _limit: number, _domain?: string): Promise<ScanPost[]> {
+  // TODO(skill-dojo): wire to Skill Dojo API fallback
   throw new Error("Skill Dojo integration pending");
 }

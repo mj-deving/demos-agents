@@ -10,6 +10,7 @@
  */
 
 import type { StateStore, TipPolicy, PayPolicy, ToolCallEvent, ProvenancePath } from "./types.js";
+import type { SdkBridge } from "./sdk-bridge.js";
 
 // Local Symbol — not globally discoverable via Symbol.for()
 // Note: Object.getOwnPropertySymbols() can still enumerate — this prevents
@@ -109,6 +110,16 @@ export class DemosSession {
   getSigningHandle(): unknown {
     this.checkExpired();
     return (this as Record<symbol, unknown>)[SIGNING_HANDLE];
+  }
+
+  /** Get SDK bridge (internal use by toolkit tools) */
+  getBridge(): SdkBridge {
+    this.checkExpired();
+    const handle = (this as Record<symbol, unknown>)[SIGNING_HANDLE] as { bridge?: SdkBridge } | undefined;
+    if (!handle?.bridge) {
+      throw new Error("SDK bridge not available — session may not be fully connected");
+    }
+    return handle.bridge;
   }
 
   /** Update auth token (for refresh flows) */
