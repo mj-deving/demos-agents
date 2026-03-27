@@ -8,8 +8,8 @@
 import type { PublishDraft, ReplyOptions, PublishResult, ToolResult } from "../types.js";
 import { ok, err, demosError } from "../types.js";
 import { DemosSession } from "../session.js";
-import { checkAndRecordWrite } from "../guards/write-rate-limit.js";
-import { checkAndRecordDedup } from "../guards/dedup-guard.js";
+import { checkWriteRateLimit, recordWrite } from "../guards/write-rate-limit.js";
+import { checkDedup, recordPublish as recordDedupPublish } from "../guards/dedup-guard.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 
 /**
@@ -30,10 +30,10 @@ export async function publish(
       return err(demosError("INVALID_INPUT", "Category is required", false), localProvenance(start));
     }
 
-    // Atomic check+record in single lock acquisition per guard (prevents TOCTOU)
+    // Check guards first (no mutation — safe to reject without side effects)
     const [rateLimitError, dedupError] = await Promise.all([
-      checkAndRecordWrite(session.stateStore, session.walletAddress, true),
-      checkAndRecordDedup(session.stateStore, session.walletAddress, draft.text, true),
+      checkWriteRateLimit(session.stateStore, session.walletAddress),
+      checkDedup(session.stateStore, session.walletAddress, draft.text),
     ]);
 
     if (rateLimitError) return err(rateLimitError, localProvenance(start));
@@ -41,6 +41,12 @@ export async function publish(
 
     // TODO(toolkit-mvp): integrate SDK bridge — claims → DAHR → tx → confirm → broadcast
     const txHash = await executePublishPipeline(session, draft);
+
+    // Record only after pipeline commits (prevents false entries on failure)
+    await Promise.all([
+      recordWrite(session.stateStore, session.walletAddress),
+      recordDedupPublish(session.stateStore, session.walletAddress, draft.text),
+    ]);
 
     return ok<PublishResult>(
       { txHash },
@@ -70,6 +76,7 @@ export async function reply(
   return publish(session, {
     text: opts.text,
     category: opts.category ?? "ANALYSIS",
+    parentTxHash: opts.parentTxHash,
   });
 }
 

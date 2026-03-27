@@ -48,6 +48,7 @@ export type {
   AttestResult,
   DiscoverSourcesResult,
   Source,
+  SourceStatus,
   PayResult,
 } from "./types.js";
 

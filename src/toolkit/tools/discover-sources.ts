@@ -42,7 +42,9 @@ export async function discoverSources(
       ? sources.filter((s) => s.domain === opts.domain)
       : sources;
 
-    const active = filtered.filter((s) => s.status !== "quarantined");
+    // Exclude non-available sources
+    const excludedStatuses = new Set(["quarantined", "stale", "deprecated", "archived"]);
+    const active = filtered.filter((s) => !excludedStatuses.has(s.status));
     const sorted = active.sort((a, b) => (b.healthScore ?? 0) - (a.healthScore ?? 0));
 
     const result = ok<DiscoverSourcesResult>(
@@ -89,9 +91,13 @@ async function loadCatalog(catalogPath: string): Promise<Source[]> {
   return sources;
 }
 
-function normalizeStatus(status: string | undefined): "active" | "degraded" | "quarantined" {
-  if (status === "active" || status === "degraded" || status === "quarantined") {
-    return status;
+type SourceStatus = "active" | "degraded" | "quarantined" | "stale" | "deprecated" | "archived";
+
+const VALID_STATUSES = new Set<string>(["active", "degraded", "quarantined", "stale", "deprecated", "archived"]);
+
+function normalizeStatus(status: string | undefined): SourceStatus {
+  if (status && VALID_STATUSES.has(status)) {
+    return status as SourceStatus;
   }
   return "active";
 }

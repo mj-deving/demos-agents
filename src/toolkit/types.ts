@@ -123,6 +123,8 @@ export interface PublishDraft {
   category: string;
   tags?: string[];
   confidence?: number;
+  /** For replies — txHash of the parent post to thread under */
+  parentTxHash?: string;
 }
 
 /** Reply options */
@@ -228,12 +230,14 @@ export interface DiscoverSourcesResult {
   sources: Source[];
 }
 
+export type SourceStatus = "active" | "degraded" | "quarantined" | "stale" | "deprecated" | "archived";
+
 export interface Source {
   id: string;
   name: string;
   domain: string;
   url: string;
-  status: "active" | "degraded" | "quarantined";
+  status: SourceStatus;
   healthScore?: number;
 }
 

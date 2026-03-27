@@ -116,13 +116,14 @@ function parseWallet(content: string): WalletData {
       signingHandle: parsed, // Full wallet object as signing handle
     };
   } catch (e) {
-    // Try mnemonic format (one line of words)
+    // Detect mnemonic format but reject — address derivation requires SDK bridge
     const lines = content.trim().split("\n");
     if (lines.length === 1 && lines[0].split(" ").length >= 12) {
-      return {
-        address: "mnemonic-derived", // Will be resolved by SDK
-        signingHandle: { mnemonic: lines[0] },
-      };
+      throw demosError(
+        "INVALID_INPUT",
+        "Mnemonic wallet files are not yet supported — SDK bridge needed to derive address. Use a JSON wallet file with an 'address' field.",
+        false,
+      );
     }
     throw demosError(
       "INVALID_INPUT",
