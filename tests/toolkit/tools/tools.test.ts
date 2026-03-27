@@ -188,8 +188,9 @@ describe("discoverSources()", () => {
     expect(result.data!.sources[0].id).toBe("s1");
   });
 
-  it("accepts null session for sessionless browsing", async () => {
-    const result = await discoverSources(null);
+  it("works with session using bundled catalog", async () => {
+    const session = createTestSession(tempDir);
+    const result = await discoverSources(session);
     // Uses bundled catalog — should succeed or fail with clear error
     expect(result.ok === true || result.error!.code === "INVALID_INPUT").toBe(true);
   });

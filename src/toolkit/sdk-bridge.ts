@@ -24,6 +24,13 @@ export function sanitizeUrl(url: string): string {
   }
 }
 
+/** Transaction module interface — typed replacement for bare Function fields */
+export interface TxModule {
+  store(data: Uint8Array, demos: Demos): Promise<unknown>;
+  confirm(storeTx: unknown, demos: Demos): Promise<unknown>;
+  broadcast(validity: unknown, demos: Demos): Promise<unknown>;
+}
+
 // ── Types ───────────────────────────────────────────
 
 export interface DahrResult {
@@ -113,20 +120,30 @@ export function createSdkBridge(
   apiBaseUrl: string,
   authToken: string,
   fetchImpl: typeof fetch = globalThis.fetch,
-  txModule?: { store: Function; confirm: Function; broadcast: Function },
+  txModule?: TxModule,
   options?: { allowRawSdk?: boolean },
 ): SdkBridge {
   // Closure-scoped lazy loaders — avoids module-level shared mutable state
-  let cachedTxModule: any = txModule ?? null;
-  let cachedD402Client: any = null;
-  async function getTxModule() {
+  let cachedTxModule: TxModule | null = txModule ?? null;
+  let cachedD402Client: unknown = null;
+  async function getTxModule(): Promise<TxModule> {
     if (cachedTxModule) return cachedTxModule;
     const { DemosTransactions } = await import("@kynesyslabs/demosdk/websdk");
-    cachedTxModule = DemosTransactions;
+    cachedTxModule = DemosTransactions as TxModule;
     return cachedTxModule;
   }
 
   return {
+    /**
+     * Create a DAHR attestation for a URL.
+     *
+     * TRUST BOUNDARY: DAHR proxy fetches the URL server-side, bypassing this client's
+     * SSRF validator. The proxy is operated by KyneSys and has its own URL restrictions.
+     * Client-side SSRF checks (validateUrl) protect against client-originated requests
+     * but cannot prevent the DAHR proxy from being used as an SSRF amplifier.
+     * Mitigation: URL allowlist enforcement in attest.ts + publish.ts restricts which
+     * URLs reach the proxy.
+     */
     async attestDahr(url: string, method: string = "GET"): Promise<DahrResult> {
       const dahr = await (demos as any).web2.createDahr();
       const safeUrl = sanitizeUrl(url);
@@ -304,8 +321,9 @@ export function createSdkBridge(
           const { D402Client } = await import("@kynesyslabs/demosdk/d402/client");
           cachedD402Client = new D402Client(demos);
         }
-        const payment = await cachedD402Client.createPayment(requirement);
-        return await cachedD402Client.settle(payment);
+        const client = cachedD402Client as { createPayment(req: unknown): Promise<unknown>; settle(payment: unknown): Promise<D402SettlementResult> };
+        const payment = await client.createPayment(requirement);
+        return await client.settle(payment);
       } catch (e) {
         if ((e as any)?.success === false) throw e; // already a D402SettlementResult-shaped error
         throw new Error(`D402 settlement failed: ${(e as Error).message}`);

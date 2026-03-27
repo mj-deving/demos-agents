@@ -11,6 +11,7 @@ import { open, lstat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 
+import type { Demos } from "@kynesyslabs/demosdk/websdk";
 import type { ConnectOptions } from "../types.js";
 import { demosError } from "../types.js";
 import { DemosSession } from "../session.js";
@@ -61,6 +62,14 @@ export async function connect(opts: ConnectOptions): Promise<DemosSession> {
     const mode = fstats.mode & 0o777;
 
     if (mode !== 0o600) {
+      // SECURITY NOTE: Container/WSL2 environments often mount host filesystems via drvfs
+      // where chmod is cosmetic (permissions are always 0o777 regardless of what's set).
+      // We downgrade the mode-600 check to a warning in these environments because:
+      // 1. Refusing to connect would break ALL container/WSL2 usage
+      // 2. The real security boundary in containers is the container itself, not file perms
+      // 3. WSL2 users typically rely on Windows ACLs, not POSIX permissions
+      // Risk: An attacker with access to the same container can read the wallet file.
+      // Mitigation: Use Docker secrets or mount with proper permissions when possible.
       const isContainer = await detectContainer();
       if (isContainer) {
         console.warn(
@@ -184,7 +193,7 @@ async function connectSdk(
   wallet: WalletData,
   rpcUrl: string,
   algorithm: string,
-): Promise<{ demos: any; address: string; authToken: string }> {
+): Promise<{ demos: Demos; address: string; authToken: string }> {
   try {
     // Lazy import — avoids module-level crypto polyfill and global state mutation
     const { Demos } = await import("@kynesyslabs/demosdk/websdk");

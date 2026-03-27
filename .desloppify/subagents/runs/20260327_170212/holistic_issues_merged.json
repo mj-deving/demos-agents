@@ -1,0 +1,2008 @@
+{
+  "assessments": {
+    "abstraction_fitness": {
+      "score": 84.0,
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty",
+        "Delegation Density",
+        "Definition Directness",
+        "Type Discipline"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 90.0,
+        "Indirection Cost": 88.0,
+        "Interface Honesty": 85.0,
+        "Delegation Density": 100.0,
+        "Definition Directness": 80.0,
+        "Type Discipline": 88.0
+      }
+    },
+    "ai_generated_debt": 85.5,
+    "api_surface_coherence": 72.0,
+    "authorization_consistency": 76.0,
+    "contract_coherence": 74.0,
+    "convention_outlier": 83.0,
+    "cross_module_architecture": 88.0,
+    "dependency_health": 91.0,
+    "design_coherence": 78.5,
+    "error_consistency": 76.0,
+    "high_level_elegance": 87.0,
+    "incomplete_migration": 78.0,
+    "initialization_coupling": 87.0,
+    "logic_clarity": 76.5,
+    "low_level_elegance": 81.0,
+    "mid_level_elegance": 78.5,
+    "naming_quality": 88.0,
+    "package_organization": 91.5,
+    "test_strategy": 71.0,
+    "type_safety": 71.0
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "Dependency direction is strictly layered: tools/ \u2192 toolkit/ (core) \u2192 never reverse. Coupling matrix shows tools/ imports toolkit/ 34 times; toolkit/ imports tools/ 9 times (index.ts re-exports only \u2014 intentional facade).",
+        "src/toolkit/index.ts is a clean barrel re-export with documented public surface. The 9 back-edges from toolkit/ \u2192 tools/ are all from index.ts collecting tool exports \u2014 intentional, not a cycle.",
+        "types.ts (21 importers) and session.ts (11 importers) are legitimately high fan-in hub modules \u2014 they define foundational types and the session contract that all tools depend on. This is by design, not accidental coupling.",
+        "guards/ \u2192 toolkit/ is 7 edges, all pointing to types.ts and state-helpers.ts. tools/ \u2192 guards/ is 6 edges. No bidirectional edges between guards/ and tools/ \u2014 guards are purely downstream consumers.",
+        "connect.ts has two lazy dynamic imports pointing outside the toolkit boundary: `await import('../../lib/auth.js')` at lines 222 and 244. These cross from src/toolkit/tools/ up into src/lib/ \u2014 a different subsystem.",
+        "The BUNDLED_CATALOG_PATH in discover-sources.ts uses import.meta.url and string replacement to navigate to config/sources/catalog.json \u2014 a build-time path that hardcodes the location of an external config dir.",
+        "sdk-bridge.ts uses dynamic lazy import for '@kynesyslabs/demosdk/d402/client' (payD402) and '@kynesyslabs/demosdk/websdk' (getTxModule) \u2014 documented as intentional to prevent module-level side effects.",
+        "Module-level mutable cache in discover-sources.ts: `const catalogCache = new Map<string, Source[]>()` \u2014 shared across all uses of the module. Isolated to read-only catalog data (no writes by tools), low blast radius.",
+        "VALID_STATUSES and normalizeStatus in discover-sources.ts are flagged as deprecated (0 importers for VALID_STATUSES) but still present in the file. They're used internally by normalizeStatus which is still active, so the deprecation signal is partly inaccurate \u2014 but VALID_STATUSES itself is not imported externally.",
+        "No circular dependency cycles detected in import graph summary. All detected cycles would pass through the index.ts facade, not through tool-to-tool or guard-to-guard imports."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "connect.ts has two dynamic imports crossing from src/toolkit/tools/ into src/lib/auth.js \u2014 a boundary violation where a toolkit tool reaches into the broader app's lib layer. This is the primary structural issue. The module-level catalog cache in discover-sources.ts is a minor shared-mutable-state concern."
+    },
+    "high_level_elegance": {
+      "evidence": [
+        "The toolkit directory structure maps cleanly to domain capabilities: tools/ (user-facing operations), guards/ (invariant enforcement), core files (types, session, schemas, state-store, sdk-bridge, url-validator). Each directory has a single coherent purpose.",
+        "index.ts exports exactly the public API \u2014 tools, types, session, state-store, guards, schemas. The export surface is comprehensive but organized by capability group with clear header comments. A new engineer can find any entry point without searching.",
+        "The three-layer pattern (connect \u2192 session \u2192 tools \u2192 guards) is consistent across all 10 tools. Every tool accepts DemosSession, returns ToolResult<T>, validates input via schemas, and calls guards before side effects. This pattern is reliably applied.",
+        "CLAUDE.md accurately describes the toolkit: '10 tools, 6 guards, typed contracts, DemosSession, FileStateStore, SDK bridge, SSRF validator'. The runtime matches the documentation.",
+        "discoverSources() accepts `session: DemosSession | null` \u2014 the only tool that makes session optional. This is documented ('Read-only, no session required') but creates a visible inconsistency in the public API surface. A new engineer reading the API would ask why this one is different.",
+        "The guards directory exposes both old-style (checkDedup/recordPublish) and new-style (checkAndRecordDedup) functions. The backward-compat wrappers are documented inline but double the public guard surface unnecessarily.",
+        "pay.ts contains an inline Zod schema (D402RequirementSchema) for validating 402 response bodies. All other input validation lives in schemas.ts \u2014 this is a small ownership violation: schema definitions are split between the dedicated schemas file and a tool file.",
+        "The toolkit is scoped entirely to src/toolkit/ \u2014 24 files, 3138 LOC. The package_size_census shows 100% of tracked files under src/. This is a narrow, focused codebase with no sprawl."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "discoverSources() nullable session parameter breaks API uniformity. The backward-compat guard dual-surface adds noise to the public index.ts without clear external need. D402RequirementSchema defined inside pay.ts rather than schemas.ts is a minor ownership inconsistency."
+    },
+    "convention_outlier": {
+      "evidence": [
+        "All files use camelCase for functions and variables, PascalCase for types/interfaces/classes \u2014 consistent with TypeScript conventions. 141 function names sampled, all follow the same convention.",
+        "File naming is uniformly kebab-case across all three directories (tools/, guards/, toolkit/). No outliers found.",
+        "All modules use named exports exclusively \u2014 no default exports anywhere in the toolkit. Export pattern is 100% consistent across 24 files.",
+        "Guards follow a shared behavioral protocol: type-define local state types, import stateKey/loadState/checkAndAppend/GUARD_LOCK_TTL_MS from state-helpers.ts, return DemosError | null for check functions. 5 of 7 guards follow this pattern exactly.",
+        "backoff.ts is a structural outlier in guards/: it has no local state types, does not import loadState or GUARD_LOCK_TTL_MS, and follows the withBackoff(operation) async wrapper pattern instead of the check/record pattern. This is correct \u2014 backoff is a different kind of guard \u2014 but the mechanical scanner flagged it as missing shared patterns.",
+        "state-helpers.ts is also flagged as an outlier in guards/ for not importing GUARD_LOCK_TTL_MS/loadState \u2014 but it IS the file that exports them. This is a false positive from the scanner.",
+        "The guards directory has two public API styles: old-style pair (checkX/recordX) and new unified (checkAndRecordX). dedup-guard.ts and write-rate-limit.ts expose both: checkDedup/recordPublish (old) alongside checkAndRecordDedup/checkAndRecordWrite (new). tip-spend-cap.ts exposes both checkTipSpendCap/recordTip (old) and checkAndRecordTip (new). This dual surface is documented as 'backward compat' but presents convention inconsistency \u2014 callers must choose which API to use.",
+        "Tools follow consistent verb-first naming: checkWriteRateLimit, checkDedup, checkPaySpendCap, recordWrite, recordPublish, recordTip, recordPayment. The only outlier is checkAndRecordX which merges two operations but uses a different naming style than either the check or record convention.",
+        "discover-sources.ts defines a local SourceStatus type alias (line 100) that duplicates the exported SourceStatus type from types.ts. This creates a convention outlier: one type defined in two places with the same name but different visibility.",
+        "verify.ts imports sleep from guards/state-helpers.ts \u2014 a tool importing a utility from the guards layer. The sleep utility's placement in state-helpers.ts is a mild ownership mismatch (sleep has nothing to do with guard state), but it's a shared file pattern.",
+        "The `domain` parameter in ScanOptions is imported by scan.ts but scan.ts does not use it to filter (it passes to fetchFeed, which ignores it in practice \u2014 domain filtering not yet implemented). The unused import in scan.ts is flagged by the scanner."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Dual guard API surface (old checkX/recordX + new checkAndRecordX) creates API choice ambiguity for consumers. Local SourceStatus type in discover-sources.ts duplicates the exported type. These are visible convention inconsistencies in the public surface."
+    },
+    "error_consistency": {
+      "evidence": [
+        "The toolkit has a documented two-strategy model: tools return ToolResult<T> (ok/err envelope); internal helpers and SDK bridge throw. This layering is intentional and consistent with the 'Result in core, throw in CLI' pattern the rubric permits.",
+        "withToolWrapper catches all thrown exceptions from tool implementations and converts them to typed DemosError \u2014 this is the single error translation boundary. The pattern works correctly.",
+        "Guards uniformly return DemosError | null \u2014 no guards throw. This is consistent across all 7 guard files.",
+        "connect.ts throws DemosError directly (not wrapped in ToolResult) \u2014 intentional because connect() is a lifecycle function, not a toolkit tool. This is documented behavior but visible inconsistency.",
+        "sdk-bridge.ts throws raw Error objects (not DemosError) from attestDahr, publishHivePost, transferDem, and signAndBroadcast. withToolWrapper wraps these into DemosError on catch. However, payD402 has its own catch block at line 288 that re-throws either the original (if D402SettlementResult-shaped) or a new Error \u2014 the re-throw is NOT converted to DemosError before leaving sdk-bridge, relying on withToolWrapper in pay.ts to handle it. This is a fragile two-step conversion.",
+        "publish.ts: executePublishPipeline() throws demosError() directly (line 92: `throw demosError('INVALID_INPUT', ...)`) and also throws plain `new Error()` from bridge.attestDahr (bridged through). withToolWrapper catches both and handles them differently \u2014 isDemosError check distinguishes DemosError thrown intentionally from plain Error.",
+        "scan.ts inner catch (line 38) silently swallows the Skill Dojo fallback error with `catch { /* both failed */ }` \u2014 the original local error (localErr) is partially preserved in the outer catch message, but the Skill Dojo failure is completely discarded with no context.",
+        "verify.ts: the inner catch at line 88 in checkConfirmation wraps the error into a new Error with added context ('Verification requires SuperColony API...'). This is good \u2014 context is preserved. However the outer verify() function has a separate `return err(...)` at line 59 after the loop that's a dead code path \u2014 the loop always exits via return on the final attempt.",
+        "discover-sources.ts: loadCatalog() calls JSON.parse(raw) at line 80 without try/catch \u2014 raw is from readFile and could be malformed JSON. The outer try/catch in discoverSources() at line 43 catches this and wraps it properly. However, the JSON.parse is in the inner helper and the outer catch is in a different function scope \u2014 this is the pattern flagged by the 'security' detector ('JSON.parse without try/catch').",
+        "tip-spend-cap.ts checkAndRecordTip has a logic order issue: the per-tip max check (line 36: `if (amount > policy.maxPerTip)`) happens BEFORE the isFinite/positive check (line 44). If amount is NaN or Infinity, the first check (NaN > 10 = false) passes, and the second check catches it \u2014 but this relies on comparison-with-NaN behavior being falsy, which is correct but non-obvious. The more defensive order would be: validate first, then apply policy checks.",
+        "pay-spend-cap.ts has the same order issue: line 34 checks `amount > policy.maxPerCall` before line 42 validates `isFinite(amount)`. Same NaN-comparison dependency."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The silent Skill Dojo error swallow in scan.ts is a concrete information loss. The JSON.parse without local try/catch in discover-sources.ts loadCatalog() is a confirmed vulnerability (relying on an outer catch in a different function scope). The NaN-before-isFinite validation order in tip-spend-cap and pay-spend-cap is non-obvious and order-dependent. These aren't catastrophic but create predictability gaps."
+    },
+    "naming_quality": {
+      "evidence": [
+        "Guard functions consistently use 'checkAndRecord*' pattern: checkAndRecordDedup, checkAndRecordWrite, checkAndRecordTip \u2014 clear, intent-bearing compound names that communicate both read and write semantics",
+        "Tool files are named identically to their exported function (scan.ts exports scan(), publish.ts exports publish(), pay.ts exports pay()) \u2014 perfect name/file/function alignment",
+        "'withToolWrapper' and 'withBackoff' use the established 'with*' prefix consistently \u2014 follows codebase convention tracked in sibling_conventions data (3x with prefix in tools/)",
+        "'checkAndAppend' in state-helpers.ts is precisely named \u2014 reveals the atomic check+write operation that eliminates double-lock overhead",
+        "'localProvenance' is specific and accurate \u2014 creates a Provenance object with path='local', no behavior mismatch",
+        "'stateKey' is a minimal but clear name \u2014 constructs a wallet-scoped storage key; the docstring adds needed detail about the 16-char hash",
+        "'executePublishPipeline' in publish.ts \u2014 'execute' is a generic verb (listed in look_for), but it is used consistently with 'execute' prefix for 2 internal orchestrators and the context (pipeline orchestration) is clear from the compound name. Borderline.",
+        "'fetchFeed' and 'fetchFromSkillDojo' in scan.ts follow the 'fetch*' convention (3 occurrences across tools/) and communicate intent accurately",
+        "'identifyOpportunities' \u2014 specific verb, not generic, accurately describes the scoring/categorization operation",
+        "'safeReadBody' in pay.ts \u2014 'safe' modifier is informative (swallows parse errors, returns null), accurately reflects behavior",
+        "'fetchWithValidatedRedirects' \u2014 verbose but precise, surfaces the SSRF validation behavior in the name",
+        "'stripPaymentProofOnCrossOriginRedirect' \u2014 very precise and long, communicates exact behavior",
+        "'detectContainer' \u2014 accurate, no mismatch",
+        "'authenticateFallback' \u2014 suffix 'Fallback' is accurate (handles address-only wallets)",
+        "'connectSdk' \u2014 slightly generic (could be 'connectDemosWallet') but used only once as internal helper; acceptable",
+        "'parseWallet' \u2014 accurate, used internally",
+        "Backward-compat aliases (checkDedup, checkWriteRateLimit, checkTipSpendCap, recordPublish, recordWrite, recordTip) \u2014 old names pre-date the combined checkAndRecord* pattern; comments explicitly say 'backward compat' which explains the vocabulary split",
+        "'AUTH_PENDING_TOKEN' in sdk-bridge.ts \u2014 clear sentinel name, purpose is explicit",
+        "'withWalletSettlementLock' in pay.ts \u2014 precise, communicates scoped locking for D402 settlement"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Two minor concerns hold this below 90: (1) backward-compat dual-name surface (checkDedup/checkAndRecordDedup etc.) creates vocabulary split that a new developer must learn to navigate; (2) 'executePublishPipeline' uses a generic 'execute' prefix though the compound name mitigates it."
+    },
+    "abstraction_fitness": {
+      "evidence": [
+        "withToolWrapper<T> centralizes 5 boilerplate concerns (timing, touch, onToolCall notification, error wrapping, DemosError passthrough) used by 7 tools \u2014 clear leverage with no pass-through",
+        "checkAndAppend<TState, TEntry> in state-helpers.ts is a genuinely polymorphic generic that all 5 active guards use, each with different state shapes \u2014 the generic pressure is real and earned",
+        "StateStore interface has exactly one implementation (FileStateStore) in production. The mechanical scan confirms: one_impl_interface_count=1. However, tests inject mock implementations \u2014 so the interface does serve substitution under test, making it a justified public API typing shell per the 'skip' list.",
+        "DemosSession class carries a large config bag (13 properties from ConnectOptions passed through to session fields one-to-one in connect.ts lines 95-112). This is not indirection \u2014 connect.ts maps ConnectOptions \u2192 DemosSession constructor, which is appropriate for an opaque session handle design. No pass-through wrapper, the session is the final consumer.",
+        "reply() in publish.ts is a thin wrapper over publish() \u2014 it adds a field default (category='ANALYSIS') and thread setup (parentTxHash), which constitutes real translation behavior, not pure forwarding. Acceptable.",
+        "sdk-bridge.ts SdkBridge interface exposes 7 methods; the factory (createSdkBridge) is the only implementation. This is explicitly a public API typing shell that isolates SDK volatility \u2014 matches the 'skip' condition exactly.",
+        "validateInput() wraps zod's safeParse with a fixed error shape (DemosError). This adds real translation (Zod issue arrays \u2192 DemosError message), not pass-through.",
+        "The mechanical scan reports indirection_hotspot_count=5, but on inspection these are chained method calls within single functions (url-validator.ts DNS chain, pay.ts redirect chain), not layered wrapper indirection.",
+        "wide_param_bags: session.ts has 22 config_bag_mentions. The large ConnectOptions object flows through connect.ts to DemosSession constructor. Each property is individually named and documented; there is no sub-object decomposition needed because the options are already minimal at the call site (most are optional).",
+        "The schemas.ts layer adds Zod schemas alongside TypeScript types \u2014 this is a parallel definition that adds runtime validation value. The compile-time sync assertions (lines 172-194) eliminate the risk of schema/type drift. This is legitimate abstraction.",
+        "discoverSources() does not use withToolWrapper \u2014 it manually replicates the session.touch() and onToolCall notification pattern. This is a minor inconsistency but not a meaningless abstraction; the tool has a different lifecycle (session is optional).",
+        "The guards layer (6 files) all use a consistent pattern: stateKey + checkAndAppend or loadState + lock. The abstraction is fully leveraged \u2014 zero copy-paste of the core pattern."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "discoverSources() manually replicates withToolWrapper boilerplate (touch + onToolCall) instead of using the wrapper, creating an inconsistency. The wrapper's optional-session design prevents direct reuse, but the duplication is a mild abstraction fitness gap.",
+      "sub_axes": {
+        "abstraction_leverage": 90.0,
+        "indirection_cost": 88.0,
+        "interface_honesty": 85.0,
+        "delegation_density": 100.0,
+        "definition_directness": 80.0,
+        "type_discipline": 88.0
+      }
+    },
+    "dependency_health": {
+      "evidence": [
+        "5 production dependencies: @anthropic-ai/sdk, @kynesyslabs/demosdk, proper-lockfile, yaml, zod \u2014 lean set for the scope",
+        "@anthropic-ai/sdk is used in src/lib/llm-provider.ts (lazy import) \u2014 outside the toolkit scope but within the repo. It is a production dep serving the LLM provider abstraction, not a dev dep that leaked.",
+        "zod is used in schemas.ts and pay.ts \u2014 genuinely needed for runtime validation. Toolkit-wide usage justifies inclusion as a production dep.",
+        "@kynesyslabs/demosdk is the core SDK \u2014 central to all chain operations. Used via lazy import in connect.ts and sdk-bridge.ts to avoid module-level side effects. Properly scoped.",
+        "proper-lockfile used exclusively in state-store.ts for file-level locking. This is the right tool for cooperative file locks with stale TTL support \u2014 not a heavy dep pulled for light use; no native Node.js API provides equivalent semantics.",
+        "yaml dep is in production dependencies but not used anywhere in src/toolkit/. It is used in other parts of the repo (YAML config parsing for agent persona files, strategy files). The toolkit itself has no YAML dependency.",
+        "No duplicate libraries for the same purpose: no moment+dayjs, no axios+fetch, no lodash+native \u2014 fetch is used directly for HTTP in pay.ts, no wrapper lib added",
+        "No circular dependency cycles: the import graph is strictly layered (tools/ \u2192 toolkit/ \u2192 guards/, toolkit/ \u2192 tools/ for barrel only). No cycles visible in coupling_matrix.",
+        "4 dev dependencies: @auth/agent, @types/proper-lockfile, playwright, tsx, typescript, vitest \u2014 appropriately scoped. playwright is dev-only (used for TLSN browser automation, currently disabled). @auth/agent appears to be a dev/tooling dep.",
+        "Version pinning: all dependencies use ^ (caret) semver ranges. No exact pins. This is standard Node.js practice; no evidence of conflicts.",
+        "No evidence of unused production dependencies in the toolkit itself \u2014 all 5 are used somewhere in the repo's production code."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "yaml is in production dependencies but the toolkit itself does not use it \u2014 it is used only in CLI/config layers outside the toolkit scope. This is not a true defect for the repository as a whole, but represents a slightly broad production dep set from the toolkit perspective."
+    },
+    "low_level_elegance": {
+      "evidence": [
+        "Guards uniformly use checkAndAppend with a closure for the predicate \u2014 each guard's check logic is a pure inline function: clear, bounded, local state mutation (prune + maybe append) in one place",
+        "pay.ts is the most complex file (320 LOC, 9 named steps) \u2014 but each step is logically distinct (idempotency check, SSRF, spend cap, parse 402, payee validation, amount guard, settle, record spend, retry). No unrelated concerns mixed in. The step comments (Step 1-9) make the sequence readable.",
+        "fetchWithValidatedRedirects in pay.ts uses a while(true) loop with explicit redirectsFollowed counter and max-hops guard \u2014 the infinite loop pattern requires reading carefully but the guard is correct and the purpose is clear",
+        "verify.ts has a control flow issue: the retry loop (lines 29-56) uses both 'continue' and a post-loop fallback err() (lines 59-62). The post-loop return is dead code \u2014 the loop runs attempt=0..3 (4 iterations for RETRY_DELAYS_MS.length=3), and on the last attempt both catch branch and the non-confirmed branch return directly. The outer fallback is never reached but looks load-bearing.",
+        "tip.ts resolves the post author by fetching the full feed and doing a linear scan (lines 38-55) \u2014 this works but the approach of fetching 50 posts to resolve one author is implicit, side-effectful, and not surfaced in the function signature or docstring",
+        "scan.ts's identifyOpportunities function (lines 49-62) uses a hardcoded reaction threshold of 5 and score of 0.7 \u2014 magic numbers with no named constants or explanation",
+        "checkBlockedIpv4 in url-validator.ts is a long chain of if-returns covering 9 IP ranges \u2014 each check is a single condition with an informative reason string. Not deep nesting; direct and readable.",
+        "connect.ts's detectContainer() reads three files in sequence: /.dockerenv, /proc/1/cgroup, /proc/mounts \u2014 each wrapped in try/catch. This is correctly structured sequential fallback, not defensive sprawl; the comment explains WSL2 detection.",
+        "backoff.ts uses non-null assertions (lastResult!) at the end of withBackoff() \u2014 the assertions are correct (loop runs at least once) but the type could be narrowed by initializing lastResult as the first iteration result directly",
+        "sdk-bridge.ts publishHivePost has a 6-fallback txHash extraction chain (lines 251-256) to handle multiple SDK response shapes \u2014 this is necessary given SDK instability but visually complex",
+        "stateKey() in state-helpers.ts is a 2-line function that returns a string \u2014 minimal and precise. sleep() is a standard 1-liner. Both are appropriately not extracted further.",
+        "The 'while (true)' in fetchWithValidatedRedirects is bounded by redirectsFollowed >= MAX_REDIRECT_HOPS guard and by 'return response' on non-redirect status. The loop termination conditions require active inspection to confirm correctness.",
+        "In tip.ts, the linear feed scan for author resolution (O(n) over 50 posts) with no pagination or targeted lookup is a functional but imprecise approach \u2014 works for small feeds, fragile for deep posts",
+        "parseWallet in connect.ts handles 3 wallet formats (JSON with address, JSON with mnemonic, key=value) via a try/catch + instanceof chain. Each format path returns early or throws. The flow is somewhat convoluted but each path is distinct and commented."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "mid_level_elegance": {
+      "evidence": [
+        "withToolWrapper pattern in tool-wrapper.ts cleanly extracts cross-cutting concerns (timing, touch, onToolCall, error wrapping) with a single consistent calling convention across 7+ tools",
+        "Guards interface cleanly at boundary: checkWriteRateLimit(store, walletAddress) + checkDedup(store, walletAddress, text) \u2014 both return DemosError | null, consumed identically in publish.ts",
+        "checkAndAppend in state-helpers.ts provides single atomic lock-check-append primitive, eliminating dual-lock (check+record) races across guard implementations",
+        "session.getBridge() is the clean boundary: tools call it, SDK isolation is contained in sdk-bridge.ts, tools never touch Demos SDK directly",
+        "publish.ts executePublishPipeline is 30 lines: attest \u2192 publishHivePost \u2192 return txHash. Clean linear composition with bridge as single collaborator",
+        "connect.ts passes signingHandle: { demos, bridge } into DemosSession constructor \u2014 the bridge is stored as a field inside the signing handle object rather than a named property on the session, requiring getBridge() to cast and check handle?.bridge which is fragile",
+        "connect.ts hardcodes DEFAULT_SUPERCOLONY_API = 'https://www.supercolony.ai' when calling createSdkBridge \u2014 apiBaseUrl is not threaded from ConnectOptions, so callers cannot override it without modifying source",
+        "publish.ts reply() does input validation (validateInput) then calls publish() which does its own guard + pipeline \u2014 two layers both propagate error but validation seam is not through withToolWrapper for reply, reply has its own manual err() with latencyMs: 0",
+        "scan.ts fetchFeed uses a 5-way fallback chain for response shape normalization (data?.posts ?? data?.results ?? data?.items ?? data?.data ?? data) \u2014 this ad-hoc glue-code is necessary but not centralized; similar response normalization may exist elsewhere",
+        "sdk-bridge.ts publishHivePost has a 6-way txHash extraction fallback chain (confirmHash || results[...].hash || response.data.transaction.hash || ...) \u2014 SDK response shape uncertainty encoded as boundary-glue rather than a documented SDK contract",
+        "pay.ts is the most complex tool at 320 LOC with 9 sequential labeled steps \u2014 the flow is documented with inline step comments and is coherent, but it is not decomposed; D402 challenge/response is a single function rather than composed collaborators",
+        "attest.ts TODO comment: 'TODO(sdk-bridge): wire to session's SDK bridge once connect() creates it' \u2014 this comment is stale/misleading, connect() already creates the bridge, attest already calls session.getBridge()",
+        "Error propagation across boundaries is consistent: guards return DemosError | null, tools translate via err(error, localProvenance(start)), withToolWrapper catches and wraps throw paths"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "test_strategy": {
+      "evidence": [
+        "21 test files spanning 24 production files \u2014 near 1:1 test-to-module ratio, strong coverage intent",
+        "integration.test.ts covers behavioral contracts for attest, scan, react, verify, tip, publish, reply all in one file using a shared mock SdkBridge \u2014 genuine cross-module verification exists",
+        "pay-d402.test.ts mocks fetch globally and bridge.payD402, covering the full 9-step D402 challenge/response flow including idempotency, spend cap, payee validation, and receipt recording",
+        "tools.test.ts covers validation rejection paths (empty txHash, invalid type, spend cap enforcement) for react, tip, scan, verify, attest, discoverSources, pay with strong assertions on error codes",
+        "guard tests (write-rate-limit, dedup-guard, tip-spend-cap, pay-spend-cap, backoff, pay-receipt-log) each have dedicated test files with boundary and lock behavior",
+        "state-helpers.ts has 7 importers but NO direct test file \u2014 covered only transitively through guard tests that call guards that call state-helpers",
+        "scan.ts (99 LOC, high complexity, 1 importer via index) has no direct test \u2014 covered only through tools.test.ts bridge failure path and integration.test.ts happy path; the fetchFeed response normalization (5-way fallback) has no targeted shape-variation tests",
+        "verify.ts (92 LOC) has no direct test \u2014 covered only through integration.test.ts which mocks the bridge; the retry logic with RETRY_DELAYS_MS [3000, 5000, 10000] is never tested against actual delays or retry exhaustion",
+        "discover-sources.ts (109 LOC, 4 detectors, highest signal density) has no direct test file \u2014 covered only via index.ts import. Its deprecated symbols (VALID_STATUSES, normalizeStatus) and JSON.parse without try/catch have no test coverage",
+        "Integration test for attest() in integration.test.ts has conditional assertion: if (result.ok) { ... } else { expect(result.error.code).toBeDefined() } \u2014 the else branch is almost tautological and does not assert the error code or message when DNS fails",
+        "publish integration test also uses conditional assertion: if (result.ok) { ... } else { expect(result.error).toBeDefined() } \u2014 no negative path assertion strength",
+        "All guard tests use tmpdir-based FileStateStore and clean up with afterEach \u2014 no timing dependency or cross-test state pollution detected",
+        "No snapshot tests found \u2014 snapshot overuse is not a concern",
+        "No test uses vi.useFakeTimers despite verify.ts having 3s/5s/10s delays \u2014 integration test uses 25000ms timeout suggesting real sleep in CI"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "api_surface_coherence": {
+      "evidence": [
+        "All tools except discoverSources share a consistent calling convention: fn(session: DemosSession, opts: XxxOptions) => Promise<ToolResult<XxxResult>>",
+        "discoverSources breaks the uniform pattern: first param is DemosSession | null (nullable) where all other tools require DemosSession \u2014 callers cannot predict whether session is required without reading the signature",
+        "All tools except discoverSources use withToolWrapper \u2014 discoverSources manually replicates start time, session.touch(), onToolCall, and err() with hardcoded {path: 'local', latencyMs: 0-ish} instead of using localProvenance. This makes the observability guarantee inconsistent",
+        "connect() returns DemosSession directly (not ToolResult<DemosSession>) \u2014 all other tools return ToolResult<T>. This is an intentional API design decision (connect throws on failure), but a developer reading the barrel export sees a mixed pattern",
+        "disconnect() is synchronous void \u2014 all other exported functions are async. The sync/async mix at the public surface is documented by design but is an outlier",
+        "scan() accepts opts?: ScanOptions (optional) \u2014 all other tools require opts (non-optional). opts can be undefined for scan but tools.test.ts must pass undefined explicitly",
+        "reply() accepts ReplyOptions (which has required parentTxHash, optional category, optional attestUrl) \u2014 publish() accepts PublishDraft (which has required text + category, optional parentTxHash). The two types overlap structurally but differ in what is required, creating conceptual friction when choosing between them",
+        "All tool inputs (except connect opts) flow through validateInput(schema, opts) at the tool entry \u2014 consistent validation boundary exists",
+        "Error codes are a typed union (DemosErrorCode) with 10 values, consistently returned in DemosError.code \u2014 callers can switch on code without string comparison",
+        "Public API has no function with >5 parameters \u2014 all accept (session, opts) exactly",
+        "Mixed sync/async detected by scan: src/toolkit/tools/connect.ts, src/toolkit/guards/pay-receipt-log.ts, src/toolkit/guards/state-helpers.ts, src/toolkit/tools/tool-wrapper.ts all appear in sync_async_mix list \u2014 tool-wrapper.ts has localProvenance which is sync, not a public API concern",
+        "discoverSources exports are named 'discoverSources' (camelCase) but the DiscoverSourcesOptions has matchThreshold field which is not used within discoverSources itself \u2014 it is a dead option field"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "authorization_consistency": {
+      "evidence": [
+        "No route handlers, HTTP middleware, or RLS tables exist \u2014 this is a toolkit, not a web server. Auth consistency must be evaluated at the trust boundary layer: session gating, SSRF prevention, spend-cap enforcement, and credential handling.",
+        "All write/chain tools (publish, attest, tip, pay, react, scan, verify) uniformly require a DemosSession parameter. discoverSources accepts `session: DemosSession | null` \u2014 explicitly documented as a read-only tool that requires no auth. This is intentional and clearly documented.",
+        "SSRF validation via validateUrl() is consistently applied at all three tools that accept caller-controlled URLs: attest.ts (line 30), pay.ts (line 59), and publish.ts executePublishPipeline (line 88). In pay.ts, each redirect hop also re-validates (line 267). The three sibling URL-accepting tools all apply the same control.",
+        "scan.ts, react.ts, verify.ts, tip.ts use only relative paths via bridge.apiCall() \u2014 absolute URL injection is blocked at the bridge boundary (sdk-bridge.ts line 173-174). These tools have no SSRF risk because they never accept caller-controlled URLs.",
+        "sdk-bridge.ts apiCall() (line 185): Bearer token is auto-attached when authToken !== AUTH_PENDING_TOKEN. All API-calling tools rely on this single enforcement point rather than managing tokens individually \u2014 this is the correct pattern.",
+        "CRITICAL: urlAllowlist is defined in ConnectOptions (types.ts line 108), stored in DemosSession (session.ts line 36), but never passed to validateUrl(). UrlValidationOptions has no allowlist parameter. A caller who configures urlAllowlist gets no filtering effect \u2014 the control is wired but dead.",
+        "CRITICAL: connect.ts authenticateFallback() (line 248) returns the string literal 'auth-pending' when no cached token exists. AUTH_PENDING_TOKEN in sdk-bridge.ts is '__AUTH_PENDING__'. These two strings are different. The apiCall guard checks `authToken !== AUTH_PENDING_TOKEN` (i.e., !== '__AUTH_PENDING__'). For address-only wallets with no auth cache, the session receives 'auth-pending' as its token, which passes the guard and causes apiCall to emit 'Bearer auth-pending' \u2014 an invalid token \u2014 to every SuperColony API call.",
+        "connect.ts auth failure path (line 224-227): when ensureAuth() throws, authToken is set to AUTH_PENDING_TOKEN and execution continues, creating a degraded session. The degraded-session pattern is intentional and documented, but combined with the sentinel mismatch in authenticateFallback, the auth posture for read-only wallet sessions is unpredictable.",
+        "Spend-cap guards (tip-spend-cap, pay-spend-cap, write-rate-limit) are wallet-scoped via stateKey() and persist across session restarts. Consistent enforcement across all spending tools.",
+        "pay.ts payee trust gate (line 140-148): session.payPolicy.requirePayeeApproval is checked before any settlement. The trusted payees check on line 141 does `const trusted = session.payPolicy.trustedPayees ?? []` \u2014 this ?? [] is redundant (DemosSession constructor always initializes trustedPayees to []), but it is not an auth gap."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "ai_generated_debt": {
+      "evidence": [
+        "tool-wrapper.ts: docstring at lines 11-17 enumerates 5 numbered steps for a 26-line function that speaks for itself \u2014 the comment adds ceremony over insight",
+        "state-helpers.ts: comments '// Prune old entries', '// Check condition', '// Append entry if provided', '// Always persist pruned state' restate the code immediately below rather than explaining WHY",
+        "session.ts: '// Configuration' and '// Internal state' section labels above property groups add zero information \u2014 the properties are self-describing",
+        "attest.ts: executeDahrAttestation() is a 3-line pass-through that calls bridge.attestDahr() and returns a shaped result \u2014 barely avoids the pure pass-through threshold but adds minimal value",
+        "discover-sources.ts: duplicate SourceStatus type defined locally at line 100 alongside the canonical one exported from types.ts \u2014 both VALID_STATUSES and normalizeStatus have zero importers outside the file",
+        "sdk-bridge.ts: transferDem() has two null/validity checks ('if (!to || typeof to !== \"string\")' and 'if (!Number.isFinite(amount) || amount <= 0)') that duplicate the Zod validation already enforced by TipOptionsSchema before this code is called \u2014 defensive overengineering at a non-API boundary",
+        "guards (dedup-guard.ts, write-rate-limit.ts, tip-spend-cap.ts, pay-spend-cap.ts): recordX() functions each re-implement the load \u2192 prune \u2192 push \u2192 set pattern identically (4 duplications) rather than reusing checkAndAppend from state-helpers.ts \u2014 identified backward-compat wrappers but the record functions still duplicate logic",
+        "No console.log dumps, entry/exit trace logging, or nosy debug patterns found anywhere in the toolkit",
+        "No generic names (handleData, processItem) found \u2014 all identifiers use domain vocabulary"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Restating inline comments in state-helpers.ts, a local SourceStatus duplicate in discover-sources.ts, and 4 near-identical recordX() implementations that don't reuse checkAndAppend despite it being available are the primary gaps preventing 90+."
+    },
+    "incomplete_migration": {
+      "evidence": [
+        "write-rate-limit.ts: checkAndRecordWrite() is the new unified API (line 24); checkWriteRateLimit() and recordWrite() are labeled '(backward compat)' wrappers forwarding to it (lines 55-59, 62-78). The old separate-functions API is the only one exported from index.ts.",
+        "dedup-guard.ts: same pattern \u2014 checkAndRecordDedup() is the unified API; checkDedup() and recordPublish() are '(backward compat)' wrappers (lines 54-81)",
+        "tip-spend-cap.ts: same pattern \u2014 checkAndRecordTip() is unified; checkTipSpendCap() and recordTip() are '(backward compat)' wrappers (lines 85-114)",
+        "index.ts exports only checkWriteRateLimit/recordWrite, checkTipSpendCap/recordTip, checkDedup/recordPublish \u2014 none of the new checkAndRecord* API is exported",
+        "This is an in-progress migration: the new unified API exists but consumers cannot reach it without importing directly from the guard files, bypassing index.ts",
+        "discover-sources.ts: VALID_STATUSES (line 102) and normalizeStatus (line 104) have 0 importers outside the file \u2014 confirmed by scan evidence \u2014 but they ARE used internally (lines 88, 105). The scan finding 'Deprecated: VALID_STATUSES (0 importers)' and 'Deprecated: normalizeStatus (0 importers)' reflect 0 external importers, not actual dead code.",
+        "scan evidence: 'Deprecated: Source (2 importers)' in types.ts \u2014 Source interface is actively used in types.ts (DiscoverSourcesResult.sources) and discover-sources.ts. Not actually deprecated.",
+        "scan evidence: 'Deprecated: active (1 importer)' in discover-sources.ts \u2014 this is the string literal 'active' used as a default fallback in normalizeStatus(), not a deprecated symbol",
+        "No mixed JS/TS files found \u2014 codebase is 100% TypeScript",
+        "No stale migration TODO comments referencing 'migrate', 'legacy', or 'remove after' \u2014 the two TODOs (sdk-bridge, toolkit-mvp) reference future wiring, not stale migration debt",
+        "No old+new API coexistence patterns (class vs functional, axios vs fetch, moment vs dayjs)"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "package_organization": {
+      "evidence": [
+        "Structure data: 3 directories with clear, non-ambiguous names: src/toolkit/ (core types + session + state store + schemas + url-validator + barrel), src/toolkit/guards/ (rate limiting, dedup, spend caps, backoff), src/toolkit/tools/ (one file per tool). Names reflect exact responsibilities.",
+        "coupling_matrix shows unidirectional flow: tools/ \u2192 toolkit/ (34 edges), guards/ \u2192 toolkit/ (7 edges), toolkit/ \u2192 tools/ (9 edges, via barrel re-export), toolkit/ \u2192 guards/ (6 edges, via barrel re-export). No reciprocal cycles.",
+        "directory_profiles: src/toolkit/ has avg_fan_in 7.0 (types.ts=21, session.ts=11, schemas.ts=10) \u2014 genuinely core, correctly placed at top level. All 7 files have meaningful importers.",
+        "tools/ avg_fan_in 1.6 \u2014 tools are consumed via index.ts barrel, so low direct fan-in is expected. Correctly placed as leaf consumers of the core.",
+        "guards/ avg_fan_in 2.6 \u2014 consumed by tools and exposed via barrel. Correct placement.",
+        "No root-level straggler files: all 24 production files live under src/toolkit/{,guards/,tools/}. No misplaced files.",
+        "import-affinity: tools/ imports exclusively from src/toolkit/ (34 edges) and src/toolkit/guards/ (6 edges) \u2014 no cross-sibling imports, no reaching outside the subsystem.",
+        "toolkit/ re-exports both tools/ and guards/ via index.ts \u2014 this is the intentional barrel/facade pattern (explicitly in skip list).",
+        "No flat directory overload: largest directory is tools/ with 10 files, all tool-module files \u2014 cohesive responsibility set.",
+        "tool-wrapper.ts lives in tools/ despite being a cross-cutting utility for tools \u2014 fan_in of 7 from other tools confirms it belongs in tools/ (all its importers are tools). No affinity mismatch.",
+        "state-helpers.ts lives in guards/ with fan_in 7, all from guards/ \u2014 correct placement."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "tool-wrapper.ts is a utility that serves all tools but lives inside tools/ \u2014 a new developer might not find it immediately when looking for shared utilities. No structural violation, but slight navigability cost. schemas.ts in toolkit/ could arguably be in a validation/ subfolder but at 10 importers and tight coupling to types.ts, current placement is defensible."
+    },
+    "initialization_coupling": {
+      "evidence": [
+        "connect.ts line 252: 'let _isContainer: boolean | null = null' \u2014 module-level mutable singleton that caches detectContainer() result. Explicitly documented as 'cached \u2014 container status is invariant per process'. Not a boot-order issue, but does create shared state across imports.",
+        "discover-sources.ts line 18: 'const catalogCache = new Map<string, Source[]>()' \u2014 module-level cache singleton keyed by catalog path. Safe for process lifetime, but tests importing this module share the same cache instance.",
+        "discover-sources.ts line 21-26: BUNDLED_CATALOG_PATH computed at import time using import.meta.url + string regex replacement. Deterministic per file location but cannot be overridden without passing catalogPath to discoverSources(). Well-mitigated by the optional session.sourceCatalogPath override.",
+        "state-store.ts line 17: 'const DEFAULT_STATE_DIR = resolve(homedir(), \".config\", \"demos\")' \u2014 homedir() called at module scope. If HOME env changes between imports (rare in practice), the cached constant is stale. FileStateStore constructor accepts dir override, so test isolation is possible.",
+        "sdk-bridge.ts lines 108-109: 'let cachedTxModule: any = txModule ?? null; let cachedD402Client: any = null' \u2014 closure-scoped (inside createSdkBridge factory), NOT module-level. Correctly session-scoped. Not an initialization coupling issue.",
+        "All Demos SDK imports are lazy (dynamic await import()) \u2014 no module-level SDK initialization, no global state mutation at import time. This is a documented design goal in connect.ts: 'Uses lazy SDK imports to avoid module-level side effects'.",
+        "Zod schemas in schemas.ts are all module-level constants (pure, synchronous, no I/O) \u2014 acceptable per skip list ('Standard library initialization').",
+        "No environment variable reads at module scope (no process.env.X at top level). All env-dependent config flows through ConnectOptions at runtime.",
+        "No circular initialization dependencies \u2014 import graph is acyclic (tools \u2192 toolkit \u2192 no-import of tools).",
+        "Guards' DEFAULT_STATE objects (DEFAULT_STATE: { entries: [] }) are module-level constants. Each call to loadState() returns structuredClone(defaultValue) which correctly isolates state \u2014 no shared mutable reference passed to callers."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Two module-level singletons (_isContainer in connect.ts, catalogCache in discover-sources.ts) are shared across test runs importing those modules. Tests that need isolation from each other must work around these. The DEFAULT_STATE_DIR homedir() call at module scope is a minor environment read at import time."
+    },
+    "design_coherence": {
+      "evidence": [
+        "pay.ts is 321 LOC but has a single coherent responsibility: D402 challenge/response flow. The 9 numbered steps map clearly to the protocol. Helper extraction (fetchWithValidatedRedirects, withWalletSettlementLock, safeReadBody) is well-scoped.",
+        "sdk-bridge.ts: apiCall() catch block returns { ok: false, status: 0, data: err.message } \u2014 this is a silent failure that converts a network exception to a successful-looking ToolResult. Callers may not distinguish 'server said 500' from 'DNS failed'.",
+        "discover-sources.ts: loadCatalog() has a 3-line inline healthScore resolution that handles two shapes (entry.healthScore vs entry.rating.overall). This is a minor multi-shape mapping concern but not a design problem given catalog format variability.",
+        "url-validator.ts: checkBlockedIpv4() has high cyclomatic complexity (9 IP range checks) but each branch is a single, independent IP range check. This is data-driven enumeration, not tangled logic. No extraction would improve it.",
+        "scan.ts: fetchFromSkillDojo() is declared async but only throws synchronously. This is acceptable as a stub \u2014 the async signature is needed for the future wired implementation. Not a design problem.",
+        "dedup-guard.ts has backward-compat wrappers (checkDedup, recordPublish) that are thin delegators. The prompt says NOT to flag pass-through wrappers as design problems when they have clear semantic purpose (backward compat).",
+        "async_no_await across 6 files: scan.ts fetchFromSkillDojo throws (stub), dedup-guard.ts checkDedup/recordPublish delegate to async functions (implicitly returns promise), write-rate-limit.ts backward-compat wrappers same pattern. These are delegation wrappers, not logic errors.",
+        "connect.ts is 282 LOC handling: input validation, wallet file security (TOCTOU, symlink), credential parsing (3 formats), SDK connection, auth, session construction. This mixes 5 concerns in one function \u2014 a candidate for extraction into focused helpers.",
+        "The toolkit follows a consistent structural pattern: public tool function \u2192 withToolWrapper \u2192 guards \u2192 bridge calls \u2192 ok/err. This is data-driven via withToolWrapper and is positive design.",
+        "Parameter grouping in createSdkBridge (5 params) is appropriate \u2014 each param has independent semantic meaning (demos, apiBaseUrl, authToken, fetchImpl, txModule)."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "connect.ts mixes 5 distinct concerns in a single function body (file security, credential parsing, SDK connection, auth, session construction). The apiCall() silent-catch pattern in sdk-bridge.ts converts network exceptions to a response shape that callers cannot distinguish from an HTTP error response."
+    },
+    "contract_coherence": {
+      "evidence": [
+        "PublishDraft.attestUrl is typed as optional (attestUrl?: string) in types.ts line 129, but executePublishPipeline() throws 'PublishDraft.attestUrl is required' at runtime (publish.ts line 84). The type annotation promises callers can omit this field; the runtime rejects it.",
+        "schemas.ts line 14 documents this as 'intentional two-layer validation' but the documented intent does not fix the contract lie \u2014 the TypeScript type says optional, the function requires it.",
+        "verify.ts checkConfirmation() returns blockHeight: 1 hardcoded (line 87) when a post is found. VerifyResult.blockHeight implies real chain block height; always returning 1 is a contract violation \u2014 caller receives a meaningless numeric value as if it were meaningful.",
+        "connect() returns DemosSession via Promise<DemosSession> and throws DemosError on failure \u2014 consistent contract, no silent returns.",
+        "All 10 tools return Promise<ToolResult<T>> consistently \u2014 no mixed throw/return across the module API.",
+        "DemosSession.getBridge() throws an Error (not DemosError) if bridge is not available. The session's public contract via getAuthToken(), getSigningHandle(), getBridge() all throw on expired \u2014 consistent.",
+        "disconnect(session) returns void and calls session.expire() \u2014 contract is honest (no return value claimed).",
+        "checkAndRecordDedup and checkDedup/recordPublish backward-compat wrappers: checkDedup is documented as 'Check if text is a duplicate (backward compat)' \u2014 matches its behavior exactly.",
+        "ok() and err() factory functions have matching signatures and return types \u2014 ToolResult<T> shape is consistent across all callers.",
+        "SdkBridge interface: signAndBroadcast() is declared in the interface but not used by any tool \u2014 it's a dead interface method that consumers see but cannot practically use without knowing what txData shape to pass.",
+        "scan.ts fetchFromSkillDojo(): declared as returning Promise<ScanPost[]> but always throws \u2014 this is a stub, acceptable per the 'protocol/interface stubs' skip rule.",
+        "apiCall() in sdk-bridge.ts: declared return Promise<ApiCallResult>, but network exceptions are caught and returned as { ok: false, status: 0 } \u2014 the interface says it returns ApiCallResult, and it does, but the distinction between status:0-from-network vs status:0-from-server is lost. This is a partial contract lie on the ApiCallResult semantics."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "logic_clarity": {
+      "evidence": [
+        "verify.ts lines 59-62: return err(demosError('CONFIRM_TIMEOUT', 'Verification exhausted all retries', true), ...) after the for-loop is dead code. The loop iterates attempt 0..RETRY_DELAYS_MS.length (0..3 inclusive). On the final iteration (attempt=3), either the try block returns ok (confirmed or confirmed:false) or the catch block returns err. The post-loop return is never reached.",
+        "pay-spend-cap.ts lines 34-44: amount validity check order is inverted. Line 34 checks `amount > policy.maxPerCall` before line 42 validates `!Number.isFinite(amount) || amount <= 0`. If amount is negative (e.g. -5), -5 > maxPerCall is false, passes through to the spending cap check. The isFinite/positive check should guard first, then compare against policy.",
+        "scan.ts fetchFromSkillDojo(): async function that only throws synchronously \u2014 never awaits. Per the rubric this is a stub, and the skip rule covers 'framework lifecycle methods that must be async by contract'. Since the future implementation will need async, this is acceptable. Not an actionable issue.",
+        "connect.ts detectContainer(): assigns result = false, then three try blocks that may set result = true. The logic is clear and sequential. No dead branches.",
+        "publish.ts executePublishPipeline(): if (!draft.attestUrl) throw \u2014 this early return guard is clear and intentional.",
+        "sdk-bridge.ts publishHivePost(): multi-shape txHash extraction chain (lines 251-256) uses 6 fallback expressions. The chain is correct: each fallback is for a distinct SDK response shape. No identical branches.",
+        "withToolWrapper: isDemosError check uses three property presence checks (code, message, retryable). These are distinct conditions \u2014 not a simplifiable boolean.",
+        "dedup-guard.ts checkAndRecordDedup: the `record` boolean parameter controls whether newEntry is passed to checkAndAppend. The ternary `record ? { timestamp: Date.now(), hash } : undefined` is clear. Not a simplification candidate.",
+        "state-store.ts lock(): `return async () => { await release(); }` \u2014 the async wrapper is necessary because the StateStore Unlock type is () => Promise<void>, and release() may or may not be async depending on the lockfile library version. Acceptable.",
+        "pay.ts fetchWithValidatedRedirects: `while(true)` loop with early returns for non-redirect and max-hop breach. Pattern is clear and correct \u2014 no identical branches.",
+        "verify.ts checkConfirmation: the outer try/catch re-wraps the exception with additional context. This is not dead code \u2014 it's the exception-path for network failures that the caller needs to distinguish from 'post not found'."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "type_safety": {
+      "evidence": [
+        "types.ts: Every public option type (ConnectOptions, PublishDraft, ReplyOptions, ReactOptions, TipOptions, ScanOptions, VerifyOptions, AttestOptions, DiscoverSourcesOptions, PayOptions, TipPolicy, PayPolicy), result type (PublishResult, ScanResult, VerifyResult, AttestResult, PayResult, TipResult, ReactResult, DiscoverSourcesResult), and error type (DemosError, DemosErrorCode) is fully annotated with no any. This is 100% of the public API surface.",
+        "schemas.ts: Compile-time sync assertions (lines 173-194) verify that Zod schema output extends TypeScript interface and vice versa. These are zero-runtime-cost type guards that prevent schema/interface drift. A strong positive pattern.",
+        "sdk-bridge.ts line 105: txModule parameter typed as `{ store: Function; confirm: Function; broadcast: Function }`. Bare Function provides no parameter or return type checking. Used at tx.store(encoded, demos), tx.confirm(storeTx, demos), tx.broadcast(validity, demos) \u2014 wrong argument types pass TypeScript validation silently.",
+        "sdk-bridge.ts lines 108-109: `let cachedTxModule: any = txModule ?? null` and `let cachedD402Client: any = null`. Both become typed after dynamic import but the cache slot is any \u2014 all downstream uses lose type information at cache-hit paths.",
+        "sdk-bridge.ts lines 119, 205, 272: `(demos as any).web2.createDahr()`, `(demos as any).sendTransaction()`, `(demos as any).transfer()` \u2014 these methods are not in the Demos SDK's declared TypeScript interface. The casts are SDK-gap-forced, not design-negligent. No comment explains why.",
+        "sdk-bridge.ts lines 249-256: Six `(validity as any)` and `(result as any)` casts for txHash extraction across multiple SDK response shapes. Each cast produces undefined silently if the SDK response changes shape \u2014 no runtime shape validation accompanies these casts.",
+        "discover-sources.ts line 100: `type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'` \u2014 a local non-exported type definition that exactly duplicates the exported SourceStatus in types.ts line 237. The file imports Source from types.ts but not SourceStatus. If types.ts adds a status (e.g., 'suspended'), discover-sources.ts will silently diverge and normalizeStatus will return 'active' for the new value instead of normalizing it correctly.",
+        "connect.ts line 187: `): Promise<{ demos: any; address: string; authToken: string }>` \u2014 the demos field typed as any. sdk-bridge.ts line 11 shows `import type { Demos } from '@kynesyslabs/demosdk/websdk'` is available \u2014 Demos IS importable as a type. The any return in connectSdk() loses type safety on the Demos instance throughout its usage in the session.",
+        "scan.ts, verify.ts, tip.ts: feed responses deserialized as `result.data as Record<string, unknown>` then progressively narrowed with runtime checks. This is the expected pattern for dynamic API responses \u2014 not a typing defect.",
+        "session.ts: signingHandle stored as unknown via Symbol and retrieved with `as { bridge?: SdkBridge }`. The cast is unsound at runtime but reasonable given the Symbol-keyed privacy pattern. The bridge? optional field means getBridge() correctly throws if the bridge is absent.",
+        "No @ts-ignore or @ts-expect-error appears in any toolkit source file. All type escapes are explicit `as` casts with visible, localized scope.",
+        "schemas.ts lines 76-77: stateStore and onToolCall are z.any() in Zod schemas with explanatory comments ('runtime object \u2014 can't validate methods', 'runtime callback \u2014 passthrough'). These are justified \u2014 Zod cannot verify interface method presence at parse time."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The toolkit has a clear and deliberately maintained three-layer structure (tools \u2192 core \u2192 guards) with no cycles and strict directional dependencies. The index.ts barrel is the only intentional back-edge from core to tools, and it serves a documented facade purpose. The two confirmed issues \u2014 connect.ts reaching into src/lib/auth.js and the module-level catalog cache in discover-sources.ts \u2014 are isolated boundary violations that don't undermine the overall architecture.",
+      "score_rationale": "This scores above 85 because the dependency structure is coherent, no cycles exist, and the hub modules (types.ts, session.ts) have appropriate fan-in for their role. The connect.ts cross-boundary dynamic import is a real violation \u2014 toolkit tools should not depend on app-layer lib code \u2014 but it's isolated to one file. The catalog cache is low-severity shared mutable state. These pull the score below 90 but don't approach the recurring-violation pattern of an 80."
+    },
+    "high_level_elegance": {
+      "dimension_character": "The toolkit has strong, deliberate decomposition: directory layout maps to capability boundaries, the three-layer pattern (tools/session/guards) is applied uniformly, and the public API surface is well-organized. The main tension is that the public surface has minor inconsistencies \u2014 one nullable-session tool, backward-compat guard wrappers doubling the guard API, and an inline schema definition in pay.ts \u2014 that a new engineer would notice as 'why is this one different?'",
+      "score_rationale": "This scores at 87 \u2014 solidly above 80 but not at 90. The decomposition is coherent and a new engineer can predict ownership boundaries. The inconsistencies (nullable session in discoverSources, dual guard surface, misplaced schema) don't undermine the architecture but do create friction when reading the public API. They're the kind of 'almost uniform' issues that push a score below 90."
+    },
+    "convention_outlier": {
+      "dimension_character": "The toolkit has strong naming and file organization conventions \u2014 camelCase throughout, kebab-case files, named exports only, consistent guard behavioral protocols. The main friction is the dual guard API surface: old check/record pairs coexist with unified checkAndRecord functions in the same module, exported side by side. A developer reading the public API must choose between two conventions without obvious guidance on which to use.",
+      "score_rationale": "This scores at 83 \u2014 solid but with noticeable friction. The convention foundation is clean (naming, file organization, export patterns). The dual guard API is the primary drag: it's a convention island within the guards subsystem that a new engineer would stumble over. The duplicate SourceStatus type is a minor but concrete inconsistency. These pull the score below 85 but don't reach the 80-level 'recurring friction' threshold."
+    },
+    "error_consistency": {
+      "dimension_character": "The toolkit has a well-defined two-layer error model: guards return DemosError|null, tools return ToolResult<T>, and withToolWrapper translates throws to typed errors at a single boundary. This architecture is sound and consistently applied across most of the codebase. The friction comes from several concrete gaps: a silent error swallow in scan.ts, JSON.parse without local error handling in discover-sources.ts, and validation-order dependency in two spend-cap guards that relies on NaN arithmetic properties being falsy.",
+      "score_rationale": "This scores at 76 \u2014 in the 'mixed' range. The structural error model is correct and coherent, which keeps it well above 60. The concrete issues \u2014 silent swallow, unguarded JSON.parse, and subtle validation-order dependencies \u2014 are not isolated outliers but spread across multiple files in a pattern suggesting the error handling discipline was applied carefully in some areas (guards, tool-wrapper) but less carefully in others (fallback paths, catalog loading). A developer can mostly predict error behavior but would encounter surprises in these specific paths."
+    },
+    "naming_quality": {
+      "dimension_character": "The codebase uses consistently intent-bearing names: the 'checkAndRecord*' pattern in guards precisely signals atomic check+write semantics, tool files are aligned to exported function names, and helpers like 'fetchWithValidatedRedirects' and 'stripPaymentProofOnCrossOriginRedirect' surface non-obvious behaviors in their names. The main friction is the backward-compatibility naming split in guards \u2014 three parallel naming surfaces (checkDedup/checkWriteRateLimit/checkTipSpendCap alongside their checkAndRecord* replacements) that a new developer encounters without immediately knowing which is current.",
+      "score_rationale": "The codebase scores between the 90 anchor ('names are mostly precise; a few generic or slightly misleading names require a second look') and the 80 anchor ('a developer regularly encounters names that don't communicate intent'). The backward-compat aliases create momentary confusion but the comments are explicit; 'executePublishPipeline' is the only true generic-verb instance and it is an internal helper. Overall a developer can mostly read names and predict behavior, placing this at 88."
+    },
+    "abstraction_fitness": {
+      "dimension_character": "The toolkit's abstractions are generally earned: withToolWrapper and checkAndAppend provide real leverage used by multiple callers with distinct payloads, and the SdkBridge interface correctly isolates an unstable external SDK. The main gap is that discoverSources() manually duplicates the touch+onToolCall notification that withToolWrapper would provide \u2014 the wrapper's session-required signature prevents reuse for a session-optional tool, leading to a small but real duplication that undermines the abstraction's coverage.",
+      "score_rationale": "The codebase scores near the 90 anchor ('generally strong with a few layers that feel overbuilt') but not quite there \u2014 the discoverSources duplication is a concrete abstraction coverage gap, and the StateStore one-implementation interface, while justified by testing needs, adds naming ceremony without production substitution pressure. A score of 84 reflects solid abstraction fitness with isolated rough edges that don't materially impede a developer but are visible."
+    },
+    "dependency_health": {
+      "dimension_character": "The dependency set is lean and purposeful: 5 production dependencies each serving a distinct need with no duplication or heavy-dep-for-light-use patterns. The import graph shows no cycles and all toolkit deps are accessed via lazy imports where appropriate to avoid module-level side effects. The only minor observation is that yaml appears in production deps but is not used within the toolkit boundary \u2014 it serves the broader agent infrastructure.",
+      "score_rationale": "This codebase scores near the 90 anchor ('mostly healthy with minor overlap or weight concerns'). The lean dep set, no duplication, no cycles, and appropriate use of lazy imports all point toward a well-maintained dependency graph. The yaml dep being production-scoped while only used in CLI/config layers is a minor observation that doesn't materially hinder any developer. Score of 91 reflects this \u2014 solidly healthy with one very minor note."
+    },
+    "low_level_elegance": {
+      "dimension_character": "Most functions in this codebase are direct and well-extracted: guards use single-responsibility closures, tool functions follow a consistent guard-then-execute shape, and helpers like checkBlockedIpv4 use flat if-return chains rather than nested conditions. The rough edges are concentrated in three areas: verify.ts has a dead-code fallback after an exhaustive retry loop that appears necessary but isn't; tip.ts uses a full feed scan to resolve a post author address, an implicit approach that scales poorly; and pay.ts's while(true) redirect loop and the 6-path txHash extraction in sdk-bridge.ts require careful reading to confirm correctness.",
+      "score_rationale": "The codebase scores between the 90 anchor ('mostly clean craft with isolated rough edges') and the 80 anchor ('a developer regularly encounters local complexity that makes individual functions harder to follow'). The dead-code path in verify.ts and the feed-scan author lookup in tip.ts are concrete craft issues that would cause a developer to pause \u2014 but they are isolated to specific tools, not systemic. The broader codebase (guards, url-validator, schemas) is clean and well-extracted. A score of 81 reflects good overall craft with specific functions that require extra mental effort to verify correctness."
+    },
+    "mid_level_elegance": {
+      "dimension_character": "The toolkit demonstrates solid mid-level discipline: the guard-boundary interface is uniform (DemosError | null), the withToolWrapper abstraction cleanly centralizes cross-cutting telemetry and error wrapping, and the bridge layer cleanly isolates SDK complexity. The main weaknesses are in glue-code density at SDK response normalization boundaries (sdk-bridge.ts txHash extraction, scan.ts feed shape normalization), one fragile handoff (bridge stored opaquely inside signingHandle requiring runtime type cast in getBridge()), and a non-injectable apiBaseUrl that leaks a hardcoded constant into the session/bridge boundary.",
+      "score_rationale": "This scores above average (mid-70s) because the dominant patterns \u2014 guard interface, withToolWrapper, bridge abstraction \u2014 are clean and consistent. It does not reach the high-80s because of meaningful seam weaknesses: the opaque signingHandle.bridge cast, the un-overridable apiBaseUrl in connect(), multi-fallback SDK response normalization encoded as inline glue rather than defined contracts, and the stale TODO in attest.ts. These are module-level friction points rather than codebase-wide entropy."
+    },
+    "test_strategy": {
+      "dimension_character": "The test suite has good structural coverage intent \u2014 21 test files, strong guard isolation, a real integration test with mock bridge, and TDD-quality assertions in the validation and guard layers. The primary weaknesses are untested high-complexity modules (scan.ts fetchFeed shape normalization, discover-sources.ts deprecated path, state-helpers.ts as a widely-shared utility with 7 importers), untested retry/exhaustion behavior in verify.ts, and conditional integration test assertions that collapse to near-tautologies on the failure branch.",
+      "score_rationale": "This scores in the low-70s. The test suite is clearly intentional (not vibe-tested) and covers the most critical business logic paths (guards, D402, publish pipeline). But three files with no direct tests \u2014 state-helpers.ts (7 importers), discover-sources.ts (highest signal density), and verify.ts retry logic \u2014 represent meaningful unverified behavior. The conditional assertions in integration tests reduce confidence that failure paths are actually tested rather than merely exercised."
+    },
+    "api_surface_coherence": {
+      "dimension_character": "The public toolkit API is strongly consistent across 9 of 10 tools: uniform (session, opts) calling convention, typed ToolResult<T> return envelope, DemosErrorCode-typed failures, and Zod input validation at every boundary. The coherence breaks at three points: discoverSources uses a nullable session parameter (breaking uniformity with all other tools), connect/disconnect are exceptions to the async-ToolResult pattern (intentional but undocumented as exceptions), and discoverSources manually reimplements what withToolWrapper provides instead of using it.",
+      "score_rationale": "Scores in the low-70s. The core tool API (publish, reply, react, tip, scan, verify, attest, pay) is highly coherent \u2014 parameter ordering, error envelope, and validation are uniform. The penalty comes from discoverSources being a clear outlier in three ways (nullable session, no withToolWrapper, dead matchThreshold field) that a developer hits immediately when learning the API surface. The connect/disconnect async exception is intentional but undocumented in the type signatures."
+    },
+    "authorization_consistency": {
+      "dimension_character": "The toolkit's trust boundary pattern is structurally sound: all tools require DemosSession, SSRF validation is uniformly applied to every caller-controlled URL, and the Bearer token is automatically attached at the bridge layer rather than per-tool. However, two concrete auth inconsistencies undermine an otherwise consistent posture: the urlAllowlist security control is configured by callers but never consumed by the validator (dead control), and authenticateFallback returns a different string than AUTH_PENDING_TOKEN, causing degraded read-only sessions to emit invalid Bearer tokens instead of unauthenticated requests.",
+      "score_rationale": "Score 76.0. The dominant auth pattern \u2014 session gating, SSRF for all external URLs, auto-Bearer at the bridge layer, wallet-scoped spend caps \u2014 is applied consistently across all sibling tools. The penalty is for two concrete gaps with real behavioral impact: the dead urlAllowlist (callers configure a security control that has zero effect) and the sentinel mismatch (read-only sessions silently send invalid credentials to the API). These are fixable single-file issues but represent meaningful trust boundary failures, not mere style drift."
+    },
+    "ai_generated_debt": {
+      "dimension_character": "The toolkit is largely free of LLM hallmark patterns \u2014 no debug dump logging, no generic names, no try-catch around pure expressions, and no nosy docstrings on trivial functions. The dominant debt pattern is restating comments that mirror the code line-by-line (state-helpers.ts section headers, tool-wrapper.ts step list) rather than explaining the why, plus a handful of defensive guards inside the SDK bridge that duplicate validation already enforced at the schema layer. Four guard recordX() functions are near-identical copies that bypass the shared checkAndAppend helper, and a local SourceStatus type in discover-sources.ts duplicates the canonical type in types.ts.",
+      "score_rationale": "At the 90 anchor a reviewer would see 'mostly clean with small pockets of boilerplate or restating patterns.' This codebase sits just below that: the restating comments appear in a high-traffic helper (state-helpers.ts, 7 importers), the record function duplication spans 4 files, and the double-validation in transferDem() is a textbook AI-generated defensive pattern. The issues are real but concentrated \u2014 the happy path is clean and the domain vocabulary is precise \u2014 placing this solidly at 85.5."
+    },
+    "incomplete_migration": {
+      "dimension_character": "The codebase shows one genuine incomplete migration: three guard modules introduced a unified checkAndRecord* API to allow atomic check+record in a single lock acquisition, but the old separate check/record functions were retained as 'backward compat' wrappers and the new API was never exported from index.ts. This means external consumers are locked into the two-call pattern and cannot benefit from the atomic API without importing internals. The mechanical scan signals for VALID_STATUSES, normalizeStatus, Source, and 'active' are false positives \u2014 those symbols are actively used within their files, not deprecated.",
+      "score_rationale": "At 80 ('solid but uneven') a developer encounters old and new patterns coexisting without clarity on which to follow. That description fits exactly: three guard files have a new checkAndRecord* API that is unreachable via the public index.ts, forcing callers to use the old split API even though the unified one exists. This is real migration friction, but it is contained to three guards and has zero impact on correctness \u2014 the wrappers are functionally correct. The absence of any other migration debt (no mixed JS/TS, no stale TODOs, no deprecated-but-called symbols) keeps the score from falling further. 78.0 reflects one concrete coexistence issue in a small, focused subsystem."
+    },
+    "package_organization": {
+      "dimension_character": "The three-directory layout (toolkit/, guards/, tools/) maps precisely to the three distinct responsibilities: shared contracts and session, safety guards, and tool implementations. Coupling flows unidirectionally without reciprocal edges. File counts are appropriate and every directory name accurately predicts its contents. The structure is small enough (24 files) that navigation is intuitive, and the barrel index.ts provides a single entry point without obscuring internals.",
+      "score_rationale": "At the 90 anchor ('mostly coherent with minor placement outliers'), this codebase meets or exceeds expectations. The coupling matrix shows clean layering, no stragglers, and no affinity mismatches. The only minor navigability question is whether tool-wrapper.ts (a shared utility used by 7 of 10 tools) should be at toolkit/ rather than tools/ \u2014 but since all its importers are tools, it is not a structural violation. Scoring at 91.5 rather than 95+ because of this single mild placement ambiguity and the tight 24-file scope which limits the evidence base for assessing navigability at scale."
+    },
+    "initialization_coupling": {
+      "dimension_character": "The toolkit demonstrates strong discipline around initialization coupling: all SDK imports are lazy, no environment variable reads occur at module scope, and the Zod schema constants are pure computations. The main gap is two module-level caches (_isContainer and catalogCache) that create shared state across test runs, and DEFAULT_STATE_DIR which captures homedir() at module load. These are isolated cases with clear rationale and runtime mitigations (overrides via constructor/options), not systemic patterns.",
+      "score_rationale": "At 90 ('mostly stable with limited boot-order fragility') a developer would trust the import model with limited exceptions. The toolkit earns this range: lazy SDK imports are explicitly the design goal, and the three module-level singletons are documented or mitigated. The score is pulled to 87 rather than 90 because catalogCache is shared across tests without a flush mechanism, and DEFAULT_STATE_DIR captures homedir() at import time which is the exact pattern flagged in the initialization_coupling rubric. These are genuine initialization coupling patterns, but their practical impact is low due to available overrides."
+    },
+    "design_coherence": {
+      "dimension_character": "The toolkit shows strong structural discipline: a consistent withToolWrapper pipeline pattern, well-scoped helper extraction in pay.ts and state-helpers.ts, and focused single-responsibility files throughout. The main tension points are connect.ts mixing 5 concerns in one function body and sdk-bridge.ts's apiCall() silently swallowing network errors into a response shape that callers cannot easily distinguish from HTTP errors.",
+      "score_rationale": "Score 78.5 reflects a codebase that is structurally sound with consistent patterns and good extraction discipline, but has two notable design issues: connect.ts accumulating 5 responsibilities and sdk-bridge.ts silent error conversion. The flagged 'high cyclomatic complexity' files (url-validator.ts, discover-sources.ts) are false positives \u2014 their branching is inherent to their domain. The 'monster function' in pay.ts is a sequential protocol implementation with a single clear responsibility."
+    },
+    "contract_coherence": {
+      "dimension_character": "The toolkit has strong structural contract discipline \u2014 10 tools uniformly return ToolResult<T>, error creation is centralized via demosError(), and session lifecycle methods are consistently honest about what they do and throw. However, two concrete contract violations undermine trust at the point of use: PublishDraft.attestUrl is typed optional but required at runtime, and verify() returns a hardcoded blockHeight: 1 that appears meaningful but is fabricated.",
+      "score_rationale": "Score 74.0 reflects a codebase with a correct and consistent macro-level contract (ToolResult<T> everywhere, typed error codes, no mixed throw/return within the module) but two runtime contract violations that directly mislead callers. The optional/required mismatch on attestUrl is a type annotation lie that TypeScript's type system cannot catch and will cause silent runtime failures. The hardcoded blockHeight:1 creates false data that callers may log or relay on-chain."
+    },
+    "logic_clarity": {
+      "dimension_character": "The toolkit's control flow is generally direct and intention-revealing \u2014 guard chains, retry loops, and protocol steps are clearly sequenced without redundant branching. Two concrete logic defects exist: a dead code path after verify()'s for-loop (unreachable return), and an inverted validation check order in pay-spend-cap.ts that allows invalid amounts to bypass the isFinite check.",
+      "score_rationale": "Score 76.5 reflects solid overall logic clarity with no egregious branching issues, but two correctness problems: dead code after the verify retry loop (indicating the loop termination condition was not fully reasoned through) and a guard ordering issue in pay-spend-cap.ts where the maxPerCall check fires before the isFinite/positive check, which can produce misleading error codes for invalid input."
+    },
+    "type_safety": {
+      "dimension_character": "The toolkit's public API surface is well-typed with no any escapes and schema-to-interface sync assertions that prevent drift. Type safety degrades at SDK integration boundaries in sdk-bridge.ts, where the Demos SDK lacks declared types for web2.createDahr(), sendTransaction(), and transfer() \u2014 forcing pervasive as any casts. The non-SDK-forced issues are: bare Function parameters for txModule (no call-site checking), any-typed cache variables, a duplicate SourceStatus type in discover-sources.ts, and the any-return on the demos field in connectSdk(). Together these create a codebase where the developer can trust public API types but must treat sdk-bridge.ts as a type-unsafe layer.",
+      "score_rationale": "Score 71.0. The public surface is genuinely strong (a high-confidence positive). The sdk-bridge.ts any saturation accounts for substantial type coverage loss at the most security-relevant integration point \u2014 the SDK boundary where tokens and chain operations live. Some of this is SDK-forced, but the bare Function typing for txModule and the any cache variables are not SDK-forced and could be improved. The duplicate SourceStatus type creates a silent divergence risk. This combination places the codebase in the 70-75 range: a developer can trust API types but must independently verify runtime behavior in sdk-bridge.ts."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "connect_ts_lib_auth_import",
+      "summary": "connect.ts dynamically imports src/lib/auth.js \u2014 toolkit tool crossing into app lib layer",
+      "confidence": "high",
+      "suggestion": "Move the auth functions needed by connect.ts (ensureAuth, loadAuthCache) into sdk-bridge.ts or expose them as optional injectable callbacks in ConnectOptions. This keeps the toolkit self-contained without reaching into src/lib/.",
+      "related_files": [
+        "src/toolkit/tools/connect.ts"
+      ],
+      "evidence": [
+        "Line 222: `const { ensureAuth } = await import('../../lib/auth.js')` \u2014 crosses from src/toolkit/tools/ up two levels into src/lib/",
+        "Line 244: `const { loadAuthCache } = await import('../../lib/auth.js')` \u2014 second cross-boundary import in the fallback auth path",
+        "The toolkit is designed as a framework-agnostic module (CLAUDE.md: 'framework-agnostic toolkit'), but connect.ts depends on a project-specific auth module"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "discover_sources_module_level_cache",
+      "summary": "Module-level mutable Map cache in discover-sources.ts creates shared process state",
+      "confidence": "medium",
+      "suggestion": "This is low-priority given the catalog is static per deployment. If the concern matters, document the cache-invalidation assumption in a comment (e.g., '// catalog is assumed static per process \u2014 restart to pick up catalog changes'). Alternatively, move the cache into DemosSession if per-session catalog isolation becomes needed.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts"
+      ],
+      "evidence": [
+        "Line 18: `const catalogCache = new Map<string, Source[]>()` \u2014 module-level mutable singleton",
+        "Cache is keyed by path but shared across all sessions in the same process \u2014 a session with a custom sourceCatalogPath could observe stale data if the catalog file changes mid-process",
+        "The toolkit architecture intends session-scoped isolation (DemosSession is session-scoped), but this cache is process-scoped"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "discover_sources_nullable_session",
+      "summary": "discoverSources() accepts nullable session breaking the uniform tool API contract",
+      "confidence": "medium",
+      "suggestion": "Accept `session?: DemosSession` (optional, not nullable) or split into two functions: `discoverSources(session, opts)` for session-aware path and a standalone `loadSourceCatalog(catalogPath?, opts)` for session-free use. The simplest fix is `session?: DemosSession` \u2014 callers pass undefined rather than null, which is idiomatic TypeScript.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/index.ts"
+      ],
+      "evidence": [
+        "Line 31 of discover-sources.ts: `export async function discoverSources(session: DemosSession | null, opts?: DiscoverSourcesOptions)`",
+        "All other 9 tools have signature `(session: DemosSession, ...)` \u2014 discoverSources is the only one accepting null",
+        "The docstring says 'Read-only, no session required (optional \u2014 for custom catalog path)' \u2014 this is a legitimate use case but breaks the uniform pattern"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "pay_ts_inline_schema",
+      "summary": "D402RequirementSchema defined in pay.ts breaks schemas.ts ownership boundary",
+      "confidence": "medium",
+      "suggestion": "Move D402RequirementSchema to schemas.ts alongside the other Zod schemas. Add a brief comment noting it validates 402 response bodies (not tool input), consistent with the existing schema documentation pattern.",
+      "related_files": [
+        "src/toolkit/tools/pay.ts",
+        "src/toolkit/schemas.ts"
+      ],
+      "evidence": [
+        "pay.ts lines 17-23: `const D402RequirementSchema = z.object(...)` \u2014 Zod schema defined inside a tool file",
+        "All other Zod schemas are in schemas.ts with documentation explaining the two-layer validation design",
+        "schemas.ts is 10-imported across the codebase and is the designated home for input shape validation"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "guard_dual_api_surface",
+      "summary": "Guards expose old check/record pairs alongside new unified checkAndRecord \u2014 ambiguous API for consumers",
+      "confidence": "high",
+      "suggestion": "Add JSDoc @deprecated tags to the old-style check/record functions (checkDedup, recordPublish, checkWriteRateLimit, recordWrite, checkTipSpendCap, recordTip) pointing to their checkAndRecord replacements. This signals convention preference without breaking existing callers. Example: `/** @deprecated Use checkAndRecordDedup() for atomic check+record. */`",
+      "related_files": [
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/tip-spend-cap.ts",
+        "src/toolkit/index.ts"
+      ],
+      "evidence": [
+        "dedup-guard.ts exports checkDedup (old), recordPublish (old), AND checkAndRecordDedup (new) \u2014 three functions for two operations",
+        "write-rate-limit.ts exports checkWriteRateLimit (old), recordWrite (old), AND checkAndRecordWrite (new)",
+        "tip-spend-cap.ts exports checkTipSpendCap (old), recordTip (old), AND checkAndRecordTip (new)",
+        "index.ts re-exports all six old-style functions under '\u2500\u2500 Guards (exposed for testing and advanced consumers) \u2500\u2500' without indicating which style is preferred",
+        "The new unified checkAndRecord functions are the correct ones to use (single lock acquisition, atomic check+record) but there's no deprecation signal on the old functions"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "discover_sources_duplicate_source_status",
+      "summary": "discover-sources.ts defines a local SourceStatus type that duplicates the exported SourceStatus from types.ts",
+      "confidence": "high",
+      "suggestion": "Remove the local SourceStatus type from discover-sources.ts and import it from types.ts: `import type { ..., SourceStatus } from '../types.js'`. The types.ts definition is already part of the public API.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/types.ts"
+      ],
+      "evidence": [
+        "discover-sources.ts line 100: `type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'`",
+        "types.ts line 237: `export type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'` \u2014 identical definition",
+        "discover-sources.ts does not import SourceStatus from types.ts despite it being exported from there"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "scan_silent_skill_dojo_error",
+      "summary": "scan.ts silently swallows Skill Dojo fallback error, losing all context on dual-path failure",
+      "confidence": "high",
+      "suggestion": "Change the inner catch to capture the Skill Dojo error and include both failure messages in the returned error. For example: `catch (dojoErr) { return err(demosError('NETWORK_ERROR', `Scan failed (local: ${(localErr as Error).message}, skill-dojo: ${(dojoErr as Error).message})`, true), localProvenance(start)); }`",
+      "related_files": [
+        "src/toolkit/tools/scan.ts"
+      ],
+      "evidence": [
+        "Lines 32-39: the skillDojoFallback path catches the Dojo error with `catch { /* both failed */ }` \u2014 zero context preserved",
+        "The outer error path (line 42) uses localErr from the first fetch failure, not the Dojo failure \u2014 if Dojo fails for a different reason (auth, format), that information is lost",
+        "A developer debugging a scan failure would see only 'Scan failed: <local error>' with no indication that Skill Dojo was tried and also failed"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "discover_sources_json_parse_no_local_catch",
+      "summary": "loadCatalog() calls JSON.parse without local try/catch, relying on outer function's catch in different scope",
+      "confidence": "high",
+      "suggestion": "Add a local try/catch inside loadCatalog() around the JSON.parse, throwing a descriptive error: `try { catalog = JSON.parse(raw); } catch { throw new Error(`Invalid JSON in catalog at ${catalogPath}`); }`. This makes the error contract explicit at the parse site.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts"
+      ],
+      "evidence": [
+        "discover-sources.ts line 80: `const catalog = JSON.parse(raw)` \u2014 no try/catch in loadCatalog()",
+        "The outer try/catch is in discoverSources() (line 43), a different function that calls loadCatalog(). This works but the error handling is owned by the caller, not the function that parses",
+        "If loadCatalog is called from another context in the future, the JSON.parse throw would propagate unhandled",
+        "Flagged by the security detector as 'JSON.parse() without try/catch - may throw on malformed input'"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "spend_cap_validation_order",
+      "summary": "tip-spend-cap and pay-spend-cap check policy bounds before validating isFinite \u2014 relies on NaN comparison behavior",
+      "confidence": "medium",
+      "suggestion": "Move the `isFinite(amount) && amount > 0` validation to be the FIRST check in both functions, before any policy comparison. This makes validation order self-documenting and removes the implicit NaN-comparison dependency.",
+      "related_files": [
+        "src/toolkit/guards/tip-spend-cap.ts",
+        "src/toolkit/guards/pay-spend-cap.ts"
+      ],
+      "evidence": [
+        "tip-spend-cap.ts line 36: `if (amount > policy.maxPerTip)` checked before line 44: `if (!Number.isFinite(amount) || amount <= 0)`. NaN > 10 is false, so NaN would pass the first check and be caught by the second \u2014 but this depends on implicit NaN arithmetic.",
+        "pay-spend-cap.ts line 34: `if (amount > policy.maxPerCall)` checked before line 42: `if (!Number.isFinite(amount) || amount <= 0)`. Same pattern.",
+        "If the isFinite check is ever removed or moved, NaN amounts would pass the policy check silently"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "backward_compat_naming_split",
+      "summary": "Backward-compat guard aliases (checkDedup, checkWriteRateLimit, checkTipSpendCap) create dual naming surface alongside current checkAndRecord* names",
+      "confidence": "medium",
+      "suggestion": "Migrate publish.ts (the only caller of old names) to use checkAndRecordDedup with record=true in a single call, eliminating the separate recordDedupPublish call. Then remove the backward-compat aliases from each guard file. This reduces the naming surface to one name per operation.",
+      "related_files": [
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/tip-spend-cap.ts"
+      ],
+      "evidence": [
+        "dedup-guard.ts exports both checkAndRecordDedup (current) and checkDedup (backward compat) \u2014 both are active, checkDedup delegates to checkAndRecordDedup with record=false",
+        "write-rate-limit.ts similarly exports checkAndRecordWrite alongside checkWriteRateLimit and recordWrite",
+        "tip-spend-cap.ts exports checkAndRecordTip alongside checkTipSpendCap and recordTip",
+        "publish.ts imports checkDedup and recordPublish (old names), not the unified checkAndRecordDedup \u2014 so the old names are still load-bearing"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "discover_sources_manual_wrapper_replication",
+      "summary": "discoverSources() manually replicates withToolWrapper boilerplate (touch + onToolCall) for a session-optional tool",
+      "confidence": "medium",
+      "suggestion": "Make withToolWrapper accept 'session: DemosSession | null' and guard touch()/onToolCall notification with null checks. This lets discoverSources use withToolWrapper while keeping its session-optional contract. Alternatively, extract a lightweight notifyToolCall(session, toolName, result) helper that both withToolWrapper and discoverSources can call.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/tools/tool-wrapper.ts"
+      ],
+      "evidence": [
+        "discover-sources.ts lines 36-37: 'if (session) session.touch();' \u2014 manual replication of withToolWrapper's session.touch() call",
+        "discover-sources.ts lines 61-63: manual onToolCall notification block \u2014 identical pattern to what withToolWrapper does post-success",
+        "withToolWrapper requires a non-null DemosSession (line 19 signature), so it cannot be used when session is DemosSession | null",
+        "All other 9 tools use withToolWrapper; discoverSources is the only outlier"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "low_level_elegance",
+      "identifier": "verify_dead_code_fallback",
+      "summary": "Dead-code err() fallback after retry loop in verify.ts is never reached but looks load-bearing",
+      "confidence": "high",
+      "suggestion": "Remove lines 59-62. To make the loop's exhaustion property self-evident, rename the loop variable bound to make max iterations obvious, or add a brief comment before the loop: '// Loop handles all attempts including the last; fallback below is unreachable'. The cleaner fix is deletion of the dead code.",
+      "related_files": [
+        "src/toolkit/tools/verify.ts"
+      ],
+      "evidence": [
+        "verify.ts loop: for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) \u2014 runs 4 iterations (0,1,2,3) for RETRY_DELAYS_MS.length=3",
+        "On attempt=3 (last): catch branch returns err() directly (line 45-55); non-confirmed branch returns ok() directly (line 43)",
+        "Lines 59-62: 'return err(demosError(\"CONFIRM_TIMEOUT\", \"Verification exhausted all retries\", true))' \u2014 this line is unreachable; every loop termination returns from inside the loop body",
+        "A developer reading this file cannot immediately tell the fallback is dead \u2014 it looks like necessary exhaustion handling"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "low_level_elegance",
+      "identifier": "tip_feed_scan_for_author",
+      "summary": "tip() fetches full feed (50 posts) to resolve one post author \u2014 implicit, unscalable, and fragile for non-recent posts",
+      "confidence": "medium",
+      "suggestion": "Add a dedicated post-lookup API call (e.g., /api/post/:txHash if available) before falling back to feed scan. If only feed scan is possible, document the limitation explicitly in the function docstring: '@param opts.txHash \u2014 must be in the 50 most recent posts (feed lookup limitation)'. Extract the author resolution into a named helper resolvePostAuthor(session, txHash) to make the side effect explicit at the call site.",
+      "related_files": [
+        "src/toolkit/tools/tip.ts"
+      ],
+      "evidence": [
+        "tip.ts lines 38-55: fetches /api/feed?limit=50, then does a linear posts.find() for opts.txHash",
+        "If the target post is not in the 50 most recent posts, tip returns INVALID_INPUT 'not found in feed'",
+        "The function docstring says 'tip DEM to a post author' but does not document that it requires the post to be in the recent feed",
+        "No post-lookup API endpoint is used \u2014 the feed scan is an implicit workaround"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "low_level_elegance",
+      "identifier": "scan_magic_numbers",
+      "summary": "identifyOpportunities() in scan.ts uses unexplained magic numbers for reaction threshold and score",
+      "confidence": "high",
+      "suggestion": "Extract named constants: 'const LOW_ENGAGEMENT_THRESHOLD = 5; const MIN_CONTENT_LENGTH = 100; const REPLY_OPPORTUNITY_SCORE = 0.7;' with brief inline comments explaining the rationale (e.g., '// replies with <5 reactions and >100 chars are good engagement targets').",
+      "related_files": [
+        "src/toolkit/tools/scan.ts"
+      ],
+      "evidence": [
+        "scan.ts line 52: 'if (post.reactions.agree + post.reactions.disagree < 5 && post.text.length > 100)' \u2014 threshold 5 and length 100 are unexplained",
+        "scan.ts line 56: 'score: 0.7' \u2014 the scoring basis is not documented",
+        "No named constants or comments explain why these values were chosen"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle_bridge_opaque_handle",
+      "summary": "SdkBridge stored opaquely inside signingHandle requiring runtime cast in getBridge()",
+      "confidence": "high",
+      "suggestion": "Define a typed interface (e.g. SigningHandle = { demos: unknown; bridge: SdkBridge }) and use it in both connect.ts and session.ts. Remove the optional-chain and cast from getBridge() by making the type explicit.",
+      "related_files": [
+        "src/toolkit/session.ts",
+        "src/toolkit/tools/connect.ts"
+      ],
+      "evidence": [
+        "connect.ts: signingHandle: { demos, bridge } \u2014 bridge is a positional field inside an untyped object",
+        "session.ts getBridge(): const handle = (this as Record<symbol, unknown>)[SIGNING_HANDLE] as { bridge?: SdkBridge } | undefined \u2014 requires cast and optional-chain check",
+        "DemosSession constructor types signingHandle as 'unknown' with no interface specifying bridge"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle_api_base_url_hardcoded",
+      "summary": "DEFAULT_SUPERCOLONY_API hardcoded in connect.ts, not threaded from ConnectOptions",
+      "confidence": "high",
+      "suggestion": "Add optional supercolonyApi?: string to ConnectOptions; pass opts.supercolonyApi ?? DEFAULT_SUPERCOLONY_API into createSdkBridge. This makes the seam explicit and test-injectable without changing the default.",
+      "related_files": [
+        "src/toolkit/tools/connect.ts",
+        "src/toolkit/types.ts"
+      ],
+      "evidence": [
+        "connect.ts: const DEFAULT_SUPERCOLONY_API = 'https://www.supercolony.ai'",
+        "connect.ts: const bridge = createSdkBridge(demos, DEFAULT_SUPERCOLONY_API, authToken) \u2014 no opts.supercolonyApi override",
+        "ConnectOptions in types.ts has no supercolonyApi field, so callers cannot point at staging/test"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle_reply_validation_bypass_wrapper",
+      "summary": "reply() validates input then delegates to publish(), which re-validates and runs withToolWrapper; reply's own validation errors use latencyMs: 0 instead of wrapper timing",
+      "confidence": "high",
+      "suggestion": "Wrap reply() in withToolWrapper like all other tools. Move ReplyOptions validation inside the wrapper so timing and onToolCall fire consistently for both validation and execution failures.",
+      "related_files": [
+        "src/toolkit/tools/publish.ts"
+      ],
+      "evidence": [
+        "reply(): const inputError = validateInput(ReplyOptionsSchema, opts); if (inputError) return err(inputError, { path: 'local', latencyMs: 0 }); \u2014 manual provenance with hardcoded 0",
+        "publish() runs withToolWrapper which records real timing \u2014 but reply validation errors bypass it entirely",
+        "onToolCall is never triggered for reply() validation failures, creating an observability gap"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle_stale_todo_attest",
+      "summary": "Stale TODO comment in attest.ts claims SDK bridge wiring is pending, but it is already wired",
+      "confidence": "high",
+      "suggestion": "Remove the TODO comment from attest.ts line 41. The bridge wiring is complete.",
+      "related_files": [
+        "src/toolkit/tools/attest.ts"
+      ],
+      "evidence": [
+        "attest.ts line 41: // TODO(sdk-bridge): wire to session's SDK bridge once connect() creates it",
+        "executeDahrAttestation immediately calls session.getBridge() \u2014 the bridge is already wired",
+        "connect() has created the bridge since it was implemented; this TODO is misleading to future maintainers"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "mle_sdk_txhash_fallback_glue",
+      "summary": "6-way txHash extraction fallback in publishHivePost encodes SDK response shape uncertainty as inline glue",
+      "confidence": "medium",
+      "suggestion": "Extract a normalizeHiveTxHash(result: unknown): string | undefined helper that centralizes all SDK response shapes. Document which SDK version returns which shape. This isolates the glue in one named place rather than inline at the call site.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "sdk-bridge.ts publishHivePost: const txHash = confirmHash || (results ? results[Object.keys(results)[0]]?.hash : ...) || response.data.transaction.hash || response.data.hash || result.hash || result.txHash",
+        "This 6-branch fallback is at the boundary between toolkit and Demos SDK \u2014 shape uncertainty is not documented in an SDK contract or adapter",
+        "Similar multi-shape response parsing exists in scan.ts (feed response normalization) and signAndBroadcast (result.hash ?? result.txHash)"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts_state_helpers_untested",
+      "summary": "state-helpers.ts (7 importers, shared locking primitive) has no direct tests",
+      "confidence": "high",
+      "suggestion": "Add tests/toolkit/guards/state-helpers.test.ts covering: loadState returns structuredClone default on missing/corrupt JSON, checkAndAppend returns error when check fails without appending, checkAndAppend appends newEntry when check passes, prune boundary (entries at exactly cutoff ms are excluded). These cover behavior that guards depend on but don't directly assert.",
+      "related_files": [
+        "src/toolkit/guards/state-helpers.ts",
+        "tests/toolkit/guards/"
+      ],
+      "evidence": [
+        "scan evidence: 'test_coverage: No direct tests (78 LOC, 7 importers) \u2014 covered only via imports from tested mod'",
+        "state-helpers.ts exports: stateKey, loadState, checkAndAppend, sleep \u2014 checkAndAppend is the atomic lock-check-append primitive used by all 5 stateful guards",
+        "No tests for: JSON parse failure fallback in loadState, pruneWindowMs cutoff boundary, newEntry=undefined behavior (check-only without append), lock TTL expiry"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts_discover_sources_untested",
+      "summary": "discover-sources.ts (109 LOC, highest signal density) has no direct tests; deprecated symbols and unsafe JSON.parse are uncovered",
+      "confidence": "high",
+      "suggestion": "Add tests/toolkit/tools/discover-sources.test.ts with: domain filter returns only matching sources, matchThreshold filters low-score sources, malformed catalog JSON does not throw uncaught exception. Also delete VALID_STATUSES and normalizeStatus (0 importers confirmed by scan).",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts"
+      ],
+      "evidence": [
+        "scan evidence: 'test_coverage: No direct tests (109 LOC, 1 importers) \u2014 covered only via imports from tested mod'",
+        "scan evidence: 'smells: 1x High cyclomatic complexity (>15 branches)'",
+        "scan evidence: 'security: JSON.parse() without try/catch - may throw on malformed input'",
+        "scan evidence: 'deprecated: VALID_STATUSES (0 importers), normalizeStatus (0 importers) \u2014 safe to delete'"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts_verify_retry_untested",
+      "summary": "verify.ts retry logic (3s/5s/10s delays, exhaustion path) has no targeted tests; integration test uses real sleep with 25s timeout",
+      "confidence": "high",
+      "suggestion": "Add tests/toolkit/tools/verify.test.ts using vi.useFakeTimers() to test retry logic without real delays: bridge throws on first call, succeeds on second (confirm via retry); bridge throws on all calls (verify returns CONFIRM_TIMEOUT); bridge returns confirmed: false on all calls (verify returns ok with confirmed: false).",
+      "related_files": [
+        "src/toolkit/tools/verify.ts",
+        "tests/toolkit/tools/integration.test.ts"
+      ],
+      "evidence": [
+        "verify.ts: RETRY_DELAYS_MS = [3000, 5000, 10000] \u2014 total potential wait is 18s in exhaustion path",
+        "integration.test.ts verify test: timeout: 25000 \u2014 suggests real sleep is occurring in test",
+        "No test for: retry exhaustion returning CONFIRM_TIMEOUT, partial success (confirmed on retry 2 not retry 0)",
+        "scan evidence: 'test_coverage: No direct tests (92 LOC, 1 importers)'"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "ts_integration_conditional_assertions",
+      "summary": "Integration test assertions collapse to near-tautologies on DNS failure branch",
+      "confidence": "high",
+      "suggestion": "For attest and publish integration tests: use vi.stubGlobal on DNS/fetch or mock validateUrl (as pay-d402.test.ts does) to force the happy path deterministically. Alternatively, in the else branch assert specific error codes (e.g., INVALID_INPUT for SSRF, NETWORK_ERROR for DNS) rather than merely asserting error is defined.",
+      "related_files": [
+        "tests/toolkit/tools/integration.test.ts"
+      ],
+      "evidence": [
+        "attest() integration test: if (result.ok) { expect(result.data!.responseHash).toBe('mock-hash-abc') } else { expect(result.error!.code).toBeDefined() }",
+        "The else branch asserts only that error.code is defined \u2014 any string (including undefined cast to string) would pass",
+        "publish() integration test: if (result.ok) { expect(result.data!.txHash).toBeDefined() } else { expect(result.error).toBeDefined() } \u2014 even weaker",
+        "In CI without real network, these tests always exercise the else branch but assert nothing meaningful"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc_discover_sources_nullable_session",
+      "summary": "discoverSources(session: DemosSession | null) is the only tool with a nullable session \u2014 breaks uniform calling convention",
+      "confidence": "high",
+      "suggestion": "Provide two overloads or split into two functions: discoverSources(session: DemosSession, opts?) for the session-context path, and an autonomous discoverSourcesCatalog(opts?) that takes no session at all. Alternatively, make session truly optional with a default: discoverSources(opts?, session?) \u2014 but the most honest API is to just take no session when it is not needed.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/index.ts"
+      ],
+      "evidence": [
+        "discoverSources(session: DemosSession | null, opts?: DiscoverSourcesOptions) \u2014 all 8 other tools accept DemosSession (non-nullable)",
+        "Internal: if (session) session.touch() \u2014 null check required at every caller call-site",
+        "The rationale is that discoverSources is 'read-only, no session required' (per JSDoc) \u2014 but the API surface does not enforce or signal this: callers who read only the signature cannot distinguish required from optional session"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc_discover_sources_no_wrapper",
+      "summary": "discoverSources manually reimplements withToolWrapper cross-cutting logic, creating observability inconsistency",
+      "confidence": "high",
+      "suggestion": "Refactor discoverSources to use withToolWrapper when session is non-null. Extract the catalog logic into a standalone loadFilteredSources() that withToolWrapper calls. This eliminates the manual boilerplate and restores onToolCall consistency.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/tools/tool-wrapper.ts"
+      ],
+      "evidence": [
+        "discoverSources manually: const start = Date.now(); if (session) session.touch(); \u2014 duplicates withToolWrapper's first two lines",
+        "discoverSources manually: if (session?.onToolCall) { session.onToolCall({ ... }) } \u2014 duplicates onToolCall notification",
+        "discoverSources manually builds provenance inline: { path: 'local', latencyMs: Date.now() - start } \u2014 duplicates localProvenance(start)",
+        "If onToolCall callback is expected to fire for all tool calls, callers will not receive it when session is null (legitimate use case if no session)"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc_discover_sources_dead_match_threshold",
+      "summary": "DiscoverSourcesOptions.matchThreshold is accepted by discoverSources but never used internally",
+      "confidence": "high",
+      "suggestion": "Either implement matchThreshold filtering (filter by source healthScore >= matchThreshold) or remove the field from DiscoverSourcesOptions and its Zod schema. Silent no-op options violate the contract coherence principle.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/types.ts",
+        "src/toolkit/schemas.ts"
+      ],
+      "evidence": [
+        "types.ts DiscoverSourcesOptions: { domain?: string; matchThreshold?: number }",
+        "discover-sources.ts body: only opts?.domain is read \u2014 matchThreshold is never accessed",
+        "A caller who passes matchThreshold: 5 receives no error and no filtering effect \u2014 silent option absorption"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc_connect_disconnect_exception_undocumented",
+      "summary": "connect() and disconnect() break the async-ToolResult pattern without documenting the exception in public types",
+      "confidence": "medium",
+      "suggestion": "Add a JSDoc comment to the connect/disconnect exports in index.ts explicitly noting they are lifecycle functions that throw rather than returning ToolResult. Alternatively, wrap connect() to return Promise<ToolResult<DemosSession>> for full protocol consistency \u2014 though this is a larger breaking change.",
+      "related_files": [
+        "src/toolkit/tools/connect.ts",
+        "src/toolkit/index.ts"
+      ],
+      "evidence": [
+        "connect(): Promise<DemosSession> \u2014 throws DemosError rather than returning ToolResult<DemosSession>",
+        "disconnect(): void \u2014 synchronous, no return value or confirmation",
+        "All other 8 tools return Promise<ToolResult<T>> \u2014 connect/disconnect are the only exceptions",
+        "index.ts export has no comment distinguishing connect/disconnect as lifecycle exceptions from the tool protocol"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "ac_url_allowlist_dead",
+      "summary": "urlAllowlist is stored in DemosSession but never consumed by validateUrl \u2014 allow-list control is wired but dead",
+      "confidence": "high",
+      "suggestion": "Add `allowlist?: string[]` to UrlValidationOptions in url-validator.ts. In validateUrl(), before the IP blocklist check, return { valid: true, resolvedIp } if the parsed hostname matches any entry in opts.allowlist. At all three validateUrl call sites (attest, pay, publish), pass urlAllowlist: session.urlAllowlist. This activates a security control callers can configure but currently gets no effect.",
+      "related_files": [
+        "src/toolkit/session.ts",
+        "src/toolkit/url-validator.ts",
+        "src/toolkit/tools/attest.ts",
+        "src/toolkit/tools/pay.ts",
+        "src/toolkit/tools/publish.ts"
+      ],
+      "evidence": [
+        "session.ts line 36: readonly urlAllowlist: string[] \u2014 stored as session configuration",
+        "attest.ts line 30: validateUrl(opts.url, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed",
+        "pay.ts line 59: validateUrl(opts.url, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed",
+        "pay.ts line 267: validateUrl(nextUrl, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed at redirect validation",
+        "publish.ts line 88: validateUrl(draft.attestUrl, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed",
+        "url-validator.ts UrlValidationOptions (line 24-27): { allowInsecure?, resolveOverride? } \u2014 no allowlist field exists"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "ac-auth-pending-sentinel",
+      "reasoning": "connect.ts imports AUTH_PENDING_TOKEN from sdk-bridge.ts and correctly returns it in authenticateFallback(). The bare string 'auth-pending' does not appear in the codebase. This finding is dismissed after direct code re-read."
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "ai_debt_restating_comments_state_helpers",
+      "summary": "Inline comments in checkAndAppend restate the code rather than explaining rationale",
+      "confidence": "high",
+      "suggestion": "Remove the header labels ('// Prune old entries', '// Check condition', '// Append entry if provided') entirely; the code is self-describing. Promote the parenthetical rationale on line 66 to a standalone comment: '// Persist on check-only paths too \u2014 prevents unbounded growth when only reading state'",
+      "related_files": [
+        "src/toolkit/guards/state-helpers.ts"
+      ],
+      "evidence": [
+        "Line 54: '// Prune old entries' above state.entries.filter()",
+        "Line 57: '// Check condition' above const errorMsg = check(state, now)",
+        "Line 61: '// Append entry if provided' above if (newEntry) { state.entries.push(newEntry) }",
+        "Line 66: '// Always persist pruned state (prevents unbounded growth on check-only paths)' \u2014 the parenthetical is the only useful part; the header restates the code"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "ai_debt_record_fn_duplication",
+      "summary": "Four guard recordX() functions duplicate load\u2192prune\u2192push\u2192set instead of reusing checkAndAppend",
+      "confidence": "high",
+      "suggestion": "Replace each recordX() with a call to checkAndAppend passing record=true-equivalent: pass newEntry and a no-op check that always returns null. This eliminates 4 separate lock+load+prune+push+store sequences. Example for recordPublish: call checkAndAppend(store, key, DEFAULT_STATE, DAY_MS, () => null, { timestamp: Date.now(), hash }).",
+      "related_files": [
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/tip-spend-cap.ts",
+        "src/toolkit/guards/pay-spend-cap.ts"
+      ],
+      "evidence": [
+        "dedup-guard.ts recordPublish(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+        "write-rate-limit.ts recordWrite(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+        "tip-spend-cap.ts recordTip(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+        "pay-spend-cap.ts recordPayment(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+        "checkAndAppend in state-helpers.ts already does exactly this with pruneWindowMs, entry append, and lock"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "ai_debt_source_status_local_duplicate",
+      "summary": "SourceStatus type and VALID_STATUSES set re-declared locally in discover-sources.ts despite canonical export in types.ts",
+      "confidence": "high",
+      "suggestion": "Import SourceStatus from '../types.js' and delete the local re-declaration. Replace VALID_STATUSES with a type-safe lookup: const VALID_STATUSES = new Set<SourceStatus>(['active','degraded','quarantined','stale','deprecated','archived']). This is a single-file change.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/types.ts"
+      ],
+      "evidence": [
+        "discover-sources.ts line 100: 'type SourceStatus = \"active\" | \"degraded\" | ...' \u2014 zero importers",
+        "types.ts line 237: 'export type SourceStatus = \"active\" | \"degraded\" | ...' \u2014 same union, exported",
+        "VALID_STATUSES Set at line 102 duplicates the canonical SourceStatus values as a runtime set"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "incomplete_migration_checkandrecord_not_exported",
+      "summary": "Unified checkAndRecord* API exists in guards but is not exported \u2014 callers forced to use backward-compat wrappers",
+      "confidence": "high",
+      "suggestion": "Complete the migration: add checkAndRecordWrite, checkAndRecordDedup, and checkAndRecordTip to index.ts exports alongside or replacing the backward-compat wrappers. Once no internal callers reference the old API, remove the wrapper functions. The migration is already done in each guard file \u2014 only index.ts needs updating.",
+      "related_files": [
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/tip-spend-cap.ts",
+        "src/toolkit/index.ts"
+      ],
+      "evidence": [
+        "write-rate-limit.ts: checkAndRecordWrite() is the unified API (combines check+record atomically), but index.ts exports only checkWriteRateLimit (line 82) and recordWrite (line 83) \u2014 both labeled '(backward compat)'",
+        "dedup-guard.ts: checkAndRecordDedup() is the unified API; index.ts exports only checkDedup and recordPublish (lines 95-98)",
+        "tip-spend-cap.ts: checkAndRecordTip() is the unified API; index.ts exports only checkTipSpendCap and recordTip (lines 86-88)",
+        "External consumers cannot use the atomic check+record operation without importing directly from guard files, bypassing the stable public API surface"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "init_coupling_catalog_cache_no_flush",
+      "summary": "Module-level catalogCache in discover-sources.ts has no flush mechanism \u2014 tests sharing the same module instance cannot isolate catalog contents",
+      "confidence": "medium",
+      "suggestion": "Export a clearCatalogCache() function for test use: 'export function clearCatalogCache() { catalogCache.clear(); }'. This is a single-line addition that lets tests reset state between runs without restructuring the production cache logic.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts"
+      ],
+      "evidence": [
+        "Line 18: 'const catalogCache = new Map<string, Source[]>()' \u2014 module-level singleton",
+        "Line 76-77: cache is checked and populated without any TTL or invalidation",
+        "Tests that load a custom catalog in one test and a different one in another within the same process will see the first cached value on subsequent calls to the same path"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_silent_catch",
+      "summary": "apiCall() catch block silently converts network exceptions to ok:false response \u2014 callers cannot distinguish DNS failure from HTTP 500",
+      "confidence": "high",
+      "suggestion": "Re-throw or surface as a DemosError(NETWORK_ERROR) so that callers can distinguish retryable network failures from non-retryable HTTP errors. If apiCall must never throw, add a third field (e.g., networkError: true) to ApiCallResult.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Lines 199-201: catch(err) { return { ok: false, status: 0, data: (err as Error).message }; }",
+        "status: 0 is the only signal that this was a network error vs an HTTP error; callers checking result.ok will treat both identically",
+        "The existing DemosError system has a NETWORK_ERROR code with retryable:true that is the correct carrier for this case"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "connect_mixed_concerns",
+      "summary": "connect() mixes 5 distinct responsibilities in one function body: security checks, credential parsing, SDK connection, auth, session construction",
+      "confidence": "medium",
+      "suggestion": "Extract the security + file reading into a helper (e.g., readSecureWalletFile) and the session construction into a helper (e.g., buildSession). This would leave connect() as a readable orchestration of 3-4 clearly named steps rather than 5 interleaved responsibilities.",
+      "related_files": [
+        "src/toolkit/tools/connect.ts"
+      ],
+      "evidence": [
+        "Lines 47-55: symlink check and TOCTOU prevention",
+        "Lines 58-77: file mode enforcement with container detection branch",
+        "Lines 80-81: wallet credential parsing (3 format branches in parseWallet)",
+        "Lines 83-88: SDK connection and auth via connectSdk",
+        "Lines 90-112: session construction with 12 options mapped"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "e30205a024d27497",
+      "reasoning": "High cyclomatic complexity from mechanical detector but each branch handles a distinct catalog shape or field fallback. This is inherent multi-format normalization, not design fragmentation."
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "7976518927d2eee8",
+      "reasoning": "Monster function detector fired on LOC, but the function has one responsibility (D402 payment flow) with helpers already extracted. Length is justified by the protocol's sequential steps."
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "9c14840d40c65d85",
+      "reasoning": "Async stub that throws \u2014 the async signature is forward-compatible with the planned implementation. Not a design problem."
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "85dbbc078c5d8bc7",
+      "reasoning": "IP range enumeration cannot be meaningfully refactored \u2014 each range has a distinct semantic name. A data-driven table would not reduce complexity and would obscure the named ranges."
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "181f0d8a7efbf02a",
+      "reasoning": "The 6 files do not share a common anti-pattern. The backward-compat delegation wrappers (async returning async call result) are idiomatic TypeScript. The async stub is intentional. No systemic fix warranted."
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "attest_url_optional_required_lie",
+      "summary": "PublishDraft.attestUrl typed optional but throws at runtime if absent \u2014 type annotation lies to callers",
+      "confidence": "high",
+      "suggestion": "Change PublishDraft.attestUrl from optional to required (remove '?'). If there is a genuine future use case for omitting it, make that an explicit second interface (PublishDraftWithoutAttestation) with a comment explaining when attestation is skippable. Do not let the type promise something the runtime rejects.",
+      "related_files": [
+        "src/toolkit/types.ts",
+        "src/toolkit/tools/publish.ts",
+        "src/toolkit/schemas.ts"
+      ],
+      "evidence": [
+        "types.ts line 129: attestUrl?: string  \u2014 optional by type",
+        "publish.ts line 84: throw new Error('PublishDraft.attestUrl is required') \u2014 runtime required",
+        "schemas.ts line 96: attestUrl: nonEmptyString.optional()  \u2014 schema also says optional",
+        "schemas.ts lines 10-14 documents this as 'intentional' but the type annotation still communicates the wrong contract to callers"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "verify_hardcoded_block_height",
+      "summary": "verify() returns blockHeight: 1 hardcoded \u2014 callers receive fabricated data as if it were real chain data",
+      "confidence": "high",
+      "suggestion": "Remove the hardcoded blockHeight entirely: return { confirmed: found } when found is true. If blockHeight is available from the feed API response in the future, populate it then. Do not return a placeholder number in a field that implies real chain data.",
+      "related_files": [
+        "src/toolkit/tools/verify.ts"
+      ],
+      "evidence": [
+        "verify.ts line 87: return { confirmed: found, blockHeight: found ? 1 : undefined }",
+        "VerifyResult.blockHeight?: number implies actual chain block height",
+        "Any caller logging or relaying this value on-chain would surface false provenance data"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "sdk_bridge_dead_interface_method",
+      "summary": "SdkBridge.signAndBroadcast() exposed in interface but no tool uses it and txData shape is untyped unknown",
+      "confidence": "medium",
+      "suggestion": "Remove signAndBroadcast() from the SdkBridge interface if no tool uses it, or document what txData shape is expected and add at least one typed overload. Dead interface methods on the public contract confuse consumers about the intended usage surface.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "sdk-bridge.ts line 71: signAndBroadcast(txData: unknown): Promise<{ hash: string }>",
+        "No tool in src/toolkit/tools/ calls session.getBridge().signAndBroadcast()",
+        "txData: unknown provides no guidance to callers on what to pass"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "logic_clarity",
+      "identifier": "verify_dead_code_post_loop",
+      "summary": "verify() has unreachable return err() after the retry for-loop \u2014 loop always returns on final iteration",
+      "confidence": "high",
+      "suggestion": "Remove lines 59-62. The for-loop condition `attempt <= RETRY_DELAYS_MS.length` already covers all retry attempts and the final failure case is handled inside the catch on the last iteration. If TypeScript requires a non-void return, restructure the loop to `attempt < RETRY_DELAYS_MS.length` with explicit exhausted handling after the loop.",
+      "related_files": [
+        "src/toolkit/tools/verify.ts"
+      ],
+      "evidence": [
+        "for loop: attempt 0..RETRY_DELAYS_MS.length inclusive (0,1,2,3) \u2014 4 iterations",
+        "On attempt=3 (last): try block returns ok({confirmed}) or ok({confirmed:false}); catch block returns err(CONFIRM_TIMEOUT). Loop always exits via return.",
+        "Lines 59-62: return err(demosError('CONFIRM_TIMEOUT', 'Verification exhausted all retries', true), ...) is never reached."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "logic_clarity",
+      "identifier": "pay_spend_cap_guard_order",
+      "summary": "pay-spend-cap.ts checks amount > maxPerCall before isFinite/positive validation \u2014 inverted guard order",
+      "confidence": "high",
+      "suggestion": "Move the isFinite/positive check (lines 42-44) to before the maxPerCall check (line 34). Validate that amount is a valid number before comparing it against policy limits.",
+      "related_files": [
+        "src/toolkit/guards/pay-spend-cap.ts"
+      ],
+      "evidence": [
+        "Line 34: if (amount > policy.maxPerCall) return SPEND_LIMIT \u2014 fires before isFinite check",
+        "Line 42: if (!Number.isFinite(amount) || amount <= 0) return INVALID_INPUT \u2014 second check",
+        "If amount = -5: -5 > maxPerCall is false \u2192 passes line 34 \u2192 line 42 catches it (INVALID_INPUT). Correct result but wrong code path \u2014 the per-call max fires first.",
+        "If amount = Infinity: Infinity > maxPerCall is true \u2192 returns SPEND_LIMIT. Correct by accident \u2014 but the real error is INVALID_INPUT (non-finite), not SPEND_LIMIT.",
+        "Callers get SPEND_LIMIT for Infinity input, which suggests they should raise their maxSpend, not that the input is invalid."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_bridge_function_params",
+      "summary": "txModule parameter typed with bare Function \u2014 call signatures are unchecked at every use site",
+      "confidence": "high",
+      "suggestion": "Replace bare Function with explicit call signatures: `{ store: (data: Uint8Array, sdk: unknown) => Promise<unknown>; confirm: (tx: unknown, sdk: unknown) => Promise<unknown>; broadcast: (validity: unknown, sdk: unknown) => Promise<unknown> }`. Using unknown for SDK-typed parameters is still safer than Function \u2014 it forces an explicit cast at use sites rather than silently accepting any argument.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "sdk-bridge.ts line 105: txModule?: { store: Function; confirm: Function; broadcast: Function }",
+        "Actual call sites: tx.store(encoded, demos) line 244, tx.confirm(storeTx, demos) line 245, tx.broadcast(validity, demos) line 246",
+        "Function type provides no parameter or return type constraints \u2014 passing wrong argument types compiles silently"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_bridge_any_cache_vars",
+      "summary": "cachedTxModule and cachedD402Client typed as any \u2014 type information lost on cache-hit path",
+      "confidence": "medium",
+      "suggestion": "Use unknown instead of any for cache variables. `let cachedTxModule: unknown = txModule ?? null`. At the single use site `const tx = txModule ?? await getTxModule()`, the existing narrowing (checking that tx exists before calling tx.store) is already present \u2014 switching to unknown forces the existing code path through explicit narrowing rather than implicitly allowing all property access.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "sdk-bridge.ts line 108: let cachedTxModule: any = txModule ?? null",
+        "sdk-bridge.ts line 109: let cachedD402Client: any = null",
+        "After dynamic import: cachedTxModule = DemosTransactions (a static class object), cachedD402Client = new D402Client(demos) \u2014 both have known shapes post-import"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_duplicate_source_status",
+      "summary": "discover-sources.ts defines a local SourceStatus type that exactly duplicates the exported type in types.ts",
+      "confidence": "high",
+      "suggestion": "Remove the local SourceStatus type definition on line 100 of discover-sources.ts and add SourceStatus to the import on line 12: `import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, SourceStatus, ToolResult } from '../types.js'`.",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts",
+        "src/toolkit/types.ts"
+      ],
+      "evidence": [
+        "types.ts line 237: export type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'",
+        "discover-sources.ts line 100: type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived' (local, unexported)",
+        "discover-sources.ts imports Source from types.ts (line 12) but not SourceStatus \u2014 the duplicate was introduced to avoid widening the import",
+        "normalizeStatus() uses the local type for its return annotation; if types.ts adds a new status value, normalizeStatus will silently return 'active' for unrecognized values instead of passing them through"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "ts_connect_sdk_demos_any",
+      "summary": "connectSdk() return type has demos: any \u2014 Demos instance loses type information at connection site",
+      "confidence": "high",
+      "suggestion": "In connect.ts, add `import type { Demos } from '@kynesyslabs/demosdk/websdk'` and change the connectSdk() return type to `Promise<{ demos: Demos; address: string; authToken: string }>`. The lazy import pattern does not prevent using the type at the signature level \u2014 type imports are compile-time only.",
+      "related_files": [
+        "src/toolkit/tools/connect.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "connect.ts line 187: ): Promise<{ demos: any; address: string; authToken: string }>",
+        "sdk-bridge.ts line 11: import type { Demos } from '@kynesyslabs/demosdk/websdk' \u2014 the Demos type IS importable",
+        "createSdkBridge() in sdk-bridge.ts accepts `demos: Demos` as its first parameter (line 100), so the type exists and is usable",
+        "The any typing on demos means all downstream uses of the Demos instance lose IDE support and compiler checking"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "review_quality": {
+    "batch_count": 20,
+    "dimension_coverage": 0.05,
+    "evidence_density": 6.822,
+    "high_score_missing_issue_note": 0
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Strict three-layer dependency direction enforced",
+          "description": "tools/ \u2192 core/ \u2192 guards/ with no bidirectional edges. The 9 back-edges from toolkit/ to tools/ are all index.ts re-exports \u2014 an intentional facade, not a cycle. Any senior engineer reading the coupling matrix would confirm the direction is clean.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Hub modules are architecturally justified",
+          "description": "types.ts (21 importers) and session.ts (11 importers) have high fan-in by design \u2014 they define the typed contracts and session handle that every tool must use. This is not accidental coupling; it reflects the correct information-hiding boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "connect.ts crosses toolkit boundary into app lib layer",
+          "description": "Two dynamic imports reach into src/lib/auth.js from within the toolkit, violating the framework-agnostic contract. The toolkit should not depend on project-specific auth infrastructure.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "high_level_elegance": {
+      "add": [
+        {
+          "header": "Uniform three-layer tool pattern applied consistently",
+          "description": "All 10 tools follow: accept DemosSession, validate input via schemas, run guards before side effects, return ToolResult<T> via withToolWrapper. This pattern is reliably applied and a new engineer can trust it holds everywhere.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Index.ts public surface organized by capability group",
+          "description": "index.ts groups exports under labeled sections (Core Types, Session, State Store, Tools, Guards, Schemas) with matching header comments. The toolkit's responsibility is immediately navigable from the barrel.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "discoverSources nullable session breaks API uniformity",
+          "description": "All other tools require DemosSession; discoverSources accepts null. This is a legitimate design (read-only, no SDK needed) but creates API inconsistency visible at the index.ts export level.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Uniform named exports and kebab-case file naming",
+          "description": "All 24 production files use named exports exclusively and kebab-case filenames. No default exports, no naming convention drift. A developer can apply the file-naming and export pattern from any file and trust it holds everywhere.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard behavioral protocol consistent across 5 of 7 files",
+          "description": "The check/record guard pattern (import stateKey/loadState/checkAndAppend, return DemosError|null) is applied consistently across dedup, write-rate, tip-spend, pay-spend, and pay-receipt guards. backoff.ts and state-helpers.ts are structural outliers by intent, not convention drift.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual guard API surface without deprecation signals",
+          "description": "Old checkX/recordX pairs and new unified checkAndRecordX functions coexist in three guard modules without deprecation markers. Callers cannot determine the preferred API from the public surface alone.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "error_consistency": {
+      "add": [
+        {
+          "header": "Two-layer error model clearly defined and mostly consistent",
+          "description": "Guards return DemosError|null; tools return ToolResult<T>; sdk-bridge throws; withToolWrapper translates throws to typed DemosError at a single boundary. This architecture is sound and the vast majority of code follows it correctly.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "withToolWrapper is reliable single error translation point",
+          "description": "All 9 withToolWrapper-based tools converge exception handling to one place. The isDemosError duck-type check correctly preserves intentionally-thrown DemosError codes versus generic Error messages. This prevents error-code loss at the tool boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Silent error swallow on Skill Dojo fallback path",
+          "description": "scan.ts swallows the Skill Dojo fallback exception with an empty catch, losing all diagnostic context on dual-path failure. This is a concrete information-loss defect, not a design tradeoff.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "JSON.parse error handling delegated to outer caller scope",
+          "description": "discover-sources.ts loadCatalog() calls JSON.parse without local error handling, relying on the try/catch in discoverSources() at a different call stack level. This is a fragile pattern that breaks if loadCatalog is called from other contexts.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "naming_quality": {
+      "add": [
+        {
+          "header": "checkAndRecord* pattern in guard layer",
+          "description": "Guards use precise compound names (checkAndRecordDedup, checkAndRecordWrite, checkAndRecordTip) that communicate atomic check+write semantics. The 'checkAndAppend' helper in state-helpers.ts follows the same pattern consistently.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Tool file/function name alignment",
+          "description": "Every tool file is named identically to its exported function (scan.ts/scan(), pay.ts/pay(), publish.ts/publish()). This eliminates import discovery friction entirely.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Backward-compat aliases still active in guards",
+          "description": "Three guard files export both current checkAndRecord* names and older check*/record* aliases. The aliases exist because publish.ts still uses them \u2014 they are load-bearing, not dead code.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "SSRF-surfacing names in pay.ts helpers",
+          "description": "Internal helpers like fetchWithValidatedRedirects and stripPaymentProofOnCrossOriginRedirect name the security behavior explicitly, making the security intent visible at the call site without reading the implementation.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "withToolWrapper earns its indirection across 9 tools",
+          "description": "withToolWrapper centralizes timing, session.touch(), onToolCall notification, and DemosError passthrough for all tools. It accepts a typed error code and a generic callback \u2014 no pass-through, genuine leverage.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "checkAndAppend is a genuinely polymorphic generic",
+          "description": "checkAndAppend<TState, TEntry> is used by all 5 active guards with distinct state shapes (DedupState, WriteRateState, PaySpendState, TipState). The generic type parameter represents real structural variation, not ceremonial typing.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SdkBridge interface justified as SDK isolation shell",
+          "description": "SdkBridge has one production implementation but tests inject mocks against the interface. It explicitly isolates @kynesyslabs/demosdk volatility \u2014 a valid public API typing shell per the abstraction_fitness skip list.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Zod schemas alongside TypeScript types add runtime value",
+          "description": "schemas.ts mirrors types.ts with Zod schemas that provide runtime validation. The compile-time sync assertions (Forward/Reverse type checks) prevent drift between the layers, making the parallel definition justified.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "discoverSources bypasses withToolWrapper wrapper",
+          "description": "discoverSources accepts DemosSession | null, so it cannot use withToolWrapper as currently typed. It manually replicates touch() and onToolCall logic, creating a coverage gap in the abstraction.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Lean 5-dep production set, no duplication",
+          "description": "The toolkit uses exactly 5 production deps (demosdk, zod, proper-lockfile, yaml, @anthropic-ai/sdk), each serving a distinct purpose. No duplicate HTTP clients, date libraries, or utility frameworks.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Lazy SDK imports prevent module-level side effects",
+          "description": "connect.ts and sdk-bridge.ts use dynamic import() for @kynesyslabs/demosdk to avoid module-level crypto polyfill and global state mutation. This is an intentional dependency isolation pattern.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "proper-lockfile is justified for cooperative file locking",
+          "description": "proper-lockfile provides stale TTL + exponential retry semantics for file locks that have no direct Node.js equivalent. It is not a heavy dep for light use \u2014 it is the appropriate tool for the state-store locking requirement.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "yaml in production deps, unused in toolkit layer",
+          "description": "yaml is a production dependency used in CLI/config layers (YAML persona files, strategy configs) but not within the toolkit itself. This is accurate for the monorepo scope but makes the toolkit's production dep set appear slightly broader than it needs to be.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "low_level_elegance": {
+      "add": [
+        {
+          "header": "Guards use single-responsibility closure predicate pattern",
+          "description": "Each guard's check logic is an inline closure passed to checkAndAppend \u2014 the predicate has no side effects, is pure, and returns null (allowed) or string (error message). This keeps guard internals minimal and testable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "pay.ts 9-step pipeline is long but single-responsibility",
+          "description": "The pay() function is 320 LOC with 9 distinct steps. Each step is logically distinct (idempotency, SSRF, spend cap, parse 402, payee check, amount guard, settle, record, retry) and labeled with step comments. The length is justified by the protocol complexity, not concern mixing.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "url-validator.ts uses flat if-return chains for IP range checks",
+          "description": "checkBlockedIpv4 covers 9 IP ranges using flat if-return conditions with informative reason strings. No nesting beyond a single level. The structure is direct and readable despite covering many ranges.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "verify.ts has dead-code fallback after exhaustive retry loop",
+          "description": "The post-loop return err() at lines 59-62 of verify.ts is never reached \u2014 all loop iterations terminate with explicit returns inside the body. The unreachable code creates misleading impression that exhaustion handling requires this path.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "tip.ts feed scan for author resolution is implicit and limited",
+          "description": "tip() resolves the post author by fetching 50 recent posts and scanning linearly. Posts older than the last 50 will fail with INVALID_INPUT. This limitation is not documented in the function signature or docstring.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "withToolWrapper cleanly centralizes cross-cutting seam concerns",
+          "description": "Timing, touch(), onToolCall, and error wrapping are extracted into a single wrapper used by 7+ tools. The seam contract is explicit: fn receives startMs, returns ToolResult<T>, wrapper handles everything else.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard boundary interface is minimal and uniform",
+          "description": "All guards expose check*(store, walletAddress, ...) returning DemosError | null. This makes them composable at tool layer via parallel Promise.all or sequential checks with identical error propagation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SDK bridge opaquely stored in signingHandle creates cast overhead",
+          "description": "The bridge is stored as an untyped field inside signingHandle: unknown in DemosSession, requiring a runtime cast in getBridge(). This was likely a transitional decision during initial implementation that should be formalized with a typed interface.",
+          "settled": false,
+          "positive": false
+        },
+        {
+          "header": "Multi-fallback SDK response parsing localized but undocumented",
+          "description": "publishHivePost has a 6-way txHash extraction fallback and scan.ts has a 5-way feed shape fallback. The SDK response shape variation is real but the glue is inline rather than extracted into named adapters with version documentation.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    },
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Integration test with real mock bridge exists",
+          "description": "integration.test.ts covers the full tool layer with a typed mock SdkBridge, verifying behavioral contracts for attest, scan, react, verify, tip, publish, and reply in one file. This is genuine cross-module verification, not just unit isolation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "D402 flow has thorough targeted tests",
+          "description": "pay-d402.test.ts mocks fetch globally and covers the complete 9-step challenge/response flow including idempotency, spend cap, payee validation, and receipt recording. The pattern (mock SSRF validator + mock bridge) is the right approach for other tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "verify.ts retry logic tested with real sleep in CI",
+          "description": "The integration test for verify() uses a 25s timeout, suggesting real delays run in CI. This creates slow tests and does not cover exhaustion or retry count boundaries.",
+          "settled": false,
+          "positive": false
+        },
+        {
+          "header": "Conditional integration assertions weaken failure-path coverage",
+          "description": "attest and publish integration tests use if/else with tautological else branches when DNS fails, meaning in most CI environments these tests always exercise only the else branch and assert almost nothing.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    },
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Core tool API (session, opts) convention is consistent",
+          "description": "All tools except discoverSources share an identical calling convention: (session: DemosSession, opts: XxxOptions) => Promise<ToolResult<XxxResult>>. Error codes are typed (DemosErrorCode), validation is uniform (validateInput at entry), and parameter count is always 2.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "discoverSources is a three-way outlier on public surface",
+          "description": "discoverSources deviates from the tool protocol in three ways: nullable session parameter, manual reimplementation of withToolWrapper boilerplate, and a dead matchThreshold option field. Together these make it the primary coherence gap in the public API.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "SSRF validation uniformly applied at all external URL inputs",
+          "description": "attest.ts, pay.ts (initial request + each redirect hop), and publish.ts all call validateUrl before any outbound request. scan/react/verify/tip use only relative API paths blocked from absolute URL injection at the bridge. No caller-controlled URL escapes SSRF validation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Bearer token auto-attached at bridge layer, not per tool",
+          "description": "apiCall() in sdk-bridge.ts attaches Authorization: Bearer unconditionally when authToken is not AUTH_PENDING_TOKEN. Tools never manually manage token attachment \u2014 enforced at a single boundary. Both degraded-session paths (auth failure, address-only wallet) correctly use AUTH_PENDING_TOKEN to suppress the header.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "urlAllowlist is a dead security control",
+          "description": "ConnectOptions.urlAllowlist is stored in DemosSession but never passed to validateUrl(), which has no allowlist parameter. Callers who configure urlAllowlist receive no filtering effect \u2014 the control exists in config but has zero runtime impact.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Spend cap guards consistently wallet-scoped and persistent",
+          "description": "All spending guards (tip, pay, write-rate) scope state by wallet address via stateKey() and persist across session restarts via FileStateStore. This ensures cap enforcement is durable and consistent across reconnects.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "No debug logging or generic domain names",
+          "description": "The entire toolkit contains no console.log dumps, entry/exit trace logging, or generic names (handleData, processItem). Every identifier uses precise domain vocabulary \u2014 attestDahr, checkWriteRateLimit, withToolWrapper \u2014 making the signal-to-noise ratio high.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Restating comments in high-traffic helper",
+          "description": "state-helpers.ts (7 importers) uses inline section headers that restate the code directly below rather than explaining business rationale. The parenthetical on the persist comment is the only exception.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Record function duplication across 4 guards",
+          "description": "Four recordX() functions each independently implement load\u2192prune\u2192push\u2192set despite checkAndAppend in state-helpers.ts providing exactly this capability. The refactor was applied to the check path but not the record path.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "Atomic guard API exists but is unexported",
+          "description": "Three guards (write-rate-limit, dedup-guard, tip-spend-cap) introduced unified checkAndRecord* functions for atomic check+record under a single lock, but only the legacy split-call API is exported from index.ts. The migration is half-done: implementation updated, public surface not.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "No mixed JS/TS or stale migration debt",
+          "description": "The codebase is 100% TypeScript with no .js companion files. No stale 'remove after', 'legacy', or 'migrate' TODO comments exist. The mechanical scan 'deprecated' signals are false positives \u2014 those symbols are actively used.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "package_organization": {
+      "add": [
+        {
+          "header": "Three-layer directory mirrors responsibility boundaries",
+          "description": "toolkit/ (contracts + session), guards/ (safety enforcement), tools/ (tool implementations) are non-overlapping concerns with unidirectional coupling. A developer can predict which directory owns a new file without reading existing code.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No reciprocal coupling or straggler root files",
+          "description": "The coupling matrix shows no bidirectional directory edges. All 24 production files are placed under the three subdirectories with no root-level stragglers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "tool-wrapper.ts placement is marginally ambiguous",
+          "description": "tool-wrapper.ts lives in tools/ but all 7 of its importers are other tools \u2014 making it a shared utility inside the consumer directory. Not a structural violation, but slightly harder to discover when looking for cross-cutting toolkit helpers.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "Lazy SDK imports prevent module-level side effects",
+          "description": "All Demos SDK imports use dynamic await import() inside function bodies, documented as an explicit design goal in connect.ts. No SDK state is created at module load time \u2014 each session gets a fresh SDK instance.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No module-scope env var reads",
+          "description": "The toolkit reads no process.env variables at module scope. All environment-dependent configuration flows through ConnectOptions at runtime, making test isolation straightforward.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Two module-level caches without flush API",
+          "description": "_isContainer (connect.ts) and catalogCache (discover-sources.ts) are module-level singletons. _isContainer is documented as process-invariant. catalogCache has no flush mechanism, making test isolation harder when different catalog paths are needed across tests.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "homedir() called at state-store module scope",
+          "description": "DEFAULT_STATE_DIR in state-store.ts captures homedir() at import time. FileStateStore accepts a dir override, so test isolation is achievable by passing a temp dir \u2014 the module-level default is rarely used in tests.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Consistent withToolWrapper pipeline pattern across all tools",
+          "description": "Every toolkit tool follows: public function \u2192 withToolWrapper \u2192 guards \u2192 bridge calls \u2192 ok/err. This is a deliberate structural pattern that makes the control flow predictable and consistent across all 10 tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "pay.ts sequential protocol correctly exceeds LOC threshold",
+          "description": "The D402 challenge/response protocol has 9 sequential steps with proper helper extraction (fetchWithValidatedRedirects, withWalletSettlementLock, safeReadBody). LOC is justified by protocol complexity, not mixed concerns.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "sdk-bridge.ts apiCall silent catch conflates failure types",
+          "description": "Network exceptions are converted to { ok: false, status: 0 } which is indistinguishable from an HTTP 0-status response. Callers lose the ability to distinguish retryable network errors from non-retryable HTTP errors.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    },
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "ToolResult<T> uniform return contract across all tools",
+          "description": "All 10 tools return Promise<ToolResult<T>> with no mixed throw/return patterns within the module API. This is a strong positive contract discipline enforced by withToolWrapper.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "attestUrl optional type vs required runtime mismatch",
+          "description": "PublishDraft.attestUrl is typed optional (?) but throws at runtime if absent. This was intentionally designed as 'two-layer validation' but the type annotation communicates the wrong contract to callers who rely on TypeScript types.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "verify() blockHeight hardcoded to 1 \u2014 fabricated data",
+          "description": "When a post is found in the feed, verify() returns blockHeight: 1. The feed API does not provide block height, so this placeholder was never replaced with real data. Callers receive a typed field with meaningless content.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "logic_clarity": {
+      "add": [
+        {
+          "header": "Control flow generally direct, no complex branching",
+          "description": "The toolkit tools follow clear sequential patterns (validate \u2192 guard \u2192 execute \u2192 record) with no identical if/else branches or always-true conditions found across the 10 tools and 6 guards reviewed.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "verify() for-loop has unreachable post-loop return",
+          "description": "The inclusive upper bound (attempt <= RETRY_DELAYS_MS.length) means the final retry is handled inside the loop, making the post-loop error return dead code. This indicates the loop termination logic was not fully verified.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "pay-spend-cap.ts validates limits before input validity",
+          "description": "The maxPerCall check fires before the isFinite check, which means Infinity input gets SPEND_LIMIT error code instead of INVALID_INPUT. Guard ordering should validate input shape before comparing against policy.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "type_safety": {
+      "add": [
+        {
+          "header": "Public API surface fully typed with no any escapes",
+          "description": "types.ts, index.ts, and all tool function signatures use fully typed interfaces. Every option type, result type, and error type is precise. The Zod schemas include compile-time sync assertions that prevent schema/interface drift. This is the codebase's strongest type safety layer.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Zod compile-time sync assertions prevent schema drift",
+          "description": "schemas.ts lines 173-194 use type-level assertions to verify schema output extends interface (forward) and interface extends schema input (reverse). Zero runtime cost. This is an unusually disciplined approach to keeping Zod schemas synchronized with TypeScript interfaces.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No @ts-ignore or @ts-expect-error in toolkit source",
+          "description": "All type escapes use explicit `as` casts with localized scope \u2014 no file-level type suppression. Casts are visible and traceable to specific SDK gaps.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SDK boundary is the primary any sink \u2014 partially SDK-forced",
+          "description": "The Demos SDK does not declare web2.createDahr(), sendTransaction(), or transfer() in its TypeScript interface, forcing as any casts at SDK call sites. The bare Function txModule parameter and any-typed cache variables are not SDK-forced and reduce type safety unnecessarily.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "SourceStatus duplicated in discover-sources.ts",
+          "description": "A local SourceStatus type definition in discover-sources.ts exactly duplicates the exported type from types.ts. This creates a silently-diverging copy that will cause incorrect normalizeStatus behavior if types.ts adds a new status value.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  },
+  "review_scope": {
+    "reviewed_files_count": 0,
+    "successful_batch_count": 20,
+    "full_sweep_included": false,
+    "total_files": 24,
+    "imported_dimensions": [
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "contract_coherence",
+      "convention_outlier",
+      "cross_module_architecture",
+      "dependency_health",
+      "design_coherence",
+      "error_consistency",
+      "high_level_elegance",
+      "incomplete_migration",
+      "initialization_coupling",
+      "logic_clarity",
+      "low_level_elegance",
+      "mid_level_elegance",
+      "naming_quality",
+      "package_organization",
+      "test_strategy",
+      "type_safety"
+    ]
+  },
+  "provenance": {
+    "kind": "blind_review_batch_import",
+    "blind": true,
+    "runner": "dry-run",
+    "run_stamp": "20260327_170212",
+    "created_at": "2026-03-27T17:14:16+00:00",
+    "batch_count": 20,
+    "batch_indexes": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "packet_path": "/home/mj/projects/demos-agents/.desloppify/review_packet_blind.json",
+    "packet_sha256": "28a31a2d6b91b878b585100ed18195650124f0dae62c0092a2d954cab0077911"
+  },
+  "assessment_coverage": {
+    "scored_dimensions": [
+      "naming_quality",
+      "logic_clarity",
+      "type_safety",
+      "contract_coherence",
+      "error_consistency",
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "high_level_elegance",
+      "mid_level_elegance",
+      "low_level_elegance",
+      "cross_module_architecture",
+      "initialization_coupling",
+      "convention_outlier",
+      "dependency_health",
+      "test_strategy",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "incomplete_migration",
+      "package_organization",
+      "design_coherence"
+    ],
+    "selected_dimensions": [
+      "naming_quality",
+      "logic_clarity",
+      "type_safety",
+      "contract_coherence",
+      "error_consistency",
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "high_level_elegance",
+      "mid_level_elegance",
+      "low_level_elegance",
+      "cross_module_architecture",
+      "initialization_coupling",
+      "convention_outlier",
+      "dependency_health",
+      "test_strategy",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "incomplete_migration",
+      "package_organization",
+      "design_coherence"
+    ],
+    "imported_dimensions": [
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "contract_coherence",
+      "convention_outlier",
+      "cross_module_architecture",
+      "dependency_health",
+      "design_coherence",
+      "error_consistency",
+      "high_level_elegance",
+      "incomplete_migration",
+      "initialization_coupling",
+      "logic_clarity",
+      "low_level_elegance",
+      "mid_level_elegance",
+      "naming_quality",
+      "package_organization",
+      "test_strategy",
+      "type_safety"
+    ],
+    "missing_dimensions": []
+  }
+}

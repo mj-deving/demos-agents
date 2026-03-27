@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-03-27T16:59:34+00:00",
-  "updated": "2026-03-27T17:14:24+00:00",
+  "updated": "2026-03-27T17:14:16+00:00",
   "queue_order": [
     "review::.::holistic::abstraction_fitness::discover_sources_manual_wrapper_replication",
     "review::.::holistic::ai_generated_debt::ai_debt_record_fn_duplication",
@@ -214,12 +214,16 @@
   },
   "superseded": {},
   "promoted_ids": [],
-  "plan_start_scores": {},
+  "plan_start_scores": {
+    "strict": 20.9,
+    "overall": 20.9,
+    "objective": 83.7,
+    "verified": 83.7
+  },
   "refresh_state": {
     "_subjective_migration_pruned": true,
     "lifecycle_phase": "plan",
-    "subjective_review_completed_at_scan_count": 2,
-    "postflight_scan_completed_at_scan_count": 3
+    "subjective_review_completed_at_scan_count": 2
   },
   "execution_log": [
     {
@@ -428,26 +432,6 @@
         "import_scores_pruned": [],
         "sync_status": "synced",
         "sync_message": null
-      }
-    },
-    {
-      "timestamp": "2026-03-27T17:14:24+00:00",
-      "action": "clear_start_scores",
-      "issue_ids": [],
-      "cluster_name": null,
-      "actor": "system",
-      "note": null,
-      "detail": {}
-    },
-    {
-      "timestamp": "2026-03-27T17:14:24+00:00",
-      "action": "complete_postflight_scan",
-      "issue_ids": [],
-      "cluster_name": null,
-      "actor": "system",
-      "note": null,
-      "detail": {
-        "scan_count": 3
       }
     }
   ],

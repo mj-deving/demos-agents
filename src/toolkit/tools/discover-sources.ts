@@ -9,11 +9,12 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, ToolResult } from "../types.js";
+import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, SourceStatus, ToolResult } from "../types.js";
 import { ok, err, demosError } from "../types.js";
 import { DemosSession } from "../session.js";
 import { validateInput, DiscoverSourcesOptionsSchema } from "../schemas.js";
 import { safeParse } from "../guards/state-helpers.js";
+import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 
 // Module-level catalog cache (keyed by path — catalog is static per process)
 const catalogCache = new Map<string, Source[]>();
@@ -30,19 +31,16 @@ const BUNDLED_CATALOG_PATH = resolve(
  * Discover available data sources from the bundled catalog.
  */
 export async function discoverSources(
-  session: DemosSession | null,
+  session: DemosSession,
   opts?: DiscoverSourcesOptions,
 ): Promise<ToolResult<DiscoverSourcesResult>> {
-  const start = Date.now();
-  if (session) session.touch();
+  return withToolWrapper(session, "discoverSources", "NETWORK_ERROR", async (start) => {
+    const inputError = validateInput(DiscoverSourcesOptionsSchema, opts);
+    if (inputError) {
+      return err(inputError, localProvenance(start));
+    }
 
-  const inputError = validateInput(DiscoverSourcesOptionsSchema, opts);
-  if (inputError) {
-    return err(inputError, { path: "local", latencyMs: Date.now() - start });
-  }
-
-  try {
-    const catalogPath = session?.sourceCatalogPath ?? BUNDLED_CATALOG_PATH;
+    const catalogPath = session.sourceCatalogPath ?? BUNDLED_CATALOG_PATH;
     const sources = await loadCatalog(catalogPath);
 
     const filtered = opts?.domain
@@ -50,26 +48,15 @@ export async function discoverSources(
       : sources;
 
     // Exclude non-available sources
-    const excludedStatuses = new Set(["quarantined", "stale", "deprecated", "archived"]);
+    const excludedStatuses = new Set<string>(["quarantined", "stale", "deprecated", "archived"]);
     const active = filtered.filter((s) => !excludedStatuses.has(s.status));
     const sorted = active.sort((a, b) => (b.healthScore ?? 0) - (a.healthScore ?? 0));
 
-    const result = ok<DiscoverSourcesResult>(
+    return ok<DiscoverSourcesResult>(
       { sources: sorted },
-      { path: "local", latencyMs: Date.now() - start },
+      localProvenance(start),
     );
-
-    if (session?.onToolCall) {
-      session.onToolCall({ tool: "discoverSources", durationMs: Date.now() - start, result });
-    }
-
-    return result;
-  } catch (e) {
-    return err(
-      demosError("INVALID_INPUT", `Failed to load source catalog: ${(e as Error).message}`, false),
-      { path: "local", latencyMs: Date.now() - start },
-    );
-  }
+  });
 }
 
 async function loadCatalog(catalogPath: string): Promise<Source[]> {
@@ -78,9 +65,9 @@ async function loadCatalog(catalogPath: string): Promise<Source[]> {
   if (cached) return cached;
 
   const raw = await readFile(catalogPath, "utf-8");
-  const catalog = safeParse(raw);
+  const catalog = safeParse(raw) as Record<string, unknown>;
 
-  const entries = Array.isArray(catalog) ? catalog : catalog.sources ?? [];
+  const entries = Array.isArray(catalog) ? catalog : (catalog.sources ?? []) as unknown[];
   const sources: Source[] = entries.map((entry: Record<string, unknown>) => ({
     id: (entry.id as string) ?? "",
     name: (entry.name as string) ?? (entry.id as string) ?? "",
@@ -97,8 +84,6 @@ async function loadCatalog(catalogPath: string): Promise<Source[]> {
   catalogCache.set(catalogPath, sources);
   return sources;
 }
-
-type SourceStatus = "active" | "degraded" | "quarantined" | "stale" | "deprecated" | "archived";
 
 const VALID_STATUSES = new Set<string>(["active", "degraded", "quarantined", "stale", "deprecated", "archived"]);
 

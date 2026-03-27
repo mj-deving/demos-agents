@@ -26,7 +26,8 @@ export async function loadState<T>(
   if (!raw) return structuredClone(defaultValue);
   try {
     return safeParse(raw) as T;
-  } catch {
+  } catch (e) {
+    console.warn(`[demos-toolkit] State corruption detected for key — resetting to default. Parse error: ${(e as Error).message}`);
     return structuredClone(defaultValue);
   }
 }

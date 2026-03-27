@@ -1,19 +1,19 @@
 {
   "version": 3,
   "created": "2026-03-27T16:59:25+00:00",
-  "last_scan": "2026-03-27T16:59:34+00:00",
-  "scan_count": 1,
-  "overall_score": 20.9,
-  "objective_score": 83.7,
-  "strict_score": 20.9,
-  "verified_strict_score": 83.7,
+  "last_scan": "2026-03-27T17:14:24+00:00",
+  "scan_count": 3,
+  "overall_score": 81.0,
+  "objective_score": 83.6,
+  "strict_score": 81.0,
+  "verified_strict_score": 83.6,
   "stats": {
-    "total": 61,
+    "total": 106,
     "auto_resolved": 0,
     "deferred": 0,
     "false_positive": 0,
-    "fixed": 0,
-    "open": 61,
+    "fixed": 20,
+    "open": 86,
     "triaged_out": 0,
     "wontfix": 0,
     "by_tier": {
@@ -22,7 +22,7 @@
         "deferred": 0,
         "false_positive": 0,
         "fixed": 0,
-        "open": 3,
+        "open": 34,
         "triaged_out": 0,
         "wontfix": 0
       },
@@ -31,7 +31,7 @@
         "deferred": 0,
         "false_positive": 0,
         "fixed": 0,
-        "open": 6,
+        "open": 19,
         "triaged_out": 0,
         "wontfix": 0
       },
@@ -40,7 +40,7 @@
         "deferred": 0,
         "false_positive": 0,
         "fixed": 0,
-        "open": 32,
+        "open": 33,
         "triaged_out": 0,
         "wontfix": 0
       },
@@ -48,8 +48,8 @@
         "auto_resolved": 0,
         "deferred": 0,
         "false_positive": 0,
-        "fixed": 0,
-        "open": 20,
+        "fixed": 20,
+        "open": 0,
         "triaged_out": 0,
         "wontfix": 0
       }
@@ -70,7 +70,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -96,7 +96,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -122,7 +122,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -148,7 +148,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -174,7 +174,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -200,7 +200,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -226,7 +226,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:33+00:00",
-      "last_seen": "2026-03-27T16:59:33+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -254,7 +254,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -282,7 +282,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -310,7 +310,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -338,7 +338,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -366,7 +366,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -394,7 +394,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -412,17 +412,17 @@
       "file": "src/toolkit/tools/pay.ts",
       "tier": 3,
       "confidence": "medium",
-      "summary": "No direct tests (320 LOC, 1 importers) \u2014 covered only via imports from tested modules",
+      "summary": "No direct tests (331 LOC, 1 importers) \u2014 covered only via imports from tested modules",
       "detail": {
         "kind": "transitive_only",
-        "loc": 320,
+        "loc": 331,
         "importer_count": 1,
-        "loc_weight": 17.88854381999832
+        "loc_weight": 18.193405398660254
       },
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -452,7 +452,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -482,7 +482,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -521,7 +521,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -551,7 +551,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -581,7 +581,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -612,7 +612,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -642,7 +642,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -672,7 +672,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -702,7 +702,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -732,7 +732,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -762,7 +762,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -792,7 +792,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -822,7 +822,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -853,7 +853,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -883,7 +883,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -913,7 +913,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -943,7 +943,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -973,7 +973,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1004,7 +1004,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1035,7 +1035,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1065,7 +1065,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1089,13 +1089,13 @@
         "severity": "low",
         "count": 1,
         "lines": [
-          41
+          52
         ]
       },
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1125,7 +1125,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1155,7 +1155,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1186,7 +1186,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1215,7 +1215,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1244,7 +1244,7 @@
       "status": "open",
       "note": null,
       "first_seen": "2026-03-27T16:59:34+00:00",
-      "last_seen": "2026-03-27T16:59:34+00:00",
+      "last_seen": "2026-03-27T17:14:24+00:00",
       "resolved_at": null,
       "reopen_count": 0,
       "work_item_kind": "mechanical_defect",
@@ -1267,11 +1267,11 @@
         "reason": "unassessed",
         "dimension": "abstraction_fitness"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1280,7 +1280,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::ai_generated_debt": {
       "id": "subjective_review::.::ai_generated_debt",
@@ -1293,11 +1301,11 @@
         "reason": "unassessed",
         "dimension": "ai_generated_debt"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1306,7 +1314,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::api_surface_coherence": {
       "id": "subjective_review::.::api_surface_coherence",
@@ -1319,11 +1335,11 @@
         "reason": "unassessed",
         "dimension": "api_surface_coherence"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1332,7 +1348,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::authorization_consistency": {
       "id": "subjective_review::.::authorization_consistency",
@@ -1345,11 +1369,11 @@
         "reason": "unassessed",
         "dimension": "authorization_consistency"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1358,7 +1382,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::contract_coherence": {
       "id": "subjective_review::.::contract_coherence",
@@ -1371,11 +1403,11 @@
         "reason": "unassessed",
         "dimension": "contract_coherence"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1384,7 +1416,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::convention_outlier": {
       "id": "subjective_review::.::convention_outlier",
@@ -1397,11 +1437,11 @@
         "reason": "unassessed",
         "dimension": "convention_outlier"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1410,7 +1450,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::cross_module_architecture": {
       "id": "subjective_review::.::cross_module_architecture",
@@ -1423,11 +1471,11 @@
         "reason": "unassessed",
         "dimension": "cross_module_architecture"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1436,7 +1484,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::dependency_health": {
       "id": "subjective_review::.::dependency_health",
@@ -1449,11 +1505,11 @@
         "reason": "unassessed",
         "dimension": "dependency_health"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1462,7 +1518,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::design_coherence": {
       "id": "subjective_review::.::design_coherence",
@@ -1475,11 +1539,11 @@
         "reason": "unassessed",
         "dimension": "design_coherence"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1488,7 +1552,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::error_consistency": {
       "id": "subjective_review::.::error_consistency",
@@ -1501,11 +1573,11 @@
         "reason": "unassessed",
         "dimension": "error_consistency"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1514,7 +1586,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::high_level_elegance": {
       "id": "subjective_review::.::high_level_elegance",
@@ -1527,11 +1607,11 @@
         "reason": "unassessed",
         "dimension": "high_level_elegance"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1540,7 +1620,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::incomplete_migration": {
       "id": "subjective_review::.::incomplete_migration",
@@ -1553,11 +1641,11 @@
         "reason": "unassessed",
         "dimension": "incomplete_migration"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1566,7 +1654,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::initialization_coupling": {
       "id": "subjective_review::.::initialization_coupling",
@@ -1579,11 +1675,11 @@
         "reason": "unassessed",
         "dimension": "initialization_coupling"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1592,7 +1688,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::logic_clarity": {
       "id": "subjective_review::.::logic_clarity",
@@ -1605,11 +1709,11 @@
         "reason": "unassessed",
         "dimension": "logic_clarity"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1618,7 +1722,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::low_level_elegance": {
       "id": "subjective_review::.::low_level_elegance",
@@ -1631,11 +1743,11 @@
         "reason": "unassessed",
         "dimension": "low_level_elegance"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1644,7 +1756,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::mid_level_elegance": {
       "id": "subjective_review::.::mid_level_elegance",
@@ -1657,11 +1777,11 @@
         "reason": "unassessed",
         "dimension": "mid_level_elegance"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1670,7 +1790,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::naming_quality": {
       "id": "subjective_review::.::naming_quality",
@@ -1683,11 +1811,11 @@
         "reason": "unassessed",
         "dimension": "naming_quality"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1696,7 +1824,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::package_organization": {
       "id": "subjective_review::.::package_organization",
@@ -1709,11 +1845,11 @@
         "reason": "unassessed",
         "dimension": "package_organization"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1722,7 +1858,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::test_strategy": {
       "id": "subjective_review::.::test_strategy",
@@ -1735,11 +1879,11 @@
         "reason": "unassessed",
         "dimension": "test_strategy"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
@@ -1748,7 +1892,15 @@
       "zone": "production",
       "suppressed": false,
       "suppressed_at": null,
-      "suppression_pattern": null
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
     },
     "subjective_review::.::type_safety": {
       "id": "subjective_review::.::type_safety",
@@ -1761,15 +1913,1697 @@
         "reason": "unassessed",
         "dimension": "type_safety"
       },
-      "status": "open",
-      "note": null,
+      "status": "fixed",
+      "note": "Still absent in current scan scope (src/toolkit)",
       "first_seen": "2026-03-27T16:59:34+00:00",
       "last_seen": "2026-03-27T16:59:34+00:00",
-      "resolved_at": null,
+      "resolved_at": "2026-03-27T17:14:16+00:00",
       "reopen_count": 0,
       "work_item_kind": "assessment_request",
       "issue_kind": "assessment_request",
       "origin": "synthetic_task",
+      "lang": "typescript",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-27T17:14:16+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-27T17:14:24+00:00",
+        "scan_verification_text": "Still absent in current scan scope (src/toolkit)"
+      }
+    },
+    "review::.::holistic::cross_module_architecture::connect_ts_lib_auth_import": {
+      "id": "review::.::holistic::cross_module_architecture::connect_ts_lib_auth_import",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "connect.ts dynamically imports src/lib/auth.js \u2014 toolkit tool crossing into app lib layer",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/toolkit/tools/connect.ts"
+        ],
+        "evidence": [
+          "Line 222: `const { ensureAuth } = await import('../../lib/auth.js')` \u2014 crosses from src/toolkit/tools/ up two levels into src/lib/",
+          "Line 244: `const { loadAuthCache } = await import('../../lib/auth.js')` \u2014 second cross-boundary import in the fallback auth path",
+          "The toolkit is designed as a framework-agnostic module (CLAUDE.md: 'framework-agnostic toolkit'), but connect.ts depends on a project-specific auth module"
+        ],
+        "suggestion": "Move the auth functions needed by connect.ts (ensureAuth, loadAuthCache) into sdk-bridge.ts or expose them as optional injectable callbacks in ConnectOptions. This keeps the toolkit self-contained without reaching into src/lib/.",
+        "reasoning": "",
+        "summary_hash": "a0287b9a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::cross_module_architecture::discover_sources_module_level_cache": {
+      "id": "review::.::holistic::cross_module_architecture::discover_sources_module_level_cache",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Module-level mutable Map cache in discover-sources.ts creates shared process state",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts"
+        ],
+        "evidence": [
+          "Line 18: `const catalogCache = new Map<string, Source[]>()` \u2014 module-level mutable singleton",
+          "Cache is keyed by path but shared across all sessions in the same process \u2014 a session with a custom sourceCatalogPath could observe stale data if the catalog file changes mid-process",
+          "The toolkit architecture intends session-scoped isolation (DemosSession is session-scoped), but this cache is process-scoped"
+        ],
+        "suggestion": "This is low-priority given the catalog is static per deployment. If the concern matters, document the cache-invalidation assumption in a comment (e.g., '// catalog is assumed static per process \u2014 restart to pick up catalog changes'). Alternatively, move the cache into DemosSession if per-session catalog isolation becomes needed.",
+        "reasoning": "",
+        "summary_hash": "eb6d2bf0"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::high_level_elegance::discover_sources_nullable_session": {
+      "id": "review::.::holistic::high_level_elegance::discover_sources_nullable_session",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "discoverSources() accepts nullable session breaking the uniform tool API contract",
+      "detail": {
+        "holistic": true,
+        "dimension": "high_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/index.ts"
+        ],
+        "evidence": [
+          "Line 31 of discover-sources.ts: `export async function discoverSources(session: DemosSession | null, opts?: DiscoverSourcesOptions)`",
+          "All other 9 tools have signature `(session: DemosSession, ...)` \u2014 discoverSources is the only one accepting null",
+          "The docstring says 'Read-only, no session required (optional \u2014 for custom catalog path)' \u2014 this is a legitimate use case but breaks the uniform pattern"
+        ],
+        "suggestion": "Accept `session?: DemosSession` (optional, not nullable) or split into two functions: `discoverSources(session, opts)` for session-aware path and a standalone `loadSourceCatalog(catalogPath?, opts)` for session-free use. The simplest fix is `session?: DemosSession` \u2014 callers pass undefined rather than null, which is idiomatic TypeScript.",
+        "reasoning": "",
+        "summary_hash": "0051f778"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::high_level_elegance::pay_ts_inline_schema": {
+      "id": "review::.::holistic::high_level_elegance::pay_ts_inline_schema",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "D402RequirementSchema defined in pay.ts breaks schemas.ts ownership boundary",
+      "detail": {
+        "holistic": true,
+        "dimension": "high_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/pay.ts",
+          "src/toolkit/schemas.ts"
+        ],
+        "evidence": [
+          "pay.ts lines 17-23: `const D402RequirementSchema = z.object(...)` \u2014 Zod schema defined inside a tool file",
+          "All other Zod schemas are in schemas.ts with documentation explaining the two-layer validation design",
+          "schemas.ts is 10-imported across the codebase and is the designated home for input shape validation"
+        ],
+        "suggestion": "Move D402RequirementSchema to schemas.ts alongside the other Zod schemas. Add a brief comment noting it validates 402 response bodies (not tool input), consistent with the existing schema documentation pattern.",
+        "reasoning": "",
+        "summary_hash": "749e6ab6"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::convention_outlier::guard_dual_api_surface": {
+      "id": "review::.::holistic::convention_outlier::guard_dual_api_surface",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Guards expose old check/record pairs alongside new unified checkAndRecord \u2014 ambiguous API for consumers",
+      "detail": {
+        "holistic": true,
+        "dimension": "convention_outlier",
+        "related_files": [
+          "src/toolkit/guards/dedup-guard.ts",
+          "src/toolkit/guards/write-rate-limit.ts",
+          "src/toolkit/guards/tip-spend-cap.ts",
+          "src/toolkit/index.ts"
+        ],
+        "evidence": [
+          "dedup-guard.ts exports checkDedup (old), recordPublish (old), AND checkAndRecordDedup (new) \u2014 three functions for two operations",
+          "write-rate-limit.ts exports checkWriteRateLimit (old), recordWrite (old), AND checkAndRecordWrite (new)",
+          "tip-spend-cap.ts exports checkTipSpendCap (old), recordTip (old), AND checkAndRecordTip (new)",
+          "index.ts re-exports all six old-style functions under '\u2500\u2500 Guards (exposed for testing and advanced consumers) \u2500\u2500' without indicating which style is preferred",
+          "The new unified checkAndRecord functions are the correct ones to use (single lock acquisition, atomic check+record) but there's no deprecation signal on the old functions"
+        ],
+        "suggestion": "Add JSDoc @deprecated tags to the old-style check/record functions (checkDedup, recordPublish, checkWriteRateLimit, recordWrite, checkTipSpendCap, recordTip) pointing to their checkAndRecord replacements. This signals convention preference without breaking existing callers. Example: `/** @deprecated Use checkAndRecordDedup() for atomic check+record. */`",
+        "reasoning": "",
+        "summary_hash": "a54aa8fa"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::convention_outlier::discover_sources_duplicate_source_status": {
+      "id": "review::.::holistic::convention_outlier::discover_sources_duplicate_source_status",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "discover-sources.ts defines a local SourceStatus type that duplicates the exported SourceStatus from types.ts",
+      "detail": {
+        "holistic": true,
+        "dimension": "convention_outlier",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/types.ts"
+        ],
+        "evidence": [
+          "discover-sources.ts line 100: `type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'`",
+          "types.ts line 237: `export type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'` \u2014 identical definition",
+          "discover-sources.ts does not import SourceStatus from types.ts despite it being exported from there"
+        ],
+        "suggestion": "Remove the local SourceStatus type from discover-sources.ts and import it from types.ts: `import type { ..., SourceStatus } from '../types.js'`. The types.ts definition is already part of the public API.",
+        "reasoning": "",
+        "summary_hash": "ef72d843"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::scan_silent_skill_dojo_error": {
+      "id": "review::.::holistic::error_consistency::scan_silent_skill_dojo_error",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "scan.ts silently swallows Skill Dojo fallback error, losing all context on dual-path failure",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/toolkit/tools/scan.ts"
+        ],
+        "evidence": [
+          "Lines 32-39: the skillDojoFallback path catches the Dojo error with `catch { /* both failed */ }` \u2014 zero context preserved",
+          "The outer error path (line 42) uses localErr from the first fetch failure, not the Dojo failure \u2014 if Dojo fails for a different reason (auth, format), that information is lost",
+          "A developer debugging a scan failure would see only 'Scan failed: <local error>' with no indication that Skill Dojo was tried and also failed"
+        ],
+        "suggestion": "Change the inner catch to capture the Skill Dojo error and include both failure messages in the returned error. For example: `catch (dojoErr) { return err(demosError('NETWORK_ERROR', `Scan failed (local: ${(localErr as Error).message}, skill-dojo: ${(dojoErr as Error).message})`, true), localProvenance(start)); }`",
+        "reasoning": "",
+        "summary_hash": "ba31e870"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::discover_sources_json_parse_no_local_catch": {
+      "id": "review::.::holistic::error_consistency::discover_sources_json_parse_no_local_catch",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "loadCatalog() calls JSON.parse without local try/catch, relying on outer function's catch in different scope",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts"
+        ],
+        "evidence": [
+          "discover-sources.ts line 80: `const catalog = JSON.parse(raw)` \u2014 no try/catch in loadCatalog()",
+          "The outer try/catch is in discoverSources() (line 43), a different function that calls loadCatalog(). This works but the error handling is owned by the caller, not the function that parses",
+          "If loadCatalog is called from another context in the future, the JSON.parse throw would propagate unhandled",
+          "Flagged by the security detector as 'JSON.parse() without try/catch - may throw on malformed input'"
+        ],
+        "suggestion": "Add a local try/catch inside loadCatalog() around the JSON.parse, throwing a descriptive error: `try { catalog = JSON.parse(raw); } catch { throw new Error(`Invalid JSON in catalog at ${catalogPath}`); }`. This makes the error contract explicit at the parse site.",
+        "reasoning": "",
+        "summary_hash": "da5f84a6"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::spend_cap_validation_order": {
+      "id": "review::.::holistic::error_consistency::spend_cap_validation_order",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "tip-spend-cap and pay-spend-cap check policy bounds before validating isFinite \u2014 relies on NaN comparison behavior",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/toolkit/guards/tip-spend-cap.ts",
+          "src/toolkit/guards/pay-spend-cap.ts"
+        ],
+        "evidence": [
+          "tip-spend-cap.ts line 36: `if (amount > policy.maxPerTip)` checked before line 44: `if (!Number.isFinite(amount) || amount <= 0)`. NaN > 10 is false, so NaN would pass the first check and be caught by the second \u2014 but this depends on implicit NaN arithmetic.",
+          "pay-spend-cap.ts line 34: `if (amount > policy.maxPerCall)` checked before line 42: `if (!Number.isFinite(amount) || amount <= 0)`. Same pattern.",
+          "If the isFinite check is ever removed or moved, NaN amounts would pass the policy check silently"
+        ],
+        "suggestion": "Move the `isFinite(amount) && amount > 0` validation to be the FIRST check in both functions, before any policy comparison. This makes validation order self-documenting and removes the implicit NaN-comparison dependency.",
+        "reasoning": "",
+        "summary_hash": "461af7c5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::naming_quality::backward_compat_naming_split": {
+      "id": "review::.::holistic::naming_quality::backward_compat_naming_split",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Backward-compat guard aliases (checkDedup, checkWriteRateLimit, checkTipSpendCap) create dual naming surface alongside current checkAndRecord* names",
+      "detail": {
+        "holistic": true,
+        "dimension": "naming_quality",
+        "related_files": [
+          "src/toolkit/guards/dedup-guard.ts",
+          "src/toolkit/guards/write-rate-limit.ts",
+          "src/toolkit/guards/tip-spend-cap.ts"
+        ],
+        "evidence": [
+          "dedup-guard.ts exports both checkAndRecordDedup (current) and checkDedup (backward compat) \u2014 both are active, checkDedup delegates to checkAndRecordDedup with record=false",
+          "write-rate-limit.ts similarly exports checkAndRecordWrite alongside checkWriteRateLimit and recordWrite",
+          "tip-spend-cap.ts exports checkAndRecordTip alongside checkTipSpendCap and recordTip",
+          "publish.ts imports checkDedup and recordPublish (old names), not the unified checkAndRecordDedup \u2014 so the old names are still load-bearing"
+        ],
+        "suggestion": "Migrate publish.ts (the only caller of old names) to use checkAndRecordDedup with record=true in a single call, eliminating the separate recordDedupPublish call. Then remove the backward-compat aliases from each guard file. This reduces the naming surface to one name per operation.",
+        "reasoning": "",
+        "summary_hash": "8851dd6e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::abstraction_fitness::discover_sources_manual_wrapper_replication": {
+      "id": "review::.::holistic::abstraction_fitness::discover_sources_manual_wrapper_replication",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "discoverSources() manually replicates withToolWrapper boilerplate (touch + onToolCall) for a session-optional tool",
+      "detail": {
+        "holistic": true,
+        "dimension": "abstraction_fitness",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/tools/tool-wrapper.ts"
+        ],
+        "evidence": [
+          "discover-sources.ts lines 36-37: 'if (session) session.touch();' \u2014 manual replication of withToolWrapper's session.touch() call",
+          "discover-sources.ts lines 61-63: manual onToolCall notification block \u2014 identical pattern to what withToolWrapper does post-success",
+          "withToolWrapper requires a non-null DemosSession (line 19 signature), so it cannot be used when session is DemosSession | null",
+          "All other 9 tools use withToolWrapper; discoverSources is the only outlier"
+        ],
+        "suggestion": "Make withToolWrapper accept 'session: DemosSession | null' and guard touch()/onToolCall notification with null checks. This lets discoverSources use withToolWrapper while keeping its session-optional contract. Alternatively, extract a lightweight notifyToolCall(session, toolName, result) helper that both withToolWrapper and discoverSources can call.",
+        "reasoning": "",
+        "summary_hash": "0d36158d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::verify_dead_code_fallback": {
+      "id": "review::.::holistic::low_level_elegance::verify_dead_code_fallback",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Dead-code err() fallback after retry loop in verify.ts is never reached but looks load-bearing",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/verify.ts"
+        ],
+        "evidence": [
+          "verify.ts loop: for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) \u2014 runs 4 iterations (0,1,2,3) for RETRY_DELAYS_MS.length=3",
+          "On attempt=3 (last): catch branch returns err() directly (line 45-55); non-confirmed branch returns ok() directly (line 43)",
+          "Lines 59-62: 'return err(demosError(\"CONFIRM_TIMEOUT\", \"Verification exhausted all retries\", true))' \u2014 this line is unreachable; every loop termination returns from inside the loop body",
+          "A developer reading this file cannot immediately tell the fallback is dead \u2014 it looks like necessary exhaustion handling"
+        ],
+        "suggestion": "Remove lines 59-62. To make the loop's exhaustion property self-evident, rename the loop variable bound to make max iterations obvious, or add a brief comment before the loop: '// Loop handles all attempts including the last; fallback below is unreachable'. The cleaner fix is deletion of the dead code.",
+        "reasoning": "",
+        "summary_hash": "518ee2ab"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::tip_feed_scan_for_author": {
+      "id": "review::.::holistic::low_level_elegance::tip_feed_scan_for_author",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "tip() fetches full feed (50 posts) to resolve one post author \u2014 implicit, unscalable, and fragile for non-recent posts",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/tip.ts"
+        ],
+        "evidence": [
+          "tip.ts lines 38-55: fetches /api/feed?limit=50, then does a linear posts.find() for opts.txHash",
+          "If the target post is not in the 50 most recent posts, tip returns INVALID_INPUT 'not found in feed'",
+          "The function docstring says 'tip DEM to a post author' but does not document that it requires the post to be in the recent feed",
+          "No post-lookup API endpoint is used \u2014 the feed scan is an implicit workaround"
+        ],
+        "suggestion": "Add a dedicated post-lookup API call (e.g., /api/post/:txHash if available) before falling back to feed scan. If only feed scan is possible, document the limitation explicitly in the function docstring: '@param opts.txHash \u2014 must be in the 50 most recent posts (feed lookup limitation)'. Extract the author resolution into a named helper resolvePostAuthor(session, txHash) to make the side effect explicit at the call site.",
+        "reasoning": "",
+        "summary_hash": "2b00fafe"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::scan_magic_numbers": {
+      "id": "review::.::holistic::low_level_elegance::scan_magic_numbers",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "identifyOpportunities() in scan.ts uses unexplained magic numbers for reaction threshold and score",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/scan.ts"
+        ],
+        "evidence": [
+          "scan.ts line 52: 'if (post.reactions.agree + post.reactions.disagree < 5 && post.text.length > 100)' \u2014 threshold 5 and length 100 are unexplained",
+          "scan.ts line 56: 'score: 0.7' \u2014 the scoring basis is not documented",
+          "No named constants or comments explain why these values were chosen"
+        ],
+        "suggestion": "Extract named constants: 'const LOW_ENGAGEMENT_THRESHOLD = 5; const MIN_CONTENT_LENGTH = 100; const REPLY_OPPORTUNITY_SCORE = 0.7;' with brief inline comments explaining the rationale (e.g., '// replies with <5 reactions and >100 chars are good engagement targets').",
+        "reasoning": "",
+        "summary_hash": "2209d205"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::mle_bridge_opaque_handle": {
+      "id": "review::.::holistic::mid_level_elegance::mle_bridge_opaque_handle",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "SdkBridge stored opaquely inside signingHandle requiring runtime cast in getBridge()",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/session.ts",
+          "src/toolkit/tools/connect.ts"
+        ],
+        "evidence": [
+          "connect.ts: signingHandle: { demos, bridge } \u2014 bridge is a positional field inside an untyped object",
+          "session.ts getBridge(): const handle = (this as Record<symbol, unknown>)[SIGNING_HANDLE] as { bridge?: SdkBridge } | undefined \u2014 requires cast and optional-chain check",
+          "DemosSession constructor types signingHandle as 'unknown' with no interface specifying bridge"
+        ],
+        "suggestion": "Define a typed interface (e.g. SigningHandle = { demos: unknown; bridge: SdkBridge }) and use it in both connect.ts and session.ts. Remove the optional-chain and cast from getBridge() by making the type explicit.",
+        "reasoning": "",
+        "summary_hash": "81d2a4c0"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::mle_api_base_url_hardcoded": {
+      "id": "review::.::holistic::mid_level_elegance::mle_api_base_url_hardcoded",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "DEFAULT_SUPERCOLONY_API hardcoded in connect.ts, not threaded from ConnectOptions",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/connect.ts",
+          "src/toolkit/types.ts"
+        ],
+        "evidence": [
+          "connect.ts: const DEFAULT_SUPERCOLONY_API = 'https://www.supercolony.ai'",
+          "connect.ts: const bridge = createSdkBridge(demos, DEFAULT_SUPERCOLONY_API, authToken) \u2014 no opts.supercolonyApi override",
+          "ConnectOptions in types.ts has no supercolonyApi field, so callers cannot point at staging/test"
+        ],
+        "suggestion": "Add optional supercolonyApi?: string to ConnectOptions; pass opts.supercolonyApi ?? DEFAULT_SUPERCOLONY_API into createSdkBridge. This makes the seam explicit and test-injectable without changing the default.",
+        "reasoning": "",
+        "summary_hash": "6d3e7d1f"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::mle_reply_validation_bypass_wrapper": {
+      "id": "review::.::holistic::mid_level_elegance::mle_reply_validation_bypass_wrapper",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "reply() validates input then delegates to publish(), which re-validates and runs withToolWrapper; reply's own validation errors use latencyMs: 0 instead of wrapper timing",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/publish.ts"
+        ],
+        "evidence": [
+          "reply(): const inputError = validateInput(ReplyOptionsSchema, opts); if (inputError) return err(inputError, { path: 'local', latencyMs: 0 }); \u2014 manual provenance with hardcoded 0",
+          "publish() runs withToolWrapper which records real timing \u2014 but reply validation errors bypass it entirely",
+          "onToolCall is never triggered for reply() validation failures, creating an observability gap"
+        ],
+        "suggestion": "Wrap reply() in withToolWrapper like all other tools. Move ReplyOptions validation inside the wrapper so timing and onToolCall fire consistently for both validation and execution failures.",
+        "reasoning": "",
+        "summary_hash": "00a9f56a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::mle_stale_todo_attest": {
+      "id": "review::.::holistic::mid_level_elegance::mle_stale_todo_attest",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Stale TODO comment in attest.ts claims SDK bridge wiring is pending, but it is already wired",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/attest.ts"
+        ],
+        "evidence": [
+          "attest.ts line 41: // TODO(sdk-bridge): wire to session's SDK bridge once connect() creates it",
+          "executeDahrAttestation immediately calls session.getBridge() \u2014 the bridge is already wired",
+          "connect() has created the bridge since it was implemented; this TODO is misleading to future maintainers"
+        ],
+        "suggestion": "Remove the TODO comment from attest.ts line 41. The bridge wiring is complete.",
+        "reasoning": "",
+        "summary_hash": "98119c86"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::mle_sdk_txhash_fallback_glue": {
+      "id": "review::.::holistic::mid_level_elegance::mle_sdk_txhash_fallback_glue",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "6-way txHash extraction fallback in publishHivePost encodes SDK response shape uncertainty as inline glue",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "sdk-bridge.ts publishHivePost: const txHash = confirmHash || (results ? results[Object.keys(results)[0]]?.hash : ...) || response.data.transaction.hash || response.data.hash || result.hash || result.txHash",
+          "This 6-branch fallback is at the boundary between toolkit and Demos SDK \u2014 shape uncertainty is not documented in an SDK contract or adapter",
+          "Similar multi-shape response parsing exists in scan.ts (feed response normalization) and signAndBroadcast (result.hash ?? result.txHash)"
+        ],
+        "suggestion": "Extract a normalizeHiveTxHash(result: unknown): string | undefined helper that centralizes all SDK response shapes. Document which SDK version returns which shape. This isolates the glue in one named place rather than inline at the call site.",
+        "reasoning": "",
+        "summary_hash": "3d57084d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::ts_state_helpers_untested": {
+      "id": "review::.::holistic::test_strategy::ts_state_helpers_untested",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "state-helpers.ts (7 importers, shared locking primitive) has no direct tests",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "src/toolkit/guards/state-helpers.ts",
+          "tests/toolkit/guards/"
+        ],
+        "evidence": [
+          "scan evidence: 'test_coverage: No direct tests (78 LOC, 7 importers) \u2014 covered only via imports from tested mod'",
+          "state-helpers.ts exports: stateKey, loadState, checkAndAppend, sleep \u2014 checkAndAppend is the atomic lock-check-append primitive used by all 5 stateful guards",
+          "No tests for: JSON parse failure fallback in loadState, pruneWindowMs cutoff boundary, newEntry=undefined behavior (check-only without append), lock TTL expiry"
+        ],
+        "suggestion": "Add tests/toolkit/guards/state-helpers.test.ts covering: loadState returns structuredClone default on missing/corrupt JSON, checkAndAppend returns error when check fails without appending, checkAndAppend appends newEntry when check passes, prune boundary (entries at exactly cutoff ms are excluded). These cover behavior that guards depend on but don't directly assert.",
+        "reasoning": "",
+        "summary_hash": "51327e12"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::ts_discover_sources_untested": {
+      "id": "review::.::holistic::test_strategy::ts_discover_sources_untested",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "discover-sources.ts (109 LOC, highest signal density) has no direct tests; deprecated symbols and unsafe JSON.parse are uncovered",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts"
+        ],
+        "evidence": [
+          "scan evidence: 'test_coverage: No direct tests (109 LOC, 1 importers) \u2014 covered only via imports from tested mod'",
+          "scan evidence: 'smells: 1x High cyclomatic complexity (>15 branches)'",
+          "scan evidence: 'security: JSON.parse() without try/catch - may throw on malformed input'",
+          "scan evidence: 'deprecated: VALID_STATUSES (0 importers), normalizeStatus (0 importers) \u2014 safe to delete'"
+        ],
+        "suggestion": "Add tests/toolkit/tools/discover-sources.test.ts with: domain filter returns only matching sources, matchThreshold filters low-score sources, malformed catalog JSON does not throw uncaught exception. Also delete VALID_STATUSES and normalizeStatus (0 importers confirmed by scan).",
+        "reasoning": "",
+        "summary_hash": "81e3b718"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::ts_verify_retry_untested": {
+      "id": "review::.::holistic::test_strategy::ts_verify_retry_untested",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "verify.ts retry logic (3s/5s/10s delays, exhaustion path) has no targeted tests; integration test uses real sleep with 25s timeout",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "src/toolkit/tools/verify.ts",
+          "tests/toolkit/tools/integration.test.ts"
+        ],
+        "evidence": [
+          "verify.ts: RETRY_DELAYS_MS = [3000, 5000, 10000] \u2014 total potential wait is 18s in exhaustion path",
+          "integration.test.ts verify test: timeout: 25000 \u2014 suggests real sleep is occurring in test",
+          "No test for: retry exhaustion returning CONFIRM_TIMEOUT, partial success (confirmed on retry 2 not retry 0)",
+          "scan evidence: 'test_coverage: No direct tests (92 LOC, 1 importers)'"
+        ],
+        "suggestion": "Add tests/toolkit/tools/verify.test.ts using vi.useFakeTimers() to test retry logic without real delays: bridge throws on first call, succeeds on second (confirm via retry); bridge throws on all calls (verify returns CONFIRM_TIMEOUT); bridge returns confirmed: false on all calls (verify returns ok with confirmed: false).",
+        "reasoning": "",
+        "summary_hash": "7dacb98a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::ts_integration_conditional_assertions": {
+      "id": "review::.::holistic::test_strategy::ts_integration_conditional_assertions",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Integration test assertions collapse to near-tautologies on DNS failure branch",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "tests/toolkit/tools/integration.test.ts"
+        ],
+        "evidence": [
+          "attest() integration test: if (result.ok) { expect(result.data!.responseHash).toBe('mock-hash-abc') } else { expect(result.error!.code).toBeDefined() }",
+          "The else branch asserts only that error.code is defined \u2014 any string (including undefined cast to string) would pass",
+          "publish() integration test: if (result.ok) { expect(result.data!.txHash).toBeDefined() } else { expect(result.error).toBeDefined() } \u2014 even weaker",
+          "In CI without real network, these tests always exercise the else branch but assert nothing meaningful"
+        ],
+        "suggestion": "For attest and publish integration tests: use vi.stubGlobal on DNS/fetch or mock validateUrl (as pay-d402.test.ts does) to force the happy path deterministically. Alternatively, in the else branch assert specific error codes (e.g., INVALID_INPUT for SSRF, NETWORK_ERROR for DNS) rather than merely asserting error is defined.",
+        "reasoning": "",
+        "summary_hash": "ddcc8dd8"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::asc_discover_sources_nullable_session": {
+      "id": "review::.::holistic::api_surface_coherence::asc_discover_sources_nullable_session",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "discoverSources(session: DemosSession | null) is the only tool with a nullable session \u2014 breaks uniform calling convention",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/index.ts"
+        ],
+        "evidence": [
+          "discoverSources(session: DemosSession | null, opts?: DiscoverSourcesOptions) \u2014 all 8 other tools accept DemosSession (non-nullable)",
+          "Internal: if (session) session.touch() \u2014 null check required at every caller call-site",
+          "The rationale is that discoverSources is 'read-only, no session required' (per JSDoc) \u2014 but the API surface does not enforce or signal this: callers who read only the signature cannot distinguish required from optional session"
+        ],
+        "suggestion": "Provide two overloads or split into two functions: discoverSources(session: DemosSession, opts?) for the session-context path, and an autonomous discoverSourcesCatalog(opts?) that takes no session at all. Alternatively, make session truly optional with a default: discoverSources(opts?, session?) \u2014 but the most honest API is to just take no session when it is not needed.",
+        "reasoning": "",
+        "summary_hash": "40898b50"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::asc_discover_sources_no_wrapper": {
+      "id": "review::.::holistic::api_surface_coherence::asc_discover_sources_no_wrapper",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "discoverSources manually reimplements withToolWrapper cross-cutting logic, creating observability inconsistency",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/tools/tool-wrapper.ts"
+        ],
+        "evidence": [
+          "discoverSources manually: const start = Date.now(); if (session) session.touch(); \u2014 duplicates withToolWrapper's first two lines",
+          "discoverSources manually: if (session?.onToolCall) { session.onToolCall({ ... }) } \u2014 duplicates onToolCall notification",
+          "discoverSources manually builds provenance inline: { path: 'local', latencyMs: Date.now() - start } \u2014 duplicates localProvenance(start)",
+          "If onToolCall callback is expected to fire for all tool calls, callers will not receive it when session is null (legitimate use case if no session)"
+        ],
+        "suggestion": "Refactor discoverSources to use withToolWrapper when session is non-null. Extract the catalog logic into a standalone loadFilteredSources() that withToolWrapper calls. This eliminates the manual boilerplate and restores onToolCall consistency.",
+        "reasoning": "",
+        "summary_hash": "a0a6e76d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::asc_discover_sources_dead_match_threshold": {
+      "id": "review::.::holistic::api_surface_coherence::asc_discover_sources_dead_match_threshold",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "DiscoverSourcesOptions.matchThreshold is accepted by discoverSources but never used internally",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/types.ts",
+          "src/toolkit/schemas.ts"
+        ],
+        "evidence": [
+          "types.ts DiscoverSourcesOptions: { domain?: string; matchThreshold?: number }",
+          "discover-sources.ts body: only opts?.domain is read \u2014 matchThreshold is never accessed",
+          "A caller who passes matchThreshold: 5 receives no error and no filtering effect \u2014 silent option absorption"
+        ],
+        "suggestion": "Either implement matchThreshold filtering (filter by source healthScore >= matchThreshold) or remove the field from DiscoverSourcesOptions and its Zod schema. Silent no-op options violate the contract coherence principle.",
+        "reasoning": "",
+        "summary_hash": "275498cc"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::asc_connect_disconnect_exception_undocumented": {
+      "id": "review::.::holistic::api_surface_coherence::asc_connect_disconnect_exception_undocumented",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "connect() and disconnect() break the async-ToolResult pattern without documenting the exception in public types",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/toolkit/tools/connect.ts",
+          "src/toolkit/index.ts"
+        ],
+        "evidence": [
+          "connect(): Promise<DemosSession> \u2014 throws DemosError rather than returning ToolResult<DemosSession>",
+          "disconnect(): void \u2014 synchronous, no return value or confirmation",
+          "All other 8 tools return Promise<ToolResult<T>> \u2014 connect/disconnect are the only exceptions",
+          "index.ts export has no comment distinguishing connect/disconnect as lifecycle exceptions from the tool protocol"
+        ],
+        "suggestion": "Add a JSDoc comment to the connect/disconnect exports in index.ts explicitly noting they are lifecycle functions that throw rather than returning ToolResult. Alternatively, wrap connect() to return Promise<ToolResult<DemosSession>> for full protocol consistency \u2014 though this is a larger breaking change.",
+        "reasoning": "",
+        "summary_hash": "2ff225a2"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::authorization_consistency::ac_url_allowlist_dead": {
+      "id": "review::.::holistic::authorization_consistency::ac_url_allowlist_dead",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "urlAllowlist is stored in DemosSession but never consumed by validateUrl \u2014 allow-list control is wired but dead",
+      "detail": {
+        "holistic": true,
+        "dimension": "authorization_consistency",
+        "related_files": [
+          "src/toolkit/session.ts",
+          "src/toolkit/url-validator.ts",
+          "src/toolkit/tools/attest.ts",
+          "src/toolkit/tools/pay.ts",
+          "src/toolkit/tools/publish.ts"
+        ],
+        "evidence": [
+          "session.ts line 36: readonly urlAllowlist: string[] \u2014 stored as session configuration",
+          "attest.ts line 30: validateUrl(opts.url, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed",
+          "pay.ts line 59: validateUrl(opts.url, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed",
+          "pay.ts line 267: validateUrl(nextUrl, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed at redirect validation",
+          "publish.ts line 88: validateUrl(draft.attestUrl, { allowInsecure: session.allowInsecureUrls }) \u2014 urlAllowlist not passed",
+          "url-validator.ts UrlValidationOptions (line 24-27): { allowInsecure?, resolveOverride? } \u2014 no allowlist field exists"
+        ],
+        "suggestion": "Add `allowlist?: string[]` to UrlValidationOptions in url-validator.ts. In validateUrl(), before the IP blocklist check, return { valid: true, resolvedIp } if the parsed hostname matches any entry in opts.allowlist. At all three validateUrl call sites (attest, pay, publish), pass urlAllowlist: session.urlAllowlist. This activates a security control callers can configure but currently gets no effect.",
+        "reasoning": "",
+        "summary_hash": "c650095d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::ai_debt_restating_comments_state_helpers": {
+      "id": "review::.::holistic::ai_generated_debt::ai_debt_restating_comments_state_helpers",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Inline comments in checkAndAppend restate the code rather than explaining rationale",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/toolkit/guards/state-helpers.ts"
+        ],
+        "evidence": [
+          "Line 54: '// Prune old entries' above state.entries.filter()",
+          "Line 57: '// Check condition' above const errorMsg = check(state, now)",
+          "Line 61: '// Append entry if provided' above if (newEntry) { state.entries.push(newEntry) }",
+          "Line 66: '// Always persist pruned state (prevents unbounded growth on check-only paths)' \u2014 the parenthetical is the only useful part; the header restates the code"
+        ],
+        "suggestion": "Remove the header labels ('// Prune old entries', '// Check condition', '// Append entry if provided') entirely; the code is self-describing. Promote the parenthetical rationale on line 66 to a standalone comment: '// Persist on check-only paths too \u2014 prevents unbounded growth when only reading state'",
+        "reasoning": "",
+        "summary_hash": "e4560fe2"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::ai_debt_record_fn_duplication": {
+      "id": "review::.::holistic::ai_generated_debt::ai_debt_record_fn_duplication",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Four guard recordX() functions duplicate load\u2192prune\u2192push\u2192set instead of reusing checkAndAppend",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/toolkit/guards/dedup-guard.ts",
+          "src/toolkit/guards/write-rate-limit.ts",
+          "src/toolkit/guards/tip-spend-cap.ts",
+          "src/toolkit/guards/pay-spend-cap.ts"
+        ],
+        "evidence": [
+          "dedup-guard.ts recordPublish(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+          "write-rate-limit.ts recordWrite(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+          "tip-spend-cap.ts recordTip(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+          "pay-spend-cap.ts recordPayment(): load state, filter dayAgo, push entry, store \u2014 6 lines",
+          "checkAndAppend in state-helpers.ts already does exactly this with pruneWindowMs, entry append, and lock"
+        ],
+        "suggestion": "Replace each recordX() with a call to checkAndAppend passing record=true-equivalent: pass newEntry and a no-op check that always returns null. This eliminates 4 separate lock+load+prune+push+store sequences. Example for recordPublish: call checkAndAppend(store, key, DEFAULT_STATE, DAY_MS, () => null, { timestamp: Date.now(), hash }).",
+        "reasoning": "",
+        "summary_hash": "0da7913f"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::ai_debt_source_status_local_duplicate": {
+      "id": "review::.::holistic::ai_generated_debt::ai_debt_source_status_local_duplicate",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "SourceStatus type and VALID_STATUSES set re-declared locally in discover-sources.ts despite canonical export in types.ts",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/types.ts"
+        ],
+        "evidence": [
+          "discover-sources.ts line 100: 'type SourceStatus = \"active\" | \"degraded\" | ...' \u2014 zero importers",
+          "types.ts line 237: 'export type SourceStatus = \"active\" | \"degraded\" | ...' \u2014 same union, exported",
+          "VALID_STATUSES Set at line 102 duplicates the canonical SourceStatus values as a runtime set"
+        ],
+        "suggestion": "Import SourceStatus from '../types.js' and delete the local re-declaration. Replace VALID_STATUSES with a type-safe lookup: const VALID_STATUSES = new Set<SourceStatus>(['active','degraded','quarantined','stale','deprecated','archived']). This is a single-file change.",
+        "reasoning": "",
+        "summary_hash": "f66b4447"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::incomplete_migration::incomplete_migration_checkandrecord_not_exported": {
+      "id": "review::.::holistic::incomplete_migration::incomplete_migration_checkandrecord_not_exported",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Unified checkAndRecord* API exists in guards but is not exported \u2014 callers forced to use backward-compat wrappers",
+      "detail": {
+        "holistic": true,
+        "dimension": "incomplete_migration",
+        "related_files": [
+          "src/toolkit/guards/write-rate-limit.ts",
+          "src/toolkit/guards/dedup-guard.ts",
+          "src/toolkit/guards/tip-spend-cap.ts",
+          "src/toolkit/index.ts"
+        ],
+        "evidence": [
+          "write-rate-limit.ts: checkAndRecordWrite() is the unified API (combines check+record atomically), but index.ts exports only checkWriteRateLimit (line 82) and recordWrite (line 83) \u2014 both labeled '(backward compat)'",
+          "dedup-guard.ts: checkAndRecordDedup() is the unified API; index.ts exports only checkDedup and recordPublish (lines 95-98)",
+          "tip-spend-cap.ts: checkAndRecordTip() is the unified API; index.ts exports only checkTipSpendCap and recordTip (lines 86-88)",
+          "External consumers cannot use the atomic check+record operation without importing directly from guard files, bypassing the stable public API surface"
+        ],
+        "suggestion": "Complete the migration: add checkAndRecordWrite, checkAndRecordDedup, and checkAndRecordTip to index.ts exports alongside or replacing the backward-compat wrappers. Once no internal callers reference the old API, remove the wrapper functions. The migration is already done in each guard file \u2014 only index.ts needs updating.",
+        "reasoning": "",
+        "summary_hash": "660e7168"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::init_coupling_catalog_cache_no_flush": {
+      "id": "review::.::holistic::initialization_coupling::init_coupling_catalog_cache_no_flush",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Module-level catalogCache in discover-sources.ts has no flush mechanism \u2014 tests sharing the same module instance cannot isolate catalog contents",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts"
+        ],
+        "evidence": [
+          "Line 18: 'const catalogCache = new Map<string, Source[]>()' \u2014 module-level singleton",
+          "Line 76-77: cache is checked and populated without any TTL or invalidation",
+          "Tests that load a custom catalog in one test and a different one in another within the same process will see the first cached value on subsequent calls to the same path"
+        ],
+        "suggestion": "Export a clearCatalogCache() function for test use: 'export function clearCatalogCache() { catalogCache.clear(); }'. This is a single-line addition that lets tests reset state between runs without restructuring the production cache logic.",
+        "reasoning": "",
+        "summary_hash": "b27899cd"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::sdk_bridge_silent_catch": {
+      "id": "review::.::holistic::design_coherence::sdk_bridge_silent_catch",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "apiCall() catch block silently converts network exceptions to ok:false response \u2014 callers cannot distinguish DNS failure from HTTP 500",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "Lines 199-201: catch(err) { return { ok: false, status: 0, data: (err as Error).message }; }",
+          "status: 0 is the only signal that this was a network error vs an HTTP error; callers checking result.ok will treat both identically",
+          "The existing DemosError system has a NETWORK_ERROR code with retryable:true that is the correct carrier for this case"
+        ],
+        "suggestion": "Re-throw or surface as a DemosError(NETWORK_ERROR) so that callers can distinguish retryable network failures from non-retryable HTTP errors. If apiCall must never throw, add a third field (e.g., networkError: true) to ApiCallResult.",
+        "reasoning": "",
+        "summary_hash": "ddbb8102"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::connect_mixed_concerns": {
+      "id": "review::.::holistic::design_coherence::connect_mixed_concerns",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "connect() mixes 5 distinct responsibilities in one function body: security checks, credential parsing, SDK connection, auth, session construction",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/toolkit/tools/connect.ts"
+        ],
+        "evidence": [
+          "Lines 47-55: symlink check and TOCTOU prevention",
+          "Lines 58-77: file mode enforcement with container detection branch",
+          "Lines 80-81: wallet credential parsing (3 format branches in parseWallet)",
+          "Lines 83-88: SDK connection and auth via connectSdk",
+          "Lines 90-112: session construction with 12 options mapped"
+        ],
+        "suggestion": "Extract the security + file reading into a helper (e.g., readSecureWalletFile) and the session construction into a helper (e.g., buildSession). This would leave connect() as a readable orchestration of 3-4 clearly named steps rather than 5 interleaved responsibilities.",
+        "reasoning": "",
+        "summary_hash": "a01ec7b4"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::attest_url_optional_required_lie": {
+      "id": "review::.::holistic::contract_coherence::attest_url_optional_required_lie",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "PublishDraft.attestUrl typed optional but throws at runtime if absent \u2014 type annotation lies to callers",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/toolkit/types.ts",
+          "src/toolkit/tools/publish.ts",
+          "src/toolkit/schemas.ts"
+        ],
+        "evidence": [
+          "types.ts line 129: attestUrl?: string  \u2014 optional by type",
+          "publish.ts line 84: throw new Error('PublishDraft.attestUrl is required') \u2014 runtime required",
+          "schemas.ts line 96: attestUrl: nonEmptyString.optional()  \u2014 schema also says optional",
+          "schemas.ts lines 10-14 documents this as 'intentional' but the type annotation still communicates the wrong contract to callers"
+        ],
+        "suggestion": "Change PublishDraft.attestUrl from optional to required (remove '?'). If there is a genuine future use case for omitting it, make that an explicit second interface (PublishDraftWithoutAttestation) with a comment explaining when attestation is skippable. Do not let the type promise something the runtime rejects.",
+        "reasoning": "",
+        "summary_hash": "6dbf7abf"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::verify_hardcoded_block_height": {
+      "id": "review::.::holistic::contract_coherence::verify_hardcoded_block_height",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "verify() returns blockHeight: 1 hardcoded \u2014 callers receive fabricated data as if it were real chain data",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/toolkit/tools/verify.ts"
+        ],
+        "evidence": [
+          "verify.ts line 87: return { confirmed: found, blockHeight: found ? 1 : undefined }",
+          "VerifyResult.blockHeight?: number implies actual chain block height",
+          "Any caller logging or relaying this value on-chain would surface false provenance data"
+        ],
+        "suggestion": "Remove the hardcoded blockHeight entirely: return { confirmed: found } when found is true. If blockHeight is available from the feed API response in the future, populate it then. Do not return a placeholder number in a field that implies real chain data.",
+        "reasoning": "",
+        "summary_hash": "a87959c7"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::sdk_bridge_dead_interface_method": {
+      "id": "review::.::holistic::contract_coherence::sdk_bridge_dead_interface_method",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "SdkBridge.signAndBroadcast() exposed in interface but no tool uses it and txData shape is untyped unknown",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "sdk-bridge.ts line 71: signAndBroadcast(txData: unknown): Promise<{ hash: string }>",
+          "No tool in src/toolkit/tools/ calls session.getBridge().signAndBroadcast()",
+          "txData: unknown provides no guidance to callers on what to pass"
+        ],
+        "suggestion": "Remove signAndBroadcast() from the SdkBridge interface if no tool uses it, or document what txData shape is expected and add at least one typed overload. Dead interface methods on the public contract confuse consumers about the intended usage surface.",
+        "reasoning": "",
+        "summary_hash": "ea0ed8e0"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::verify_dead_code_post_loop": {
+      "id": "review::.::holistic::logic_clarity::verify_dead_code_post_loop",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "verify() has unreachable return err() after the retry for-loop \u2014 loop always returns on final iteration",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/toolkit/tools/verify.ts"
+        ],
+        "evidence": [
+          "for loop: attempt 0..RETRY_DELAYS_MS.length inclusive (0,1,2,3) \u2014 4 iterations",
+          "On attempt=3 (last): try block returns ok({confirmed}) or ok({confirmed:false}); catch block returns err(CONFIRM_TIMEOUT). Loop always exits via return.",
+          "Lines 59-62: return err(demosError('CONFIRM_TIMEOUT', 'Verification exhausted all retries', true), ...) is never reached."
+        ],
+        "suggestion": "Remove lines 59-62. The for-loop condition `attempt <= RETRY_DELAYS_MS.length` already covers all retry attempts and the final failure case is handled inside the catch on the last iteration. If TypeScript requires a non-void return, restructure the loop to `attempt < RETRY_DELAYS_MS.length` with explicit exhausted handling after the loop.",
+        "reasoning": "",
+        "summary_hash": "65f95c28"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::pay_spend_cap_guard_order": {
+      "id": "review::.::holistic::logic_clarity::pay_spend_cap_guard_order",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "pay-spend-cap.ts checks amount > maxPerCall before isFinite/positive validation \u2014 inverted guard order",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/toolkit/guards/pay-spend-cap.ts"
+        ],
+        "evidence": [
+          "Line 34: if (amount > policy.maxPerCall) return SPEND_LIMIT \u2014 fires before isFinite check",
+          "Line 42: if (!Number.isFinite(amount) || amount <= 0) return INVALID_INPUT \u2014 second check",
+          "If amount = -5: -5 > maxPerCall is false \u2192 passes line 34 \u2192 line 42 catches it (INVALID_INPUT). Correct result but wrong code path \u2014 the per-call max fires first.",
+          "If amount = Infinity: Infinity > maxPerCall is true \u2192 returns SPEND_LIMIT. Correct by accident \u2014 but the real error is INVALID_INPUT (non-finite), not SPEND_LIMIT.",
+          "Callers get SPEND_LIMIT for Infinity input, which suggests they should raise their maxSpend, not that the input is invalid."
+        ],
+        "suggestion": "Move the isFinite/positive check (lines 42-44) to before the maxPerCall check (line 34). Validate that amount is a valid number before comparing it against policy limits.",
+        "reasoning": "",
+        "summary_hash": "dd444c78"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::ts_bridge_function_params": {
+      "id": "review::.::holistic::type_safety::ts_bridge_function_params",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "txModule parameter typed with bare Function \u2014 call signatures are unchecked at every use site",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "sdk-bridge.ts line 105: txModule?: { store: Function; confirm: Function; broadcast: Function }",
+          "Actual call sites: tx.store(encoded, demos) line 244, tx.confirm(storeTx, demos) line 245, tx.broadcast(validity, demos) line 246",
+          "Function type provides no parameter or return type constraints \u2014 passing wrong argument types compiles silently"
+        ],
+        "suggestion": "Replace bare Function with explicit call signatures: `{ store: (data: Uint8Array, sdk: unknown) => Promise<unknown>; confirm: (tx: unknown, sdk: unknown) => Promise<unknown>; broadcast: (validity: unknown, sdk: unknown) => Promise<unknown> }`. Using unknown for SDK-typed parameters is still safer than Function \u2014 it forces an explicit cast at use sites rather than silently accepting any argument.",
+        "reasoning": "",
+        "summary_hash": "4aaa572e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::ts_bridge_any_cache_vars": {
+      "id": "review::.::holistic::type_safety::ts_bridge_any_cache_vars",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "cachedTxModule and cachedD402Client typed as any \u2014 type information lost on cache-hit path",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "sdk-bridge.ts line 108: let cachedTxModule: any = txModule ?? null",
+          "sdk-bridge.ts line 109: let cachedD402Client: any = null",
+          "After dynamic import: cachedTxModule = DemosTransactions (a static class object), cachedD402Client = new D402Client(demos) \u2014 both have known shapes post-import"
+        ],
+        "suggestion": "Use unknown instead of any for cache variables. `let cachedTxModule: unknown = txModule ?? null`. At the single use site `const tx = txModule ?? await getTxModule()`, the existing narrowing (checking that tx exists before calling tx.store) is already present \u2014 switching to unknown forces the existing code path through explicit narrowing rather than implicitly allowing all property access.",
+        "reasoning": "",
+        "summary_hash": "dd63458a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::ts_duplicate_source_status": {
+      "id": "review::.::holistic::type_safety::ts_duplicate_source_status",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "discover-sources.ts defines a local SourceStatus type that exactly duplicates the exported type in types.ts",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/toolkit/tools/discover-sources.ts",
+          "src/toolkit/types.ts"
+        ],
+        "evidence": [
+          "types.ts line 237: export type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived'",
+          "discover-sources.ts line 100: type SourceStatus = 'active' | 'degraded' | 'quarantined' | 'stale' | 'deprecated' | 'archived' (local, unexported)",
+          "discover-sources.ts imports Source from types.ts (line 12) but not SourceStatus \u2014 the duplicate was introduced to avoid widening the import",
+          "normalizeStatus() uses the local type for its return annotation; if types.ts adds a new status value, normalizeStatus will silently return 'active' for unrecognized values instead of passing them through"
+        ],
+        "suggestion": "Remove the local SourceStatus type definition on line 100 of discover-sources.ts and add SourceStatus to the import on line 12: `import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, SourceStatus, ToolResult } from '../types.js'`.",
+        "reasoning": "",
+        "summary_hash": "41b0ddb6"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::ts_connect_sdk_demos_any": {
+      "id": "review::.::holistic::type_safety::ts_connect_sdk_demos_any",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "connectSdk() return type has demos: any \u2014 Demos instance loses type information at connection site",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/toolkit/tools/connect.ts",
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "connect.ts line 187: ): Promise<{ demos: any; address: string; authToken: string }>",
+          "sdk-bridge.ts line 11: import type { Demos } from '@kynesyslabs/demosdk/websdk' \u2014 the Demos type IS importable",
+          "createSdkBridge() in sdk-bridge.ts accepts `demos: Demos` as its first parameter (line 100), so the type exists and is usable",
+          "The any typing on demos means all downstream uses of the Demos instance lose IDE support and compiler checking"
+        ],
+        "suggestion": "In connect.ts, add `import type { Demos } from '@kynesyslabs/demosdk/websdk'` and change the connectSdk() return type to `Promise<{ demos: Demos; address: string; authToken: string }>`. The lazy import pattern does not prevent using the type at the signature level \u2014 type imports are compile-time only.",
+        "reasoning": "",
+        "summary_hash": "c1f115f5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:16+00:00",
+      "last_seen": "2026-03-27T17:14:16+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::src/toolkit/tools/publish.ts::non_null_assert": {
+      "id": "smells::src/toolkit/tools/publish.ts::non_null_assert",
+      "detector": "smells",
+      "file": "src/toolkit/tools/publish.ts",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "1x Non-null assertions (!.)",
+      "detail": {
+        "smell_id": "non_null_assert",
+        "severity": "low",
+        "count": 1,
+        "lines": [
+          90
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-27T17:14:23+00:00",
+      "last_seen": "2026-03-27T17:14:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
       "lang": "typescript",
       "zone": "production",
       "suppressed": false,
@@ -1794,7 +3628,7 @@
         }
       },
       "warnings": [],
-      "updated_at": "2026-03-27T16:59:34+00:00"
+      "updated_at": "2026-03-27T17:14:24+00:00"
     }
   },
   "score_confidence": {
@@ -1807,13 +3641,139 @@
     "source": "scan"
   },
   "subjective_integrity": {
-    "status": "pass",
+    "status": "disabled",
     "target_score": 85.0,
     "matched_count": 0,
     "matched_dimensions": [],
     "reset_dimensions": []
   },
-  "subjective_assessments": {},
+  "subjective_assessments": {
+    "abstraction_fitness": {
+      "score": 84.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00",
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty",
+        "Delegation Density",
+        "Definition Directness",
+        "Type Discipline"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 90.0,
+        "Indirection Cost": 88.0,
+        "Interface Honesty": 85.0,
+        "Delegation Density": 100.0,
+        "Definition Directness": 80.0,
+        "Type Discipline": 88.0
+      }
+    },
+    "ai_generated_debt": {
+      "score": 85.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "api_surface_coherence": {
+      "score": 72.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "authorization_consistency": {
+      "score": 76.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "contract_coherence": {
+      "score": 74.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "convention_outlier": {
+      "score": 83.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "cross_module_architecture": {
+      "score": 88.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "dependency_health": {
+      "score": 91.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "design_coherence": {
+      "score": 78.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "mechanical_issues_changed",
+      "stale_since": "2026-03-27T17:14:24+00:00"
+    },
+    "error_consistency": {
+      "score": 76.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "mechanical_issues_changed",
+      "stale_since": "2026-03-27T17:14:24+00:00"
+    },
+    "high_level_elegance": {
+      "score": 87.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "incomplete_migration": {
+      "score": 78.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "initialization_coupling": {
+      "score": 87.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "logic_clarity": {
+      "score": 76.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "mechanical_issues_changed",
+      "stale_since": "2026-03-27T17:14:24+00:00"
+    },
+    "low_level_elegance": {
+      "score": 81.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "mid_level_elegance": {
+      "score": 78.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "naming_quality": {
+      "score": 88.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "package_organization": {
+      "score": 91.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "test_strategy": {
+      "score": 71.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    },
+    "type_safety": {
+      "score": 71.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-27T17:14:16+00:00"
+    }
+  },
   "scan_history": [
     {
       "timestamp": "2026-03-27T16:59:34+00:00",
@@ -1943,6 +3903,264 @@
           "strict": 0.0
         }
       }
+    },
+    {
+      "timestamp": "2026-03-27T17:14:16+00:00",
+      "lang": "typescript",
+      "strict_score": 81.1,
+      "verified_strict_score": 83.7,
+      "objective_score": 83.7,
+      "overall_score": 81.1,
+      "open": 105,
+      "diff_new": 44,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 44,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": null
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Code quality": {
+          "score": 87.1,
+          "strict": 87.1
+        },
+        "Security": {
+          "score": 97.3,
+          "strict": 97.3
+        },
+        "File health": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Duplication": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Test health": {
+          "score": 71.7,
+          "strict": 71.7
+        },
+        "Abstraction fit": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "AI generated debt": {
+          "score": 85.5,
+          "strict": 85.5
+        },
+        "API coherence": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Auth consistency": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "Contracts": {
+          "score": 74.0,
+          "strict": 74.0
+        },
+        "Convention drift": {
+          "score": 83.0,
+          "strict": 83.0
+        },
+        "Cross-module arch": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Dep health": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Design coherence": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Error consistency": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "High elegance": {
+          "score": 87.0,
+          "strict": 87.0
+        },
+        "Stale migration": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Init coupling": {
+          "score": 87.0,
+          "strict": 87.0
+        },
+        "Logic clarity": {
+          "score": 76.5,
+          "strict": 76.5
+        },
+        "Low elegance": {
+          "score": 81.0,
+          "strict": 81.0
+        },
+        "Mid elegance": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Naming quality": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Structure nav": {
+          "score": 91.5,
+          "strict": 91.5
+        },
+        "Test strategy": {
+          "score": 71.0,
+          "strict": 71.0
+        },
+        "Type safety": {
+          "score": 71.0,
+          "strict": 71.0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-03-27T17:14:24+00:00",
+      "lang": "typescript",
+      "strict_score": 81.0,
+      "verified_strict_score": 83.6,
+      "objective_score": 83.6,
+      "overall_score": 81.0,
+      "open": 86,
+      "diff_new": 1,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 42,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": 85.0
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Code quality": {
+          "score": 86.8,
+          "strict": 86.8
+        },
+        "Security": {
+          "score": 97.3,
+          "strict": 97.3
+        },
+        "File health": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Duplication": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Test health": {
+          "score": 71.8,
+          "strict": 71.8
+        },
+        "Abstraction fit": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "AI generated debt": {
+          "score": 85.5,
+          "strict": 85.5
+        },
+        "API coherence": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Auth consistency": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "Contracts": {
+          "score": 74.0,
+          "strict": 74.0
+        },
+        "Convention drift": {
+          "score": 83.0,
+          "strict": 83.0
+        },
+        "Cross-module arch": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Dep health": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Design coherence": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Error consistency": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "High elegance": {
+          "score": 87.0,
+          "strict": 87.0
+        },
+        "Stale migration": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Init coupling": {
+          "score": 87.0,
+          "strict": 87.0
+        },
+        "Logic clarity": {
+          "score": 76.5,
+          "strict": 76.5
+        },
+        "Low elegance": {
+          "score": 81.0,
+          "strict": 81.0
+        },
+        "Mid elegance": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Naming quality": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Structure nav": {
+          "score": 91.5,
+          "strict": 91.5
+        },
+        "Test strategy": {
+          "score": 71.0,
+          "strict": 71.0
+        },
+        "Type safety": {
+          "score": 71.0,
+          "strict": 71.0
+        }
+      }
     }
   ],
   "review_cache": {
@@ -2064,19 +4282,19 @@
             "body_hash": "60fdd49dc5addecbafbafd4a7e93e45a",
             "loc": 6
           },
-          "src/toolkit/tools/pay.ts:settlement:159:167": {
+          "src/toolkit/tools/pay.ts:settlement:170:178": {
             "body_hash": "70440d82ec724b17e7e421a35e8e6190",
             "loc": 9
           },
-          "src/toolkit/tools/pay.ts:isManualRedirect:280:282": {
+          "src/toolkit/tools/pay.ts:isManualRedirect:291:293": {
             "body_hash": "548451cbf862b7f1f72a28159c8e9e74",
             "loc": 3
           },
-          "src/toolkit/tools/pay.ts:stripPaymentProofOnCrossOriginRedirect:284:294": {
+          "src/toolkit/tools/pay.ts:stripPaymentProofOnCrossOriginRedirect:295:305": {
             "body_hash": "714d23abec004277e243979adc02cd37",
             "loc": 11
           },
-          "src/toolkit/tools/pay.ts:isDemosErrorLike:296:304": {
+          "src/toolkit/tools/pay.ts:isDemosErrorLike:307:315": {
             "body_hash": "c8c027d642056e50837f769464dcd79e",
             "loc": 9
           },
@@ -2115,6 +4333,14 @@
         },
         "near_pairs": []
       }
+    },
+    "files": {},
+    "holistic": {
+      "reviewed_at": "2026-03-27T17:14:16+00:00",
+      "file_count_at_review": 24,
+      "issue_count": 44,
+      "reviewed_files_count": 0,
+      "full_sweep_included": false
     }
   },
   "lang_capabilities": {
@@ -2154,7 +4380,7 @@
       "patterns": 0,
       "naming": 3,
       "facade": 24,
-      "test_coverage": 251,
+      "test_coverage": 253,
       "smells": 25,
       "react": 0,
       "security": 24,
@@ -2173,11 +4399,11 @@
   },
   "dimension_scores": {
     "Code quality": {
-      "score": 87.1,
-      "strict": 87.1,
-      "verified_strict_score": 87.1,
+      "score": 86.8,
+      "strict": 86.8,
+      "verified_strict_score": 86.8,
       "checks": 146,
-      "failing": 32,
+      "failing": 33,
       "tier": 3,
       "detectors": {
         "unused": {
@@ -2194,9 +4420,9 @@
         },
         "smells": {
           "potential": 25,
-          "pass_rate": 0.524,
-          "failing": 25,
-          "weighted_failures": 11.9
+          "pass_rate": 0.512,
+          "failing": 26,
+          "weighted_failures": 12.2
         },
         "orphaned": {
           "potential": 24,
@@ -2297,57 +4523,72 @@
       }
     },
     "Test health": {
-      "score": 71.7,
-      "strict": 71.7,
-      "verified_strict_score": 71.7,
-      "checks": 251,
+      "score": 71.8,
+      "strict": 71.8,
+      "verified_strict_score": 71.8,
+      "checks": 253,
       "failing": 7,
       "tier": 4,
       "detectors": {
         "test_coverage": {
-          "potential": 251,
-          "pass_rate": 0.7167667928042045,
+          "potential": 253,
+          "pass_rate": 0.7178008040126223,
           "failing": 7,
-          "weighted_failures": 71.09153500614465
+          "weighted_failures": 71.39639658480658
         }
       }
     },
     "Abstraction fit": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 84.0,
+      "strict": 84.0,
+      "verified_strict_score": 84.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 1,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.84,
+          "failing": 1,
+          "weighted_failures": 1.6,
+          "assessment_score": 84.0,
+          "placeholder": false,
           "dimension_key": "abstraction_fitness",
           "configured_weight": 8.0,
-          "components": []
+          "components": [
+            "Abstraction Leverage",
+            "Indirection Cost",
+            "Interface Honesty",
+            "Delegation Density",
+            "Definition Directness",
+            "Type Discipline"
+          ],
+          "component_scores": {
+            "Abstraction Leverage": 90.0,
+            "Indirection Cost": 88.0,
+            "Interface Honesty": 85.0,
+            "Delegation Density": 100.0,
+            "Definition Directness": 80.0,
+            "Type Discipline": 88.0
+          }
         }
       }
     },
     "AI generated debt": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 85.5,
+      "strict": 85.5,
+      "verified_strict_score": 85.5,
       "checks": 10,
-      "failing": 0,
+      "failing": 3,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.855,
+          "failing": 3,
+          "weighted_failures": 1.45,
+          "assessment_score": 85.5,
+          "placeholder": false,
           "dimension_key": "ai_generated_debt",
           "configured_weight": 1.0,
           "components": []
@@ -2355,20 +4596,20 @@
       }
     },
     "API coherence": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 72.0,
+      "strict": 72.0,
+      "verified_strict_score": 72.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 4,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.72,
+          "failing": 4,
+          "weighted_failures": 2.8,
+          "assessment_score": 72.0,
+          "placeholder": false,
           "dimension_key": "api_surface_coherence",
           "configured_weight": 1.0,
           "components": []
@@ -2376,20 +4617,20 @@
       }
     },
     "Auth consistency": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 76.0,
+      "strict": 76.0,
+      "verified_strict_score": 76.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 1,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.76,
+          "failing": 1,
+          "weighted_failures": 2.4,
+          "assessment_score": 76.0,
+          "placeholder": false,
           "dimension_key": "authorization_consistency",
           "configured_weight": 1.0,
           "components": []
@@ -2397,20 +4638,20 @@
       }
     },
     "Contracts": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 74.0,
+      "strict": 74.0,
+      "verified_strict_score": 74.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 3,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.74,
+          "failing": 3,
+          "weighted_failures": 2.6,
+          "assessment_score": 74.0,
+          "placeholder": false,
           "dimension_key": "contract_coherence",
           "configured_weight": 12.0,
           "components": []
@@ -2418,20 +4659,20 @@
       }
     },
     "Convention drift": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 83.0,
+      "strict": 83.0,
+      "verified_strict_score": 83.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 2,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.83,
+          "failing": 2,
+          "weighted_failures": 1.7,
+          "assessment_score": 83.0,
+          "placeholder": false,
           "dimension_key": "convention_outlier",
           "configured_weight": 1.0,
           "components": []
@@ -2439,20 +4680,20 @@
       }
     },
     "Cross-module arch": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 88.0,
+      "strict": 88.0,
+      "verified_strict_score": 88.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 2,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.88,
+          "failing": 2,
+          "weighted_failures": 1.2,
+          "assessment_score": 88.0,
+          "placeholder": false,
           "dimension_key": "cross_module_architecture",
           "configured_weight": 1.0,
           "components": []
@@ -2460,20 +4701,20 @@
       }
     },
     "Dep health": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 91.0,
+      "strict": 91.0,
+      "verified_strict_score": 91.0,
       "checks": 10,
       "failing": 0,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
+          "pass_rate": 0.91,
           "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "weighted_failures": 0.9,
+          "assessment_score": 91.0,
+          "placeholder": false,
           "dimension_key": "dependency_health",
           "configured_weight": 1.0,
           "components": []
@@ -2481,20 +4722,20 @@
       }
     },
     "Design coherence": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 78.5,
+      "strict": 78.5,
+      "verified_strict_score": 78.5,
       "checks": 10,
-      "failing": 0,
+      "failing": 2,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.785,
+          "failing": 2,
+          "weighted_failures": 2.15,
+          "assessment_score": 78.5,
+          "placeholder": false,
           "dimension_key": "design_coherence",
           "configured_weight": 10.0,
           "components": []
@@ -2502,20 +4743,20 @@
       }
     },
     "Error consistency": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 76.0,
+      "strict": 76.0,
+      "verified_strict_score": 76.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 3,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.76,
+          "failing": 3,
+          "weighted_failures": 2.4,
+          "assessment_score": 76.0,
+          "placeholder": false,
           "dimension_key": "error_consistency",
           "configured_weight": 3.0,
           "components": []
@@ -2523,20 +4764,20 @@
       }
     },
     "High elegance": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 87.0,
+      "strict": 87.0,
+      "verified_strict_score": 87.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 2,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.87,
+          "failing": 2,
+          "weighted_failures": 1.3,
+          "assessment_score": 87.0,
+          "placeholder": false,
           "dimension_key": "high_level_elegance",
           "configured_weight": 22.0,
           "components": []
@@ -2544,20 +4785,20 @@
       }
     },
     "Stale migration": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 78.0,
+      "strict": 78.0,
+      "verified_strict_score": 78.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 1,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.78,
+          "failing": 1,
+          "weighted_failures": 2.2,
+          "assessment_score": 78.0,
+          "placeholder": false,
           "dimension_key": "incomplete_migration",
           "configured_weight": 1.0,
           "components": []
@@ -2565,20 +4806,20 @@
       }
     },
     "Init coupling": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 87.0,
+      "strict": 87.0,
+      "verified_strict_score": 87.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 1,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.87,
+          "failing": 1,
+          "weighted_failures": 1.3,
+          "assessment_score": 87.0,
+          "placeholder": false,
           "dimension_key": "initialization_coupling",
           "configured_weight": 1.0,
           "components": []
@@ -2586,20 +4827,20 @@
       }
     },
     "Logic clarity": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 76.5,
+      "strict": 76.5,
+      "verified_strict_score": 76.5,
       "checks": 10,
-      "failing": 0,
+      "failing": 2,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.765,
+          "failing": 2,
+          "weighted_failures": 2.35,
+          "assessment_score": 76.5,
+          "placeholder": false,
           "dimension_key": "logic_clarity",
           "configured_weight": 6.0,
           "components": []
@@ -2607,20 +4848,20 @@
       }
     },
     "Low elegance": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 81.0,
+      "strict": 81.0,
+      "verified_strict_score": 81.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 3,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.81,
+          "failing": 3,
+          "weighted_failures": 1.9,
+          "assessment_score": 81.0,
+          "placeholder": false,
           "dimension_key": "low_level_elegance",
           "configured_weight": 12.0,
           "components": []
@@ -2628,20 +4869,20 @@
       }
     },
     "Mid elegance": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 78.5,
+      "strict": 78.5,
+      "verified_strict_score": 78.5,
       "checks": 10,
-      "failing": 0,
+      "failing": 5,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.785,
+          "failing": 5,
+          "weighted_failures": 2.15,
+          "assessment_score": 78.5,
+          "placeholder": false,
           "dimension_key": "mid_level_elegance",
           "configured_weight": 22.0,
           "components": []
@@ -2649,20 +4890,20 @@
       }
     },
     "Naming quality": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 88.0,
+      "strict": 88.0,
+      "verified_strict_score": 88.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 1,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.88,
+          "failing": 1,
+          "weighted_failures": 1.2,
+          "assessment_score": 88.0,
+          "placeholder": false,
           "dimension_key": "naming_quality",
           "configured_weight": 2.0,
           "components": []
@@ -2670,20 +4911,20 @@
       }
     },
     "Structure nav": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 91.5,
+      "strict": 91.5,
+      "verified_strict_score": 91.5,
       "checks": 10,
       "failing": 0,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
+          "pass_rate": 0.915,
           "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "weighted_failures": 0.85,
+          "assessment_score": 91.5,
+          "placeholder": false,
           "dimension_key": "package_organization",
           "configured_weight": 5.0,
           "components": []
@@ -2691,20 +4932,20 @@
       }
     },
     "Test strategy": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 71.0,
+      "strict": 71.0,
+      "verified_strict_score": 71.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 4,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.71,
+          "failing": 4,
+          "weighted_failures": 2.9,
+          "assessment_score": 71.0,
+          "placeholder": false,
           "dimension_key": "test_strategy",
           "configured_weight": 1.0,
           "components": []
@@ -2712,20 +4953,20 @@
       }
     },
     "Type safety": {
-      "score": 0.0,
-      "strict": 0.0,
-      "verified_strict_score": 0.0,
+      "score": 71.0,
+      "strict": 71.0,
+      "verified_strict_score": 71.0,
       "checks": 10,
-      "failing": 0,
+      "failing": 4,
       "tier": 4,
       "detectors": {
         "subjective_assessment": {
           "potential": 10,
-          "pass_rate": 0.0,
-          "failing": 0,
-          "weighted_failures": 10.0,
-          "assessment_score": 0.0,
-          "placeholder": true,
+          "pass_rate": 0.71,
+          "failing": 4,
+          "weighted_failures": 2.9,
+          "assessment_score": 71.0,
+          "placeholder": false,
           "dimension_key": "type_safety",
           "configured_weight": 12.0,
           "components": []
@@ -2734,8 +4975,89 @@
     }
   },
   "reminder_history": {
-    "auto_fixers_available": 1,
-    "dry_run_first": 1,
-    "report_scores": 1
-  }
+    "auto_fixers_available": 2,
+    "dry_run_first": 2,
+    "report_scores": 2,
+    "review_issues_pending": 1,
+    "stagnant_nudge": 5,
+    "feedback_nudge": 1,
+    "review_not_run": 1
+  },
+  "concern_dismissals": {
+    "ac-auth-pending-sentinel": {
+      "dismissed_at": "2026-03-27T17:14:16+00:00",
+      "reasoning": "connect.ts imports AUTH_PENDING_TOKEN from sdk-bridge.ts and correctly returns it in authenticateFallback(). The bare string 'auth-pending' does not appear in the codebase. This finding is dismissed after direct code re-read.",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "e30205a024d27497": {
+      "dismissed_at": "2026-03-27T17:14:16+00:00",
+      "reasoning": "High cyclomatic complexity from mechanical detector but each branch handles a distinct catalog shape or field fallback. This is inherent multi-format normalization, not design fragmentation.",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": [
+        "smells::src/toolkit/tools/discover-sources.ts::high_cyclomatic_complexity"
+      ]
+    },
+    "7976518927d2eee8": {
+      "dismissed_at": "2026-03-27T17:14:16+00:00",
+      "reasoning": "Monster function detector fired on LOC, but the function has one responsibility (D402 payment flow) with helpers already extracted. Length is justified by the protocol's sequential steps.",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": [
+        "smells::src/toolkit/tools/pay.ts::high_cyclomatic_complexity",
+        "smells::src/toolkit/tools/pay.ts::monster_function"
+      ]
+    },
+    "9c14840d40c65d85": {
+      "dismissed_at": "2026-03-27T17:14:16+00:00",
+      "reasoning": "Async stub that throws \u2014 the async signature is forward-compatible with the planned implementation. Not a design problem.",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": [
+        "smells::src/toolkit/tools/scan.ts::async_no_await",
+        "smells::src/toolkit/tools/scan.ts::high_cyclomatic_complexity",
+        "smells::src/toolkit/tools/scan.ts::todo_fixme"
+      ]
+    },
+    "85dbbc078c5d8bc7": {
+      "dismissed_at": "2026-03-27T17:14:16+00:00",
+      "reasoning": "IP range enumeration cannot be meaningfully refactored \u2014 each range has a distinct semantic name. A data-driven table would not reduce complexity and would obscure the named ranges.",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": [
+        "smells::src/toolkit/url-validator.ts::high_cyclomatic_complexity"
+      ]
+    },
+    "181f0d8a7efbf02a": {
+      "dismissed_at": "2026-03-27T17:14:16+00:00",
+      "reasoning": "The 6 files do not share a common anti-pattern. The backward-compat delegation wrappers (async returning async call result) are idiomatic TypeScript. The async stub is intentional. No systemic fix warranted.",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": [
+        "smells::src/toolkit/guards/dedup-guard.ts::async_no_await",
+        "smells::src/toolkit/guards/state-helpers.ts::async_no_await",
+        "smells::src/toolkit/guards/write-rate-limit.ts::async_no_await",
+        "smells::src/toolkit/tools/connect.ts::async_no_await",
+        "smells::src/toolkit/tools/publish.ts::async_no_await",
+        "smells::src/toolkit/tools/scan.ts::async_no_await"
+      ]
+    }
+  },
+  "assessment_import_audit": [
+    {
+      "timestamp": "2026-03-27T17:14:16+00:00",
+      "mode": "trusted_internal",
+      "trusted": true,
+      "reason": "trusted import-run replay from 20260327_170212",
+      "override_used": false,
+      "attested_external": false,
+      "provisional": false,
+      "provisional_count": 0,
+      "attest": "",
+      "import_file": "/home/mj/projects/demos-agents/.desloppify/subagents/runs/20260327_170212/holistic_issues_merged.json",
+      "packet_sha256": "28a31a2d6b91b878b585100ed18195650124f0dae62c0092a2d954cab0077911"
+    }
+  ]
 }
