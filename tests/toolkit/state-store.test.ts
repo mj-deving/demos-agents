@@ -57,7 +57,9 @@ describe("FileStateStore", () => {
     it("creates file if it doesn't exist for locking", async () => {
       const unlock = await store.lock("new-lock", 5000);
       const data = await store.get("new-lock");
-      expect(data).toBeDefined(); // File exists (may be empty)
+      // File should exist with empty string content (created by append mode)
+      expect(data).not.toBeNull();
+      expect(typeof data).toBe("string");
       await unlock();
     });
 

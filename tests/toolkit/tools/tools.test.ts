@@ -1,7 +1,8 @@
 /**
- * Tests for react, tip, scan, verify, attest, discoverSources, pay tools.
+ * Tests for tool input validation and guard integration.
  *
- * Verifies typed contracts, parameter validation, and guard integration.
+ * These tests verify validation behavior (rejection paths) without
+ * mocked SDK bridge. Happy-path behavioral tests are in integration.test.ts.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -10,7 +11,6 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DemosSession } from "../../../src/toolkit/session.js";
 import { FileStateStore } from "../../../src/toolkit/state-store.js";
-import { publish, reply } from "../../../src/toolkit/tools/publish.js";
 import { react } from "../../../src/toolkit/tools/react.js";
 import { tip } from "../../../src/toolkit/tools/tip.js";
 import { scan } from "../../../src/toolkit/tools/scan.js";
@@ -31,35 +31,18 @@ function createTestSession(tempDir: string, overrides?: Partial<ConstructorParam
   });
 }
 
-describe("react()", () => {
+describe("react() validation", () => {
   let tempDir: string;
 
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-react-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
-
-  it("accepts DemosSession as first parameter", async () => {
-    const session = createTestSession(tempDir);
-    const result = await react(session, { txHash: "0xabc", type: "agree" });
-    expect(result).toHaveProperty("ok");
-    expect(result).toHaveProperty("provenance");
-  });
-
-  it("returns ToolResult with success boolean", async () => {
-    const session = createTestSession(tempDir);
-    const result = await react(session, { txHash: "0xabc", type: "agree" });
-    // Will fail (no SDK) but typed result structure is correct
-    if (result.ok) {
-      expect(typeof result.data!.success).toBe("boolean");
-    } else {
-      expect(result.error).toBeDefined();
-    }
-  });
 
   it("rejects missing txHash", async () => {
     const session = createTestSession(tempDir);
     const result = await react(session, { txHash: "", type: "agree" });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("INVALID_INPUT");
+    expect(result.error!.message).toContain("txHash");
   });
 
   it("rejects invalid reaction type", async () => {
@@ -67,22 +50,25 @@ describe("react()", () => {
     const result = await react(session, { txHash: "0x1", type: "like" as "agree" });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("INVALID_INPUT");
+    expect(result.error!.message).toContain("agree");
+  });
+
+  it("fails with bridge error when no bridge configured", async () => {
+    const session = createTestSession(tempDir);
+    const result = await react(session, { txHash: "0xabc", type: "agree" });
+    expect(result.ok).toBe(false);
+    expect(result.error!.code).toBe("NETWORK_ERROR");
+    expect(result.error!.message).toContain("bridge not available");
   });
 });
 
-describe("tip()", () => {
+describe("tip() validation", () => {
   let tempDir: string;
 
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-tip-tool-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
-  it("accepts DemosSession as first parameter", async () => {
-    const session = createTestSession(tempDir);
-    const result = await tip(session, { txHash: "0xabc", amount: 5 });
-    expect(result).toHaveProperty("ok");
-  });
-
-  it("enforces tip spend cap", async () => {
+  it("enforces tip spend cap (max 10 DEM)", async () => {
     const session = createTestSession(tempDir);
     const result = await tip(session, { txHash: "0xabc", amount: 15 });
     expect(result.ok).toBe(false);
@@ -95,48 +81,36 @@ describe("tip()", () => {
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("INVALID_INPUT");
   });
+
+  it("rejects NaN amount", async () => {
+    const session = createTestSession(tempDir);
+    const result = await tip(session, { txHash: "0xabc", amount: NaN });
+    expect(result.ok).toBe(false);
+    expect(result.error!.code).toBe("INVALID_INPUT");
+    expect(result.error!.message).toContain("positive finite");
+  });
 });
 
-describe("scan()", () => {
+describe("scan() validation", () => {
   let tempDir: string;
 
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-scan-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
-  it("accepts DemosSession as first parameter", async () => {
+  it("fails with bridge error when no bridge configured", async () => {
     const session = createTestSession(tempDir);
     const result = await scan(session);
-    expect(result).toHaveProperty("ok");
-    expect(result).toHaveProperty("provenance");
-  });
-
-  it("returns ToolResult with posts array on success", async () => {
-    const session = createTestSession(tempDir);
-    const result = await scan(session);
-    // Will fail (no API) but structure is correct
-    if (result.ok) {
-      expect(Array.isArray(result.data!.posts)).toBe(true);
-    } else {
-      expect(result.error).toBeDefined();
-    }
+    expect(result.ok).toBe(false);
+    expect(result.error!.code).toBe("NETWORK_ERROR");
+    expect(result.error!.message).toContain("bridge not available");
   });
 });
 
-describe("verify()", () => {
+describe("verify() validation", () => {
   let tempDir: string;
 
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-verify-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
-
-  it(
-    "accepts DemosSession as first parameter",
-    async () => {
-      const session = createTestSession(tempDir);
-      const result = await verify(session, { txHash: "0xabc" });
-      expect(result).toHaveProperty("ok");
-    },
-    25000,
-  );
 
   it("rejects missing txHash", async () => {
     const session = createTestSession(tempDir);
@@ -146,17 +120,11 @@ describe("verify()", () => {
   });
 });
 
-describe("attest()", () => {
+describe("attest() validation", () => {
   let tempDir: string;
 
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-attest-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
-
-  it("accepts DemosSession as first parameter", async () => {
-    const session = createTestSession(tempDir);
-    const result = await attest(session, { url: "https://api.binance.com/price" });
-    expect(result).toHaveProperty("ok");
-  });
 
   it("rejects missing URL", async () => {
     const session = createTestSession(tempDir);
@@ -173,11 +141,12 @@ describe("attest()", () => {
     expect(result.error!.message).toContain("HTTPS");
   });
 
-  it("allows HTTP when allowInsecureUrls is true", async () => {
-    const session = createTestSession(tempDir, { allowInsecureUrls: true });
-    const result = await attest(session, { url: "http://localhost/data" });
-    // Will fail at SDK level but should pass the HTTPS check
-    expect(result.error?.code !== "INVALID_INPUT" || !result.error?.message.includes("HTTPS")).toBe(true);
+  it("rejects private IP via SSRF validator", async () => {
+    const session = createTestSession(tempDir);
+    const result = await attest(session, { url: "https://10.0.0.1/secret" });
+    expect(result.ok).toBe(false);
+    expect(result.error!.code).toBe("INVALID_INPUT");
+    expect(result.error!.message).toContain("private");
   });
 });
 
@@ -187,21 +156,7 @@ describe("discoverSources()", () => {
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-discover-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
-  it("returns ToolResult with Source array", async () => {
-    const session = createTestSession(tempDir);
-    const result = await discoverSources(session);
-    // May fail if catalog path doesn't resolve, but structure is correct
-    expect(result).toHaveProperty("ok");
-    expect(result).toHaveProperty("provenance");
-  });
-
-  it("accepts null session for sessionless browsing", async () => {
-    const result = await discoverSources(null);
-    expect(result).toHaveProperty("ok");
-  });
-
   it("filters by domain when specified", async () => {
-    // Create a minimal test catalog
     const catalogPath = join(tempDir, "test-catalog.json");
     writeFileSync(catalogPath, JSON.stringify([
       { id: "s1", name: "Source 1", domain: "crypto", url: "https://a.com", status: "active" },
@@ -216,19 +171,35 @@ describe("discoverSources()", () => {
     expect(result.data!.sources).toHaveLength(2);
     expect(result.data!.sources.every(s => s.domain === "crypto")).toBe(true);
   });
+
+  it("excludes archived and deprecated sources", async () => {
+    const catalogPath = join(tempDir, "test-catalog.json");
+    writeFileSync(catalogPath, JSON.stringify([
+      { id: "s1", domain: "crypto", url: "https://a.com", status: "active" },
+      { id: "s2", domain: "crypto", url: "https://b.com", status: "archived" },
+      { id: "s3", domain: "crypto", url: "https://c.com", status: "deprecated" },
+    ]));
+
+    const session = createTestSession(tempDir, { sourceCatalogPath: catalogPath });
+    const result = await discoverSources(session);
+
+    expect(result.ok).toBe(true);
+    expect(result.data!.sources).toHaveLength(1);
+    expect(result.data!.sources[0].id).toBe("s1");
+  });
+
+  it("accepts null session for sessionless browsing", async () => {
+    const result = await discoverSources(null);
+    // Uses bundled catalog — should succeed or fail with clear error
+    expect(result.ok === true || result.error!.code === "INVALID_INPUT").toBe(true);
+  });
 });
 
-describe("pay()", () => {
+describe("pay() validation", () => {
   let tempDir: string;
 
   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-pay-tool-")); });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
-
-  it("accepts DemosSession as first parameter", async () => {
-    const session = createTestSession(tempDir);
-    const result = await pay(session, { url: "https://api.com/data", maxSpend: 10 });
-    expect(result).toHaveProperty("ok");
-  });
 
   it("rejects missing URL", async () => {
     const session = createTestSession(tempDir);
@@ -244,6 +215,13 @@ describe("pay()", () => {
     expect(result.error!.code).toBe("INVALID_INPUT");
   });
 
+  it("rejects NaN maxSpend", async () => {
+    const session = createTestSession(tempDir);
+    const result = await pay(session, { url: "https://api.com/data", maxSpend: NaN });
+    expect(result.ok).toBe(false);
+    expect(result.error!.code).toBe("INVALID_INPUT");
+  });
+
   it("rejects HTTP URL by default", async () => {
     const session = createTestSession(tempDir);
     const result = await pay(session, { url: "http://api.com/data", maxSpend: 10 });
@@ -254,7 +232,6 @@ describe("pay()", () => {
 
   it("returns cached result for duplicate payment (idempotency)", async () => {
     const session = createTestSession(tempDir);
-    // Record a receipt manually
     const { recordPayReceipt, makeIdempotencyKey } = await import(
       "../../../src/toolkit/guards/pay-receipt-log.js"
     );
@@ -270,39 +247,6 @@ describe("pay()", () => {
     const result = await pay(session, { url: "https://api.com/data", maxSpend: 10 });
     expect(result.ok).toBe(true);
     expect(result.data!.receipt!.txHash).toBe("0xcached");
-  });
-});
-
-describe("All tools accept DemosSession as first parameter", () => {
-  let tempDir: string;
-
-  beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-all-tools-")); });
-  afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
-
-  it("every tool function takes session as arg[0]", () => {
-    // Type-level verification: all tool functions accept DemosSession
-    const session = createTestSession(tempDir);
-
-    // These compile = type contract satisfied
-    const _p = publish;  // (session, draft) => ToolResult<PublishResult>
-    const _r = reply;    // (session, opts) => ToolResult<PublishResult>
-    const _rc = react;   // (session, opts) => ToolResult<ReactResult>
-    const _t = tip;      // (session, opts) => ToolResult<TipResult>
-    const _s = scan;     // (session, opts?) => ToolResult<ScanResult>
-    const _v = verify;   // (session, opts) => ToolResult<VerifyResult>
-    const _a = attest;   // (session, opts) => ToolResult<AttestResult>
-    const _d = discoverSources; // (session | null, opts?) => ToolResult<...>
-    const _pay = pay;    // (session, opts) => ToolResult<PayResult>
-
-    // All are functions
-    expect(typeof _p).toBe("function");
-    expect(typeof _r).toBe("function");
-    expect(typeof _rc).toBe("function");
-    expect(typeof _t).toBe("function");
-    expect(typeof _s).toBe("function");
-    expect(typeof _v).toBe("function");
-    expect(typeof _a).toBe("function");
-    expect(typeof _d).toBe("function");
-    expect(typeof _pay).toBe("function");
+    expect(result.data!.receipt!.amount).toBe(5);
   });
 });

@@ -1,16 +1,16 @@
 /**
- * Tests for connect() SDK integration.
+ * Tests for connect() — validation and error paths.
  *
- * Uses temp wallet files and mocked SDK to test the integration flow.
+ * Happy-path SDK connection tested in integration.test.ts with mocked bridge.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, chmodSync } from "node:fs";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { connect, disconnect } from "../../../src/toolkit/tools/connect.js";
 
-describe("connect() integration", () => {
+describe("connect() validation", () => {
   let tempDir: string;
 
   beforeEach(() => {
@@ -27,61 +27,47 @@ describe("connect() integration", () => {
     return walletPath;
   }
 
-  it("loads JSON wallet and fails at SDK connect (not wallet parsing)", async () => {
-    const walletPath = createWalletFile(JSON.stringify({
-      address: "demos1abc123test",
-      mnemonic: "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12",
-    }));
-
-    // Should fail at SDK connect (no real RPC), NOT at wallet parsing
-    try {
-      await connect({ walletPath });
-      // If it succeeds (e.g., SDK returns without error), that's fine too
-    } catch (e: any) {
-      // Error should be AUTH_FAILED (SDK connection), not INVALID_INPUT (wallet parsing)
-      expect(e.code).toBe("AUTH_FAILED");
-      expect(e.message).toContain("SDK connection failed");
-    }
-  });
-
-  it("rejects mnemonic-only wallet files", async () => {
+  it("rejects mnemonic-only wallet files with clear error", async () => {
     const walletPath = createWalletFile(
       "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12",
     );
 
-    try {
-      await connect({ walletPath });
-      expect.unreachable("Should have thrown");
-    } catch (e: any) {
-      expect(e.message || e.code).toContain("Mnemonic wallet files are not yet supported");
-    }
+    await expect(connect({ walletPath })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("Mnemonic wallet files are not yet supported"),
+    });
   });
 
-  it("rejects HTTP rpcUrl unless allowInsecureUrls", async () => {
+  it("rejects HTTP rpcUrl with INVALID_INPUT error", async () => {
     const walletPath = createWalletFile(JSON.stringify({ address: "demos1test" }));
 
-    try {
-      await connect({ walletPath, rpcUrl: "http://localhost:26657" });
-      expect.unreachable("Should have thrown");
-    } catch (e: any) {
-      expect(e.message).toContain("HTTPS");
-    }
+    await expect(connect({ walletPath, rpcUrl: "http://localhost:26657" })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("HTTPS"),
+    });
   });
 
-  it("allows HTTP rpcUrl when allowInsecureUrls is true", async () => {
+  it("allows HTTP rpcUrl when allowInsecureUrls is true (fails later at SDK)", async () => {
     const walletPath = createWalletFile(JSON.stringify({ address: "demos1test" }));
 
-    // Will fail at SDK connect (not a real RPC), but should pass the HTTPS check
-    try {
-      await connect({ walletPath, rpcUrl: "http://localhost:26657", allowInsecureUrls: true });
-    } catch (e: any) {
-      // Should NOT be an HTTPS error
-      expect(e.message).not.toContain("HTTPS");
-    }
+    // Should pass HTTPS check but fail at SDK connect (no real RPC)
+    await expect(
+      connect({ walletPath, rpcUrl: "http://localhost:26657", allowInsecureUrls: true }),
+    ).rejects.toMatchObject({
+      code: "AUTH_FAILED", // Fails at SDK, NOT at HTTPS validation
+    });
   });
 
-  it("disconnect expires session", async () => {
-    // Create a mock session to test disconnect
+  it("rejects wallet with invalid mnemonic word count", async () => {
+    const walletPath = createWalletFile('DEMOS_MNEMONIC="word1 word2 word3"');
+
+    await expect(connect({ walletPath })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("3 words"),
+    });
+  });
+
+  it("disconnect expires session and clears sensitive data", async () => {
     const { DemosSession } = await import("../../../src/toolkit/session.js");
     const { FileStateStore } = await import("../../../src/toolkit/state-store.js");
 
@@ -97,5 +83,6 @@ describe("connect() integration", () => {
     expect(session.expired).toBe(false);
     disconnect(session);
     expect(session.expired).toBe(true);
+    expect(() => session.getAuthToken()).toThrow("expired");
   });
 });
