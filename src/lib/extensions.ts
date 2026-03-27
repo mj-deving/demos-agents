@@ -15,8 +15,8 @@
 import type { KNOWN_EXTENSIONS } from "./state.js";
 import type { AgentConfig } from "./agent-config.js";
 import type { AnySessionState, V2SessionState, PublishedPostRecord } from "./state.js";
-import type { AttestationType } from "./attestation-policy.js";
-import type { LLMProvider } from "./llm-provider.js";
+import type { AttestationType } from "./attestation/attestation-policy.js";
+import type { LLMProvider } from "./llm/llm-provider.js";
 import type { AgentSourceView, SourceRecordV2 } from "./sources/catalog.js";
 import type { PreflightCandidate } from "./sources/policy.js";
 

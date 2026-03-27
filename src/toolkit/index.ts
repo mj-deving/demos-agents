@@ -75,6 +75,8 @@ export { discoverSources } from "./tools/discover-sources.js";
 export { pay } from "./tools/pay.js";
 
 // ── Guards (exposed for testing and advanced consumers) ──
+// @deprecated — check/record pairs scheduled for removal in v2.0.
+// Use checkAndAppend() unified API from state-helpers instead.
 
 export {
   checkWriteRateLimit,

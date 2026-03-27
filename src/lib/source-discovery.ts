@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, existsSync, renameSync } from "node:fs";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { info } from "./sdk.js";
 import { fetchWithTimeout } from "./fetch-with-timeout.js";
-import type { SourceRecord, AttestationType } from "./attestation-policy.js";
+import type { SourceRecord, AttestationType } from "./attestation/attestation-policy.js";
 import type { SourceRecordV2 } from "./sources/catalog.js";
 import { generateSourceId, normalizeUrlPattern, loadCatalog } from "./sources/catalog.js";
 

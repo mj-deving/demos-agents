@@ -20,7 +20,7 @@ import { dirname } from "node:path";
 import type { EvidenceEntry } from "./sources/providers/types.js";
 import type { SourceRecordV2 } from "./sources/catalog.js";
 import type { FetchSourceResult } from "./sources/fetch.js";
-import type { ExtractedClaim } from "./claim-extraction.js";
+import type { ExtractedClaim } from "./attestation/claim-extraction.js";
 
 // ── Constants ─────────────────────────────────────────
 

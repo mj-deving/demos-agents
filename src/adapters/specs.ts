@@ -8,7 +8,7 @@
  * our FrameworkPlugin and EventPlugin interfaces.
  */
 
-import type { FrameworkPlugin, EventPlugin, AgentEvent, EventAction } from "./types.js";
+import type { FrameworkPlugin, EventPlugin, AgentEvent, EventAction } from "../types.js";
 
 // ── Eliza OS Adapter ────────────────────────────────
 

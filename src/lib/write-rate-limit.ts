@@ -1,4 +1,8 @@
 /**
+ * @deprecated Use src/toolkit/guards/write-rate-limit.ts (async/StateStore-based) instead.
+ * This legacy version (sync/file-based) is only used by cli/session-runner.ts and cli/event-runner.ts.
+ * TODO: Migrate CLI runners to toolkit guards, then remove this file.
+ *
  * Persistent address-scoped write rate limiting.
  *
  * Tracks daily and hourly publish counts per wallet address to stay
