@@ -63,23 +63,29 @@ export async function verify(
 }
 
 async function checkConfirmation(session: DemosSession, txHash: string): Promise<VerifyResult> {
-  const bridge = session.getBridge();
-  // Query feed for the post by txHash — if it appears, it's confirmed
-  const result = await bridge.apiCall(`/api/feed?limit=5`);
-  if (!result.ok) {
-    throw new Error(`RPC query failed: ${result.status}`);
+  // Verification requires SuperColony API (feed indexer) — no chain-level tx query exists.
+  // When API is down, this throws and verify() retries per its retry schedule.
+  try {
+    const bridge = session.getBridge();
+    const result = await bridge.apiCall(`/api/feed?limit=20`);
+    if (!result.ok) {
+      throw new Error(`Feed API returned ${result.status} — SuperColony API may be down`);
+    }
+
+    const data = result.data as Record<string, unknown>;
+    const posts = (data?.posts ?? data?.results ?? data) as unknown[];
+    if (!Array.isArray(posts)) {
+      throw new Error("Unexpected feed response shape");
+    }
+
+    const found = posts.some((p: unknown) => {
+      const post = p as Record<string, unknown>;
+      return String(post.txHash ?? "") === txHash;
+    });
+
+    return { confirmed: found, blockHeight: found ? 1 : undefined };
+  } catch (e) {
+    // API unavailable — throw so verify() retries
+    throw new Error(`Verification requires SuperColony API (feed indexer): ${(e as Error).message}`);
   }
-
-  const data = result.data as Record<string, unknown>;
-  const posts = (data?.posts ?? data?.results ?? data) as unknown[];
-  if (!Array.isArray(posts)) {
-    throw new Error("Unexpected feed response shape");
-  }
-
-  const found = posts.some((p: unknown) => {
-    const post = p as Record<string, unknown>;
-    return String(post.txHash ?? "") === txHash;
-  });
-
-  return { confirmed: found, blockHeight: found ? 1 : undefined };
 }

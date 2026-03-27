@@ -32,14 +32,13 @@ export async function tip(
     }
 
     const bridge = session.getBridge();
-    const result = await bridge.signAndBroadcast({
-      type: "dem_transfer",
-      recipient: opts.txHash, // Post author resolved from txHash
-      amount: opts.amount,
-    });
+    const memo = `HIVE_TIP:${opts.txHash}`;
+    // TODO(tip-resolution): resolve post author from txHash via feed API
+    // For now, txHash is used as recipient placeholder
+    const result = await bridge.transferDem(opts.txHash, opts.amount, memo);
 
     await recordTip(session.stateStore, session.walletAddress, opts.txHash, opts.amount);
 
-    return ok<TipResult>({ txHash: result.hash }, localProvenance(start));
+    return ok<TipResult>({ txHash: result.txHash }, localProvenance(start));
   });
 }
