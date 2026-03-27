@@ -26,6 +26,16 @@ const DEFAULT_ALGORITHM = "falcon";
  * authenticates with SuperColony API, and returns an opaque DemosSession.
  */
 export async function connect(opts: ConnectOptions): Promise<DemosSession> {
+  // HTTPS enforcement on rpcUrl
+  const rpcUrl = opts.rpcUrl ?? DEFAULT_RPC_URL;
+  if (!opts.allowInsecureUrls && !rpcUrl.startsWith("https://")) {
+    throw demosError(
+      "INVALID_INPUT",
+      "RPC URL must use HTTPS (set allowInsecureUrls for local dev)",
+      false,
+    );
+  }
+
   const walletPath = resolve(opts.walletPath.replace(/^~(?=$|\/)/, homedir()));
 
   // Symlink check — prevents mode-600 bypass via symlink
