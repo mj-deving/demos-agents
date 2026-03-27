@@ -4,6 +4,7 @@
   "description": "Demos Network agent definitions, strategies, and operational tooling",
   "private": true,
   "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
     "scan-feed": "tsx cli/scan-feed.ts",
     "audit": "tsx cli/audit.ts",

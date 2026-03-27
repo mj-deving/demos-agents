@@ -10,8 +10,11 @@
     "rootDir": ".",
     "resolveJsonModule": true,
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "paths": {
+      "@demos-agents/core": ["./packages/core/src/index.ts"]
+    }
   },
-  "include": ["src/**/*.ts", "cli/**/*.ts", "platform/**/*.ts", "connectors/**/*.ts"],
+  "include": ["src/**/*.ts", "cli/**/*.ts", "platform/**/*.ts", "connectors/**/*.ts", "packages/core/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

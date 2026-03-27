@@ -104,8 +104,9 @@ export function createSdkBridge(
   fetchImpl: typeof fetch = globalThis.fetch,
   txModule?: { store: Function; confirm: Function; broadcast: Function },
 ): SdkBridge {
-  // Closure-scoped lazy loader — avoids module-level shared mutable state
+  // Closure-scoped lazy loaders — avoids module-level shared mutable state
   let cachedTxModule: any = txModule ?? null;
+  let cachedD402Client: any = null;
   async function getTxModule() {
     if (cachedTxModule) return cachedTxModule;
     const { DemosTransactions } = await import("@kynesyslabs/demosdk/websdk");
@@ -278,10 +279,12 @@ export function createSdkBridge(
 
     async payD402(requirement: D402PaymentRequirement): Promise<D402SettlementResult> {
       try {
-        const { D402Client } = await import("@kynesyslabs/demosdk/d402/client");
-        const client = new D402Client(demos);
-        const payment = await client.createPayment(requirement);
-        return await client.settle(payment);
+        if (!cachedD402Client) {
+          const { D402Client } = await import("@kynesyslabs/demosdk/d402/client");
+          cachedD402Client = new D402Client(demos);
+        }
+        const payment = await cachedD402Client.createPayment(requirement);
+        return await cachedD402Client.settle(payment);
       } catch (e) {
         if ((e as any)?.success === false) throw e; // already a D402SettlementResult-shaped error
         throw new Error(`D402 settlement failed: ${(e as Error).message}`);

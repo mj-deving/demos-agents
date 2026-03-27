@@ -1,0 +1,15 @@
+{
+  "name": "@demos-agents/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "peerDependencies": {
+    "@kynesyslabs/demosdk": "^2.11.5"
+  }
+}
