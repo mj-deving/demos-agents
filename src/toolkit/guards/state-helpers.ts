@@ -74,6 +74,20 @@ export async function checkAndAppend<TState extends { entries: TEntry[] }, TEntr
 }
 
 /**
+ * Unconditionally append an entry with pruning — no check, just record.
+ * Convenience wrapper over checkAndAppend for record-only paths.
+ */
+export async function appendEntry<TState extends { entries: TEntry[] }, TEntry extends { timestamp: number }>(
+  store: StateStore,
+  key: string,
+  defaultState: TState,
+  pruneWindowMs: number,
+  entry: TEntry,
+): Promise<void> {
+  await checkAndAppend(store, key, defaultState, pruneWindowMs, () => null, entry);
+}
+
+/**
  * Safe JSON parser that strips prototype pollution vectors (__proto__, constructor, prototype).
  * Drop-in replacement for JSON.parse in security-sensitive paths.
  */

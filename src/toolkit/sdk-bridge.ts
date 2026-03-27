@@ -94,10 +94,13 @@ export interface SdkBridge {
   /** Settle a D402 payment (createPayment + settle, nonce-safe) */
   payD402(requirement: D402PaymentRequirement): Promise<D402SettlementResult>;
 
-  /** Query a transaction by hash to resolve sender address (RPC-based, trusted) */
-  queryTransaction(txHash: string): Promise<{ sender: string } | null>;
+  /** Query a transaction by hash to resolve sender address (RPC-based, trusted). Optional — SDK may not expose query methods. */
+  queryTransaction?(txHash: string): Promise<{ sender: string } | null>;
 
-  /** Get the underlying Demos instance (for direct SDK access when needed) */
+  /**
+   * Get the underlying Demos instance (for direct SDK access when needed).
+   * @throws {Error} Unless bridge was created with `options.allowRawSdk: true`.
+   */
   getDemos(): Demos;
 }
 
@@ -320,7 +323,7 @@ export function createSdkBridge(
         return await client.settle(payment);
       } catch (e) {
         if ((e as any)?.success === false) throw e; // already a D402SettlementResult-shaped error
-        throw new Error(`D402 settlement failed: ${(e as Error).message}`);
+        throw new Error(`D402 settlement failed: ${sanitizeUrl((e as Error).message)}`);
       }
     },
 

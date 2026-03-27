@@ -8,7 +8,7 @@
 import { randomUUID } from "node:crypto";
 import type { StateStore, DemosError, PayPolicy } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, checkAndAppend, loadState, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
+import { stateKey, checkAndAppend, appendEntry, loadState, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -72,9 +72,8 @@ export async function recordPayment(
   url: string,
 ): Promise<void> {
   const key = stateKey("pay-spend", walletAddress);
-  await checkAndAppend<PaySpendState, PayEntry>(
+  await appendEntry<PaySpendState, PayEntry>(
     store, key, DEFAULT_STATE, DAY_MS,
-    () => null, // always allowed — unconditional record
     { timestamp: Date.now(), amount, url },
   );
 }
@@ -93,17 +92,17 @@ export async function reservePaySpend(
   url: string,
   policy: Required<PayPolicy>,
 ): Promise<{ error: DemosError | null; rollback: () => Promise<void> }> {
-  // Per-call max (no lock needed — static check)
-  if (amount > policy.maxPerCall) {
+  // Validate finiteness first (NaN > X is always false — would bypass maxPerCall)
+  if (!Number.isFinite(amount) || amount <= 0) {
     return {
-      error: demosError("SPEND_LIMIT", `Payment ${amount} DEM exceeds per-call max ${policy.maxPerCall} DEM`, false),
+      error: demosError("INVALID_INPUT", "Payment amount must be a positive finite number", false),
       rollback: async () => {},
     };
   }
 
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (amount > policy.maxPerCall) {
     return {
-      error: demosError("INVALID_INPUT", "Payment amount must be a positive finite number", false),
+      error: demosError("SPEND_LIMIT", `Payment ${amount} DEM exceeds per-call max ${policy.maxPerCall} DEM`, false),
       rollback: async () => {},
     };
   }

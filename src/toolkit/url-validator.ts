@@ -100,8 +100,8 @@ export function createPinnedFetch(resolvedIp: string): typeof fetch {
 
     const originalHostname = url.hostname;
 
-    // Rewrite hostname to resolved IP
-    url.hostname = resolvedIp;
+    // Rewrite hostname to resolved IP (IPv6 requires bracket notation in URL host)
+    url.hostname = resolvedIp.includes(":") ? `[${resolvedIp}]` : resolvedIp;
 
     // Merge Host header — original hostname for TLS SNI / virtual hosting
     const headers = new Headers(init?.headers);

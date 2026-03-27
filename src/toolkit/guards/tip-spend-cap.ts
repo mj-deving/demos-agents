@@ -7,7 +7,7 @@
 
 import type { StateStore, DemosError, TipPolicy } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, checkAndAppend } from "./state-helpers.js";
+import { stateKey, checkAndAppend, appendEntry } from "./state-helpers.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -101,9 +101,8 @@ export async function recordTip(
   amount: number,
 ): Promise<void> {
   const key = stateKey("tip-spend", walletAddress);
-  await checkAndAppend<TipState, TipEntry>(
+  await appendEntry<TipState, TipEntry>(
     store, key, DEFAULT_STATE, DAY_MS,
-    () => null, // always allowed — unconditional record
     { timestamp: Date.now(), postTxHash, amount },
   );
 }

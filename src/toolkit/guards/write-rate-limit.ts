@@ -7,7 +7,7 @@
 
 import type { StateStore, DemosError } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, loadState, checkAndAppend } from "./state-helpers.js";
+import { stateKey, loadState, checkAndAppend, appendEntry } from "./state-helpers.js";
 
 const DAILY_LIMIT = 14;
 const HOURLY_LIMIT = 4;
@@ -65,9 +65,8 @@ export async function recordWrite(
   walletAddress: string,
 ): Promise<void> {
   const key = stateKey("write-rate", walletAddress);
-  await checkAndAppend<WriteRateState, { timestamp: number }>(
+  await appendEntry<WriteRateState, { timestamp: number }>(
     store, key, DEFAULT_STATE, DAY_MS,
-    () => null, // always allowed — unconditional record
     { timestamp: Date.now() },
   );
 }

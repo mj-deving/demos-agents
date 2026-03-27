@@ -99,7 +99,7 @@ export {
 
 export { withBackoff } from "./guards/backoff.js";
 
-export { checkAndAppend, safeParse } from "./guards/state-helpers.js";
+export { checkAndAppend, appendEntry, safeParse } from "./guards/state-helpers.js";
 
 export {
   makeIdempotencyKey,

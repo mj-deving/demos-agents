@@ -8,7 +8,7 @@ import { z } from "zod";
 import type { PayOptions, PayResult, ToolResult } from "../types.js";
 import { ok, err, demosError } from "../types.js";
 import { DemosSession } from "../session.js";
-import { checkPaySpendCap, recordPayment, reservePaySpend } from "../guards/pay-spend-cap.js";
+import { checkPaySpendCap, reservePaySpend } from "../guards/pay-spend-cap.js";
 import { makeIdempotencyKey, checkPayReceipt, recordPayReceipt } from "../guards/pay-receipt-log.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 import { validateUrl, createPinnedFetch } from "../url-validator.js";
