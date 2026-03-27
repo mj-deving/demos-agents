@@ -63,14 +63,44 @@ export async function reply(
   session: DemosSession,
   opts: ReplyOptions,
 ): Promise<ToolResult<PublishResult>> {
-  const inputError = validateInput(ReplyOptionsSchema, opts);
-  if (inputError) return err(inputError, { path: "local", latencyMs: 0 });
+  return withToolWrapper(session, "reply", "TX_FAILED", async (start) => {
+    const inputError = validateInput(ReplyOptionsSchema, opts);
+    if (inputError) return err(inputError, localProvenance(start));
 
-  return publish(session, {
-    text: opts.text,
-    category: opts.category ?? "ANALYSIS",
-    parentTxHash: opts.parentTxHash,
-    attestUrl: opts.attestUrl,
+    // Delegate to publish's internal pipeline (skip outer publish wrapper to avoid double-wrapping)
+    const draft: PublishDraft = {
+      text: opts.text,
+      category: opts.category ?? "ANALYSIS",
+      parentTxHash: opts.parentTxHash,
+      attestUrl: opts.attestUrl,
+    };
+
+    const draftError = validateInput(PublishDraftSchema, draft);
+    if (draftError) return err(draftError, localProvenance(start));
+
+    const [rateLimitError, dedupError] = await Promise.all([
+      checkAndRecordWrite(session.stateStore, session.walletAddress, false),
+      checkAndRecordDedup(session.stateStore, session.walletAddress, draft.text, false),
+    ]);
+
+    if (rateLimitError) return err(rateLimitError, localProvenance(start));
+    if (dedupError) return err(dedupError, localProvenance(start));
+
+    const { txHash, responseHash } = await executePublishPipeline(session, draft);
+
+    await Promise.all([
+      checkAndRecordWrite(session.stateStore, session.walletAddress, true),
+      checkAndRecordDedup(session.stateStore, session.walletAddress, draft.text, true),
+    ]);
+
+    return ok<PublishResult>(
+      { txHash },
+      {
+        path: "local",
+        latencyMs: Date.now() - start,
+        attestation: { txHash, responseHash },
+      },
+    );
   });
 }
 

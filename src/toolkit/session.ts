@@ -27,6 +27,13 @@ const SIGNING_HANDLE = Symbol("signingHandle");
 /** Inactivity timeout in milliseconds (30 minutes) */
 const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
 
+// ── Default policy constants ────────────────────────
+const DEFAULT_MAX_TIP = 10;
+const DEFAULT_MAX_TIPS_PER_POST = 5;
+const DEFAULT_TIP_COOLDOWN_MS = 60_000;
+const DEFAULT_MAX_PAY_PER_CALL = 100;
+const DEFAULT_ROLLING_24H_CAP = 100;
+
 export class DemosSession {
   readonly walletAddress: string;
   readonly rpcUrl: string;
@@ -87,13 +94,13 @@ export class DemosSession {
     this.stateStore = opts.stateStore;
     this.onToolCall = opts.onToolCall;
     this.tipPolicy = {
-      maxPerTip: opts.tipPolicy?.maxPerTip ?? 10,
-      maxPerPost: opts.tipPolicy?.maxPerPost ?? 5,
-      cooldownMs: opts.tipPolicy?.cooldownMs ?? 60_000,
+      maxPerTip: opts.tipPolicy?.maxPerTip ?? DEFAULT_MAX_TIP,
+      maxPerPost: opts.tipPolicy?.maxPerPost ?? DEFAULT_MAX_TIPS_PER_POST,
+      cooldownMs: opts.tipPolicy?.cooldownMs ?? DEFAULT_TIP_COOLDOWN_MS,
     };
     this.payPolicy = {
-      maxPerCall: opts.payPolicy?.maxPerCall ?? 100,
-      rolling24hCap: opts.payPolicy?.rolling24hCap ?? 100,
+      maxPerCall: opts.payPolicy?.maxPerCall ?? DEFAULT_MAX_PAY_PER_CALL,
+      rolling24hCap: opts.payPolicy?.rolling24hCap ?? DEFAULT_ROLLING_24H_CAP,
       trustedPayees: opts.payPolicy?.trustedPayees ?? [],
       requirePayeeApproval: opts.payPolicy?.requirePayeeApproval ?? true,
     };

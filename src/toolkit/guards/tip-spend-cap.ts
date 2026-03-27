@@ -20,6 +20,7 @@ interface TipState {
 }
 
 const DEFAULT_STATE: TipState = { entries: [] };
+const MS_PER_SECOND = 1000;
 
 /** Check if a tip is allowed and optionally record it */
 export async function checkAndRecordTip(
@@ -64,7 +65,7 @@ export async function checkAndRecordTip(
       }
 
       if (lastTimestamp > 0 && now - lastTimestamp < policy.cooldownMs) {
-        const remaining = Math.ceil((policy.cooldownMs - (now - lastTimestamp)) / 1000);
+        const remaining = Math.ceil((policy.cooldownMs - (now - lastTimestamp)) / MS_PER_SECOND);
         return `Tip cooldown: ${remaining}s remaining`;
       }
 
@@ -81,7 +82,7 @@ export async function checkAndRecordTip(
   return null;
 }
 
-/** @deprecated Use checkAndRecordTip() instead */
+/** @deprecated Use checkAndRecordTip() instead. Removal: v2.0 (2026-Q3). */
 export async function checkTipSpendCap(
   store: StateStore,
   walletAddress: string,
@@ -92,7 +93,7 @@ export async function checkTipSpendCap(
   return checkAndRecordTip(store, walletAddress, postTxHash, amount, policy, false);
 }
 
-/** @deprecated Use checkAndRecordTip() with record=true, or appendEntry() for record-only */
+/** @deprecated Use checkAndRecordTip() with record=true, or appendEntry() for record-only. Removal: v2.0 (2026-Q3). */
 export async function recordTip(
   store: StateStore,
   walletAddress: string,

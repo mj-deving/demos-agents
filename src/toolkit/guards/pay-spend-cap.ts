@@ -34,7 +34,7 @@ interface PaySpendState {
 
 const DEFAULT_STATE: PaySpendState = { entries: [] };
 
-/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback */
+/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback. Removal: v2.0 (2026-Q3). */
 export async function checkPaySpendCap(
   store: StateStore,
   walletAddress: string,
@@ -62,7 +62,7 @@ export async function checkPaySpendCap(
   return error ? demosError("SPEND_LIMIT", error, false) : null;
 }
 
-/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback */
+/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback. Removal: v2.0 (2026-Q3). */
 export async function recordPayment(
   store: StateStore,
   walletAddress: string,

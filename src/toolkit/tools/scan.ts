@@ -14,6 +14,8 @@ import { parseFeedPosts } from "./feed-parser.js";
 const MIN_REACTIONS_FOR_ENGAGEMENT = 5;
 const MIN_TEXT_LENGTH_FOR_SUBSTANCE = 100;
 const DEFAULT_OPPORTUNITY_SCORE = 0.7;
+const TRENDING_OPPORTUNITY_SCORE = 0.5;
+const TRENDING_MULTIPLIER = 4;
 
 /**
  * Scan the SuperColony feed for posts and opportunities.
@@ -35,6 +37,7 @@ export async function scan(
       const opportunities = identifyOpportunities(posts);
       return ok<ScanResult>({ posts, opportunities }, localProvenance(start));
     } catch (localErr) {
+      session.logger?.warn?.("scan: feed fetch failed, no fallback", { error: (localErr as Error).message });
       return err(
         demosError("NETWORK_ERROR", `Scan failed: ${(localErr as Error).message}`, true),
         localProvenance(start),
@@ -56,12 +59,12 @@ function identifyOpportunities(posts: ScanPost[]): ScanOpportunity[] {
     }
 
     // High-engagement trending posts worth monitoring
-    if (post.reactions.agree + post.reactions.disagree >= MIN_REACTIONS_FOR_ENGAGEMENT * 4 && post.text.length > MIN_TEXT_LENGTH_FOR_SUBSTANCE) {
+    if (post.reactions.agree + post.reactions.disagree >= MIN_REACTIONS_FOR_ENGAGEMENT * TRENDING_MULTIPLIER && post.text.length > MIN_TEXT_LENGTH_FOR_SUBSTANCE) {
       opportunities.push({
         type: "trending",
         post,
         reason: "High engagement post worth monitoring",
-        score: 0.5,
+        score: TRENDING_OPPORTUNITY_SCORE,
       });
     }
   }

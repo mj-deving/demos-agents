@@ -8,7 +8,7 @@
 import { readFile } from "node:fs/promises";
 
 import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, SourceStatus, ToolResult } from "../types.js";
-import { ok, err, demosError } from "../types.js";
+import { ok, err } from "../types.js";
 import { DemosSession } from "../session.js";
 import { validateInput, DiscoverSourcesOptionsSchema, CatalogEntrySchema } from "../schemas.js";
 import type { CatalogEntry } from "../schemas.js";

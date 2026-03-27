@@ -7,7 +7,7 @@
 
 import type { StateStore, DemosError } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, loadState, checkAndAppend, appendEntry, DAY_MS } from "./state-helpers.js";
+import { stateKey, loadState, checkAndAppend, appendEntry, DAY_MS, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
 
 const DAILY_LIMIT = 14;
 const HOURLY_LIMIT = 4;
@@ -50,15 +50,15 @@ export async function checkAndRecordWrite(
   return error ? demosError("RATE_LIMITED", error, true) : null;
 }
 
-/** @deprecated Use checkAndRecordWrite() instead */
-export async function checkWriteRateLimit(
+/** @deprecated Use checkAndRecordWrite() instead. Removal: v2.0 (2026-Q3). */
+export function checkWriteRateLimit(
   store: StateStore,
   walletAddress: string,
 ): Promise<DemosError | null> {
   return checkAndRecordWrite(store, walletAddress, false);
 }
 
-/** @deprecated Use checkAndRecordWrite() with record=true, or appendEntry() for record-only */
+/** @deprecated Use checkAndRecordWrite() with record=true, or appendEntry() for record-only. Removal: v2.0 (2026-Q3). */
 export async function recordWrite(
   store: StateStore,
   walletAddress: string,
@@ -76,16 +76,21 @@ export async function getWriteRateRemaining(
   walletAddress: string,
 ): Promise<{ dailyRemaining: number; hourlyRemaining: number }> {
   const key = stateKey("write-rate", walletAddress);
-  const state = await loadState(store, key, DEFAULT_STATE);
-  const now = Date.now();
-  const dayAgo = now - DAY_MS;
-  const hourAgo = now - HOUR_MS;
+  const unlock = await store.lock(key, GUARD_LOCK_TTL_MS);
+  try {
+    const state = await loadState(store, key, DEFAULT_STATE);
+    const now = Date.now();
+    const dayAgo = now - DAY_MS;
+    const hourAgo = now - HOUR_MS;
 
-  const dailyCount = state.entries.filter((e) => e.timestamp > dayAgo).length;
-  const hourlyCount = state.entries.filter((e) => e.timestamp > hourAgo).length;
+    const dailyCount = state.entries.filter((e) => e.timestamp > dayAgo).length;
+    const hourlyCount = state.entries.filter((e) => e.timestamp > hourAgo).length;
 
-  return {
-    dailyRemaining: Math.max(0, DAILY_LIMIT - dailyCount),
-    hourlyRemaining: Math.max(0, HOURLY_LIMIT - hourlyCount),
-  };
+    return {
+      dailyRemaining: Math.max(0, DAILY_LIMIT - dailyCount),
+      hourlyRemaining: Math.max(0, HOURLY_LIMIT - hourlyCount),
+    };
+  } finally {
+    await unlock();
+  }
 }

@@ -8,7 +8,8 @@ import { createHash } from "node:crypto";
 import type { StateStore } from "../types.js";
 import { stateKey, loadState, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const RECEIPT_RETENTION_DAYS = 7;
+const WEEK_MS = RECEIPT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
 export interface PayReceipt {
   txHash: string;

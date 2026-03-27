@@ -49,8 +49,8 @@ export async function checkAndRecordDedup(
   return error ? demosError("DUPLICATE", error, false) : null;
 }
 
-/** @deprecated Use checkAndRecordDedup() instead */
-export async function checkDedup(
+/** @deprecated Use checkAndRecordDedup() instead. Removal: v2.0 (2026-Q3). */
+export function checkDedup(
   store: StateStore,
   walletAddress: string,
   text: string,
@@ -58,7 +58,7 @@ export async function checkDedup(
   return checkAndRecordDedup(store, walletAddress, text, false);
 }
 
-/** @deprecated Use checkAndRecordDedup() with record=true, or appendEntry() for record-only */
+/** @deprecated Use checkAndRecordDedup() with record=true, or appendEntry() for record-only. Removal: v2.0 (2026-Q3). */
 export async function recordPublish(
   store: StateStore,
   walletAddress: string,
