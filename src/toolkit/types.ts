@@ -1,0 +1,272 @@
+/**
+ * Core types for the Demos Toolkit.
+ *
+ * Defines the typed contracts that every tool uses:
+ * - DemosError: typed error union with 9 error codes
+ * - ToolResult<T>: typed result envelope with provenance
+ * - StateStore: pluggable persistence interface
+ * - ConnectOptions: configuration for connect()
+ */
+
+// ── Error Types ─────────────────────────────────────
+
+/** Typed error codes — consumer can switch on `code` */
+export type DemosErrorCode =
+  | "RATE_LIMITED"
+  | "AUTH_FAILED"
+  | "ATTEST_FAILED"
+  | "TX_FAILED"
+  | "CONFIRM_TIMEOUT"
+  | "DUPLICATE"
+  | "INVALID_INPUT"
+  | "NETWORK_ERROR"
+  | "SPEND_LIMIT"
+  | "PARTIAL_SUCCESS";
+
+/** Typed error — every tool failure returns this shape */
+export interface DemosError {
+  code: DemosErrorCode;
+  message: string;
+  retryable: boolean;
+  detail?: {
+    step?: string;
+    txHash?: string;
+    partialData?: unknown;
+  };
+}
+
+// ── Result Types ────────────────────────────────────
+
+/** Execution path indicator */
+export type ProvenancePath = "local" | "skill-dojo";
+
+/** Provenance metadata on every tool result */
+export interface Provenance {
+  path: ProvenancePath;
+  latencyMs: number;
+  attestation?: {
+    txHash: string;
+    responseHash: string;
+  };
+}
+
+/** Typed result envelope — all tools return this */
+export interface ToolResult<T> {
+  ok: boolean;
+  data?: T;
+  error?: DemosError;
+  provenance: Provenance;
+}
+
+// ── State Store ─────────────────────────────────────
+
+/** Unlock function returned by lock() */
+export type Unlock = () => Promise<void>;
+
+/** Pluggable state persistence interface */
+export interface StateStore {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<void>;
+  lock(key: string, ttlMs: number): Promise<Unlock>;
+}
+
+// ── Session Types ───────────────────────────────────
+
+/** Tip spending policy */
+export interface TipPolicy {
+  maxPerTip?: number;
+  maxPerPost?: number;
+  cooldownMs?: number;
+}
+
+/** Pay spending policy */
+export interface PayPolicy {
+  maxPerCall?: number;
+  rolling24hCap?: number;
+  trustedPayees?: string[];
+  requirePayeeApproval?: boolean;
+}
+
+/** Observability callback — error accessible via result.error when result.ok === false */
+export interface ToolCallEvent {
+  tool: string;
+  durationMs: number;
+  result: ToolResult<unknown>;
+}
+
+/** Configuration for connect() */
+export interface ConnectOptions {
+  walletPath: string;
+  rpcUrl?: string;
+  algorithm?: "falcon" | "ml-dsa" | "ed25519";
+  skillDojoFallback?: boolean;
+  preferredPath?: ProvenancePath;
+  stateStore?: StateStore;
+  onToolCall?: (event: ToolCallEvent) => void;
+  tipPolicy?: TipPolicy;
+  payPolicy?: PayPolicy;
+  urlAllowlist?: string[];
+  allowInsecureUrls?: boolean;
+  sourceCatalogPath?: string;
+  specsDir?: string;
+  entityMaps?: {
+    assets?: Record<string, string>;
+    macro?: Record<string, string>;
+  };
+}
+
+// ── Tool-Specific Types ─────────────────────────────
+
+/** Draft post for publish/reply */
+export interface PublishDraft {
+  text: string;
+  category: string;
+  tags?: string[];
+  confidence?: number;
+}
+
+/** Reply options */
+export interface ReplyOptions {
+  parentTxHash: string;
+  text: string;
+  category?: string;
+}
+
+/** React options */
+export interface ReactOptions {
+  txHash: string;
+  type: "agree" | "disagree";
+}
+
+/** Tip options */
+export interface TipOptions {
+  txHash: string;
+  amount: number;
+}
+
+/** Scan options */
+export interface ScanOptions {
+  domain?: string;
+  limit?: number;
+  filters?: Record<string, unknown>;
+}
+
+/** Verify options */
+export interface VerifyOptions {
+  txHash: string;
+}
+
+/** Attest options */
+export interface AttestOptions {
+  url: string;
+  claimType?: string;
+}
+
+/** Discover sources options */
+export interface DiscoverSourcesOptions {
+  domain?: string;
+  matchThreshold?: number;
+}
+
+/** Pay options */
+export interface PayOptions {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  maxSpend: number;
+  asset?: string;
+}
+
+// ── Tool Result Data Types ──────────────────────────
+
+export interface PublishResult {
+  txHash: string;
+}
+
+export interface ReactResult {
+  success: boolean;
+}
+
+export interface TipResult {
+  txHash: string;
+}
+
+export interface ScanResult {
+  posts: ScanPost[];
+  opportunities: ScanOpportunity[];
+}
+
+export interface ScanPost {
+  txHash: string;
+  text: string;
+  category: string;
+  author: string;
+  timestamp: number;
+  reactions: { agree: number; disagree: number };
+  tags?: string[];
+}
+
+export interface ScanOpportunity {
+  type: "reply" | "react" | "tip";
+  post: ScanPost;
+  reason: string;
+  score: number;
+}
+
+export interface VerifyResult {
+  confirmed: boolean;
+  blockHeight?: number;
+}
+
+export interface AttestResult {
+  responseHash: string;
+  txHash: string;
+}
+
+export interface DiscoverSourcesResult {
+  sources: Source[];
+}
+
+export interface Source {
+  id: string;
+  name: string;
+  domain: string;
+  url: string;
+  status: "active" | "degraded" | "quarantined";
+  healthScore?: number;
+}
+
+export interface PayResult {
+  response: {
+    status: number;
+    headers: Record<string, string>;
+    body: unknown;
+  };
+  receipt?: {
+    txHash: string;
+    amount: number;
+  };
+}
+
+// ── Helper ──────────────────────────────────────────
+
+/** Create a success ToolResult */
+export function ok<T>(data: T, provenance: Provenance): ToolResult<T> {
+  return { ok: true, data, provenance };
+}
+
+/** Create a failure ToolResult */
+export function err<T>(error: DemosError, provenance: Provenance): ToolResult<T> {
+  return { ok: false, error, provenance };
+}
+
+/** Create a DemosError */
+export function demosError(
+  code: DemosErrorCode,
+  message: string,
+  retryable: boolean,
+  detail?: DemosError["detail"],
+): DemosError {
+  return { code, message, retryable, ...(detail ? { detail } : {}) };
+}
