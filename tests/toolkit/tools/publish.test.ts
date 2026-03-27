@@ -36,7 +36,7 @@ describe("publish()", () => {
   it("accepts DemosSession as first parameter", async () => {
     const session = createTestSession(tempDir);
     // Publish will fail (SDK not connected) but should accept session
-    const result = await publish(session, { text: "Test post", category: "ANALYSIS" });
+    const result = await publish(session, { text: "Test post", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     // Should return typed result, not throw
     expect(result).toHaveProperty("ok");
     expect(result).toHaveProperty("provenance");
@@ -44,7 +44,7 @@ describe("publish()", () => {
 
   it("returns ToolResult with provenance", async () => {
     const session = createTestSession(tempDir);
-    const result = await publish(session, { text: "Test post", category: "ANALYSIS" });
+    const result = await publish(session, { text: "Test post", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     expect(result.provenance).toBeDefined();
     expect(result.provenance.path).toBe("local");
     expect(typeof result.provenance.latencyMs).toBe("number");
@@ -52,14 +52,14 @@ describe("publish()", () => {
 
   it("rejects empty text", async () => {
     const session = createTestSession(tempDir);
-    const result = await publish(session, { text: "", category: "ANALYSIS" });
+    const result = await publish(session, { text: "", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("INVALID_INPUT");
   });
 
   it("rejects missing category", async () => {
     const session = createTestSession(tempDir);
-    const result = await publish(session, { text: "Hello", category: "" });
+    const result = await publish(session, { text: "Hello", category: "", attestUrl: "https://api.example.com/price" });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("INVALID_INPUT");
   });
@@ -71,7 +71,7 @@ describe("publish()", () => {
       await recordWrite(session.stateStore, session.walletAddress);
     }
 
-    const result = await publish(session, { text: "Test post", category: "ANALYSIS" });
+    const result = await publish(session, { text: "Test post", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("RATE_LIMITED");
   });
@@ -83,7 +83,7 @@ describe("publish()", () => {
     const { recordPublish } = await import("../../../src/toolkit/guards/dedup-guard.js");
     await recordPublish(session.stateStore, session.walletAddress, "Duplicate text");
 
-    const result = await publish(session, { text: "Duplicate text", category: "ANALYSIS" });
+    const result = await publish(session, { text: "Duplicate text", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("DUPLICATE");
   });
@@ -101,7 +101,7 @@ describe("publish()", () => {
     });
 
     // Will fail at pipeline, observer only called on success
-    const result = await publish(session, { text: "Test", category: "ANALYSIS" });
+    const result = await publish(session, { text: "Test", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     // Verify the result is still a valid typed ToolResult
     expect(result).toHaveProperty("ok");
     expect(result).toHaveProperty("provenance");
@@ -124,6 +124,7 @@ describe("reply()", () => {
     const result = await reply(session, {
       parentTxHash: "0xparent",
       text: "Reply text",
+      attestUrl: "https://api.example.com/data",
     });
     expect(result).toHaveProperty("ok");
     expect(result).toHaveProperty("provenance");
@@ -134,6 +135,7 @@ describe("reply()", () => {
     const result = await reply(session, {
       parentTxHash: "0xparent",
       text: "Reply text",
+      attestUrl: "https://api.example.com/data",
     });
     // Will fail (no SDK) but return typed result
     expect(result.ok === true || result.ok === false).toBe(true);
@@ -144,6 +146,7 @@ describe("reply()", () => {
     const result = await reply(session, {
       parentTxHash: "",
       text: "Reply text",
+      attestUrl: "https://api.example.com/data",
     });
     expect(result.ok).toBe(false);
     expect(result.error!.code).toBe("INVALID_INPUT");

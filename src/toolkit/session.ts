@@ -12,6 +12,12 @@
 import type { StateStore, TipPolicy, PayPolicy, ToolCallEvent, ProvenancePath } from "./types.js";
 import type { SdkBridge } from "./sdk-bridge.js";
 
+/** Typed signing handle — holds SDK instance and bridge */
+export interface SigningHandle {
+  demos?: unknown;
+  bridge?: SdkBridge;
+}
+
 // Local Symbol — not globally discoverable via Symbol.for()
 // Note: Object.getOwnPropertySymbols() can still enumerate — this prevents
 // accidental leakage, not intentional extraction. See design doc Section 6.1.
@@ -51,7 +57,7 @@ export class DemosSession {
     rpcUrl: string;
     algorithm: string;
     authToken: string;
-    signingHandle: unknown;
+    signingHandle: SigningHandle;
     skillDojoFallback?: boolean;
     preferredPath?: ProvenancePath;
     stateStore: StateStore;
@@ -107,15 +113,15 @@ export class DemosSession {
   }
 
   /** Get signing handle (internal use only) */
-  getSigningHandle(): unknown {
+  getSigningHandle(): SigningHandle {
     this.checkExpired();
-    return (this as Record<symbol, unknown>)[SIGNING_HANDLE];
+    return (this as Record<symbol, unknown>)[SIGNING_HANDLE] as SigningHandle;
   }
 
   /** Get SDK bridge (internal use by toolkit tools) */
   getBridge(): SdkBridge {
     this.checkExpired();
-    const handle = (this as Record<symbol, unknown>)[SIGNING_HANDLE] as { bridge?: SdkBridge } | undefined;
+    const handle = (this as Record<symbol, unknown>)[SIGNING_HANDLE] as SigningHandle | undefined;
     if (!handle?.bridge) {
       throw new Error("SDK bridge not available — session may not be fully connected");
     }

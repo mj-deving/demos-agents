@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import type { StateStore, DemosError } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, loadState, checkAndAppend, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
+import { stateKey, checkAndAppend } from "./state-helpers.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -68,14 +68,9 @@ export async function recordPublish(
 ): Promise<void> {
   const hash = hashText(text);
   const key = stateKey("dedup", walletAddress);
-  const unlock = await store.lock(key, GUARD_LOCK_TTL_MS);
-  try {
-    const state = await loadState<DedupState>(store, key, DEFAULT_STATE);
-    const dayAgo = Date.now() - DAY_MS;
-    state.entries = state.entries.filter((e) => e.timestamp > dayAgo);
-    state.entries.push({ timestamp: Date.now(), hash });
-    await store.set(key, JSON.stringify(state));
-  } finally {
-    await unlock();
-  }
+  await checkAndAppend<DedupState, DedupEntry>(
+    store, key, DEFAULT_STATE, DAY_MS,
+    () => null, // always allowed — unconditional record
+    { timestamp: Date.now(), hash },
+  );
 }

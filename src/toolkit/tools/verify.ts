@@ -56,6 +56,8 @@ export async function verify(
       }
     }
 
+    // Unreachable — the for loop always returns on its final iteration.
+    // TypeScript requires a return for completeness.
     return err(
       demosError("CONFIRM_TIMEOUT", "Verification exhausted all retries", true),
       localProvenance(start),
@@ -84,7 +86,7 @@ async function checkConfirmation(session: DemosSession, txHash: string): Promise
       return String(post.txHash ?? "") === txHash;
     });
 
-    return { confirmed: found, blockHeight: found ? 1 : undefined };
+    return { confirmed: found };
   } catch (e) {
     // API unavailable — throw so verify() retries
     throw new Error(`Verification requires SuperColony API (feed indexer): ${(e as Error).message}`);

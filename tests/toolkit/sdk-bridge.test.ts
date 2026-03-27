@@ -59,7 +59,6 @@ describe("SDK Bridge Adapter", () => {
       expect(bridge).toBeDefined();
       expect(bridge.attestDahr).toBeDefined();
       expect(bridge.apiCall).toBeDefined();
-      expect(bridge.signAndBroadcast).toBeDefined();
     });
 
     it("exposes attestDahr method", () => {
@@ -70,9 +69,6 @@ describe("SDK Bridge Adapter", () => {
       expect(typeof bridge.apiCall).toBe("function");
     });
 
-    it("exposes signAndBroadcast method", () => {
-      expect(typeof bridge.signAndBroadcast).toBe("function");
-    });
   });
 
   describe("attestDahr", () => {

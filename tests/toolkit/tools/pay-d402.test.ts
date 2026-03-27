@@ -30,7 +30,6 @@ function mockBridge(overrides?: Partial<SdkBridge>): SdkBridge {
   return {
     attestDahr: vi.fn(async () => ({ responseHash: "h", txHash: "t", data: {}, url: "" })),
     apiCall: vi.fn(async () => ({ ok: true, status: 200, data: {} })),
-    signAndBroadcast: vi.fn(async () => ({ hash: "b" })),
     publishHivePost: vi.fn(async () => ({ txHash: "p" })),
     transferDem: vi.fn(async () => ({ txHash: "x" })),
     getDemos: vi.fn(() => ({} as any)),
