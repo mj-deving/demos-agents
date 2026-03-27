@@ -107,6 +107,7 @@ export interface ConnectOptions {
   payPolicy?: PayPolicy;
   urlAllowlist?: string[];
   allowInsecureUrls?: boolean;
+  supercolonyApi?: string;
   sourceCatalogPath?: string;
   specsDir?: string;
   entityMaps?: {
@@ -126,7 +127,7 @@ export interface PublishDraft {
   /** For replies — txHash of the parent post to thread under */
   parentTxHash?: string;
   /** Source URL to attest via DAHR — required for on-chain provenance */
-  attestUrl?: string;
+  attestUrl: string;
 }
 
 /** Reply options */
@@ -135,7 +136,7 @@ export interface ReplyOptions {
   text: string;
   category?: string;
   /** Source URL to attest via DAHR */
-  attestUrl?: string;
+  attestUrl: string;
 }
 
 /** React options */

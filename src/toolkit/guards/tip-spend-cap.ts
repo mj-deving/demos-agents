@@ -7,7 +7,7 @@
 
 import type { StateStore, DemosError, TipPolicy } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, loadState, checkAndAppend, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
+import { stateKey, checkAndAppend } from "./state-helpers.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -101,14 +101,9 @@ export async function recordTip(
   amount: number,
 ): Promise<void> {
   const key = stateKey("tip-spend", walletAddress);
-  const unlock = await store.lock(key, GUARD_LOCK_TTL_MS);
-  try {
-    const state = await loadState<TipState>(store, key, DEFAULT_STATE);
-    const dayAgo = Date.now() - DAY_MS;
-    state.entries = state.entries.filter((e) => e.timestamp > dayAgo);
-    state.entries.push({ timestamp: Date.now(), postTxHash, amount });
-    await store.set(key, JSON.stringify(state));
-  } finally {
-    await unlock();
-  }
+  await checkAndAppend<TipState, TipEntry>(
+    store, key, DEFAULT_STATE, DAY_MS,
+    () => null, // always allowed — unconditional record
+    { timestamp: Date.now(), postTxHash, amount },
+  );
 }

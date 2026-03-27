@@ -63,9 +63,11 @@ export async function reply(
   session: DemosSession,
   opts: ReplyOptions,
 ): Promise<ToolResult<PublishResult>> {
+  const start = Date.now();
+  session.touch();
   const inputError = validateInput(ReplyOptionsSchema, opts);
   if (inputError) {
-    return err(inputError, { path: "local", latencyMs: 0 });
+    return err(inputError, localProvenance(start));
   }
 
   return publish(session, {
@@ -80,14 +82,12 @@ async function executePublishPipeline(session: DemosSession, draft: PublishDraft
   const bridge = session.getBridge();
 
   // Step 1: DAHR attestation (mandatory — every post must carry proof)
-  if (!draft.attestUrl) {
-    throw new Error("PublishDraft.attestUrl is required — provide the source URL for attestation");
-  }
+  // attestUrl is guaranteed by type system + Zod schema validation at entry
 
   // URL allowlist enforcement (if configured)
   if (session.urlAllowlist.length > 0) {
     const urlObj = new URL(draft.attestUrl);
-    if (!session.urlAllowlist.some((allowed) => urlObj.origin.startsWith(allowed) || draft.attestUrl!.startsWith(allowed))) {
+    if (!session.urlAllowlist.some((allowed) => urlObj.origin.startsWith(allowed) || draft.attestUrl.startsWith(allowed))) {
       throw demosError("INVALID_INPUT", `Attestation URL not in allowlist: ${urlObj.hostname}`, false);
     }
   }

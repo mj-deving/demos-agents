@@ -9,9 +9,8 @@
  * - Rate limit / dedup / spend cap guards → guards/
  * - Cross-field checks (e.g., HTTPS + allowInsecureUrls) → connect.ts
  *
- * Note on attestUrl: PublishDraft.attestUrl is optional in types.ts but required
- * at runtime by executePublishPipeline(). This is intentional two-layer validation:
- * schema validates shape (optional), pipeline validates business rule (required).
+ * Note on attestUrl: PublishDraft.attestUrl is required in both types.ts and schemas.
+ * Every post must carry on-chain provenance via DAHR attestation.
  */
 
 import { z } from "zod";
@@ -79,6 +78,7 @@ export const ConnectOptionsSchema = z.object({
   payPolicy: PayPolicySchema.optional(),
   urlAllowlist: z.array(z.string()).optional(),
   allowInsecureUrls: z.boolean().optional(),
+  supercolonyApi: z.string().url().optional(),
   sourceCatalogPath: z.string().optional(),
   specsDir: z.string().optional(),
   entityMaps: z.object({
@@ -93,14 +93,14 @@ export const PublishDraftSchema = z.object({
   tags: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(100).optional(),
   parentTxHash: z.string().optional(),
-  attestUrl: nonEmptyString.optional(),  // SSRF validated in executePublishPipeline, not here
+  attestUrl: nonEmptyString,  // Required — SSRF validated in executePublishPipeline, not here
 });
 
 export const ReplyOptionsSchema = z.object({
   parentTxHash: txHashString,
   text: textBody,
   category: z.string().optional(),
-  attestUrl: nonEmptyString.optional(),
+  attestUrl: nonEmptyString,
 });
 
 export const ReactOptionsSchema = z.object({

@@ -197,88 +197,90 @@ describe("PayPolicySchema", () => {
 // ── PublishDraftSchema ────────────────────────────────
 
 describe("PublishDraftSchema", () => {
-  it("accepts valid draft with text and category", () => {
-    const result = validateInput(PublishDraftSchema, { text: "Test post", category: "ANALYSIS" });
+  it("accepts valid draft with text, category, and attestUrl", () => {
+    const result = validateInput(PublishDraftSchema, { text: "Test post", category: "ANALYSIS", attestUrl: "https://api.example.com/data" });
     expect(result).toBeNull();
   });
 
   it("rejects empty text", () => {
-    const result = validateInput(PublishDraftSchema, { text: "", category: "ANALYSIS" });
+    const result = validateInput(PublishDraftSchema, { text: "", category: "ANALYSIS", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
     expect(result!.code).toBe("INVALID_INPUT");
   });
 
   it("rejects whitespace-only text", () => {
-    const result = validateInput(PublishDraftSchema, { text: "   ", category: "ANALYSIS" });
+    const result = validateInput(PublishDraftSchema, { text: "   ", category: "ANALYSIS", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
     expect(result!.code).toBe("INVALID_INPUT");
   });
 
   it("rejects text exceeding 10KB", () => {
     const bigText = "x".repeat(10241);
-    const result = validateInput(PublishDraftSchema, { text: bigText, category: "ANALYSIS" });
+    const result = validateInput(PublishDraftSchema, { text: bigText, category: "ANALYSIS", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
     expect(result!.message).toContain("10KB");
   });
 
   it("accepts text at exactly 10KB boundary", () => {
     const maxText = "x".repeat(10240);
-    const result = validateInput(PublishDraftSchema, { text: maxText, category: "ANALYSIS" });
+    const result = validateInput(PublishDraftSchema, { text: maxText, category: "ANALYSIS", attestUrl: "https://api.example.com/data" });
     expect(result).toBeNull();
   });
 
   it("rejects missing category", () => {
-    const result = validateInput(PublishDraftSchema, { text: "Hello" });
+    const result = validateInput(PublishDraftSchema, { text: "Hello", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
     expect(result!.code).toBe("INVALID_INPUT");
   });
 
   it("rejects empty category", () => {
-    const result = validateInput(PublishDraftSchema, { text: "Hello", category: "" });
+    const result = validateInput(PublishDraftSchema, { text: "Hello", category: "", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
     expect(result!.code).toBe("INVALID_INPUT");
   });
 
   it("accepts optional tags array", () => {
     const result = validateInput(PublishDraftSchema, {
-      text: "Hello", category: "ANALYSIS", tags: ["crypto", "btc"],
+      text: "Hello", category: "ANALYSIS", attestUrl: "https://api.example.com/data", tags: ["crypto", "btc"],
     });
     expect(result).toBeNull();
   });
 
   it("accepts confidence in 0-100 range", () => {
     const result = validateInput(PublishDraftSchema, {
-      text: "Hello", category: "ANALYSIS", confidence: 80,
+      text: "Hello", category: "ANALYSIS", attestUrl: "https://api.example.com/data", confidence: 80,
     });
     expect(result).toBeNull();
   });
 
   it("rejects confidence > 100", () => {
     const result = validateInput(PublishDraftSchema, {
-      text: "Hello", category: "ANALYSIS", confidence: 101,
+      text: "Hello", category: "ANALYSIS", attestUrl: "https://api.example.com/data", confidence: 101,
     });
     expect(result).not.toBeNull();
   });
 
   it("rejects confidence < 0", () => {
     const result = validateInput(PublishDraftSchema, {
-      text: "Hello", category: "ANALYSIS", confidence: -1,
+      text: "Hello", category: "ANALYSIS", attestUrl: "https://api.example.com/data", confidence: -1,
     });
     expect(result).not.toBeNull();
   });
 
   it("accepts confidence at boundary 0", () => {
     const result = validateInput(PublishDraftSchema, {
-      text: "Hello", category: "ANALYSIS", confidence: 0,
+      text: "Hello", category: "ANALYSIS", attestUrl: "https://api.example.com/data", confidence: 0,
     });
     expect(result).toBeNull();
   });
 
-  it("accepts optional attestUrl", () => {
+  it("requires attestUrl (not optional)", () => {
     const result = validateInput(PublishDraftSchema, {
-      text: "Hello", category: "ANALYSIS", attestUrl: "https://api.example.com/data",
+      text: "Hello", category: "ANALYSIS",
     });
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result!.code).toBe("INVALID_INPUT");
+    expect(result!.message).toContain("attestUrl");
   });
 });
 
@@ -286,23 +288,23 @@ describe("PublishDraftSchema", () => {
 
 describe("ReplyOptionsSchema", () => {
   it("accepts valid reply", () => {
-    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "abc123", text: "Great post" });
+    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "abc123", text: "Great post", attestUrl: "https://api.example.com/data" });
     expect(result).toBeNull();
   });
 
   it("rejects empty parentTxHash", () => {
-    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "", text: "Great post" });
+    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "", text: "Great post", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
     expect(result!.code).toBe("INVALID_INPUT");
   });
 
   it("rejects empty text", () => {
-    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "abc123", text: "" });
+    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "abc123", text: "", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
   });
 
   it("rejects whitespace-only parentTxHash", () => {
-    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "   ", text: "Reply" });
+    const result = validateInput(ReplyOptionsSchema, { parentTxHash: "   ", text: "Reply", attestUrl: "https://api.example.com/data" });
     expect(result).not.toBeNull();
   });
 });

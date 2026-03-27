@@ -7,7 +7,7 @@
 
 import type { StateStore, DemosError } from "../types.js";
 import { demosError } from "../types.js";
-import { stateKey, loadState, checkAndAppend, GUARD_LOCK_TTL_MS } from "./state-helpers.js";
+import { stateKey, loadState, checkAndAppend } from "./state-helpers.js";
 
 const DAILY_LIMIT = 14;
 const HOURLY_LIMIT = 4;
@@ -65,16 +65,11 @@ export async function recordWrite(
   walletAddress: string,
 ): Promise<void> {
   const key = stateKey("write-rate", walletAddress);
-  const unlock = await store.lock(key, GUARD_LOCK_TTL_MS);
-  try {
-    const state = await loadState<WriteRateState>(store, key, DEFAULT_STATE);
-    const dayAgo = Date.now() - DAY_MS;
-    state.entries = state.entries.filter((e) => e.timestamp > dayAgo);
-    state.entries.push({ timestamp: Date.now() });
-    await store.set(key, JSON.stringify(state));
-  } finally {
-    await unlock();
-  }
+  await checkAndAppend<WriteRateState, { timestamp: number }>(
+    store, key, DEFAULT_STATE, DAY_MS,
+    () => null, // always allowed — unconditional record
+    { timestamp: Date.now() },
+  );
 }
 
 /** Get remaining capacity */

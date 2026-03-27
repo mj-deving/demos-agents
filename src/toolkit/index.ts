@@ -99,6 +99,8 @@ export {
 
 export { withBackoff } from "./guards/backoff.js";
 
+export { checkAndAppend } from "./guards/state-helpers.js";
+
 export {
   makeIdempotencyKey,
   checkPayReceipt,

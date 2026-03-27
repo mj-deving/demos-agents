@@ -49,7 +49,6 @@ export async function attest(
     }
 
     // SDK bridge attestation (withToolWrapper catches exceptions)
-    // TODO(sdk-bridge): wire to session's SDK bridge once connect() creates it
     const result = await executeDahrAttestation(session, opts);
     return ok<AttestResult>(result, {
       path: "local",

@@ -35,7 +35,9 @@ export async function scan(
             { posts, opportunities: identifyOpportunities(posts) },
             { path: "skill-dojo", latencyMs: Date.now() - start },
           );
-        } catch { /* both failed */ }
+        } catch (fallbackErr) {
+          console.warn(`[demos-toolkit] Skill Dojo fallback also failed: ${(fallbackErr as Error).message}`);
+        }
       }
 
       return err(

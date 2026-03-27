@@ -99,7 +99,8 @@ export async function connect(opts: ConnectOptions): Promise<DemosSession> {
     const stateStore = opts.stateStore ?? new FileStateStore();
 
     // Create SDK bridge (session-scoped, no module-level state)
-    const bridge = createSdkBridge(demos, DEFAULT_SUPERCOLONY_API, authToken);
+    const apiBaseUrl = opts.supercolonyApi ?? DEFAULT_SUPERCOLONY_API;
+    const bridge = createSdkBridge(demos, apiBaseUrl, authToken);
 
     return new DemosSession({
       walletAddress: address,

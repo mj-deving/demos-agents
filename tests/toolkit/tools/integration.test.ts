@@ -39,7 +39,6 @@ function mockBridge(overrides?: Partial<SdkBridge>): SdkBridge {
         ],
       },
     })),
-    signAndBroadcast: vi.fn(async () => ({ hash: "broadcast-tx-456" })),
     publishHivePost: vi.fn(async () => ({ txHash: "hive-tx-789" })),
     transferDem: vi.fn(async () => ({ txHash: "transfer-tx-101" })),
     getDemos: vi.fn(() => ({} as any)),

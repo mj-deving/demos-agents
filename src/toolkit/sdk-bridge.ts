@@ -85,9 +85,6 @@ export interface SdkBridge {
   /** Make an authenticated API call to SuperColony */
   apiCall(path: string, options?: RequestInit): Promise<ApiCallResult>;
 
-  /** Sign and broadcast a transaction */
-  signAndBroadcast(txData: unknown): Promise<{ hash: string }>;
-
   /** Publish a HIVE-encoded post to the Demos chain */
   publishHivePost(post: HivePost): Promise<{ txHash: string }>;
 
@@ -238,17 +235,10 @@ export function createSdkBridge(
         }
         return { ok: res.ok, status: res.status, data };
       } catch (err) {
-        return { ok: false, status: 0, data: (err as Error).message };
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn(`[demos-toolkit] apiCall failed: ${message}`);
+        return { ok: false, status: 0, data: message };
       }
-    },
-
-    async signAndBroadcast(txData: unknown): Promise<{ hash: string }> {
-      const result = await (demos as any).sendTransaction(txData);
-      const hash = result.hash ?? result.txHash;
-      if (!hash) {
-        throw new Error("Transaction broadcast succeeded but returned no hash");
-      }
-      return { hash };
     },
 
     async publishHivePost(post: HivePost): Promise<{ txHash: string }> {
