@@ -158,6 +158,10 @@ export async function pay(
       );
     }
 
+    // Record spend immediately after settlement — funds are committed on-chain
+    // regardless of whether the retry succeeds. Receipt is deferred to 2xx retry.
+    await recordPayment(session.stateStore, session.walletAddress, requirement.amount, opts.url);
+
     // Step 7: Retry with payment proof
     let retryResponse: Response;
     try {
@@ -185,17 +189,14 @@ export async function pay(
       );
     }
 
-    // Step 9: Success — record receipt + spend
-    await Promise.all([
-      recordPayment(session.stateStore, session.walletAddress, requirement.amount, opts.url),
-      recordPayReceipt(session.stateStore, session.walletAddress, {
-        txHash: settlement.hash,
-        url: opts.url,
-        amount: requirement.amount,
-        timestamp: Date.now(),
-        idempotencyKey,
-      }),
-    ]);
+    // Step 9: Success — record receipt (spend already recorded after settlement)
+    await recordPayReceipt(session.stateStore, session.walletAddress, {
+      txHash: settlement.hash,
+      url: opts.url,
+      amount: requirement.amount,
+      timestamp: Date.now(),
+      idempotencyKey,
+    });
 
     const retryBody = await safeReadBody(retryResponse);
     return ok<PayResult>(
