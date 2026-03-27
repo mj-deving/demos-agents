@@ -1,8 +1,9 @@
 /**
- * verify() — check on-chain confirmation of a transaction.
+ * verify() — check indexer confirmation of a transaction.
  *
- * Uses SDK bridge to query RPC node. Works even when SuperColony API is down.
- * Retries with delays [3s, 5s, 10s] before returning CONFIRM_TIMEOUT.
+ * REQUIRES SuperColony API (feed indexer) — no direct chain tx query exists in SDK.
+ * When API is unavailable, retries exhaust and returns CONFIRM_TIMEOUT.
+ * Retries with delays [3s, 5s, 10s].
  */
 
 import type { VerifyOptions, VerifyResult, ToolResult } from "../types.js";

@@ -77,6 +77,7 @@ export async function reply(
     text: opts.text,
     category: opts.category ?? "ANALYSIS",
     parentTxHash: opts.parentTxHash,
+    attestUrl: opts.attestUrl,
   });
 }
 
@@ -84,9 +85,10 @@ async function executePublishPipeline(session: DemosSession, draft: PublishDraft
   const bridge = session.getBridge();
 
   // Step 1: DAHR attestation (mandatory — every post must carry proof)
-  // TODO(claim-extraction): use source URL from claim extraction, not hardcoded
-  const attestUrl = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
-  const attestResult = await bridge.attestDahr(attestUrl);
+  if (!draft.attestUrl) {
+    throw new Error("PublishDraft.attestUrl is required — provide the source URL for attestation");
+  }
+  const attestResult = await bridge.attestDahr(draft.attestUrl);
 
   // Step 2: Publish HIVE post on-chain via store → confirm → broadcast
   const result = await bridge.publishHivePost({

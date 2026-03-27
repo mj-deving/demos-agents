@@ -30,6 +30,7 @@ function mockBridge(overrides?: Partial<SdkBridge>): SdkBridge {
             txHash: "post-tx-1",
             text: "BTC analysis with attestation",
             category: "ANALYSIS",
+            sender: "demos1agent",
             author: "demos1agent",
             timestamp: Date.now(),
             reactions: { agree: 5, disagree: 1 },
@@ -39,6 +40,8 @@ function mockBridge(overrides?: Partial<SdkBridge>): SdkBridge {
       },
     })),
     signAndBroadcast: vi.fn(async () => ({ hash: "broadcast-tx-456" })),
+    publishHivePost: vi.fn(async () => ({ txHash: "hive-tx-789" })),
+    transferDem: vi.fn(async () => ({ txHash: "transfer-tx-101" })),
     getDemos: vi.fn(() => ({} as any)),
     ...overrides,
   };
@@ -115,14 +118,10 @@ describe("Tool Integration with SDK Bridge", () => {
       const { scan } = await import("../../../src/toolkit/tools/scan.js");
       const result = await scan(session, { limit: 10 });
 
-      // scan() currently throws "pending" — will pass once wired
-      if (result.ok) {
-        expect(result.data!.posts.length).toBeGreaterThan(0);
-        expect(bridge.apiCall).toHaveBeenCalled();
-      } else {
-        // Expected until wiring is done
-        expect(result.error).toBeDefined();
-      }
+      // Bridge is mocked — outcome is deterministic
+      expect(result.ok).toBe(true);
+      expect(result.data!.posts.length).toBeGreaterThan(0);
+      expect(bridge.apiCall).toHaveBeenCalled();
     });
   });
 
@@ -131,43 +130,37 @@ describe("Tool Integration with SDK Bridge", () => {
       const { react } = await import("../../../src/toolkit/tools/react.js");
       const result = await react(session, { txHash: "post-tx-1", type: "agree" });
 
-      if (result.ok) {
-        expect(result.data!.success).toBe(true);
-        expect(bridge.apiCall).toHaveBeenCalled();
-      } else {
-        expect(result.error).toBeDefined();
-      }
+      expect(result.ok).toBe(true);
+      expect(result.data!.success).toBe(true);
+      expect(bridge.apiCall).toHaveBeenCalled();
     });
   });
 
   describe("verify() with bridge", () => {
     it(
-      "queries via bridge and returns confirmation",
+      "finds tx in feed and confirms",
       async () => {
         const { verify } = await import("../../../src/toolkit/tools/verify.js");
-        const result = await verify(session, { txHash: "mock-tx-123" });
+        // Mock feed returns post with txHash "post-tx-1" — verify should find it
+        const result = await verify(session, { txHash: "post-tx-1" });
 
-        if (result.ok) {
-          expect(typeof result.data!.confirmed).toBe("boolean");
-        } else {
-          expect(result.error).toBeDefined();
-        }
+        expect(result.ok).toBe(true);
+        expect(result.data!.confirmed).toBe(true);
       },
       25000,
     );
   });
 
   describe("tip() with bridge", () => {
-    it("calls bridge.signAndBroadcast for DEM transfer", async () => {
+    it("resolves author from feed and transfers DEM", async () => {
       const { tip } = await import("../../../src/toolkit/tools/tip.js");
+      // tip() now resolves author from feed — mock returns post with sender
       const result = await tip(session, { txHash: "post-tx-1", amount: 3 });
 
-      if (result.ok) {
-        expect(result.data!.txHash).toBeDefined();
-        expect(bridge.signAndBroadcast).toHaveBeenCalled();
-      } else {
-        expect(result.error).toBeDefined();
-      }
+      // tip resolves sender from apiCall, then calls transferDem
+      expect(result.ok).toBe(true);
+      expect(result.data!.txHash).toBeDefined();
+      expect(bridge.transferDem).toHaveBeenCalled();
     });
   });
 
@@ -177,6 +170,7 @@ describe("Tool Integration with SDK Bridge", () => {
       const result = await publish(session, {
         text: "BTC surging past $100k with strong institutional inflows and on-chain metrics confirming accumulation by long-term holders. DAHR-attested price data from CoinGecko confirms.",
         category: "ANALYSIS",
+        attestUrl: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
       });
 
       if (result.ok) {
@@ -193,6 +187,7 @@ describe("Tool Integration with SDK Bridge", () => {
       const result = await reply(session, {
         parentTxHash: "parent-tx-abc",
         text: "Agreed — the on-chain data confirms accumulation. DAHR-attested verification shows consistent buying pressure across major exchanges.",
+        attestUrl: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
       });
 
       if (result.ok) {

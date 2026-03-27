@@ -85,6 +85,15 @@ export function createSdkBridge(
   fetchImpl: typeof fetch = globalThis.fetch,
   txModule?: { store: Function; confirm: Function; broadcast: Function },
 ): SdkBridge {
+  // Closure-scoped lazy loader — avoids module-level shared mutable state
+  let cachedTxModule: any = txModule ?? null;
+  async function getTxModule() {
+    if (cachedTxModule) return cachedTxModule;
+    const { DemosTransactions } = await import("@kynesyslabs/demosdk/websdk");
+    cachedTxModule = DemosTransactions;
+    return cachedTxModule;
+  }
+
   return {
     async attestDahr(url: string, method: string = "GET"): Promise<DahrResult> {
       const dahr = await (demos as any).web2.createDahr();
@@ -183,7 +192,7 @@ export function createSdkBridge(
 
     async publishHivePost(post: HivePost): Promise<{ txHash: string }> {
       // Lazy-import DemosTransactions or use injected mock
-      const tx = txModule ?? await getTransactionsModule();
+      const tx = txModule ?? await getTxModule();
 
       // Construct HIVE post object
       const hivePost: Record<string, unknown> = {
@@ -234,6 +243,12 @@ export function createSdkBridge(
     },
 
     async transferDem(to: string, amount: number, memo: string): Promise<{ txHash: string }> {
+      if (!to || typeof to !== "string") {
+        throw new Error("transferDem: 'to' address is required");
+      }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error(`transferDem: invalid amount ${amount} — must be a positive finite number`);
+      }
       const result = await (demos as any).transfer(to, amount, memo);
       const txHash = result?.hash ?? result?.txHash;
       if (!txHash) {
@@ -248,11 +263,3 @@ export function createSdkBridge(
   };
 }
 
-// Lazy-load DemosTransactions to avoid module-level SDK import
-let _txModule: any = null;
-async function getTransactionsModule(): Promise<{ store: Function; confirm: Function; broadcast: Function }> {
-  if (_txModule) return _txModule;
-  const { DemosTransactions } = await import("@kynesyslabs/demosdk/websdk");
-  _txModule = DemosTransactions;
-  return _txModule;
-}

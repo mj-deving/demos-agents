@@ -125,6 +125,8 @@ export interface PublishDraft {
   confidence?: number;
   /** For replies — txHash of the parent post to thread under */
   parentTxHash?: string;
+  /** Source URL to attest via DAHR — required for on-chain provenance */
+  attestUrl?: string;
 }
 
 /** Reply options */
@@ -132,6 +134,8 @@ export interface ReplyOptions {
   parentTxHash: string;
   text: string;
   category?: string;
+  /** Source URL to attest via DAHR */
+  attestUrl?: string;
 }
 
 /** React options */

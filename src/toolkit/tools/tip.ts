@@ -33,9 +33,34 @@ export async function tip(
 
     const bridge = session.getBridge();
     const memo = `HIVE_TIP:${opts.txHash}`;
-    // TODO(tip-resolution): resolve post author from txHash via feed API
-    // For now, txHash is used as recipient placeholder
-    const result = await bridge.transferDem(opts.txHash, opts.amount, memo);
+
+    // Resolve post author address from feed — requires SuperColony API
+    const feedResult = await bridge.apiCall("/api/feed?limit=50");
+    if (!feedResult.ok) {
+      return err(
+        demosError("NETWORK_ERROR", "Cannot resolve tip recipient: SuperColony feed API unavailable", true),
+        localProvenance(start),
+      );
+    }
+    const posts = ((feedResult.data as Record<string, unknown>)?.posts ?? feedResult.data) as unknown[];
+    const targetPost = Array.isArray(posts)
+      ? posts.find((p: unknown) => String((p as Record<string, unknown>).txHash ?? "") === opts.txHash)
+      : undefined;
+    if (!targetPost) {
+      return err(
+        demosError("INVALID_INPUT", `Post ${opts.txHash.slice(0, 16)}... not found in feed — cannot resolve recipient`, false),
+        localProvenance(start),
+      );
+    }
+    const recipientAddress = String((targetPost as Record<string, unknown>).sender ?? "");
+    if (!recipientAddress) {
+      return err(
+        demosError("INVALID_INPUT", `Post ${opts.txHash.slice(0, 16)}... has no sender address`, false),
+        localProvenance(start),
+      );
+    }
+
+    const result = await bridge.transferDem(recipientAddress, opts.amount, memo);
 
     await recordTip(session.stateStore, session.walletAddress, opts.txHash, opts.amount);
 
