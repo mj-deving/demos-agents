@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-27 | **SDK:** 2.11.5 | **Tests:** 112 suites, 1684 passing | **Agents:** 6 defined, 3 publishing | **Sources:** 229 catalog, 38 specs
+**Last updated:** 2026-03-28 | **SDK:** 2.11.5 | **Tests:** 125 suites, 1815 passing | **Agents:** 6 defined, 3 publishing | **Sources:** 229 catalog, 38 specs
 
 ---
 
@@ -35,10 +35,16 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - **Prediction market sources:** Polymarket (gamma-api) + Kalshi specs + 4 catalog entries. Claim types: probability, prediction.
 - **Dev workflow conclusion:** Quality review trial settled — run both `/simplify` (codebase-aware) + Fabric `review_code` (correctness/security). Zero finding overlap.
 
+**Shipped 2026-03-27/28:**
+- **Toolkit security audit completed:** 28 findings resolved (3 Critical, 6 High, 12 Medium, 7 Low). DNS rebinding pin (createPinnedFetch), atomic spend cap (reservePaySpend with UUID rollback), chain-first tip resolution (RPC + 5s timeout), proto pollution defense (safeParse reviver), 0o600 file perms, getDemos gate, DAHR 30s timeout, 128-bit hash keys.
+- **Desloppify grind (3 cycles):** Strict 81→81.7. Extracted shared feed parser (parseFeedPosts), deprecated 6 guard compat exports, typed DemosRpcMethods + D402ClientLike interfaces, removed dead code, fixed provenance responseHash, restructured src/lib/ into 4 subdirectories (auth/, llm/, attestation/, scoring/).
+- **102 new tests** (1713→1815), 10 new suites. Boundary tests, connect error paths, domain filtering, feed parser shapes.
+- **CLAUDE.md trimmed** 296→69 lines. Detail moved to `.ai/guides/` (cli-reference, gotchas-detail, dev-workflow).
+
 **Where we're going:**
-- **Colony intelligence redesign:** Colony Mind 3-layer architecture (Map → Ledger → Pulse) from triple-lens analysis. 7 testable hypotheses. Blocked on colony census (supercolony.ai DNS down).
-- **Toolkit shipped (2026-03-27):** Framework-agnostic toolkit in `src/toolkit/`. 10 tools (connect, publish, reply, react, tip, scan, verify, attest, discoverSources, pay), 6 guards (rate limit, dedup, tip cap, pay cap, backoff, receipt log), Zod input validation, SSRF protection, SDK bridge. 168 toolkit tests (247 total new). Design doc APPROVED. See `design-toolkit-architecture.md`.
-- **Toolkit evolution (next):** 5-PR migration `src/toolkit/` → `packages/core/` for npm packaging. Adapter packages for OpenClaw + ElizaOS.
+- **Colony intelligence redesign:** Colony Mind 3-layer architecture. Blocked on colony census (supercolony.ai DNS down).
+- **Toolkit evolution:** 5-PR migration `src/toolkit/` → `packages/core/` for npm packaging. Adapter packages for OpenClaw + ElizaOS. Audit cleanup complete — PR2-5 unblocked.
+- **Desloppify target 85+:** 37 remaining review items. Need trusted review scores (--external-start path). Continue src/lib/ restructuring (33 flat files remain).
 - Continue collecting quality_score data (17 entries, need 20+ with actuals for meaningful correlation)
 - CCI identity as root → Agent Auth Protocol as session auth layer
 - Deeper Demos SDK integration: ZK identity, encrypted messaging, L2PS privacy (when SDK unblocks)

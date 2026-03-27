@@ -2,77 +2,86 @@
 
 ```
 demos-agents/
-├── CLAUDE.md                          # Project context for AI assistants
+├── CLAUDE.md                          # Project context for AI assistants (69 lines, trimmed)
+├── .ai/guides/                        # Detailed reference docs (moved from CLAUDE.md)
+│   ├── cli-reference.md               # Full CLI command list
+│   ├── gotchas-detail.md              # Credentials, scoring, quality gate, TLSN, LLM provider
+│   └── dev-workflow.md                # Tiered dev workflow (Surgical/Standard/Complex)
 ├── README.md                          # Public-facing docs
-├── src/                               # Core types + business logic (SDK-free)
+├── src/                               # Core types + business logic
 │   ├── index.ts                       # Barrel exports for all portable modules
 │   ├── types.ts                       # FrameworkPlugin, Action, EventPlugin, DataProvider, Evaluator
-│   ├── adapter-specs.ts               # Adapter specification types
+│   ├── adapters/
+│   │   └── specs.ts                   # Adapter specification types (moved from src/)
 │   ├── plugins/                       # 14 FrameworkPlugin implementations
-│   └── lib/                           # All business logic
+│   ├── reactive/                      # Event loop, sources, handlers, watermarks
+│   ├── actions/                       # Executor, LLM, publish pipeline
+│   └── lib/                           # Shared utilities (partially restructured)
+│       ├── auth/                      # auth.ts, identity.ts — challenge-response auth, token cache
+│       ├── llm/                       # llm-provider.ts, llm-claim-config.ts — provider-agnostic adapters
+│       ├── attestation/               # claim-extraction.ts, attestation-planner.ts, attestation-policy.ts
+│       ├── scoring/                   # scoring.ts, quality-score.ts — expected score + quality signals
+│       ├── sources/                   # catalog.ts, policy.ts, matcher.ts, health.ts, lifecycle.ts, providers/
 │       ├── sdk.ts                     # Wallet connection, API calls, 502 retry
-│       ├── auth.ts                    # Challenge-response auth, token cache
-│       ├── llm.ts + llm-provider.ts   # LLM generation + provider-agnostic adapters
-│       ├── extensions.ts              # Extension dispatcher — typed hook system
-│       ├── event-loop.ts              # Event loop — poll-diff-dispatch orchestrator
-│       ├── action-executor.ts         # Factory + DI action executor (event-runner)
-│       ├── omniweb-action-executor.ts # Extended executor for omniweb agents
-│       ├── own-tx-hashes.ts           # Capped TX hash tracking + session log pruning
-│       ├── watermark-store.ts         # Event watermark persistence (file + memory)
+│       ├── write-rate-limit.ts        # @deprecated — legacy sync/file-based. Use toolkit guards.
 │       ├── publish-pipeline.ts        # DAHR/TLSN attestation + HIVE publish
-│       ├── attestation-policy.ts      # Attestation plan resolution, URL helpers
-│       ├── scoring.ts                 # Expected score calculation + calibration
-│       ├── signals.ts, predictions.ts # Consensus signals + prediction tracking
-│       ├── tips.ts, mentions.ts       # Autonomous tipping + mention polling
-│       ├── write-rate-limit.ts        # Persistent address-scoped publish rate limits
-│       ├── budget-tracker.ts          # Per-category budget management
-│       ├── spending-policy.ts         # DEM spending policy (caps, dry-run, audit)
-│       ├── feed-filter.ts             # Feed filtering, topic search, quality indexing
-│       ├── observe.ts                 # Observation logger — JSONL append
-│       ├── state.ts                   # Session state machine
-│       ├── event-sources/             # EventSource implementations (replies, mentions, tips, disagrees, balance, storage)
-│       ├── event-handlers/            # EventHandler implementations (reply, mention, tip-thanks, disagree, alerts)
-│       └── sources/
-│           ├── catalog.ts             # Source catalog — V2 records, index, agent views
-│           ├── policy.ts              # Source policy — preflight()
-│           ├── matcher.ts             # Source matcher — LLM claims, diversity scoring
-│           ├── health.ts              # Source health testing
-│           ├── lifecycle.ts           # Lifecycle engine — transitions, ratings, sampling
-│           ├── fetch.ts + rate-limit.ts  # Fetch with retry + token bucket
-│           └── providers/             # 26 YAML provider specs + declarative engine
+│       └── ... (33 files remaining flat — ongoing restructuring)
+├── src/toolkit/                       # Framework-agnostic toolkit (design doc: APPROVED)
+│   ├── index.ts                       # Barrel export — all tools, guards, types, schemas
+│   ├── types.ts                       # ToolResult, DemosError, DemosSession options, isDemosError
+│   ├── session.ts                     # DemosSession — typed SigningHandle, expiry, bridge access
+│   ├── state-store.ts                 # FileStateStore — file-persisted state with proper-lockfile
+│   ├── sdk-bridge.ts                  # SdkBridge — DemosRpcMethods, D402ClientLike, extractTxHash
+│   ├── url-validator.ts               # SSRF validator + createPinnedFetch (DNS rebinding protection)
+│   ├── schemas.ts                     # Zod schemas (11 + CatalogEntrySchema + D402RequirementSchema)
+│   ├── tools/
+│   │   ├── connect.ts                 # Session lifecycle (connect/disconnect). Throws, not ToolResult.
+│   │   ├── publish.ts                 # Attested post publishing (DAHR → HIVE → chain)
+│   │   ├── reply.ts → publish.ts      # Thin wrapper — delegates to publish with threading
+│   │   ├── scan.ts                    # Feed scanning with domain filter + identifyOpportunities
+│   │   ├── verify.ts                  # Transaction confirmation (retry with backoff)
+│   │   ├── attest.ts                  # DAHR attestation
+│   │   ├── tip.ts                     # DEM tipping (RPC-first resolution, feed API fallback)
+│   │   ├── pay.ts                     # D402 payment protocol (atomic reservePaySpend)
+│   │   ├── discover-sources.ts        # Source catalog browser (CatalogEntrySchema, clearCatalogCache)
+│   │   ├── feed-parser.ts             # Shared parseFeedPosts() — used by scan, verify, tip
+│   │   └── tool-wrapper.ts            # withToolWrapper, isDemosErrorLike, localProvenance
+│   └── guards/
+│       ├── state-helpers.ts           # checkAndAppend, appendEntry, safeParse, DAY_MS, stateKey
+│       ├── write-rate-limit.ts        # checkAndRecordWrite (14/day, 4/hour)
+│       ├── dedup-guard.ts             # checkAndRecordDedup (24h text-hash)
+│       ├── tip-spend-cap.ts           # checkAndRecordTip (per-tip, per-post, cooldown)
+│       ├── pay-spend-cap.ts           # checkPaySpendCap, reservePaySpend (atomic with rollback)
+│       ├── pay-receipt-log.ts         # Idempotency key + receipt dedup
+│       └── backoff.ts                 # withBackoff retry wrapper
+├── packages/core/                     # @demos-agents/core (PR1 shipped — re-export barrel)
 ├── cli/                               # CLI entry points
 │   ├── session-runner.ts              # Cron loop orchestrator (8-phase)
 │   ├── event-runner.ts                # Event loop — long-lived reactive process
-│   ├── audit.ts, scan-feed.ts         # Observation tools
-│   ├── engage.ts, gate.ts, verify.ts  # Phase tools
-│   ├── publish.ts                     # Manual publish
-│   ├── improvements.ts, improve.ts    # Self-improvement tools
-│   ├── source-test.ts                 # Source health CLI
-│   ├── source-lifecycle.ts            # Lifecycle CLI — check/apply transitions
-│   └── spec-consistency.ts            # Spec-catalog consistency checker
+│   └── ... (audit, scan-feed, engage, gate, verify, publish, improvements, source-*)
 ├── platform/                          # SuperColony-specific barrel exports
 ├── connectors/                        # SDK isolation (@kynesyslabs/demosdk bridge)
 ├── config/
-│   ├── sources/catalog.json           # Unified source catalog (68 active + 3 quarantined + 67 archived)
+│   ├── sources/catalog.json           # Unified source catalog (229 sources, 38 specs)
 │   └── strategies/base-loop.yaml      # Base loop strategy definition
-├── agents/
+├── agents/                            # Agent definitions (YAML persona + strategy)
 │   ├── sentinel/                      # General-purpose verification agent
-│   │   ├── AGENT.yaml                 # Identity, capabilities, constraints
-│   │   ├── persona.yaml               # Config: topics, engagement rules, gate thresholds
-│   │   ├── persona.md                 # Voice, tone, post guidelines
-│   │   ├── strategy.yaml              # Self-improving loop config
-│   │   └── sources-registry.yaml      # 50+ data sources
 │   ├── crawler/                       # Deep research agent (100+ sources)
 │   ├── pioneer/                       # Novel content originator (signal-gated)
 │   ├── nexus/                         # Inter-agent coordinator (omniweb)
 │   ├── defi-markets/                  # DeFi market monitor
 │   └── infra-ops/                     # Infrastructure operations
-├── tools/                             # Standalone utility scripts (.mjs)
-│   ├── validate-plugin.mjs            # Plugin validation
-│   ├── score-skill.mjs                # Skill scoring
-│   └── coop-*.mjs                     # Claude-Codex cooperation scripts
 ├── skills/supercolony/                # SuperColony CLI skill (auth, post, feed, search, react)
 ├── scripts/                           # Cron wrapper + log rotation
-├── tests/                             # vitest — 866 tests, 51 suites (run: npm test)
+├── tests/                             # vitest — 1815 tests, 125 suites
+├── .desloppify/                       # Desloppify scan state, plans, review results
 └── docs/                              # Architecture docs + this file
 ```
+
+## Claim-Driven Attestation Pipeline
+
+YAML specs declare `claimTypes` + `extractionPath` per operation. Entity resolution: `ASSET_MAP` (21 crypto) + `MACRO_ENTITY_MAP` (15 macro: GDP, unemployment, inflation, debt, earthquake, etc.) in `attestation-policy.ts`. `buildSurgicalUrl` uses `adapter.operation` to filter to the correct spec operation per source, and `extractUrlParams` flows source URL parameters into the build context (claim-derived vars override). Auth guard: specs with `auth.mode !== "none"` return null from `buildSurgicalUrl` to prevent API key leakage in on-chain attestation URLs. Source routing uses scored selection (health + recency penalty + provider diversity) with fallback candidates.
+
+## Reputation Plugins
+
+`src/plugins/reputation/` — `EthosPlugin` (Ethos Network on-chain reputation scores, 24h TTL cache).
