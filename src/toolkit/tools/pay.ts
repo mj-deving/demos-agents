@@ -10,6 +10,7 @@ import { DemosSession } from "../session.js";
 import { checkPaySpendCap, recordPayment } from "../guards/pay-spend-cap.js";
 import { makeIdempotencyKey, checkPayReceipt, recordPayReceipt } from "../guards/pay-receipt-log.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
+import { validateUrl } from "../url-validator.js";
 
 /**
  * Make an HTTP request with automatic D402 payment on 402 responses.
@@ -32,14 +33,7 @@ export async function pay(
       );
     }
 
-    if (!session.allowInsecureUrls && !opts.url.startsWith("https://")) {
-      return err(
-        demosError("INVALID_INPUT", "Payment URL must use HTTPS", false),
-        localProvenance(start),
-      );
-    }
-
-    // Check for duplicate payment (idempotency)
+    // Idempotency check FIRST — if we have a receipt, skip everything
     const idempotencyKey = makeIdempotencyKey(opts.url, opts.method, opts.body);
     const existingReceipt = await checkPayReceipt(
       session.stateStore,
@@ -52,6 +46,17 @@ export async function pay(
           response: { status: 200, headers: {}, body: null },
           receipt: { txHash: existingReceipt.txHash, amount: existingReceipt.amount },
         },
+        localProvenance(start),
+      );
+    }
+
+    // SSRF validation — DNS resolution + IP blocklist + HTTPS
+    const urlCheck = await validateUrl(opts.url, {
+      allowInsecure: session.allowInsecureUrls,
+    });
+    if (!urlCheck.valid) {
+      return err(
+        demosError("INVALID_INPUT", `Payment URL blocked: ${urlCheck.reason}`, false),
         localProvenance(start),
       );
     }
