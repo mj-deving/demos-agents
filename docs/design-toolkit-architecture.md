@@ -164,13 +164,13 @@ DEMOS SDK (not ours — Demos team)
 ### 6.1 Credential Handling
 
 - `connect()` accepts a `walletPath` (file path), NOT raw private key material. The toolkit reads the wallet file, derives the signing handle, and stores only the handle in the `DemosSession`.
-- **Wallet file permission check (mandatory):** `connect()` verifies the wallet file is mode 600. Refuses to proceed with a `DemosError { code: "INVALID_INPUT" }` if permissions are too open. Logs a warning if running in a detected container environment (checks `/.dockerenv`, `/proc/1/cgroup`) where file permissions may not be meaningful.
+- **Wallet file permission check (mandatory):** `connect()` verifies the wallet file is mode 600 using `open()` then `fstat()` (check after opening, not before — prevents TOCTOU between check and read). Rejects symlinks via `lstat()` check before open (symlink mode 600 does not guarantee target is restricted). Refuses to proceed with a `DemosError { code: "INVALID_INPUT" }` if permissions are too open. Logs a warning if running in a detected container environment (checks `/.dockerenv`, `/proc/1/cgroup`) or WSL2 DrvFs mount (where `chmod 600` is cosmetic — Windows processes still have access).
 - `DemosSession.authToken` is a short-lived SuperColony API token. Auto-refreshed on 401 via **single-flight mutex** — first 401 triggers refresh, concurrent calls await the in-progress refresh (prevents thundering herd on auth endpoint). Forced rotation every 30 minutes regardless of 401 (defense-in-depth for unknown server-side TTL).
 - **Session inactivity timeout:** Sessions auto-expire after 30 minutes of no tool calls. Consumer must call `connect()` again. Limits exposure window for signing handle extraction from memory dumps.
 - **Serialization prevention:** `DemosSession` is implemented as a class with:
   - `toJSON()` that returns `{ walletAddress, rpcUrl, algorithm }` (redacts authToken and signing handle)
   - `[Symbol.for('nodejs.util.inspect.custom')]()` that redacts sensitive fields in `console.log()` / Node.js inspect
-  - authToken stored via `Symbol`-keyed property (not enumerable, not accessible via `Object.keys()`)
+  - authToken stored via **local `Symbol()`** property (not `Symbol.for()` — local symbols are not globally discoverable, whereas `Symbol.for()` can be enumerated by any code knowing the key string). Note: `Object.getOwnPropertySymbols()` can still enumerate local symbols — this is a JavaScript fundamental.
   - Note: JavaScript cannot fully prevent property access by determined code in the same process. These measures prevent *accidental* leakage in logs, crash dumps, and APM auto-capture. They do not prevent *intentional* extraction.
 - **SDK trust boundary:** The toolkit trusts `@kynesyslabs/demosdk` not to expose private key material. This is a third-party dependency not under our control. If the SDK adds key-exposing methods in a future version, the toolkit's credential isolation is compromised. The `connectors/` isolation layer wraps SDK access but cannot sandbox it. Pin SDK version and review changelogs on upgrade.
 
@@ -178,7 +178,8 @@ DEMOS SDK (not ours — Demos team)
 
 - `tip()`: Max 10 DEM per tip, max 5 tips per post per agent, 1-minute cooldown. Configurable via `connect({ tipPolicy })`.
 - `pay()`: `maxSpend` parameter is **required** per call. **Rolling 24h cumulative spend cap** of 100 DEM (configurable via `connect({ payPolicy })`), **file-persisted per wallet address** (not session-scoped). Cap does NOT reset on `connect()` / process restart. The file tracks `{ totalSpent24h, timestamps[], lastReset }`. Daily absolute maximum requires manual intervention to override.
-- `pay()` receipt persistence: Every payment is logged to `~/.config/demos/pay-receipts-{address}.json` with `{ txHash, url, amount, timestamp }`. On startup, the toolkit checks receipt log before paying — prevents duplicate payments after crash (in-memory idempotency cache alone is insufficient).
+- **D402 payee validation:** When `pay()` receives a 402 challenge, it validates the payee address in the response against a **known-payee allowlist** (configurable via `connect({ payPolicy: { trustedPayees } })`). First payment to a never-before-seen payee address is **logged as a warning** with the payee address and amount. If `payPolicy.requirePayeeApproval: true`, first-time payee payments return `DemosError { code: "SPEND_LIMIT" }` instead of auto-paying — consumer must explicitly add the payee to the allowlist. Amount anomaly: if a payee's requested amount is >5x the historical median for that payee, log a warning.
+- `pay()` receipt persistence: Every payment is logged to `~/.config/demos/pay-receipts-{address}.json` with `{ txHash, url, payeeAddress, amount, timestamp }`. On startup, the toolkit checks receipt log before paying — prevents duplicate payments after crash (in-memory idempotency cache alone is insufficient).
 - Idempotency key for `pay()`: `hash(url + method + bodyHash)` — includes request body hash to prevent incorrect dedup of different requests to the same URL.
 
 ### 6.3 State Persistence & Locking
@@ -191,22 +192,24 @@ DEMOS SDK (not ours — Demos team)
     lock(key: string, ttlMs: number): Promise<Unlock>;  // exclusive lock
   }
   ```
-  Default implementation: `FileStateStore` using `~/.config/demos/`. Alternative implementations: `SqliteStateStore` (embedded, WAL mode for concurrent access), `RedisStateStore` (networked, for K8s/multi-pod).
+  Default implementation: `FileStateStore` using `~/.config/demos/`. Alternative implementations: `SqliteStateStore` (embedded, WAL mode for concurrent access), `RedisStateStore` (networked, for K8s/multi-pod). `RedisStateStore` requires TLS by default (`rediss://` URL scheme). Rejects unencrypted `redis://` unless `allowInsecureRedis: true` is set (local development only). Redis AUTH credentials follow the same principle as wallet credentials — not logged, not serialized.
 - **Locking (CRITICAL):** All read-modify-write operations on state files use **exclusive file locking** via `proper-lockfile` (or equivalent). The lock is held for the entire check-and-update cycle — not just the write. This prevents the TOCTOU race where two processes both read "under limit," both publish, and both write "incremented" (losing one increment).
-- **Ephemeral filesystem detection:** On startup, the toolkit checks for container indicators (`/.dockerenv`, overlay filesystem in `/proc/mounts`). If detected and using `FileStateStore`, logs a prominent warning: "Ephemeral filesystem detected — guardrail state will not persist across restarts. Configure `stateStore: new SqliteStateStore('/path/to/persistent/volume')` or `stateStore: new RedisStateStore(url)` for reliable safety enforcement."
+- **Ephemeral/networked filesystem detection:** On startup, the toolkit checks for container indicators (`/.dockerenv`, overlay filesystem in `/proc/mounts`) and networked filesystem mounts (`nfs`, `cifs` in `/proc/mounts` for the state directory). If detected and using `FileStateStore`, logs a prominent warning: "Ephemeral/networked filesystem detected — guardrail state may not persist across restarts and file locking may be unreliable. Configure `stateStore: new SqliteStateStore('/path/to/persistent/volume')` or `stateStore: new RedisStateStore(url)` for reliable safety enforcement." Note: `proper-lockfile` uses lockfiles (`.lock` files), not OS-level `flock()`. Locking is cooperative — external processes that modify state files directly bypass all guards.
 - **Multi-process coordination:** Two processes sharing the same wallet correctly share rate-limit state via the lock. The lock contention window is small (read-check-update-write, ~5ms). If lock acquisition fails after 5s timeout, the tool call returns `DemosError { code: "RATE_LIMITED", message: "Could not acquire state lock" }`.
 
 ### 6.4 Input Validation (Tool Boundary)
 
 - All tool inputs validated at entry via Zod schemas (to be implemented — not yet in codebase). Malformed UTF-8, oversized payloads (>10KB text), and invalid enum values produce `DemosError { code: "INVALID_INPUT" }`.
-- **SSRF protection (default-deny):** URL inputs to `attest()` and `pay()` are validated against a **mandatory blocklist** (no configuration needed):
-  - Blocked by default: `localhost`, `127.0.0.0/8`, `169.254.0.0/16` (link-local/cloud metadata), `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` (RFC 1918), `::1`, `fc00::/7` (RFC 4193)
-  - **DNS rebinding protection:** Resolve DNS before making the request. Validate resolved IP against the blocklist (prevents `attacker.com` resolving to `169.254.169.254`).
+- **SSRF protection (default-deny):** URL inputs to `attest()` and `pay()` are validated against a **mandatory blocklist** applied to the **resolved IP address** (not the URL hostname string — prevents decimal/octal/hex encoding bypass):
+  - Blocked by default: `0.0.0.0`, `localhost`, `127.0.0.0/8`, `169.254.0.0/16` (link-local/cloud metadata), `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` (RFC 1918), `::1`, `::ffff:0:0/96` (IPv4-mapped IPv6), `fc00::/7` (RFC 4193)
+  - **DNS rebinding protection:** Resolve DNS before making the request. Validate resolved IP against the blocklist. Pin the resolved IP for the actual HTTP request (prevents DNS rebinding between resolution and connection).
+  - **Redirect policy:** `attest()` and `pay()` use `redirect: 'manual'`. Each redirect hop is validated against the blocklist before following. Maximum 3 redirects.
   - Consumer can extend with an explicit allowlist via `connect({ urlAllowlist })` to permit specific internal URLs if needed.
 - **TLS enforcement:** `connect()` rejects `rpcUrl` using HTTP (must be HTTPS). `attest()` and `pay()` reject HTTP target URLs by default. Consumer can override with `connect({ allowInsecureUrls: true })` for local development only — logs a warning.
 - **Custom catalog/spec validation:** When consumer provides `sourceCatalogPath` or `specsDir`, the toolkit:
   - Validates entries against the catalog/spec JSON schema
   - Scans URL templates for common API key parameter patterns (`apiKey`, `key`, `token`, `access_token`, `secret`) regardless of `auth.mode` setting — warns if found
+  - **URL template interpolation is restricted to a known-safe variable set:** `${pair}`, `${symbol}`, `${limit}`, `${interval}`, `${market}`, `${category}`. Session variables (`authToken`, `walletAddress`, `rpcUrl`) are NEVER available in template interpolation. The resolved URL (post-interpolation) is validated against the SSRF blocklist before the request is made. This prevents custom catalog entries from exfiltrating credentials via attestation URLs (which are stored on-chain permanently).
   - Logs when custom sources override bundled sources (shows which IDs are overridden)
 
 ### 6.5 Content Responsibility
