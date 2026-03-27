@@ -31,6 +31,23 @@ export interface TxModule {
   broadcast(validity: unknown, demos: Demos): Promise<unknown>;
 }
 
+/** Minimal typed surface for Demos SDK methods used by the bridge */
+interface DemosRpcMethods {
+  web2: { createDahr(): Promise<{ startProxy(opts: { url: string; method: string }): Promise<Record<string, unknown>> }> };
+  transfer(to: string, amount: number, memo: string): Promise<{ hash?: string; txHash?: string }>;
+  sendTransaction(txData: unknown): Promise<{ hash?: string; txHash?: string }>;
+  queryTx?(txHash: string): Promise<{ sender?: string } | null>;
+  getTx?(txHash: string): Promise<{ sender?: string } | null>;
+  connect(rpcUrl: string): Promise<void>;
+  connectWallet(mnemonic: string, opts?: Record<string, unknown>): Promise<string>;
+}
+
+/** Typed D402 client surface — replaces inline structural casts */
+interface D402ClientLike {
+  createPayment(req: unknown): Promise<unknown>;
+  settle(payment: unknown): Promise<D402SettlementResult>;
+}
+
 // ── Types ───────────────────────────────────────────
 
 export interface DahrResult {
@@ -126,9 +143,12 @@ export function createSdkBridge(
   txModule?: TxModule,
   options?: { allowRawSdk?: boolean },
 ): SdkBridge {
+  // Single cast at factory level — all methods below use typed `rpc`
+  const rpc = demos as unknown as DemosRpcMethods;
+
   // Closure-scoped lazy loaders — avoids module-level shared mutable state
   let cachedTxModule: TxModule | null = txModule ?? null;
-  let cachedD402Client: unknown = null;
+  let cachedD402Client: D402ClientLike | null = null;
   async function getTxModule(): Promise<TxModule> {
     if (cachedTxModule) return cachedTxModule;
     const { DemosTransactions } = await import("@kynesyslabs/demosdk/websdk");
@@ -148,13 +168,13 @@ export function createSdkBridge(
      * URLs reach the proxy.
      */
     async attestDahr(url: string, method: string = "GET"): Promise<DahrResult> {
-      const dahr = await (demos as any).web2.createDahr();
+      const dahr = await rpc.web2.createDahr();
       const safeUrl = sanitizeUrl(url);
 
       // startProxy can hang indefinitely (observed 300s+ in TLSN era) — bound to 30s
       const DAHR_PROXY_TIMEOUT_MS = 30_000;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
-      const proxyResponse = await Promise.race([
+      const proxyResponse: Record<string, unknown> = await Promise.race([
         dahr.startProxy({ url, method }),
         new Promise<never>((_, reject) => {
           timeoutId = setTimeout(() => reject(new Error(`DAHR proxy timeout (${DAHR_PROXY_TIMEOUT_MS / 1000}s)`)), DAHR_PROXY_TIMEOUT_MS);
@@ -202,8 +222,8 @@ export function createSdkBridge(
       }
 
       return {
-        responseHash: proxyResponse.responseHash,
-        txHash: proxyResponse.txHash,
+        responseHash: String(proxyResponse.responseHash ?? ""),
+        txHash: String(proxyResponse.txHash ?? ""),
         data,
         url,
       };
@@ -304,7 +324,7 @@ export function createSdkBridge(
       if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error(`transferDem: invalid amount ${amount} — must be a positive finite number`);
       }
-      const result = await (demos as any).transfer(to, amount, memo);
+      const result = await rpc.transfer(to, amount, memo);
       const txHash = result?.hash ?? result?.txHash;
       if (!txHash) {
         throw new Error("DEM transfer succeeded but txHash not found in response");
@@ -316,24 +336,28 @@ export function createSdkBridge(
       try {
         if (!cachedD402Client) {
           const { D402Client } = await import("@kynesyslabs/demosdk/d402/client");
-          cachedD402Client = new D402Client(demos);
+          cachedD402Client = new D402Client(demos) as D402ClientLike;
         }
-        const client = cachedD402Client as { createPayment(req: unknown): Promise<unknown>; settle(payment: unknown): Promise<D402SettlementResult> };
+        const client = cachedD402Client;
         const payment = await client.createPayment(requirement);
         return await client.settle(payment);
       } catch (e) {
-        if ((e as any)?.success === false) throw e; // already a D402SettlementResult-shaped error
+        if (e && typeof e === "object" && "success" in e && (e as D402SettlementResult).success === false) throw e; // already a D402SettlementResult-shaped error
         throw new Error(`D402 settlement failed: ${sanitizeUrl((e as Error).message)}`);
       }
     },
 
     async queryTransaction(txHash: string): Promise<{ sender: string } | null> {
       try {
-        const result = await (demos as any).queryTx(txHash);
-        if (result?.sender) return { sender: String(result.sender) };
+        if (rpc.queryTx) {
+          const result = await rpc.queryTx(txHash);
+          if (result?.sender) return { sender: String(result.sender) };
+        }
         // Try alternate SDK method
-        const result2 = await (demos as any).getTx(txHash);
-        if (result2?.sender) return { sender: String(result2.sender) };
+        if (rpc.getTx) {
+          const result2 = await rpc.getTx(txHash);
+          if (result2?.sender) return { sender: String(result2.sender) };
+        }
         return null;
       } catch {
         return null;

@@ -34,7 +34,7 @@ export async function discoverSources(
   session: DemosSession,
   opts?: DiscoverSourcesOptions,
 ): Promise<ToolResult<DiscoverSourcesResult>> {
-  return withToolWrapper(session, "discoverSources", "NETWORK_ERROR", async (start) => {
+  return withToolWrapper(session, "discoverSources", "INVALID_INPUT", async (start) => {
     const inputError = validateInput(DiscoverSourcesOptionsSchema, opts);
     if (inputError) {
       return err(inputError, localProvenance(start));

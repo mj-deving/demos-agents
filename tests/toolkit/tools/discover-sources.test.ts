@@ -84,7 +84,7 @@ describe("discoverSources()", () => {
     const result = await discoverSources(session);
 
     expect(result.ok).toBe(false);
-    expect(result.error!.code).toBe("NETWORK_ERROR");
+    expect(result.error!.code).toBe("INVALID_INPUT");
     expect(result.error!.message).toContain("discoverSources failed");
   });
 

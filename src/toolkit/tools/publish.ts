@@ -88,6 +88,7 @@ async function executePublishPipeline(session: DemosSession, draft: PublishDraft
   if (session.urlAllowlist.length > 0) {
     const urlObj = new URL(draft.attestUrl);
     if (!session.urlAllowlist.some((allowed) => urlObj.origin.startsWith(allowed) || draft.attestUrl.startsWith(allowed))) {
+      // Throws caught by withToolWrapper in publish() — intentional internal throw pattern
       throw demosError("INVALID_INPUT", `Attestation URL not in allowlist: ${urlObj.hostname}`, false);
     }
   }

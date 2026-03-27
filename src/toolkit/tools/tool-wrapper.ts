@@ -19,7 +19,7 @@ import { DemosSession } from "../session.js";
 export async function withToolWrapper<T>(
   session: DemosSession,
   toolName: string,
-  defaultErrorCode: "TX_FAILED" | "NETWORK_ERROR" | "ATTEST_FAILED" | "CONFIRM_TIMEOUT",
+  defaultErrorCode: "TX_FAILED" | "NETWORK_ERROR" | "ATTEST_FAILED" | "CONFIRM_TIMEOUT" | "INVALID_INPUT",
   fn: (startMs: number) => Promise<ToolResult<T>>,
 ): Promise<ToolResult<T>> {
   const start = Date.now();
@@ -53,4 +53,15 @@ export async function withToolWrapper<T>(
 /** Create a local provenance object */
 export function localProvenance(startMs: number): Provenance {
   return { path: "local", latencyMs: Date.now() - startMs };
+}
+
+/** Type guard for DemosError-shaped objects (code + message + retryable) */
+export function isDemosErrorLike(error: unknown): error is ReturnType<typeof demosError> {
+  return Boolean(
+    error
+    && typeof error === "object"
+    && "code" in error
+    && "message" in error
+    && "retryable" in error,
+  );
 }

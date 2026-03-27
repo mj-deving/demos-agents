@@ -10,7 +10,7 @@ import { ok, err, demosError } from "../types.js";
 import { DemosSession } from "../session.js";
 import { checkPaySpendCap, reservePaySpend } from "../guards/pay-spend-cap.js";
 import { makeIdempotencyKey, checkPayReceipt, recordPayReceipt } from "../guards/pay-receipt-log.js";
-import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
+import { withToolWrapper, localProvenance, isDemosErrorLike } from "./tool-wrapper.js";
 import { validateUrl, createPinnedFetch } from "../url-validator.js";
 import { validateInput, PayOptionsSchema } from "../schemas.js";
 
@@ -325,13 +325,4 @@ function stripPaymentProofOnCrossOriginRedirect(
   return nextHeaders;
 }
 
-function isDemosErrorLike(error: unknown): error is ReturnType<typeof demosError> {
-  return Boolean(
-    error
-    && typeof error === "object"
-    && "code" in error
-    && "message" in error
-    && "retryable" in error,
-  );
-}
 
