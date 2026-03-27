@@ -1,0 +1,87 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {"abstraction_fitness": 80.0},
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "StateStore interface has exactly one production implementation (FileStateStore), with no adapter pressure or polymorphic substitution in the codebase — but it IS used as a seam for test injection, which is valid substitution pressure.",
+        "withToolWrapper abstracts 4 cross-cutting concerns (timing, touch, telemetry, error wrapping) into a single reusable combinator — concrete value delivered, not ceremony.",
+        "SdkBridge interface wraps volatile SDK surface cleanly; tests inject mock SdkBridge rather than the real SDK, confirming the interface earns its existence.",
+        "DemosSession constructor accepts a large options bag (14 fields) but all fields are genuinely used by different tools — not pass-through bloat; each field controls distinct behavior.",
+        "checkAndAppend<TState, TEntry> is a generic helper with 5 concrete callers (write-rate-limit, dedup-guard, tip-spend-cap, pay-spend-cap, reservePaySpend) — abstraction is clearly earned.",
+        "connect.ts passes ConnectOptions (14 fields) into DemosSession constructor one-to-one with no subset selection or transformation — large option bag is forwarded almost wholesale.",
+        "parseFeedPosts is a pure extraction function used in 4 places (scan, verify, tip, index) — extracted at the right level.",
+        "Mechanical scan: 5 wide_param_bags flagged (session.ts, pay.ts, connect.ts, tip.ts, sdk-bridge.ts) but all have wide_functions=0, meaning no single function has >5 positional params — the 'width' is in the options-bag objects, which is intentional API design.",
+        "one_impl_interface_count=1 (StateStore) — only one concern has a one-implementation interface, and it carries real substitution value for testing.",
+        "delegation_heavy_class_count=0 — no delegation-heavy classes flagged.",
+        "DemosSession stores 12 public fields that are read directly by tools (session.stateStore, session.walletAddress, session.urlAllowlist, etc.) — session acts as a transparent property bag for tools rather than encapsulating behavior, which is a mild cohesion concern."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "sub_axes": {
+        "abstraction_leverage": 88.0,
+        "indirection_cost": 78.0,
+        "interface_honesty": 92.0,
+        "delegation_density": 100.0,
+        "definition_directness": 85.0,
+        "type_discipline": 88.0
+      }
+    }
+  },
+  "dimension_judgment": {
+    "abstraction_fitness": {
+      "dimension_character": "The toolkit's abstraction layer is generally well-earned: withToolWrapper, checkAndAppend, SdkBridge, and parseFeedPosts all deliver measurable value without ceremony. The primary tension is in DemosSession serving as a transparent property bag — 12 public fields read directly by 8 tool files — which works but means tools have direct coupling to the session's internal structure rather than going through behavior-bearing methods. The StateStore one-implementation interface is legitimate given its test-injection role.",
+      "score_rationale": "The codebase scores above average (80/100) because every major abstraction is genuinely used and most indirection has clear purpose. The score is held below 85 by: DemosSession as a wide property bag (tools reach into session.urlAllowlist, session.stateStore, session.walletAddress etc. directly), and the connect→session option forwarding being essentially a 1:1 pass-through of 14 fields with no transformation. These are real costs but not severe defects given the toolkit's nature as a thin orchestration layer."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "session_property_bag",
+      "summary": "DemosSession exposes 12 public fields read directly by tools, making it a transparent property bag rather than a behavior-bearing session object",
+      "related_files": ["src/toolkit/session.ts", "src/toolkit/tools/publish.ts", "src/toolkit/tools/attest.ts", "src/toolkit/tools/pay.ts", "src/toolkit/tools/tip.ts"],
+      "evidence": [
+        "publish.ts reads: session.stateStore, session.walletAddress, session.urlAllowlist, session.allowInsecureUrls",
+        "pay.ts reads: session.stateStore, session.walletAddress, session.urlAllowlist, session.allowInsecureUrls, session.payPolicy",
+        "tip.ts reads: session.stateStore, session.walletAddress, session.tipPolicy",
+        "Tools access session fields directly in their bodies rather than calling session methods — any rename or restructuring of session fields ripples to all 8 tool files",
+        "DemosSession has only 4 behavioral methods (getAuthToken, getBridge, setAuthToken, touch, expire, expired) vs 12 public data fields"
+      ],
+      "suggestion": "Accept as a known design decision (toolkit is intentionally thin) OR gradually encapsulate: e.g., session.getGuardContext() → { stateStore, walletAddress } to reduce direct field coupling. Not urgent — the fields are stable and the pattern is consistent.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["DemosSession is a value-object/context bag by design — the toolkit is intentionally a thin orchestration layer without a service-layer boundary between session and tools"],
+    "likely_symptoms": ["session_property_bag"],
+    "possible_false_positives": ["wide_param_bags mechanical signal — all flagged files use options-bag objects which is intentional, no positional wide functions exist"]
+  },
+  "context_updates": {
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "StateStore interface earns its existence via test injection",
+          "description": "FileStateStore is the only production implementation, but test suites universally inject mock StateStores. The interface's value is substitutability for testing, not runtime polymorphism.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "withToolWrapper is a well-earned combinator abstraction",
+          "description": "All 8 tool files use withToolWrapper to eliminate timing/touch/telemetry/error-wrap boilerplate. Zero ceremony — every call site gains concrete value.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "DemosSession is a transparent property bag by design",
+          "description": "Session exposes 12 public fields read directly by tools rather than encapsulating behavior. This is a deliberate thin-orchestration design choice — coherent but creates field-coupling across all tools.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -278,3 +278,14 @@ export function demosError(
 ): DemosError {
   return { code, message, retryable, ...(detail ? { detail } : {}) };
 }
+
+/** Type guard for DemosError-shaped objects */
+export function isDemosError(value: unknown): value is DemosError {
+  return Boolean(
+    value
+    && typeof value === "object"
+    && "code" in value
+    && "message" in value
+    && "retryable" in value,
+  );
+}

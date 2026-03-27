@@ -1,0 +1,97 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 14,
+  "assessments": {"incomplete_migration": 71.0},
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "Deprecated guards in src/toolkit/guards/: checkWriteRateLimit(), recordWrite() in write-rate-limit.ts; checkDedup(), recordPublish() in dedup-guard.ts; checkTipSpendCap(), recordTip() in tip-spend-cap.ts — all marked @deprecated with JSDoc pointing to checkAndRecord* replacements.",
+        "All deprecated guards are re-exported from src/toolkit/index.ts — they remain in the public API surface with no removal timeline.",
+        "cli/session-runner.ts and cli/event-runner.ts import from src/lib/write-rate-limit.ts (the OLD file-based ledger implementation), NOT from src/toolkit/guards/write-rate-limit.ts (the new StateStore-backed implementation). Two parallel write-rate-limit systems are actively in use.",
+        "platform/index.ts exports canPublish, recordPublish, loadWriteRateLedger, saveWriteRateLedger from src/lib/write-rate-limit.ts — the old sync file API is still a first-class export.",
+        "src/lib/write-rate-limit.ts: file-based, sync I/O (readFileSync/writeFileSync), ledger-object pattern. src/toolkit/guards/write-rate-limit.ts: StateStore-backed, async, timestamp-entry pattern. These are not semantically equivalent — they store different data shapes and have different semantics.",
+        "No @deprecated annotation on src/lib/write-rate-limit.ts despite the toolkit version superseding it for new work.",
+        "No stale 'TODO: migrate' markers found in the toolkit directory.",
+        "All production TypeScript — no mixed JS/TS migration in scope."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "incomplete_migration": {
+      "dimension_character": "The codebase has two active write-rate-limit implementations: the legacy src/lib/write-rate-limit.ts (sync, file-based, ledger-object) used by both CLI runners and platform barrel, and the new src/toolkit/guards/write-rate-limit.ts (async, StateStore-backed, timestamp-entry). The toolkit guards also carry 6 deprecated shim functions retained for backward compatibility. The migration is in-progress but has no documented timeline and the old system is not marked deprecated.",
+      "score_rationale": "The dual write-rate-limit system is a genuine incomplete migration — not a design choice, since the new toolkit version was built to replace the old one. The deprecated guard shims are correctly annotated but their continued re-export in index.ts keeps them in the public API indefinitely. The CLI's continued use of the old file means the migration is blocked. Score 71 — one major incomplete migration with a clear old/new split, plus 6 deprecated-but-exported shims."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "im_dual_write_rate_limit",
+      "summary": "Two active write-rate-limit implementations coexist: legacy src/lib/ (sync/file) and toolkit src/toolkit/guards/ (async/StateStore) — CLI runners still use old system",
+      "related_files": [
+        "src/lib/write-rate-limit.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "cli/session-runner.ts",
+        "cli/event-runner.ts",
+        "platform/index.ts"
+      ],
+      "evidence": [
+        "cli/session-runner.ts line 80: import { loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger } from '../src/lib/write-rate-limit.js'",
+        "cli/event-runner.ts line 30: same import from src/lib/write-rate-limit.js",
+        "platform/index.ts line 19: exports canPublish, recordPublish from src/lib/write-rate-limit.ts",
+        "src/lib/write-rate-limit.ts has no @deprecated annotation despite the toolkit version existing and being maintained.",
+        "The two systems store state differently (file-based JSON ledger vs StateStore key-value) so they cannot be swapped transparently."
+      ],
+      "suggestion": "1. Add @deprecated JSDoc to src/lib/write-rate-limit.ts pointing to src/toolkit/guards/write-rate-limit.ts. 2. Plan CLI migration: session-runner and event-runner need to be updated to use a DemosSession + checkAndRecordWrite pattern, or accept that the CLI uses the legacy system as a deliberate long-lived consumer. 3. Remove the legacy exports from platform/index.ts once CLI migration is complete.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "im_deprecated_guard_shims_still_public",
+      "summary": "6 deprecated guard functions remain in public index.ts export surface without removal timeline",
+      "related_files": [
+        "src/toolkit/index.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "src/toolkit/guards/dedup-guard.ts",
+        "src/toolkit/guards/tip-spend-cap.ts"
+      ],
+      "evidence": [
+        "src/toolkit/index.ts exports: checkWriteRateLimit, recordWrite (deprecated), checkDedup, recordPublish (deprecated), checkTipSpendCap, recordTip (deprecated)",
+        "All are marked @deprecated in source with pointers to checkAndRecord* replacements",
+        "No test imports of deprecated functions found in production code paths (tests do test them for backward compat coverage)",
+        "Re-exporting deprecated symbols in the public barrel keeps them discoverable to new consumers who may not notice the deprecation annotation"
+      ],
+      "suggestion": "Add a target removal version/milestone comment to each deprecated shim (e.g., '// Remove in toolkit v2.0'). Consider moving them to a separate 'src/toolkit/compat.ts' file not included in the default barrel, making them opt-in rather than default-visible.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["CLI runners were written before toolkit existed and haven't been migrated; deprecated guard shims were added for backward compat but no removal plan was set"],
+    "likely_symptoms": ["im_dual_write_rate_limit", "im_deprecated_guard_shims_still_public"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "Dual write-rate-limit systems: CLI uses legacy, toolkit uses new",
+          "description": "cli/session-runner.ts and cli/event-runner.ts still import from src/lib/write-rate-limit.ts (sync, file-based). The toolkit's async StateStore version exists but hasn't replaced the CLI's usage. This is a genuine incomplete migration, not a design choice.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Deprecated guard shims are annotated but remain in public API",
+          "description": "6 deprecated functions in 3 guard files are @deprecated-annotated and re-exported from index.ts. No removal timeline is set. The annotations are correct; the gap is that they remain first-class exports.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "batch": "mid_level_elegance",
+  "batch_index": 9,
+  "assessments": {"mid_level_elegance": 78.0},
+  "dimension_notes": {
+    "mid_level_elegance": {
+      "evidence": [
+        "withToolWrapper is the canonical seam pattern: all 8 tool files call it with (session, toolName, errorCode, fn) — consistent, explicit, and boundary-respecting. The seam design is excellent.",
+        "validateInput + Zod schema at entry of every tool ensures input translation happens at the boundary (before business logic), not scattered inside.",
+        "guards (checkAndRecordWrite, checkAndRecordDedup, checkAndRecordTip, checkPaySpendCap, reservePaySpend) each return DemosError | null — consistent guard contract across all 5 guard modules.",
+        "connect.ts seam anomaly: unlike all other tools, connect() throws DemosError on failure rather than returning ToolResult<DemosSession>. This is documented and intentional (session lifecycle vs tool operation) but creates a surface inconsistency callers must handle differently.",
+        "reply() validates inputs then delegates entirely to publish() — correct seam. The earlier issue where reply() duplicated session.touch() + timing has been fixed.",
+        "feed-parser.ts parseFeedPosts is correctly extracted as a shared boundary function used by scan, verify, tip — prior 3x duplication resolved.",
+        "pay.ts fetchWithValidatedRedirects is a self-contained seam with explicit inputs/outputs — cleanly separated from the main pay() flow.",
+        "verify.ts checkConfirmation uses /api/feed?limit=50 hardcoded — the feed window is a known limitation (posts beyond 50 will never confirm). This is a real boundary defect: the verification contract promises confirmation checking but silently returns unconfirmed for posts outside the 50-post window.",
+        "scan.ts fetchFeed() throws on API error (throw new Error(...)) which is caught by the outer try/catch in scan() — the error path correctly propagates but the inner throw-then-catch seam is an unnecessary indirection versus returning an error directly.",
+        "tip.ts has a two-path recipient resolution (RPC → fallback to feed API) with a console.warn at the boundary — the warning is appropriate but the fallback resolution still uses untrusted feed data with no integrity check on the returned address.",
+        "Orchestration review: the desloppify subagent run infrastructure generates prompts (batch-N.md) but results only appear when a subagent writes them. No guard exists to detect stale/incomplete runs where prompts were generated but results dropped — a rerun can overwrite a partial set of results without draining open work first."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "mid_level_elegance": {
+      "dimension_character": "Integration seams are mostly clean and consistent — the withToolWrapper pattern, guard return contracts, and Zod boundary validation all work well together. The main defects are: verify.ts silently capping confirmation at the 50-post feed window (an undocumented narrowing of the verification contract), and connect() using throw semantics vs ToolResult semantics used by every other tool (intentional but creates caller asymmetry). The prior feed-parser duplication fix is confirmed resolved.",
+      "score_rationale": "Score 78/100. The toolkit has strong seam discipline in most places, kept below 85 by: the verify() 50-post window silent failure (callers cannot distinguish 'not confirmed' from 'outside search window'), the connect() throw-vs-return asymmetry, and scan.ts using a throw-then-catch pattern instead of returning an error directly from fetchFeed. These are real seam defects, not cosmetic."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "verify_feed_window_silent_cap",
+      "summary": "verify() silently returns unconfirmed for transactions outside the 50-post feed window — callers cannot distinguish 'not confirmed' from 'outside search window'",
+      "related_files": ["src/toolkit/tools/verify.ts"],
+      "evidence": [
+        "checkConfirmation uses `/api/feed?limit=50` — only checks the 50 most recent posts",
+        "If a txHash belongs to a post older than the 50th entry, verified=false is returned even if the post IS confirmed on-chain",
+        "No indication in the return type or error code that the result is 'unknown due to window' vs 'confirmed not present'",
+        "VerifyResult has `confirmed: boolean` with no `searchExhausted: boolean` or `windowLimited: boolean` field",
+        "Previously noted as a resolved issue (limit was 20, now 50) but the fundamental window problem remains at 50"
+      ],
+      "suggestion": "Add a `searchExhausted?: boolean` field to VerifyResult (or a third 'unknown' state) and set it when the feed returns the maximum limit of posts without finding the txHash. Alternatively, document the limitation clearly in the verify() JSDoc so callers can handle the ambiguity.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "scan_inner_throw_catch",
+      "summary": "scan() uses a throw-then-catch seam in fetchFeed() where returning an error result directly would be cleaner",
+      "related_files": ["src/toolkit/tools/scan.ts"],
+      "evidence": [
+        "fetchFeed() throws `new Error('Feed API returned ${result.status}')` on API failure",
+        "scan() wraps fetchFeed() in try/catch to convert the throw to a DemosError NETWORK_ERROR",
+        "All other tools (attest, pay, verify) return err(...) at the boundary without the throw-then-catch indirection",
+        "The pattern makes the error flow less obvious: reader must trace the throw through the catch to understand failure handling"
+      ],
+      "suggestion": "Refactor fetchFeed() to return ScanPost[] | null (or throw only for truly unexpected errors), and handle the null case directly in scan() with err(demosError(...)).",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Feed API window limitation is a fundamental API constraint, not a code defect — but the contract should acknowledge it", "connect() throw semantics is an intentional design choice documented in comments but creates caller asymmetry"],
+    "likely_symptoms": ["verify_feed_window_silent_cap"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "withToolWrapper is the canonical seam pattern — consistently applied",
+          "description": "All 8 tool files use withToolWrapper with identical (session, toolName, errorCode, fn) signature. The seam design eliminates boilerplate and enforces consistent error wrapping at boundaries.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard modules return consistent DemosError | null contracts",
+          "description": "All 5 guard modules use DemosError | null return, enabling uniform guard invocation across all tools. The check-only vs check-and-record API is consistent.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "verify() 50-post feed window silently narrows verification contract",
+          "description": "checkConfirmation queries /api/feed?limit=50 — any transaction outside the 50-most-recent posts returns confirmed=false with no indication the search was window-limited. Callers cannot distinguish confirmed-absent from window-exceeded.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

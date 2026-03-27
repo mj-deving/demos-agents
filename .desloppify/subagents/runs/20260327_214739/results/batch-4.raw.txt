@@ -1,0 +1,90 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {"error_consistency": 79.0},
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "All tools return ToolResult<T> with typed DemosError — consistent error envelope pattern across publish, scan, verify, tip, pay, attest, react, discoverSources",
+        "connect/disconnect use throw/DemosError semantics — documented intentional deviation for session lifecycle (not tool operations)",
+        "withToolWrapper catches all exceptions and wraps them in DemosError with appropriate defaultErrorCode — prevents raw Error leakage",
+        "DemosErrorCode union has 10 typed codes — consumers can switch on code for error handling",
+        "tool-wrapper.ts line 43: isDemosError check uses structural duck-typing, not instanceof — this is an in-process check but technically brittle if a non-DemosError object has code/message/retryable fields",
+        "connect.ts connectSdk() wraps ALL errors in AUTH_FAILED regardless of actual cause (e.g., wallet parse failure wrapped as AUTH_FAILED at line 245-251) — misleading error code for non-auth errors thrown inside the try block",
+        "sdk-bridge.ts apiCall() catches fetch errors, logs a console.warn, and returns { ok: false, status: 0, data: message } — error context is partially preserved (message string) but error type information is lost",
+        "scan.ts fetchFeed() throws plain Error which is caught by the outer try/catch in scan() and wrapped as NETWORK_ERROR — context is preserved via message",
+        "verify.ts: unreachable throw at line 62 — loop always returns on final iteration but TypeScript requires a return; this is noise not a real error path",
+        "pay.ts safeReadBody() catches both outer (response.text() failure) and inner (JSON parse failure) separately, returning null on outer fail and text string on inner fail — slightly inconsistent but confined to utility function",
+        "state-helpers.ts loadState() catches JSON parse errors, logs a console.warn with the error message, and returns default — silent recovery from state corruption is intentional but the warn message format is inconsistent with other console.warn patterns (missing structured context about which wallet/key was affected)",
+        "reservePaySpend lock acquisition try/catch at line 159: on exception, calls await unlock() then re-throws — correct cleanup but exception propagates as raw Error rather than DemosError, relying on withToolWrapper to catch and re-wrap"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "connectSdk() wraps all errors as AUTH_FAILED even when the failure is a parse or network issue unrelated to authentication; apiCall() discards error type info on network failures"
+    }
+  },
+  "dimension_judgment": {
+    "error_consistency": {
+      "dimension_character": "The toolkit has a well-designed error architecture: typed DemosError codes, consistent ToolResult<T> envelope, and a centralized withToolWrapper catch layer. The main residual issues are error code accuracy — connectSdk() maps all internal exceptions to AUTH_FAILED regardless of whether the failure was authentication-related, and apiCall()'s error return loses type information by converting to a plain string. Both reduce diagnosability without causing incorrect behavior.",
+      "score_rationale": "Strong structural consistency (unified envelope, typed codes, centralized catch) earns a high base score. Score stops at 79 due to the AUTH_FAILED misclassification in connectSdk() (a real semantic error) and apiCall() discarding error type on network failures. These are not severe but are persistent after prior fixes addressed the more egregious silent-swallow issues."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "ec_connect_sdk_error_code",
+      "summary": "connectSdk() wraps all internal exceptions as AUTH_FAILED regardless of actual failure cause",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "connect.ts lines 245-251: catch (e) { throw demosError('AUTH_FAILED', `SDK connection failed: ${(e as Error).message}`, true) }",
+        "This outer catch wraps everything inside the try block — including wallet parse failures, network failures, and transaction failures — all as AUTH_FAILED",
+        "A network timeout on demos.connect(rpcUrl) would produce AUTH_FAILED with retryable=true — correct retryable flag but wrong code (should be NETWORK_ERROR)",
+        "An invalid mnemonic (12-24 words check at parse level passes, but SDK rejects) would produce AUTH_FAILED — this one is accurate",
+        "The auth-specific catch at lines 235-243 correctly returns AUTH_PENDING_TOKEN for auth failures; the outer catch should use NETWORK_ERROR for non-auth SDK failures"
+      ],
+      "suggestion": "Split the outer catch to distinguish SDK connection failures (demos.connect/connectWallet — NETWORK_ERROR) from authentication failures (AUTH_FAILED). At minimum, change the outer catch to use NETWORK_ERROR for the demos.connect() call specifically.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "ec_api_call_error_loss",
+      "summary": "sdk-bridge.ts apiCall() converts network errors to plain string, losing error type information",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "sdk-bridge.ts lines 258-261: catch (err) { const message = ...; console.warn(...); return { ok: false, status: 0, data: message } }",
+        "The ApiCallResult type has no error field — error information is stuffed into data as a string",
+        "Callers (scan.ts, verify.ts, react.ts, tip.ts) check result.ok and then throw/return error — they lose the original exception type",
+        "scan.ts line 64-65: if (!result.ok) { throw new Error(`Feed API returned ${result.status}`) } — status is always 0 on network failure, making error messages misleading"
+      ],
+      "suggestion": "Add an optional error field to ApiCallResult or return a structured error object when ok=false. At minimum, preserve the original error message in a consistent location rather than in data.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["connectSdk() try/catch boundary is too broad — it was designed for auth flow but catches all SDK operations", "ApiCallResult type predates error-consistency improvements and was not updated"],
+    "likely_symptoms": ["ec_connect_sdk_error_code and ec_api_call_error_loss are independent root causes, not symptoms of each other"]
+  },
+  "context_updates": {
+    "error_consistency": {
+      "add": [
+        {
+          "header": "ToolResult envelope is consistent across all tools",
+          "description": "Every tool except connect/disconnect returns ToolResult<T> with typed DemosError. The withToolWrapper centralized catch prevents raw Error leakage. This is a strong positive pattern.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "connectSdk catch over-broad error code mapping",
+          "description": "The outer try/catch in connectSdk() maps all exceptions to AUTH_FAILED. This was appropriate when the function only called auth operations, but the scope grew to include SDK connection and wallet loading.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

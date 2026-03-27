@@ -1,0 +1,117 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 17,
+  "assessments": {"design_coherence": 82.0},
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "pay() function is 217 lines with 9 numbered sequential steps — each step is distinct but the function body is the only natural home for D402 protocol orchestration; this is inherent protocol complexity, not mixed concerns",
+        "discover-sources.ts: module-level `catalogCache` Map and `BUNDLED_CATALOG_PATH` computed via import.meta.url string manipulation — the path computation is complex (regex replace on __filename equivalent) and brittle",
+        "scan.ts: `fetchFeed()` ignores `domain` parameter passed from scan() — function accepts domain but never uses it (dead parameter path). scan() passes opts?.domain to fetchFeed, but fetchFeed only uses it as a filter placeholder that is never applied before parseFeedPosts",
+        "pay.ts: `safeReadBody` uses nested try/catch with `await import()` inside a catch — async import inside a catch block is unusual and creates implicit coupling to state-helpers module",
+        "identifyOpportunities() in scan.ts has a single hardcoded heuristic (low reactions + long text = reply opportunity) with magic constants — the design implies this should be data-driven but is implemented as a single-rule function",
+        "connect.ts: `connectSdk()` is a private helper that does 4 things: lazy import SDK, create Demos instance, connect wallet, authenticate. Each could fail independently but errors are all wrapped in a single AUTH_FAILED envelope — the multi-responsibility is acceptable given it maps to a single connect operation",
+        "guards all follow the same shape: DEFAULT_STATE constant, typed state interfaces, one or two exported check/record functions delegating to checkAndAppend/appendEntry — highly consistent",
+        "pay.ts fetchWithValidatedRedirects handles redirect loop with re-pinning and header stripping — complex but single coherent responsibility (SSRF-safe redirect following)",
+        "discover-sources.ts BUNDLED_CATALOG_PATH uses import.meta.url with regex string replace to navigate from tools/ back to project root — fragile path construction that assumes fixed directory depth"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "scan.ts has a dead parameter (domain passed into fetchFeed but never used in filtering). discover-sources.ts uses a fragile import.meta.url-based path computation. These are discrete defects rather than pervasive design incoherence."
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The toolkit shows strong structural consistency in the guard layer (uniform state shape, lock patterns, check/record separation) and appropriate complexity in pay.ts (D402 protocol has inherent multi-step structure). Two concrete design defects stand out: scan.ts passes a domain parameter to fetchFeed() that is silently dropped (unfulfilled API contract at the function call level), and discover-sources.ts uses a regex-based path construction from import.meta.url that is fragile and tied to a specific directory depth assumption.",
+      "score_rationale": "Score of 82 reflects a codebase where design decisions are mostly sound and consistent but contains two identifiable coherence failures — one dead parameter (scan domain filtering silently no-ops) and one fragile structural dependency (catalog path via regex on __filename). No functions are genuinely God objects; pay.ts is long but has a single coherent responsibility. The guard layer is a positive design exemplar."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "scan_domain_param_silently_dropped",
+      "summary": "scan() accepts domain filter option but fetchFeed() ignores it — filtering is never applied",
+      "related_files": ["src/toolkit/tools/scan.ts"],
+      "evidence": [
+        "scan() line 32: `const posts = await fetchFeed(session, limit, opts?.domain);` — domain is passed",
+        "fetchFeed() signature (line 59): `async function fetchFeed(session: DemosSession, limit: number, domain?: string)` — domain accepted but never used",
+        "fetchFeed builds path `/api/feed?limit=${limit}` with no domain query param",
+        "identifyOpportunities() receives all posts unfiltered — no post-fetch domain filtering either",
+        "User calling `scan(session, { domain: 'crypto' })` receives all posts, not domain-filtered posts"
+      ],
+      "suggestion": "Either append domain as a query parameter if the feed API supports it (`/api/feed?limit=${limit}&domain=${encodeURIComponent(domain)}`), or apply client-side filtering after parseFeedPosts: `const filtered = domain ? posts.filter(p => p.tags?.includes(domain) || p.category === domain) : posts`. Remove domain from fetchFeed signature if filtering is done post-parse. Document which approach is intentional.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "9c14840d40c65d85"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "discover_sources_fragile_path",
+      "summary": "BUNDLED_CATALOG_PATH uses regex string replace on import.meta.url — fragile, assumes fixed directory depth",
+      "related_files": ["src/toolkit/tools/discover-sources.ts"],
+      "evidence": [
+        "Lines 23-28: `fileURLToPath(import.meta.url).replace(/\\/src\\/toolkit\\/tools\\/.*$/, '')` — navigates up by stripping a hardcoded path suffix",
+        "If discover-sources.ts ever moves (e.g., during PR2-5 file migration), the regex silently fails to strip the suffix, and the resolved path points to a non-existent directory",
+        "The regex matches the literal string `/src/toolkit/tools/` — renaming the tools/ directory would silently break catalog loading at runtime",
+        "Alternative: use `new URL('../../../config/sources/catalog.json', import.meta.url)` which uses relative path navigation — explicit, move-safe, and standard ESM idiom"
+      ],
+      "suggestion": "Replace the regex-based path with `resolve(fileURLToPath(new URL('../../../config/sources/catalog.json', import.meta.url)))`. This is the standard ESM pattern for resolving sibling files relative to the current module and is robust to imports from different working directories.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "3965224138dd1f19",
+      "reasoning": "sdk-bridge.ts apiCall catch block returns a default error object `{ ok: false, status: 0, data: message }` rather than throwing. This is intentional — the SdkBridge interface documents apiCall as returning ApiCallResult, never throwing. The catch-and-return pattern is the correct design for a bridge that needs to normalize network failures into a typed result. The console.warn preserves observability. Not a design defect."
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "193400e1a8dc7bbc",
+      "reasoning": "Magic numbers flagged across 6 guard files are all named constants: DAILY_LIMIT, HOURLY_LIMIT, HOUR_MS in write-rate-limit.ts; DAY_MS and GUARD_LOCK_TTL_MS exported from state-helpers.ts and shared; INACTIVITY_TIMEOUT_MS in session.ts with explanatory comment. The scanner likely fired on numeric literal computations like `30 * 60 * 1000` — these are named constant initializations, not embedded magic numbers in logic. No systemic fix needed."
+    },
+    {
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "975a48fc7b86f11b",
+      "reasoning": "High cyclomatic complexity across 7 files is domain-appropriate: url-validator.ts checks 9 IP ranges (inherently branchy), pay.ts implements a 9-step D402 protocol (sequential steps with independent error paths), connect.ts handles 3 wallet format variants, feed-parser.ts normalizes multiple API response shapes. None of these represent mixed concerns — they are single-responsibility functions with genuine conditional complexity. A lint rule to cap complexity would produce false positives here."
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "scan.ts domain filter was likely a placeholder parameter added with intent to implement server-side filtering that was never completed — the dead parameter is the symptom",
+      "discover-sources.ts path construction reflects unfamiliarity with ESM's new URL() relative resolution pattern; regex-on-__filename is a CommonJS migration habit"
+    ],
+    "likely_symptoms": [
+      "scan_domain_param_silently_dropped",
+      "discover_sources_fragile_path"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Guard layer is design exemplar — consistent shape",
+          "description": "All 6 guards follow identical structure: typed state interface, DEFAULT_STATE constant, delegating to checkAndAppend/appendEntry from state-helpers. This consistency means adding a new guard requires minimal cognitive overhead and reduces the risk of divergent patterns.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "pay.ts complexity is protocol-inherent not design smell",
+          "description": "pay() is 217 lines because D402 has 9 sequential protocol steps each with distinct failure modes. Splitting the function would create artificial seams across a single atomic transaction. The numbered step comments make the flow navigable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "scan domain filter is a dead parameter",
+          "description": "scan() accepts opts.domain but fetchFeed() never applies it — neither as a query parameter nor post-parse filter. This is an unfulfilled API promise that silently no-ops for any caller relying on domain filtering.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

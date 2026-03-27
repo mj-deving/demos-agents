@@ -1,57 +1,279 @@
 {
-  "command": "next",
-  "items": [
-    {
-      "id": "subjective::ai_generated_debt",
-      "confidence": "medium",
-      "detector": "subjective_assessment",
-      "file": ".",
-      "summary": "Subjective review needed: AI generated debt (71.0%) [below target]",
-      "detail": {
-        "dimension_name": "AI generated debt",
-        "dimension": "ai_generated_debt",
-        "failing": 0,
-        "strict_score": 71.0,
-        "open_review_issues": 0,
-        "cli_keys": [
-          "ai_generated_debt"
-        ]
-      },
-      "status": "open",
-      "kind": "subjective_dimension",
-      "primary_command": "desloppify review --prepare --dimensions ai_generated_debt",
-      "queue_position": 1
-    }
-  ],
-  "queue": {
-    "total": 1,
-    "mode": "execution"
+  "command": "show",
+  "query": "review",
+  "status_filter": "open",
+  "total": 10,
+  "summary": {
+    "by_tier": {
+      "T1": 10
+    },
+    "by_detector": {
+      "review": 10
+    },
+    "files": 1
   },
+  "by_file": {
+    ".": [
+      {
+        "id": "review::.::holistic::ai_generated_debt::aidbt_isDemosError_duplication",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "isDemosError inline check in tool-wrapper.ts catch block duplicates the exported isDemosErrorLike() in the same file",
+        "detail": {
+          "holistic": true,
+          "dimension": "ai_generated_debt",
+          "related_files": [
+            "src/toolkit/tools/tool-wrapper.ts"
+          ],
+          "evidence": [
+            "Line 43: const isDemosError = e && typeof e === 'object' && 'code' in e && 'message' in e && 'retryable' in e;",
+            "Lines 58-63: export function isDemosErrorLike(error: unknown): error is ReturnType<typeof demosError> { return Boolean(error && typeof error === 'object' && 'code' in error && 'message' in error && 'retryable' in error); }",
+            "The two checks are identical in logic \u2014 the inline one could simply call isDemosErrorLike(e)."
+          ],
+          "suggestion": "Replace the inline isDemosError check with isDemosErrorLike(e) \u2014 the function is defined in the same file and is already exported for use elsewhere.",
+          "reasoning": "",
+          "summary_hash": "1f57cdc1"
+        }
+      },
+      {
+        "id": "review::.::holistic::ai_generated_debt::aidbt_safeReadBody_dynamic_import",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "safeReadBody in pay.ts uses dynamic import for safeParse instead of static import",
+        "detail": {
+          "holistic": true,
+          "dimension": "ai_generated_debt",
+          "related_files": [
+            "src/toolkit/tools/pay.ts"
+          ],
+          "evidence": [
+            "Lines 246-248: const { safeParse } = await import('../guards/state-helpers.js'); return safeParse(text);",
+            "safeParse is a pure synchronous utility \u2014 there is no reason for it to be dynamically imported. State-helpers is already statically imported by other toolkit files.",
+            "The dynamic import adds async overhead and a try-catch that swallows the parse failure silently."
+          ],
+          "suggestion": "Add 'import { safeParse } from ../guards/state-helpers.js' as a static import at the top of pay.ts and call it directly in safeReadBody.",
+          "reasoning": "",
+          "summary_hash": "9c4664e1"
+        }
+      },
+      {
+        "id": "review::.::holistic::api_surface_coherence::asc_reply_bypass_wrapper",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "reply() validates input outside withToolWrapper \u2014 session.touch() not called and latencyMs is 0 on validation failure",
+        "detail": {
+          "holistic": true,
+          "dimension": "api_surface_coherence",
+          "related_files": [
+            "src/toolkit/tools/publish.ts"
+          ],
+          "evidence": [
+            "reply() calls validateInput() before delegating to publish(). On failure, returns err(inputError, { path: 'local', latencyMs: 0 }) with no session.touch() and no onToolCall notification.",
+            "Every other tool (publish, scan, tip, react, attest, verify, pay, discoverSources) wraps all logic inside withToolWrapper which handles touch(), timing, and onToolCall.",
+            "This means: (a) session inactivity timer is not reset on reply() input errors, (b) onToolCall observer never fires for reply() failures, (c) latencyMs is always 0 for validation errors instead of actual elapsed time."
+          ],
+          "suggestion": "Wrap reply()'s body in withToolWrapper, moving validateInput inside the wrapper fn. This aligns reply() with all sibling tools and ensures touch()/onToolCall fire consistently.",
+          "reasoning": "",
+          "summary_hash": "6dc0a26a"
+        }
+      },
+      {
+        "id": "review::.::holistic::contract_coherence::scan_domain_contract_violation",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "scan() accepts opts.domain in its contract but never applies the filter \u2014 silently no-ops",
+        "detail": {
+          "holistic": true,
+          "dimension": "contract_coherence",
+          "related_files": [
+            "src/toolkit/tools/scan.ts"
+          ],
+          "evidence": [
+            "ScanOptions type defines `domain?: string` as an accepted parameter",
+            "scan() passes opts?.domain to fetchFeed() which accepts but ignores it \u2014 no query param, no post-filter",
+            "Callers calling scan(session, { domain: 'crypto' }) receive ALL posts, not domain-filtered results",
+            "The function's API contract (parameter exists \u2192 filter applies) is violated silently with no error or warning"
+          ],
+          "suggestion": "Either implement domain filtering (post-parse: `const filtered = domain ? posts.filter(p => p.category === domain || p.tags?.includes(domain)) : posts`) or remove the domain parameter from ScanOptions and ScanOptionsSchema until it is implemented. Returning unfiltered results while accepting a filter parameter is a contract lie.",
+          "reasoning": "",
+          "summary_hash": "9813595d"
+        }
+      },
+      {
+        "id": "review::.::holistic::convention_outlier::co_pay_inline_dynamic_import",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "pay.ts contains an inline dynamic import of safeParse inside safeReadBody, breaking the static-imports-at-top convention",
+        "detail": {
+          "holistic": true,
+          "dimension": "convention_outlier",
+          "related_files": [
+            "src/toolkit/tools/pay.ts"
+          ],
+          "evidence": [
+            "pay.ts safeReadBody() line 246: const { safeParse } = await import('../guards/state-helpers.js') \u2014 dynamic import inside a function body",
+            "All other toolkit files use static imports at module top level",
+            "safeParse is a pure synchronous function with no side effects \u2014 there is no reason to defer its import"
+          ],
+          "suggestion": "Replace the inline dynamic import with a static import at the top of pay.ts: import { safeParse } from '../guards/state-helpers.js'",
+          "reasoning": "",
+          "summary_hash": "4efd22e0"
+        }
+      },
+      {
+        "id": "review::.::holistic::convention_outlier::co_pay_spend_cap_api_divergence",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "pay-spend-cap.ts exports separate checkPaySpendCap/recordPayment functions alongside reservePaySpend, inconsistent with peers' checkAndRecord* pattern",
+        "detail": {
+          "holistic": true,
+          "dimension": "convention_outlier",
+          "related_files": [
+            "src/toolkit/guards/pay-spend-cap.ts",
+            "src/toolkit/guards/write-rate-limit.ts",
+            "src/toolkit/guards/tip-spend-cap.ts",
+            "src/toolkit/guards/dedup-guard.ts"
+          ],
+          "evidence": [
+            "pay-spend-cap.ts exports: checkPaySpendCap, recordPayment, reservePaySpend \u2014 no unified checkAndRecordPayment function",
+            "write-rate-limit.ts: checkAndRecordWrite (primary), checkWriteRateLimit (deprecated), recordWrite (deprecated)",
+            "tip-spend-cap.ts: checkAndRecordTip (primary), checkTipSpendCap (deprecated), recordTip (deprecated)",
+            "dedup-guard.ts: checkAndRecordDedup (primary), checkDedup (deprecated), recordPublish (deprecated)",
+            "checkPaySpendCap and recordPayment are NOT marked @deprecated \u2014 they are primary exports with no unified alternative"
+          ],
+          "suggestion": "Add a checkAndRecordPayment() function to pay-spend-cap.ts following the same pattern as checkAndRecordWrite/Tip/Dedup. Mark checkPaySpendCap and recordPayment as @deprecated. The reservePaySpend function is intentionally different (atomic reserve for D402 flow) and should remain.",
+          "reasoning": "",
+          "summary_hash": "0f161118"
+        }
+      },
+      {
+        "id": "review::.::holistic::cross_module_architecture::cma_connect_auth_boundary",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "connect.ts dynamically imports src/lib/auth.js breaking toolkit's framework-agnostic boundary",
+        "detail": {
+          "holistic": true,
+          "dimension": "cross_module_architecture",
+          "related_files": [
+            "src/toolkit/tools/connect.ts",
+            "src/lib/auth.ts",
+            "src/lib/sdk.js"
+          ],
+          "evidence": [
+            "connect.ts line 236: const { ensureAuth } = await import('../../lib/auth.js')",
+            "connect.ts line 259: const { loadAuthCache } = await import('../../lib/auth.js')",
+            "src/lib/auth.ts imports from src/lib/sdk.js (apiCall, info) \u2014 creating toolkit -> app lib -> app sdk transitive chain",
+            "CLAUDE.md states toolkit is 'framework-agnostic' and packages/core/ is designed as a standalone package \u2014 the auth dependency prevents toolkit from being independently packaged"
+          ],
+          "suggestion": "Move the auth token caching logic that connect.ts needs (loadAuthCache + ensureAuth) into a new src/toolkit/auth-cache.ts module, or accept the auth token as a parameter to connect() so callers own the auth flow. The toolkit should not have opinions about how auth tokens are obtained outside its own session lifecycle.",
+          "reasoning": "",
+          "summary_hash": "570772b9"
+        }
+      },
+      {
+        "id": "review::.::holistic::dependency_health::anthropic_sdk_weight_asymmetry",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "@anthropic-ai/sdk is a heavy production dep (~6MB) with zero direct imports in src/toolkit/ \u2014 burdens future toolkit packaging",
+        "detail": {
+          "holistic": true,
+          "dimension": "dependency_health",
+          "related_files": [
+            "package.json",
+            "packages/core/package.json"
+          ],
+          "evidence": [
+            "package.json lists @anthropic-ai/sdk as a production dependency at ^0.78.0",
+            "grep of src/toolkit/ shows zero direct imports from @anthropic-ai/sdk",
+            "packages/core/ re-exports from src/toolkit/ barrel \u2014 any consumer of @demos-agents/core inherits the full dependency graph including @anthropic-ai/sdk",
+            "The actual SDK usage is in src/lib/llm-provider.ts (CLI harness layer), which is outside the toolkit boundary"
+          ],
+          "suggestion": "When packages/core is published, move @anthropic-ai/sdk to a separate CLI/harness package or make it an optional peer dependency. For now, document that toolkit consumers will pull this dep transitively.",
+          "reasoning": "",
+          "summary_hash": "b099f372"
+        }
+      },
+      {
+        "id": "review::.::holistic::design_coherence::discover_sources_fragile_path",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "BUNDLED_CATALOG_PATH uses regex string replace on import.meta.url \u2014 fragile, assumes fixed directory depth",
+        "detail": {
+          "holistic": true,
+          "dimension": "design_coherence",
+          "related_files": [
+            "src/toolkit/tools/discover-sources.ts"
+          ],
+          "evidence": [
+            "Lines 23-28: `fileURLToPath(import.meta.url).replace(/\\/src\\/toolkit\\/tools\\/.*$/, '')` \u2014 navigates up by stripping a hardcoded path suffix",
+            "If discover-sources.ts ever moves (e.g., during PR2-5 file migration), the regex silently fails to strip the suffix, and the resolved path points to a non-existent directory",
+            "The regex matches the literal string `/src/toolkit/tools/` \u2014 renaming the tools/ directory would silently break catalog loading at runtime",
+            "Alternative: use `new URL('../../../config/sources/catalog.json', import.meta.url)` which uses relative path navigation \u2014 explicit, move-safe, and standard ESM idiom"
+          ],
+          "suggestion": "Replace the regex-based path with `resolve(fileURLToPath(new URL('../../../config/sources/catalog.json', import.meta.url)))`. This is the standard ESM pattern for resolving sibling files relative to the current module and is robust to imports from different working directories.",
+          "reasoning": "",
+          "summary_hash": "af085331"
+        }
+      },
+      {
+        "id": "review::.::holistic::design_coherence::scan_domain_param_silently_dropped",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "scan() accepts domain filter option but fetchFeed() ignores it \u2014 filtering is never applied",
+        "detail": {
+          "holistic": true,
+          "dimension": "design_coherence",
+          "related_files": [
+            "src/toolkit/tools/scan.ts"
+          ],
+          "evidence": [
+            "scan() line 32: `const posts = await fetchFeed(session, limit, opts?.domain);` \u2014 domain is passed",
+            "fetchFeed() signature (line 59): `async function fetchFeed(session: DemosSession, limit: number, domain?: string)` \u2014 domain accepted but never used",
+            "fetchFeed builds path `/api/feed?limit=${limit}` with no domain query param",
+            "identifyOpportunities() receives all posts unfiltered \u2014 no post-fetch domain filtering either",
+            "User calling `scan(session, { domain: 'crypto' })` receives all posts, not domain-filtered posts"
+          ],
+          "suggestion": "Either append domain as a query parameter if the feed API supports it (`/api/feed?limit=${limit}&domain=${encodeURIComponent(domain)}`), or apply client-side filtering after parseFeedPosts: `const filtered = domain ? posts.filter(p => p.tags?.includes(domain) || p.category === domain) : posts`. Remove domain from fetchFeed signature if filtering is done post-parse. Document which approach is intentional.",
+          "reasoning": "",
+          "summary_hash": "cc62e84d"
+        }
+      }
+    ]
+  },
+  "total_matching": 37,
+  "hidden": {
+    "by_detector": {
+      "review": 27
+    },
+    "total": 27
+  },
+  "noise_budget": 10,
+  "noise_global_budget": 0,
   "narrative": {
-    "phase": "regression",
-    "headline": "\u26a0 3 security issues \u2014 review before other cleanup. Score shifted 4.4 pts \u2014 this is normal after structural changes. Rescan after your next fix to see the real trend. (52 review work items \u2014 run `desloppify show review --status open`)",
+    "phase": "refinement",
+    "headline": "\u26a0 4 security issues \u2014 review before other cleanup. Crossed 80% strict! (37 review work items \u2014 run `desloppify show review --status open`)",
     "dimensions": {
       "lowest_dimensions": [
         {
-          "name": "API coherence",
-          "strict": 67.0,
-          "failing": 3,
+          "name": "Structure nav",
+          "strict": 68.0,
+          "failing": 2,
           "impact": 0.0,
           "subjective": true,
           "impact_description": "re-review to improve"
         },
         {
-          "name": "Error consistency",
-          "strict": 68.0,
-          "failing": 4,
+          "name": "Stale migration",
+          "strict": 71.0,
+          "failing": 2,
           "impact": 0.0,
           "subjective": true,
           "impact_description": "re-review to improve"
         },
         {
-          "name": "Mid elegance",
-          "strict": 68.0,
-          "failing": 4,
+          "name": "AI generated debt",
+          "strict": 72.0,
+          "failing": 2,
           "impact": 0.0,
           "subjective": true,
           "impact_description": "re-review to improve"
@@ -59,11 +281,6 @@
       ],
       "biggest_gap_dimensions": [],
       "stagnant_dimensions": [
-        {
-          "name": "Security",
-          "strict": 97.3,
-          "stuck_scans": 5
-        },
         {
           "name": "File health",
           "strict": 100.0,
@@ -73,11 +290,6 @@
           "name": "Duplication",
           "strict": 100.0,
           "stuck_scans": 5
-        },
-        {
-          "name": "Test health",
-          "strict": 72.1,
-          "stuck_scans": 5
         }
       ]
     },
@@ -85,23 +297,19 @@
       {
         "type": "auto_fix",
         "detector": "unused",
-        "count": 7,
-        "description": "7 unused issues in 1 cluster(s) \u2014 run `desloppify next`",
-        "command": "desloppify next",
+        "count": 8,
+        "description": "8 unused issues \u2014 run `desloppify autofix unused-imports --dry-run` to preview, then apply",
+        "command": "desloppify autofix unused-imports --dry-run",
         "impact": 0.0,
         "dimension": "Code quality",
         "priority": 1,
-        "clusters": [
-          "auto/unused"
-        ],
-        "cluster_count": 1,
         "lane": "cleanup"
       },
       {
         "type": "auto_fix",
         "detector": "logs",
-        "count": 4,
-        "description": "4 logs issues \u2014 run `desloppify autofix debug-logs --dry-run` to preview, then apply",
+        "count": 5,
+        "description": "5 logs issues \u2014 run `desloppify autofix debug-logs --dry-run` to preview, then apply",
         "command": "desloppify autofix debug-logs --dry-run",
         "impact": 0.0,
         "dimension": "Code quality",
@@ -112,22 +320,18 @@
         "type": "refactor",
         "detector": "test_coverage",
         "count": 7,
-        "description": "7 test_coverage issues in 1 cluster(s) \u2014 run `desloppify next`",
-        "command": "desloppify next",
+        "description": "7 test_coverage work items \u2014 review test coverage gaps \u2014 focus on critical modules with many importers first; defer test writing until code quality issues are resolved",
+        "command": "desloppify show test_coverage --status open",
         "impact": 0.0,
         "dimension": "Test health",
         "priority": 3,
-        "clusters": [
-          "auto/test_coverage-transitive_only"
-        ],
-        "cluster_count": 1,
         "lane": "test_coverage"
       },
       {
         "type": "refactor",
         "detector": "review",
-        "count": 52,
-        "description": "52 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
+        "count": 37,
+        "description": "37 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
         "command": "desloppify show review --status open",
         "impact": 0.0,
         "dimension": "Unknown",
@@ -137,8 +341,8 @@
       {
         "type": "manual_fix",
         "detector": "smells",
-        "count": 29,
-        "description": "29 smells issues \u2014 inspect with `desloppify next` and fix manually",
+        "count": 30,
+        "description": "30 smells issues \u2014 inspect with `desloppify next` and fix manually",
         "command": "desloppify show smells --status open",
         "impact": 0.0,
         "dimension": "Code quality",
@@ -149,22 +353,18 @@
         "type": "manual_fix",
         "detector": "deprecated",
         "count": 4,
-        "description": "4 deprecated issues in 1 cluster(s) \u2014 run `desloppify next`",
-        "command": "desloppify next",
+        "description": "4 deprecated work items \u2014 remove deprecated symbols or migrate callers",
+        "command": "desloppify show deprecated --status open",
         "impact": 0.0,
         "dimension": "Code quality",
         "priority": 6,
-        "clusters": [
-          "auto/deprecated"
-        ],
-        "cluster_count": 1,
         "lane": "refactor_1"
       },
       {
         "type": "manual_fix",
         "detector": "security",
-        "count": 3,
-        "description": "3 security work items \u2014 review and fix security issues \u2014 prioritize by severity",
+        "count": 4,
+        "description": "4 security work items \u2014 review and fix security issues \u2014 prioritize by severity",
         "command": "desloppify show security --status open",
         "impact": 0.0,
         "dimension": "Security",
@@ -174,9 +374,9 @@
     ],
     "strategy": {
       "fixer_leverage": {
-        "auto_fixable_count": 11,
-        "total_count": 210,
-        "coverage": 0.052,
+        "auto_fixable_count": 13,
+        "total_count": 169,
+        "coverage": 0.077,
         "impact_ratio": 0.0,
         "recommendation": "none"
       },
@@ -186,7 +386,7 @@
             2,
             1
           ],
-          "file_count": 6,
+          "file_count": 7,
           "total_impact": 0.0,
           "automation": "full",
           "run_first": true
@@ -206,7 +406,7 @@
             6,
             7
           ],
-          "file_count": 18,
+          "file_count": 19,
           "total_impact": 0.0,
           "automation": "manual",
           "run_first": false
@@ -222,44 +422,44 @@
         }
       },
       "can_parallelize": true,
-      "hint": "3 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 52 issue(s) \u2014 `desloppify show review --status open`."
+      "hint": "3 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 37 issue(s) \u2014 `desloppify show review --status open`."
     },
     "tools": {
       "fixers": [
         {
           "name": "unused-imports",
           "detector": "unused",
-          "open_count": 7,
+          "open_count": 8,
           "command": "desloppify autofix unused-imports --dry-run"
         },
         {
           "name": "unused-vars",
           "detector": "unused",
-          "open_count": 7,
+          "open_count": 8,
           "command": "desloppify autofix unused-vars --dry-run"
         },
         {
           "name": "unused-params",
           "detector": "unused",
-          "open_count": 7,
+          "open_count": 8,
           "command": "desloppify autofix unused-params --dry-run"
         },
         {
           "name": "debug-logs",
           "detector": "logs",
-          "open_count": 4,
+          "open_count": 5,
           "command": "desloppify autofix debug-logs --dry-run"
         },
         {
           "name": "dead-useeffect",
           "detector": "smells",
-          "open_count": 29,
+          "open_count": 30,
           "command": "desloppify autofix dead-useeffect --dry-run"
         },
         {
           "name": "empty-if-chain",
           "detector": "smells",
-          "open_count": 29,
+          "open_count": 30,
           "command": "desloppify autofix empty-if-chain --dry-run"
         }
       ],
@@ -287,12 +487,12 @@
       "worst_gap": 0.0,
       "trend": "stable"
     },
-    "milestone": null,
+    "milestone": "Crossed 80% strict!",
     "primary_action": {
-      "command": "desloppify next",
-      "description": "7 unused issues in 1 cluster(s) \u2014 run `desloppify next`"
+      "command": "desloppify autofix unused-imports --dry-run",
+      "description": "8 unused issues \u2014 run `desloppify autofix unused-imports --dry-run` to preview, then apply"
     },
-    "why_now": "3 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 52 issue(s) \u2014 `desloppify show review --status open`.",
+    "why_now": "3 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 37 issue(s) \u2014 `desloppify show review --status open`.",
     "verification_step": {
       "command": "desloppify scan",
       "reason": "revalidate after changes"
@@ -306,570 +506,30 @@
     ],
     "strict_target": {
       "target": 85.0,
-      "current": 76.2,
-      "gap": 8.8,
+      "current": 80.1,
+      "gap": 4.9,
       "state": "below",
       "warning": null
     },
     "reminders": [
       {
-        "type": "review_issues_pending",
-        "message": "52 review work item(s) need investigation. Run `desloppify show review --status open` to see the work queue.",
-        "command": "desloppify show review --status open",
-        "priority": 1,
-        "severity": "high"
+        "type": "review_not_run",
+        "message": "Mechanical checks look good! Run a subjective design review to catch issues linters miss: desloppify review --prepare",
+        "command": "desloppify review --prepare",
+        "priority": 3,
+        "severity": "low"
       }
     ],
     "reminder_history": {
       "auto_fixers_available": 3,
       "dry_run_first": 3,
-      "report_scores": 3,
+      "report_scores": 4,
       "review_issues_pending": 3,
       "stagnant_nudge": 5,
-      "feedback_nudge": 2,
-      "review_not_run": 2
+      "feedback_nudge": 3,
+      "review_not_run": 3
     }
   },
-  "agent_notes": [
-    "Do NOT use `desloppify plan skip` unless the user explicitly asks you to skip an item.",
-    "If you cannot fix an item, report it and move to the next one.",
-    "For cluster items: if the autofix_hint finds 0 results, drill into individual issues with the primary_command."
-  ],
-  "plan": {
-    "active": true,
-    "focus": null,
-    "clusters": [
-      {
-        "name": "auto/unused",
-        "description": "Remove 3 unused issues",
-        "item_count": 3
-      },
-      {
-        "name": "auto/deprecated",
-        "description": "Fix 4 deprecated issues",
-        "item_count": 4
-      },
-      {
-        "name": "auto/test_coverage-transitive_only",
-        "description": "Fix 7 test coverage issues",
-        "item_count": 7
-      },
-      {
-        "name": "auto/initial-review",
-        "description": "Initial review of 20 unscored subjective dimensions",
-        "item_count": 0
-      },
-      {
-        "name": "feed-normalization",
-        "description": "Extract shared feed parser from 3 implementations in scan.ts:78, verify.ts:76, tip.ts:45",
-        "item_count": 2
-      },
-      {
-        "name": "guard-debt",
-        "description": "Add @deprecated JSDoc to 6 compat exports in dedup-guard.ts, write-rate-limit.ts, tip-spend-cap.ts, index.ts",
-        "item_count": 7
-      },
-      {
-        "name": "error-contract",
-        "description": "Document connect() throws, standardize allowlist guard paths",
-        "item_count": 6
-      },
-      {
-        "name": "dead-code",
-        "description": "Remove stale TODOs, dead returns, unused stubs",
-        "item_count": 8
-      },
-      {
-        "name": "elegance-fixes",
-        "description": "Magic numbers, schema placement, reply double-wrap, verify limit",
-        "item_count": 9
-      },
-      {
-        "name": "abstraction-cleanup",
-        "description": "Inline unnecessary wrappers, narrow session parameters",
-        "item_count": 3
-      },
-      {
-        "name": "contract-fixes",
-        "description": "Fix provenance hash, getter side effects, parseWallet guard",
-        "item_count": 3
-      },
-      {
-        "name": "boundary-cleanup",
-        "description": "Auth boundary cross, catalog cache scope, container singleton",
-        "item_count": 4
-      },
-      {
-        "name": "naming-fixes",
-        "description": "Fix naming mismatches in guards and SDK methods",
-        "item_count": 2
-      },
-      {
-        "name": "dependency-cleanup",
-        "description": "Review anthropic-sdk prod classification",
-        "item_count": 1
-      },
-      {
-        "name": "test-quality",
-        "description": "Fix tautological assertions, real sleep, missing coverage",
-        "item_count": 3
-      },
-      {
-        "name": "type-safety",
-        "description": "Create DemosRpcMethods interface in sdk-bridge.ts, replace 4x (demos as any) casts at lines 148, 272, 329, 335",
-        "item_count": 4
-      }
-    ],
-    "total_ordered": 52,
-    "total_skipped": 1,
-    "plan_overrides_narrative": true
-  },
-  "overall_score": 76.2,
-  "objective_score": 81.9,
-  "strict_score": 76.2,
-  "scorecard_dimensions": [
-    {
-      "name": "File health",
-      "score": 100.0,
-      "strict": 100.0,
-      "checks": 24,
-      "failing": 0,
-      "tier": 3,
-      "subjective": false
-    },
-    {
-      "name": "AI generated debt",
-      "score": 71.0,
-      "strict": 71.0,
-      "checks": 10,
-      "failing": 0,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "ai_generated_debt"
-      ]
-    },
-    {
-      "name": "API coherence",
-      "score": 67.0,
-      "strict": 67.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "api_surface_coherence"
-      ]
-    },
-    {
-      "name": "Abstraction fit",
-      "score": 74.0,
-      "strict": 74.0,
-      "checks": 10,
-      "failing": 2,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "abstraction_fitness"
-      ]
-    },
-    {
-      "name": "Auth consistency",
-      "score": 72.0,
-      "strict": 72.0,
-      "checks": 10,
-      "failing": 1,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "authorization_consistency"
-      ]
-    },
-    {
-      "name": "Code quality",
-      "score": 80.4,
-      "strict": 80.4,
-      "checks": 145,
-      "failing": 44,
-      "tier": 3,
-      "subjective": false
-    },
-    {
-      "name": "Contracts",
-      "score": 82.0,
-      "strict": 82.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "contract_coherence"
-      ]
-    },
-    {
-      "name": "Convention drift",
-      "score": 72.0,
-      "strict": 72.0,
-      "checks": 10,
-      "failing": 2,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "convention_outlier"
-      ]
-    },
-    {
-      "name": "Cross-module arch",
-      "score": 71.5,
-      "strict": 71.5,
-      "checks": 10,
-      "failing": 2,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "cross_module_architecture"
-      ]
-    },
-    {
-      "name": "Design coherence",
-      "score": 79.5,
-      "strict": 79.5,
-      "checks": 10,
-      "failing": 4,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "design_coherence"
-      ]
-    },
-    {
-      "name": "Duplication",
-      "score": 100.0,
-      "strict": 100.0,
-      "checks": 32,
-      "failing": 0,
-      "tier": 3,
-      "subjective": false
-    },
-    {
-      "name": "Elegance",
-      "score": 70.7,
-      "strict": 70.7,
-      "checks": 30,
-      "failing": 10,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "high_level_elegance",
-        "low_level_elegance",
-        "mid_level_elegance"
-      ]
-    },
-    {
-      "name": "Error consistency",
-      "score": 68.0,
-      "strict": 68.0,
-      "checks": 10,
-      "failing": 4,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "error_consistency"
-      ]
-    },
-    {
-      "name": "Naming quality",
-      "score": 76.5,
-      "strict": 76.5,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "naming_quality"
-      ]
-    },
-    {
-      "name": "Security",
-      "score": 97.3,
-      "strict": 97.3,
-      "checks": 48,
-      "failing": 3,
-      "tier": 4,
-      "subjective": false
-    },
-    {
-      "name": "Stale migration",
-      "score": 76.0,
-      "strict": 76.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "incomplete_migration"
-      ]
-    },
-    {
-      "name": "Structure nav",
-      "score": 84.0,
-      "strict": 84.0,
-      "checks": 10,
-      "failing": 0,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "package_organization"
-      ]
-    },
-    {
-      "name": "Test health",
-      "score": 72.1,
-      "strict": 72.1,
-      "checks": 261,
-      "failing": 7,
-      "tier": 4,
-      "subjective": false
-    },
-    {
-      "name": "Test strategy",
-      "score": 72.0,
-      "strict": 72.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "test_strategy"
-      ]
-    },
-    {
-      "name": "Type safety",
-      "score": 71.0,
-      "strict": 71.0,
-      "checks": 10,
-      "failing": 5,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "type_safety"
-      ]
-    }
-  ],
-  "subjective_measures": [
-    {
-      "name": "AI generated debt",
-      "score": 71.0,
-      "strict": 71.0,
-      "checks": 10,
-      "failing": 0,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "ai_generated_debt"
-      ]
-    },
-    {
-      "name": "API coherence",
-      "score": 67.0,
-      "strict": 67.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "api_surface_coherence"
-      ]
-    },
-    {
-      "name": "Abstraction fit",
-      "score": 74.0,
-      "strict": 74.0,
-      "checks": 10,
-      "failing": 2,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "abstraction_fitness"
-      ]
-    },
-    {
-      "name": "Auth consistency",
-      "score": 72.0,
-      "strict": 72.0,
-      "checks": 10,
-      "failing": 1,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "authorization_consistency"
-      ]
-    },
-    {
-      "name": "Contracts",
-      "score": 82.0,
-      "strict": 82.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "contract_coherence"
-      ]
-    },
-    {
-      "name": "Convention drift",
-      "score": 72.0,
-      "strict": 72.0,
-      "checks": 10,
-      "failing": 2,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "convention_outlier"
-      ]
-    },
-    {
-      "name": "Cross-module arch",
-      "score": 71.5,
-      "strict": 71.5,
-      "checks": 10,
-      "failing": 2,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "cross_module_architecture"
-      ]
-    },
-    {
-      "name": "Design coherence",
-      "score": 79.5,
-      "strict": 79.5,
-      "checks": 10,
-      "failing": 4,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "design_coherence"
-      ]
-    },
-    {
-      "name": "Elegance",
-      "score": 70.7,
-      "strict": 70.7,
-      "checks": 30,
-      "failing": 10,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "high_level_elegance",
-        "low_level_elegance",
-        "mid_level_elegance"
-      ]
-    },
-    {
-      "name": "Error consistency",
-      "score": 68.0,
-      "strict": 68.0,
-      "checks": 10,
-      "failing": 4,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "error_consistency"
-      ]
-    },
-    {
-      "name": "Naming quality",
-      "score": 76.5,
-      "strict": 76.5,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "naming_quality"
-      ]
-    },
-    {
-      "name": "Stale migration",
-      "score": 76.0,
-      "strict": 76.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "incomplete_migration"
-      ]
-    },
-    {
-      "name": "Structure nav",
-      "score": 84.0,
-      "strict": 84.0,
-      "checks": 10,
-      "failing": 0,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "package_organization"
-      ]
-    },
-    {
-      "name": "Test strategy",
-      "score": 72.0,
-      "strict": 72.0,
-      "checks": 10,
-      "failing": 3,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "test_strategy"
-      ]
-    },
-    {
-      "name": "Type safety",
-      "score": 71.0,
-      "strict": 71.0,
-      "checks": 10,
-      "failing": 5,
-      "tier": 4,
-      "subjective": true,
-      "placeholder": false,
-      "cli_keys": [
-        "type_safety"
-      ]
-    }
-  ],
   "config": {
     "target_strict_score": 85,
     "review_max_age_days": 30,

@@ -1,0 +1,85 @@
+{
+  "batch": "high_level_elegance",
+  "batch_index": 2,
+  "assessments": {"high_level_elegance": 84.0},
+  "dimension_notes": {
+    "high_level_elegance": {
+      "evidence": [
+        "Top-level toolkit decomposition maps well to domain: tools/ = capabilities, guards/ = cross-cutting policies, session.ts = lifecycle, types.ts = contracts, schemas.ts = validation, sdk-bridge.ts = external isolation",
+        "index.ts barrel export reflects the stated public API surface from the file header comment exactly — declared API matches exports",
+        "CLAUDE.md project structure description matches the actual file tree — docs are trustworthy",
+        "discoverSources() requires a DemosSession parameter despite the comment 'Read-only, no session required' — the comment and the function signature are inconsistent",
+        "The prior issue 'discoverSources() requires session but is documented as not needing one' was marked resolved, but the current code still accepts and requires DemosSession as its first parameter — only the docstring changed",
+        "connect.ts / disconnect.ts use throw/void semantics while all other tools return ToolResult<T> — this is a documented intentional design choice (lifecycle vs tool operations) with clear rationale in the JSDoc",
+        "tools/feed-parser.ts is placed inside the tools/ directory but is not itself a tool — it is a shared utility used by scan, verify, and tip",
+        "guards/ and tools/ have clear roles; session.ts and state-store.ts are correctly at the toolkit root level",
+        "packages/core/ barrel re-export correctly defers to src/toolkit/index.ts — packaging layer is additive, not duplicative"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "feed-parser.ts is a shared utility placed in tools/ rather than in a more fitting location; discoverSources() docstring still contradicts the required DemosSession parameter"
+    }
+  },
+  "dimension_judgment": {
+    "high_level_elegance": {
+      "dimension_character": "The toolkit structure is generally domain-aligned and coherent — a new engineer can map directories to responsibilities quickly. The index.ts public API surface is honest and matches the header documentation. Two residual issues reduce elegance: feed-parser.ts belongs in guards/ or a shared util layer rather than tools/, and discoverSources() still carries documentation claiming it doesn't need a session while the signature requires one.",
+      "score_rationale": "Strong domain-aligned decomposition and trustworthy documentation earn a high baseline. The score stops at 84 because of the feed-parser placement (discoverable but surprising) and the persistent discoverSources session-requirement contradiction that was not actually resolved in code — the docstring was updated but the parameter wasn't removed or made optional."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "hle_feed_parser_placement",
+      "summary": "feed-parser.ts is a shared parsing utility in tools/ rather than a proper utility/shared layer",
+      "related_files": ["src/toolkit/tools/feed-parser.ts", "src/toolkit/tools/scan.ts", "src/toolkit/tools/verify.ts", "src/toolkit/tools/tip.ts"],
+      "evidence": [
+        "feed-parser.ts is imported by scan.ts, verify.ts, and tip.ts — it is a shared dependency, not a tool",
+        "Placing a shared utility inside tools/ blurs the tools/ boundary — tools/ should contain top-level operations, not inter-tool dependencies",
+        "index.ts exports parseFeedPosts from './tools/feed-parser.js' alongside tool functions, which is correct for public API but unusual for a utility"
+      ],
+      "suggestion": "Move feed-parser.ts to src/toolkit/guards/ (as a parse-only helper with no side effects) or create a src/toolkit/lib/ subdir for shared non-guard utilities. The move requires updating three import paths and the index.ts re-export path.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "hle_discover_sources_session_doc",
+      "summary": "discoverSources() docstring says session is not required but function signature requires DemosSession",
+      "related_files": ["src/toolkit/tools/discover-sources.ts"],
+      "evidence": [
+        "discover-sources.ts line 34-35 comment: 'Session required for withToolWrapper integration — only sourceCatalogPath is used for logic.'",
+        "discover-sources.ts function signature: discoverSources(session: DemosSession, ...) — session is not optional",
+        "Prior issue 'discoverSources() requires session but is documented as not needing one' was marked fixed, but the function still requires DemosSession as a mandatory first argument"
+      ],
+      "suggestion": "Either make the session parameter optional (session?: DemosSession) and handle the null case in withToolWrapper, or update the docstring to clearly state that DemosSession is required and explain why (withToolWrapper lifecycle integration). The current comment is misleading.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["discoverSources session issue was noted as resolved but only the docstring was modified, not the actual API shape"],
+    "likely_symptoms": ["hle_discover_sources_session_doc is a direct documentation/contract mismatch — the symptom is misleading documentation"],
+    "possible_false_positives": ["feed-parser placement could be considered intentional — it is small and co-located with its consumers"]
+  },
+  "context_updates": {
+    "high_level_elegance": {
+      "add": [
+        {
+          "header": "Index.ts public surface matches stated API",
+          "description": "The index.ts header comment lists the exact same API surface that index.ts actually exports — documentation and code are in sync at the package entry point.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "discoverSources session-requirement contradiction persists",
+          "description": "The prior fix updated the docstring but left the DemosSession parameter as required. The function comment now reads 'only sourceCatalogPath is used for logic' while the parameter is still required for withToolWrapper integration — a cleaner fix would make session optional.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

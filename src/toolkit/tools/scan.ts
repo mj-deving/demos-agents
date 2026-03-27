@@ -65,6 +65,7 @@ async function fetchFeed(session: DemosSession, limit: number, domain?: string):
     throw new Error(`Feed API returned ${result.status}`);
   }
 
-  return parseFeedPosts(result.data);
+  const posts = parseFeedPosts(result.data);
+  return domain ? posts.filter(p => p.tags.includes(domain)) : posts;
 }
 

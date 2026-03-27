@@ -1,0 +1,85 @@
+{
+  "batch": "ai_generated_debt",
+  "batch_index": 13,
+  "assessments": {"ai_generated_debt": 72.0},
+  "dimension_notes": {
+    "ai_generated_debt": {
+      "evidence": [
+        "Most comments explain WHY not WHAT — security rationale comments in connect.ts (container/WSL2 chmod behavior), SSRF comment in url-validator.ts, D402 flow comments in pay.ts are genuinely useful.",
+        "No entry/exit logging on every function — no 'entering X', 'exiting X' debug noise.",
+        "withToolWrapper.ts: isDemosError check duplicated inline (e && typeof e === 'object' && 'code' in e && 'message' in e && 'retryable' in e) AND also exported as isDemosErrorLike() — the inline check in the catch block and the exported function share identical logic, creating subtle duplication within the same file.",
+        "pay.ts safeReadBody: nested try-catch for JSON parsing with dynamic import of safeParse from state-helpers — the dynamic import inside a utility function is unexpected and adds unnecessary ceremony. safeParse is available as a regular import.",
+        "connect.ts: connectSdk() function has a conditional on algorithm that builds an options object only to call connectWallet with/without it — the ternary on connectOpts results in two near-identical call paths (lines 229-231) that could be unified.",
+        "discover-sources.ts: BUNDLED_CATALOG_PATH computation uses a regex string replace on the file URL path — fragile and unusual. The comment 'relative to project root' is helpful but the approach is not idiomatic.",
+        "state-helpers.ts loadState(): console.warn on corruption silently resets state — warn is appropriate but could mask repeated corruption without alerting operators.",
+        "No noisy debug logging found in production paths — log discipline is good.",
+        "No pass-through wrapper functions without added logic — all wrappers add validation, guards, or security checks.",
+        "Generic domain names absent — domain vocabulary (publish, attest, tip, react, verify, scan) used throughout."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "ai_generated_debt": {
+      "dimension_character": "The codebase is largely free of LLM-hallmark debt. Comments explain constraints rather than restate code, domain terminology is consistent, and debug logging is disciplined. Two specific patterns introduce modest debt: the isDemosError check is duplicated inline in tool-wrapper.ts alongside the exported isDemosErrorLike function, and safeReadBody in pay.ts uses a dynamic import where a static import would suffice.",
+      "score_rationale": "Strong baseline — no entry/exit log spam, no pass-through wrappers, no boilerplate error clones across files. The two defects are isolated and fixable in single edits. Score 72 reflects a clean codebase with a couple of AI-authorship artifacts that survive code review."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "aidbt_isDemosError_duplication",
+      "summary": "isDemosError inline check in tool-wrapper.ts catch block duplicates the exported isDemosErrorLike() in the same file",
+      "related_files": ["src/toolkit/tools/tool-wrapper.ts"],
+      "evidence": [
+        "Line 43: const isDemosError = e && typeof e === 'object' && 'code' in e && 'message' in e && 'retryable' in e;",
+        "Lines 58-63: export function isDemosErrorLike(error: unknown): error is ReturnType<typeof demosError> { return Boolean(error && typeof error === 'object' && 'code' in error && 'message' in error && 'retryable' in error); }",
+        "The two checks are identical in logic — the inline one could simply call isDemosErrorLike(e)."
+      ],
+      "suggestion": "Replace the inline isDemosError check with isDemosErrorLike(e) — the function is defined in the same file and is already exported for use elsewhere.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "aidbt_safeReadBody_dynamic_import",
+      "summary": "safeReadBody in pay.ts uses dynamic import for safeParse instead of static import",
+      "related_files": ["src/toolkit/tools/pay.ts"],
+      "evidence": [
+        "Lines 246-248: const { safeParse } = await import('../guards/state-helpers.js'); return safeParse(text);",
+        "safeParse is a pure synchronous utility — there is no reason for it to be dynamically imported. State-helpers is already statically imported by other toolkit files.",
+        "The dynamic import adds async overhead and a try-catch that swallows the parse failure silently."
+      ],
+      "suggestion": "Add 'import { safeParse } from ../guards/state-helpers.js' as a static import at the top of pay.ts and call it directly in safeReadBody.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Both defects appear to be AI generation artifacts — the inline check was likely written before isDemosErrorLike was extracted, and the dynamic import is a common AI pattern for avoiding circular imports that does not apply here"],
+    "likely_symptoms": ["aidbt_isDemosError_duplication", "aidbt_safeReadBody_dynamic_import"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "Comment discipline is strong — WHY not WHAT",
+          "description": "Security rationale comments (container chmod, DNS rebinding, D402 flow) explain non-obvious constraints. No code-restating comments found in production paths.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No entry/exit debug logging or full object dumps",
+          "description": "Production code uses console.warn only for genuine operator-relevant warnings (auth fallback, state corruption, untrusted feed resolution). No function lifecycle logging.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

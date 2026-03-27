@@ -1,0 +1,88 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {"naming_quality": 86.0},
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "Tool names are precise and domain-aligned: publish, reply, react, tip, scan, verify, attest, discoverSources, pay — all describe the exact network operation performed",
+        "Guard names communicate intent: checkAndRecordWrite, checkAndRecordDedup, checkAndRecordTip, checkPaySpendCap, reservePaySpend — the checkAndRecord* prefix is consistent and communicates atomic semantics",
+        "Helper names in state-helpers.ts are clear: checkAndAppend, appendEntry, loadState, stateKey, safeParse — all precise verb+noun forms",
+        "withToolWrapper is accurate (wraps tools, not tools themselves)",
+        "withBackoff accurately describes the operation (wraps with backoff behavior)",
+        "localProvenance is slightly ambiguous — it constructs a Provenance object with path='local', but 'local' could also mean 'this module'. It is used exclusively for 'non-skill-dojo execution path'",
+        "isDemosErrorLike — accurate; the Like suffix signals duck-typing rather than instanceof",
+        "fetchWithValidatedRedirects in pay.ts — accurately describes fetch with redirect security validation",
+        "isManualRedirect in pay.ts — accurate boolean check name",
+        "stripPaymentProofOnCrossOriginRedirect in pay.ts — precise and self-documenting",
+        "safeReadBody in pay.ts — safe prefix is conventional and communicates non-throwing semantics",
+        "AUTH_PENDING_TOKEN in sdk-bridge.ts — communicates that this is a sentinel, not a real token",
+        "sanitizeUrl in sdk-bridge.ts — accurate for URL query-param stripping",
+        "DemosRpcMethods interface name is clear — typed replacement for any on the demos SDK",
+        "D402ClientLike interface uses Like suffix consistently (same pattern as isDemosErrorLike)",
+        "BUNDLED_CATALOG_PATH in discover-sources.ts — clear constant name",
+        "normalizeStatus in discover-sources.ts — accurate for status string canonicalization",
+        "reservePaySpend uses 'reserve' correctly — communicates that the operation is a temporary hold, not a final spend",
+        "cachedTxModule / cachedD402Client in sdk-bridge.ts — 'cached' prefix consistently communicates lazy-initialized state",
+        "connectSdk in connect.ts — slightly confusing because it also loads the wallet, not just connects; could be initializeSdk or loadAndConnectSdk",
+        "parseWallet in connect.ts — accurate",
+        "authenticateFallback in connect.ts — clear fallback designation",
+        "detectContainer in connect.ts — precise function name",
+        "_isContainer process-level cache variable uses underscore prefix for module-level mutable state — acceptable convention"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "localProvenance is ambiguous between 'local execution path' vs 'local scope'; connectSdk does more than connecting the SDK (it also loads/authenticates the wallet)"
+    }
+  },
+  "dimension_judgment": {
+    "naming_quality": {
+      "dimension_character": "The toolkit has strong naming quality overall. Domain operation names are precise, guard function names communicate semantics clearly, and the checkAndRecord*/reservePaySpend vocabulary is consistent and intentional. The previously-flagged issues (getTxModule get-prefix confusion, backward-compat alias ambiguity, recordPublish mismatch) are confirmed resolved. Remaining naming quality concerns are minor: localProvenance is slightly ambiguous and connectSdk understates what it does.",
+      "score_rationale": "86 reflects excellent domain naming throughout the toolkit with only minor ambiguity issues. The prior naming defects were all resolved (getTxModule renamed, aliases deprecated, recordPublish name fixed). The remaining two observations are low-severity — most engineers would understand localProvenance from context, and connectSdk is common shorthand for the auth+connect flow."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "nq_connect_sdk_name",
+      "summary": "connectSdk() understates its responsibility — it loads wallet credentials, connects SDK, and authenticates, not just connects",
+      "related_files": ["src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "connect.ts connectSdk() performs: lazy SDK import, demos.connect(rpcUrl), wallet mnemonic resolution, demos.connectWallet(), SuperColony auth (ensureAuth) — four distinct operations",
+        "Name implies only SDK connection; the full flow includes wallet loading and auth",
+        "Callers (only connect.ts itself) won't be confused, but the name reduces auditability — a reader scanning for 'auth flow' may overlook this function"
+      ],
+      "suggestion": "Rename to initSessionSdk() or connectAndAuthenticateSdk() to signal that auth is included. This is a low-severity naming issue — functionality is correct, only the name understates scope.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The three previously-fixed naming issues (getTxModule, alias names, recordPublish) were all correctly resolved"],
+    "likely_symptoms": ["nq_connect_sdk_name is the only current naming defect and it is minor"],
+    "possible_false_positives": ["localProvenance ambiguity is borderline — the Provenance type and the path field value make the intent clear to any reader of the types file"]
+  },
+  "context_updates": {
+    "naming_quality": {
+      "add": [
+        {
+          "header": "checkAndRecord* guard naming pattern is settled",
+          "description": "The atomic check+record guard functions use a consistent checkAndRecord* prefix across write-rate-limit, dedup-guard, and tip-spend-cap. This naming communicates single-lock atomic semantics clearly and is now the established convention.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Domain operation names are precise throughout",
+          "description": "Tool function names (publish, reply, react, tip, scan, verify, attest, pay, discoverSources) map directly to network operations with no generic verbs in the public API surface.",
+          "settled": true,
+          "positive": true
+        }
+      ],
+      "settle": [
+        "Snake case convention"
+      ]
+    }
+  }
+}

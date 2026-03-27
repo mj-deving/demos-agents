@@ -1,0 +1,100 @@
+{
+  "batch": "package_organization",
+  "batch_index": 15,
+  "assessments": {"package_organization": 68.0},
+  "dimension_notes": {
+    "package_organization": {
+      "evidence": [
+        "src/toolkit/ is well-organized: top-level (session, types, schemas, state-store, sdk-bridge, url-validator, index), tools/ (10 files), guards/ (6 files). Clear separation by role, well below the 10-file overload threshold per subfolder.",
+        "src/lib/ has 42 files — a flat directory with highly mixed concerns: auth, LLM, attestation, feed filtering, scoring, transcript, tips, identity, source discovery, TLSN, write-rate-limit, test-quality-validator, colony-intelligence, budget-tracker. No subfolders. This meets the 'flat directory overload with mixed concerns' pattern.",
+        "src/plugins/ has 20+ plugin files all flat — but the content is plugin factories for a plugin architecture, so flatness is more defensible here. Still mixes very different domains (defi-markets, infra-ops, reputation, tlsn-attest, tips, lifecycle, network-health).",
+        "src/lib/sources/ is a subdirectory under lib — not visible from the listing but referenced in CLAUDE.md as a sub-concern.",
+        "src/lib/write-rate-limit.ts lives in lib/ while its toolkit successor lives in src/toolkit/guards/ — same domain concern, two locations.",
+        "src/lib/test-quality-validator.ts lives in lib/ alongside production business logic — testing infrastructure mixed with runtime code.",
+        "src/adapter-specs.ts is a root-level file in src/ — unclear why it is at src root rather than under src/adapters/ which exists.",
+        "connectors/ directory exists alongside src/ at repo root — isolation layer for SDK bridge. Clear ownership and small (2 files).",
+        "cli/ has 27 files — all CLI entry points, flat structure appropriate for entry point collection.",
+        "packages/core/ is the new toolkit package — correctly isolated under packages/.",
+        "src/reactive/ (event-loop, watermarks, sources, handlers) is cohesively organized with purpose-driven sub-dirs.",
+        "src/actions/ has 5 files — well-bounded, clear domain ownership (action execution pipeline)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "package_organization": {
+      "dimension_character": "The project has strong organization at the boundaries (src/toolkit/, src/actions/, src/reactive/, packages/core/) but a significantly overloaded src/lib/ directory holding 42 heterogeneous files with no sub-organization. The lib/ flat pile contains at least 6 identifiable concern clusters (auth/identity, LLM/AI, attestation/claims, sources/feeds, scoring/quality, infrastructure). This is the main navigation and ownership problem in the codebase.",
+      "score_rationale": "The toolkit subsystem is well-organized (25/25 for that area), but src/lib/ at 42 files with no subfolder structure fails the >10 files with mixed concerns threshold clearly. src/adapter-specs.ts misplaced at src root and test-quality-validator.ts in production lib/ are additional minor signals. Score 68 — good peripheral structure, significant core lib/ organization debt that affects discoverability for new contributors."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "package_organization",
+      "identifier": "pkg_lib_flat_overload",
+      "summary": "src/lib/ has 42 mixed-concern files in a flat layout — exceeds cohesion threshold by 4x",
+      "related_files": [
+        "src/lib/auth.ts",
+        "src/lib/attestation-planner.ts",
+        "src/lib/attestation-policy.ts",
+        "src/lib/claim-extraction.ts",
+        "src/lib/llm-provider.ts",
+        "src/lib/llm-claim-config.ts",
+        "src/lib/scoring.ts",
+        "src/lib/quality-score.ts",
+        "src/lib/source-discovery.ts",
+        "src/lib/source-scanner.ts",
+        "src/lib/write-rate-limit.ts",
+        "src/lib/test-quality-validator.ts",
+        "src/lib/colony-intelligence.ts"
+      ],
+      "evidence": [
+        "42 files under src/lib/ with no subfolders (excluding sources/ subdirectory)",
+        "At least 6 concern clusters identifiable: (1) auth/identity: auth.ts, identity.ts; (2) LLM/AI: llm-provider.ts, llm-claim-config.ts; (3) attestation/claims: attestation-planner.ts, attestation-policy.ts, claim-extraction.ts; (4) sources/feeds: source-discovery.ts, source-scanner.ts, feed-filter.ts, signals.ts, signal-detection.ts; (5) scoring/quality: scoring.ts, quality-score.ts, response-validator.ts; (6) infrastructure: write-rate-limit.ts, budget-tracker.ts, tx-queue.ts, fetch-with-timeout.ts, subprocess.ts, log.ts, state.ts",
+        "test-quality-validator.ts is testing infrastructure co-located with production business logic"
+      ],
+      "suggestion": "Stage 1: Create sub-directories within src/lib/: attestation/ (attestation-planner, attestation-policy, claim-extraction), llm/ (llm-provider, llm-claim-config), sources/ (source-discovery, source-scanner, feed-filter), scoring/ (scoring, quality-score, response-validator), auth/ (auth, identity). Stage 2: Move test-quality-validator.ts to tests/ or a dedicated testing-utils/. Stage 3: Update imports across cli/ and src/ with: find src cli -name '*.ts' | xargs sed -i 's|from \"../lib/attestation-|from \"../lib/attestation/|g' (repeat per cluster). Validate with npx tsc --noEmit after each stage.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "pkg_adapter_specs_misplaced",
+      "summary": "src/adapter-specs.ts is at the src/ root despite src/adapters/ subdirectory existing",
+      "related_files": ["src/adapter-specs.ts", "src/adapters"],
+      "evidence": [
+        "src/adapters/ directory exists as a subdirectory of src/",
+        "src/adapter-specs.ts lives at src/ root — import affinity is clearly with the adapters directory"
+      ],
+      "suggestion": "Move src/adapter-specs.ts to src/adapters/specs.ts or src/adapters/adapter-specs.ts. Update imports with: grep -r 'adapter-specs' src cli --include='*.ts' to find all callers, then update paths.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["src/lib/ grew organically as a catch-all for shared utilities — a common pattern where each addition is locally reasonable but the cumulative effect is a navigation-hostile flat pile"],
+    "likely_symptoms": ["pkg_lib_flat_overload", "pkg_adapter_specs_misplaced"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "package_organization": {
+      "add": [
+        {
+          "header": "src/toolkit/ organization is a positive reference pattern",
+          "description": "The toolkit subsystem (session, types, schemas, tools/, guards/) demonstrates clear role-based organization under 10 files per folder. This is the model to apply to src/lib/ reorganization.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "src/lib/ is a 42-file flat catch-all with 6 concern clusters",
+          "description": "The lib/ directory accumulated all shared utilities without subfolder organization. Six identifiable clusters (auth/identity, LLM, attestation/claims, sources/feeds, scoring/quality, infrastructure) are intermixed in a flat layout that impedes navigation and ownership clarity.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

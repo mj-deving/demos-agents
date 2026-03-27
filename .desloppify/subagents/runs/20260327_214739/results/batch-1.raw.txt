@@ -1,0 +1,86 @@
+{
+  "batch": "cross_module_architecture",
+  "batch_index": 1,
+  "assessments": {"cross_module_architecture": 77.0},
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "connect.ts dynamically imports ../../lib/auth.js at two call sites — this is a live cross-boundary dependency from src/toolkit/ into src/lib/, violating the toolkit's documented framework-agnostic boundary",
+        "The import is wrapped in try/catch and uses lazy dynamic import, softening but not eliminating the coupling",
+        "src/lib/auth.ts pulls in src/lib/sdk.js (apiCall, info), creating a transitive dependency chain: toolkit -> app lib -> app sdk",
+        "catalogCache in discover-sources.ts is a module-level mutable Map — the prior issue was flagged as fixed but a new instance exists here (keyed by path, intentional cache semantics, but still shared process state)",
+        "All other toolkit imports follow correct direction: tools -> types/session/guards/schemas, guards -> types/state-helpers only",
+        "sdk-bridge.ts uses a single cast at factory level (rpc = demos as unknown as DemosRpcMethods) and typed interface DemosRpcMethods — clean isolation pattern",
+        "tools/pay.ts has one inline dynamic import of state-helpers.safeParse inside safeReadBody — minor but unusual; could use a static import",
+        "No cycles detected among toolkit-internal modules",
+        "index.ts barrel export is comprehensive and correctly scoped",
+        "packages/core/ re-exports from src/toolkit/ index — clean dependency direction for packaging"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "connect.ts dynamically imports src/lib/auth.js breaking the toolkit's framework-agnostic boundary claim — the toolkit is not self-contained"
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The toolkit has strong internal architecture — clean layering (types -> guards -> session -> tools -> index), no cycles, hub module (state-helpers) is small and pure, and the sdk-bridge pattern correctly isolates external SDK volatility. The single structural defect is connect.ts dynamically importing src/lib/auth.js, crossing into the application lib layer for auth token caching and challenge-response auth — this is the residual stub from a prior fix that was documented as resolved but the underlying coupling remains.",
+      "score_rationale": "Architecture scores well on the strengths (no cycles, clean directed imports, isolation patterns) but the active cross-boundary import in connect.ts is a real defect that directly contradicts the documented framework-agnostic property. A score of 77 reflects a mostly-clean architecture with one persistent boundary violation that has mild transitive reach (toolkit -> app lib -> app sdk)."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "cma_connect_auth_boundary",
+      "summary": "connect.ts dynamically imports src/lib/auth.js breaking toolkit's framework-agnostic boundary",
+      "related_files": ["src/toolkit/tools/connect.ts", "src/lib/auth.ts", "src/lib/sdk.js"],
+      "evidence": [
+        "connect.ts line 236: const { ensureAuth } = await import('../../lib/auth.js')",
+        "connect.ts line 259: const { loadAuthCache } = await import('../../lib/auth.js')",
+        "src/lib/auth.ts imports from src/lib/sdk.js (apiCall, info) — creating toolkit -> app lib -> app sdk transitive chain",
+        "CLAUDE.md states toolkit is 'framework-agnostic' and packages/core/ is designed as a standalone package — the auth dependency prevents toolkit from being independently packaged"
+      ],
+      "suggestion": "Move the auth token caching logic that connect.ts needs (loadAuthCache + ensureAuth) into a new src/toolkit/auth-cache.ts module, or accept the auth token as a parameter to connect() so callers own the auth flow. The toolkit should not have opinions about how auth tokens are obtained outside its own session lifecycle.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "cma_discover_mutable_cache",
+      "summary": "Module-level mutable Map cache in discover-sources.ts persists across test runs and creates shared process state",
+      "related_files": ["src/toolkit/tools/discover-sources.ts"],
+      "evidence": [
+        "discover-sources.ts line 20: const catalogCache = new Map<string, Source[]>() — module-level mutable state",
+        "Prior issue 'Module-level mutable Map cache in discover-sources.ts' was marked resolved but the same pattern exists in the current file",
+        "The cache is keyed by path so it's deterministic per path, but tests that want fresh catalog reads must reload the module or the cache is never invalidated"
+      ],
+      "suggestion": "Accept this as intentional per-process cache (the comment says 'catalog is static per process') but export a clearCatalogCache() function for test use, or move the cache inside loadCatalog with a WeakRef/file-stat-invalidation strategy. At minimum, document that tests must use separate process or mock the readFile.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Toolkit was extracted from app code; auth module was not yet fully internalized", "Module-level cache pattern repeated from prior iteration — fix description mentioned it was resolved but a new instance was introduced in the catalog loader"],
+    "likely_symptoms": ["cma_connect_auth_boundary is a root cause", "cma_discover_mutable_cache is a minor symptom of the same incremental extraction pattern"]
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Auth boundary cross-layer import in connect.ts",
+          "description": "connect.ts dynamically imports src/lib/auth.js for ensureAuth and loadAuthCache, crossing from the toolkit's documented framework-agnostic layer into the application lib layer. This is the main remaining boundary violation after prior fixes.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Toolkit internal layering is clean",
+          "description": "All toolkit-internal imports follow correct direction: tools depend on types/session/guards/schemas, guards depend on types/state-helpers, no cycles. The single boundary violation is the outbound auth import.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

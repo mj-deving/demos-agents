@@ -1,0 +1,83 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 16,
+  "assessments": {"initialization_coupling": 88.0},
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "connect.ts uses lazy imports for SDK (`await import('@kynesyslabs/demosdk/websdk')`) and auth module — no module-level SDK side effects",
+        "sdk-bridge.ts uses closure-scoped lazy loaders (cachedTxModule, cachedD402Client) — no module-level shared mutable state across sessions",
+        "state-store.ts: DEFAULT_STATE_DIR = resolve(homedir(), '.config', 'demos') computed at module scope — reads homedir() at import time",
+        "connect.ts module-level constants DEFAULT_RPC_URL, DEFAULT_ALGORITHM, DEFAULT_SUPERCOLONY_API are pure string literals — no side effects",
+        "connect.ts: `let _isContainer: boolean | null = null` is a module-level mutable singleton — per-process cache for container detection, but lazily populated on first call, not at import time",
+        "session.ts Symbols (AUTH_TOKEN, SIGNING_HANDLE) and INACTIVITY_TIMEOUT_MS are module-level constants computed from pure expressions — no side effects",
+        "state-helpers.ts DAY_MS and GUARD_LOCK_TTL_MS are pure numeric constants — no side effects",
+        "sdk-bridge.ts: HIVE_PREFIX, DAHR_ERROR_KEYWORDS are module-level constants computed from literals — no side effects",
+        "schemas.ts: compile-time type assertion types are module-level — no runtime side effects; Zod schema objects are computed at import time but are pure, side-effect-free",
+        "state-store.ts lazy imports `open` from node:fs/promises inside lock() method — good pattern",
+        "No DB connections, network calls, or file I/O at module scope found across any toolkit files",
+        "No circular init dependencies detected — dependency graph is acyclic (types <- session/schemas/state-helpers <- guards <- tools <- index)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "DEFAULT_STATE_DIR in state-store.ts calls homedir() at module scope. This is fragile in test environments that want to override HOME or use a different state dir without instantiating FileStateStore with an explicit path. The _isContainer singleton in connect.ts is a module-level mutable variable, though this is a minor concern since it is process-invariant by design."
+    }
+  },
+  "dimension_judgment": {
+    "initialization_coupling": {
+      "dimension_character": "The toolkit codebase demonstrates strong awareness of initialization coupling concerns: SDK imports are uniformly lazy-loaded inside async functions, per-session state is encapsulated in DemosSession and closure-scoped bridge factories, and no I/O or network calls occur at module scope. Two minor deviations exist: DEFAULT_STATE_DIR in state-store.ts calls homedir() at module import time (environment-read coupling), and connect.ts holds a module-level `_isContainer` mutable singleton (though it is process-invariant by design and lazily populated).",
+      "score_rationale": "The codebase scores high (88/100) because the primary anti-patterns — import-time I/O, network calls, and global SDK singletons — are all absent. The lazy import pattern for the heavy Demos SDK is consistently applied. The single concrete defect (homedir() at module scope in state-store.ts) is a minor but real coupling issue that creates test fragility when HOME is not the intended state dir. The _isContainer singleton is a design-intentional process-scoped cache, not a coupling bug, but adds a small amount of module-level mutable state."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "init_homedir_module_scope",
+      "summary": "DEFAULT_STATE_DIR reads homedir() at module import time in state-store.ts",
+      "related_files": ["src/toolkit/state-store.ts"],
+      "evidence": [
+        "Line 17: `const DEFAULT_STATE_DIR = resolve(homedir(), '.config', 'demos');` — this executes at import time",
+        "homedir() reads the HOME environment variable; tests that want to override HOME must do so before any import of state-store.ts",
+        "Tests that pass an explicit dir to FileStateStore constructor are unaffected, but tests relying on the default are coupled to the process HOME at import time"
+      ],
+      "suggestion": "Move the DEFAULT_STATE_DIR computation inside the constructor: `this.dir = dir ?? resolve(homedir(), '.config', 'demos');`. This defers the homedir() call to construction time, allowing test code to override HOME between imports and construction without requiring module re-evaluation.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "DEFAULT_STATE_DIR constant follows a common JS pattern of top-level constants for defaults, but homedir() is an environment read, not a pure computation — placing it in the constructor body costs nothing and eliminates the coupling"
+    ],
+    "likely_symptoms": [
+      "init_homedir_module_scope"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "Lazy SDK import pattern consistently applied",
+          "description": "All heavy SDK imports (Demos, DemosTransactions, D402Client, auth module) are deferred inside async functions rather than at module scope. This is a deliberate, consistent pattern that prevents import-time side effects from crypto polyfills and global state mutation that the SDK may perform on load.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Closure-scoped bridge caches prevent cross-session state pollution",
+          "description": "sdk-bridge.ts uses closure-local variables (cachedTxModule, cachedD402Client) for lazy loading within each bridge instance. Each session gets an isolated bridge factory, so there is no shared mutable module-level cache that could cause ordering dependencies between sessions.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "homedir() read at module scope in state-store.ts",
+          "description": "DEFAULT_STATE_DIR is computed once at import time via homedir(). Tests relying on the default state dir are coupled to the HOME env var value at import time rather than at construction time. Minor fragility that can be fixed by moving the computation into the constructor.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

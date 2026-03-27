@@ -155,7 +155,7 @@ function checkBlockedIpv4(ip: string): string | null {
     return "Blocked: invalid IPv4 address";
   }
 
-  const [a, b, c, d] = parts;
+  const [a, b] = parts;
 
   // 0.0.0.0/8 ("this" network, RFC 1122)
   if (a === 0) {

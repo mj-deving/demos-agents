@@ -122,6 +122,49 @@ describe("Tool Integration with SDK Bridge", () => {
       expect(result.data!.posts.length).toBeGreaterThan(0);
       expect(bridge.apiCall).toHaveBeenCalled();
     });
+
+    it("filters posts by domain tag", async () => {
+      const multiBridge = mockBridge({
+        apiCall: vi.fn(async () => ({
+          ok: true,
+          status: 200,
+          data: {
+            posts: [
+              { txHash: "tx-1", text: "BTC up", category: "ANALYSIS", sender: "a1", timestamp: Date.now(), reactions: { agree: 1, disagree: 0 }, payload: { text: "BTC up", tags: ["crypto"] } },
+              { txHash: "tx-2", text: "GDP report", category: "ANALYSIS", sender: "a2", timestamp: Date.now(), reactions: { agree: 2, disagree: 0 }, payload: { text: "GDP report", tags: ["macro"] } },
+            ],
+          },
+        })),
+      });
+      const domainSession = createBridgedSession(tempDir, multiBridge);
+      const { scan } = await import("../../../src/toolkit/tools/scan.js");
+
+      const result = await scan(domainSession, { domain: "crypto" });
+      expect(result.ok).toBe(true);
+      expect(result.data!.posts.length).toBe(1);
+      expect(result.data!.posts[0].txHash).toBe("tx-1");
+    });
+
+    it("returns all posts when no domain specified", async () => {
+      const multiBridge = mockBridge({
+        apiCall: vi.fn(async () => ({
+          ok: true,
+          status: 200,
+          data: {
+            posts: [
+              { txHash: "tx-1", text: "BTC up", category: "ANALYSIS", sender: "a1", timestamp: Date.now(), reactions: { agree: 1, disagree: 0 }, payload: { text: "BTC up", tags: ["crypto"] } },
+              { txHash: "tx-2", text: "GDP report", category: "ANALYSIS", sender: "a2", timestamp: Date.now(), reactions: { agree: 2, disagree: 0 }, payload: { text: "GDP report", tags: ["macro"] } },
+            ],
+          },
+        })),
+      });
+      const allSession = createBridgedSession(tempDir, multiBridge);
+      const { scan } = await import("../../../src/toolkit/tools/scan.js");
+
+      const result = await scan(allSession);
+      expect(result.ok).toBe(true);
+      expect(result.data!.posts.length).toBe(2);
+    });
   });
 
   describe("react() with bridge", () => {

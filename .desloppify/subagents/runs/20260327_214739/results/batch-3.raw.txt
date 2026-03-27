@@ -1,0 +1,87 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {"convention_outlier": 83.0},
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "All tool files use named exports only — consistent across scan, publish, verify, tip, pay, attest, react, connect, discover-sources, feed-parser",
+        "All guard files export named functions — consistent pattern across 6 guards",
+        "camelCase function names throughout — no snake_case outliers found",
+        "kebab-case file names used consistently: pay-spend-cap.ts, write-rate-limit.ts, tip-spend-cap.ts, state-helpers.ts, dedup-guard.ts, pay-receipt-log.ts, feed-parser.ts, tool-wrapper.ts, sdk-bridge.ts, url-validator.ts, state-store.ts",
+        "Guard API pattern: most guards export checkAndRecord* (atomic check+record), deprecated check* and record* individually — consistent across write-rate-limit, dedup-guard, tip-spend-cap",
+        "pay-spend-cap.ts exports reservePaySpend + checkPaySpendCap + recordPayment — diverges from the checkAndRecord* pattern used by other guards; reservePaySpend is intentionally different (atomic reserve with rollback), but checkPaySpendCap + recordPayment are separate functions while peers use the unified pattern",
+        "verify.ts and scan.ts import sleep from guards/state-helpers.ts — utilities from the guards/ sub-layer used directly by tools; minor protocol inconsistency since other tools access state-helpers only via guards",
+        "discover-sources.ts imports safeParse from guards/state-helpers.ts — same pattern, tools reaching into guards/",
+        "pay.ts inline dynamic import of safeParse: const { safeParse } = await import('../guards/state-helpers.js') — all other imports are static at module top level",
+        "Deprecated aliases are consistently marked @deprecated across all guards that have them — coherent deprecation protocol"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "pay-spend-cap.ts exposes checkPaySpendCap + recordPayment separately rather than the checkAndRecord* atomic pattern used by sibling guards; pay.ts uses an inline dynamic import of safeParse where all other imports are static"
+    }
+  },
+  "dimension_judgment": {
+    "convention_outlier": {
+      "dimension_character": "The toolkit codebase has strong convention consistency: uniform named exports, consistent kebab-case file naming, camelCase functions throughout, and a clear guard API pattern. Two outliers exist: pay-spend-cap.ts still exports the pre-atomic checkPaySpendCap/recordPayment pair as non-deprecated functions alongside the new reservePaySpend, and pay.ts has one inline dynamic import of safeParse that breaks the static-imports-at-top-level convention.",
+      "score_rationale": "The conventions are tightly followed with minimal drift. Score of 83 reflects strong overall consistency with two specific outliers: the pay-spend-cap guard API protocol inconsistency (separate check/record vs unified checkAndRecord* peers) and the single inline dynamic import in pay.ts. Neither is severe but both are visible departures from the established patterns."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "co_pay_spend_cap_api_divergence",
+      "summary": "pay-spend-cap.ts exports separate checkPaySpendCap/recordPayment functions alongside reservePaySpend, inconsistent with peers' checkAndRecord* pattern",
+      "related_files": ["src/toolkit/guards/pay-spend-cap.ts", "src/toolkit/guards/write-rate-limit.ts", "src/toolkit/guards/tip-spend-cap.ts", "src/toolkit/guards/dedup-guard.ts"],
+      "evidence": [
+        "pay-spend-cap.ts exports: checkPaySpendCap, recordPayment, reservePaySpend — no unified checkAndRecordPayment function",
+        "write-rate-limit.ts: checkAndRecordWrite (primary), checkWriteRateLimit (deprecated), recordWrite (deprecated)",
+        "tip-spend-cap.ts: checkAndRecordTip (primary), checkTipSpendCap (deprecated), recordTip (deprecated)",
+        "dedup-guard.ts: checkAndRecordDedup (primary), checkDedup (deprecated), recordPublish (deprecated)",
+        "checkPaySpendCap and recordPayment are NOT marked @deprecated — they are primary exports with no unified alternative"
+      ],
+      "suggestion": "Add a checkAndRecordPayment() function to pay-spend-cap.ts following the same pattern as checkAndRecordWrite/Tip/Dedup. Mark checkPaySpendCap and recordPayment as @deprecated. The reservePaySpend function is intentionally different (atomic reserve for D402 flow) and should remain.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "co_pay_inline_dynamic_import",
+      "summary": "pay.ts contains an inline dynamic import of safeParse inside safeReadBody, breaking the static-imports-at-top convention",
+      "related_files": ["src/toolkit/tools/pay.ts"],
+      "evidence": [
+        "pay.ts safeReadBody() line 246: const { safeParse } = await import('../guards/state-helpers.js') — dynamic import inside a function body",
+        "All other toolkit files use static imports at module top level",
+        "safeParse is a pure synchronous function with no side effects — there is no reason to defer its import"
+      ],
+      "suggestion": "Replace the inline dynamic import with a static import at the top of pay.ts: import { safeParse } from '../guards/state-helpers.js'",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["pay-spend-cap.ts was built after the checkAndRecord* unification but the pattern wasn't applied — the prior fix note mentions guards but pay-spend-cap's primary exports were left in the pre-unified style"],
+    "likely_symptoms": ["co_pay_spend_cap_api_divergence is the root issue; co_pay_inline_dynamic_import is an isolated outlier"]
+  },
+  "context_updates": {
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Guard deprecation protocol is consistent",
+          "description": "All guards that have deprecated functions mark them with @deprecated JSDoc. The pattern is clean and consistent across write-rate-limit, tip-spend-cap, and dedup-guard.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "pay-spend-cap primary API not unified",
+          "description": "pay-spend-cap.ts was not updated to the checkAndRecord* pattern when other guards were unified. checkPaySpendCap and recordPayment remain as primary (non-deprecated) exports, unlike peer guards which deprecated their split forms.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

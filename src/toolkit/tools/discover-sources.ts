@@ -1,7 +1,7 @@
 /**
  * discoverSources() — browse the bundled source catalog.
  *
- * Read-only, no session required (optional — for custom catalog path).
+ * Session required for withToolWrapper integration.
  * Returns sources filtered by domain, sorted by health score.
  */
 

@@ -1,0 +1,121 @@
+{
+  "batch": "test_strategy",
+  "batch_index": 10,
+  "assessments": {"test_strategy": 79.0},
+  "dimension_notes": {
+    "test_strategy": {
+      "evidence": [
+        "25 test files in tests/toolkit/ covering all major toolkit modules. 30 test files total across tests/toolkit/ per glob.",
+        "Critical path coverage: state-helpers.ts (10 importers) is flagged by mechanical scan as having no DIRECT test file. Confirmed: tests/toolkit/guards/state-helpers.test.ts EXISTS — scanner signal is stale or refers to a different notion of 'direct'.",
+        "verify.ts has no direct test file but is exercised via tests/toolkit/tools/verify-timers.test.ts with 5 meaningful timer-mocked tests. The mechanical flag is confirmed stale.",
+        "scan.ts coverage: tests/toolkit/tools/scan-opportunities.test.ts covers identifyOpportunities boundary conditions. No test for the domain parameter behavior (which is broken — domain is silently ignored in fetchFeed).",
+        "pay.ts (319 LOC): covered by tests/toolkit/tools/pay-d402.test.ts and tests/toolkit/tools/integration.test.ts. The monster-function flag (>150 LOC) for pay() is noted but the test file exists.",
+        "react.ts (37 LOC): covered via tests/toolkit/tools/tools.test.ts (react() validation tests). No dedicated test file but tool behavior is tested.",
+        "tip.ts: covered via tests/toolkit/tools/tools.test.ts + tests/toolkit/tools/tip-chain-resolution.test.ts. Chain resolution logic has dedicated tests.",
+        "Integration tests exist in tests/toolkit/tools/integration.test.ts — uses mock SdkBridge, tests publish/scan/verify full flows. Cross-module verification is present.",
+        "No snapshot tests detected — all assertions are behavioral (expect values, not serialized snapshots).",
+        "Test fragility: verify-timers.test.ts correctly mocks sleep to avoid real delays. No real timing dependencies in test suite.",
+        "Test quality guard: vitest globalSetup scans all test files for assertion-free tests before running — enforced by tests/setup-test-quality.ts.",
+        "Missing: no test for the scan() domain parameter being silently dropped — the broken behavior has no regression test.",
+        "Missing: no test for the attest() URL allowlist check combined with SSRF validation — only individual paths are tested.",
+        "Missing: no test for discover-sources.ts catalogCache eviction or multi-path catalog loading (the module-level cache is never cleared between test runs, potentially causing test interference).",
+        "pay-d402.test.ts covers the D402 challenge/response flow including rollback on settlement failure — high-quality coverage of the complex path.",
+        "security-hardening.test.ts exists and covers SSRF validation, allowlist enforcement, AUTH_PENDING_TOKEN behavior — security-critical paths are tested."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "test_strategy": {
+      "dimension_character": "The toolkit has broad test coverage with dedicated files for all major modules, behavioral (not snapshot) assertions, proper mock injection via SdkBridge, and correct elimination of timing dependencies via mocked sleep. The test quality enforcement layer (globalSetup assertion scanner + PostToolUse hook) is a strong institutional guarantee. Gaps are: no regression test for scan()'s broken domain parameter, potential test interference from discover-sources.ts module-level catalogCache, and some tools (react, parts of scan) covered only via broad tools.test.ts rather than dedicated focused suites.",
+      "score_rationale": "Score 79/100. Test discipline is above average — no snapshot overuse, no timing fragility, proper mock boundaries, strong security path coverage. Held below 85 by: broken scan() domain behavior having no regression test (a tested defect is worth more than an untested defect), module-level catalogCache in discover-sources that can cause cross-test pollution, and missing targeted tests for the connect() error paths (symlink rejection, mode-600 failure, container detection)."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "test_strategy",
+      "identifier": "scan_domain_no_regression",
+      "summary": "scan() silently drops the domain filter with no regression test — the broken behavior could be 'fixed' or changed without test failure",
+      "related_files": ["src/toolkit/tools/scan.ts", "tests/toolkit/tools/scan-opportunities.test.ts"],
+      "evidence": [
+        "scan() accepts domain via ScanOptions but fetchFeed() never appends it to the API path",
+        "scan-opportunities.test.ts covers identifyOpportunities thresholds but does not pass a domain option in any test",
+        "No test that verifies domain IS or IS NOT used — if domain filtering is intentionally unimplemented, this should be asserted (expect path to not contain 'domain')"
+      ],
+      "suggestion": "Add a test that passes domain: 'crypto' and asserts the API call path includes 'domain=crypto' (if intended), OR asserts the path does NOT contain domain (if intentionally unimplemented). Either way, the behavior should be pinned by a test.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "discover_sources_cache_test_interference",
+      "summary": "discover-sources.ts has a module-level Map cache (catalogCache) that persists across test runs and can cause cross-test pollution",
+      "related_files": ["src/toolkit/tools/discover-sources.ts", "tests/toolkit/tools/discover-sources.test.ts"],
+      "evidence": [
+        "Line 20: `const catalogCache = new Map<string, Source[]>();` — module-level singleton",
+        "Once populated in a test run, subsequent tests in the same process see cached results from previous test's catalog file",
+        "Tests using different sourceCatalogPath values may get stale data from a previous test's path entry",
+        "No cache-clearing mechanism exposed for testing"
+      ],
+      "suggestion": "Add a `clearCatalogCache()` export (test-only) that clears the Map, and call it in test afterEach. Alternatively, move the cache to a closure-scoped parameter or class to enable injection.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "connect_error_paths_undertested",
+      "summary": "connect() critical error paths (symlink rejection, mode-600 failure, container detection fallback) lack dedicated targeted tests",
+      "related_files": ["src/toolkit/tools/connect.ts", "tests/toolkit/tools/connect.test.ts"],
+      "evidence": [
+        "connect.ts has 5 distinct early-exit paths: Zod validation, HTTPS enforcement, symlink rejection, mode-600 rejection, container detection fallback",
+        "The container detection logic (detectContainer()) reads 3 /proc files — has no test for the detection paths",
+        "The symlink rejection and mode-600 check are security-critical paths",
+        "connect.test.ts exists but its coverage of these specific paths needs verification"
+      ],
+      "suggestion": "Add tests that mock lstat() to return isSymbolicLink()=true (expect rejection), mock fd.stat() to return mode=0o644 (expect rejection in non-container), and mock /proc file reads for container detection paths.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Module-level cache in discover-sources.ts is an initialization coupling pattern that leaked into the test surface", "scan() domain parameter was added to the type/API but implementation was deferred — no test pinned the 'not yet implemented' behavior"],
+    "likely_symptoms": ["scan_domain_no_regression", "discover_sources_cache_test_interference"],
+    "possible_false_positives": ["state-helpers critical_untested mechanical flag — tests/toolkit/guards/state-helpers.test.ts exists, signal is stale"]
+  },
+  "context_updates": {
+    "test_strategy": {
+      "add": [
+        {
+          "header": "No snapshot tests — all assertions are behavioral",
+          "description": "Zero snapshot-based tests in the toolkit test suite. All assertions check specific values, error codes, and function contracts. Test suite is resilient to implementation refactoring.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Test quality enforcement layer is institutional",
+          "description": "Vitest globalSetup scans all test files for assertion-free tests before running. PostToolUse hook warns on write. The anti-vibe-testing culture is mechanically enforced, not just convention.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "security-critical paths have dedicated security-hardening tests",
+          "description": "tests/toolkit/security-hardening.test.ts covers SSRF validation, allowlist enforcement, AUTH_PENDING_TOKEN — security paths are treated as first-class test targets.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "discover-sources catalogCache causes cross-test pollution risk",
+          "description": "Module-level Map cache is never cleared between tests. Tests using different catalog paths in the same process may get stale results from a previous test's cache entry.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

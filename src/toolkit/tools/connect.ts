@@ -94,7 +94,7 @@ export async function connect(opts: ConnectOptions): Promise<DemosSession> {
     const wallet = parseWallet(walletContent);
 
     // Connect SDK and authenticate
-    const { demos, address, authToken } = await connectSdk(
+    const { demos, address, authToken } = await connectAndAuthenticate(
       wallet,
       rpcUrl,
       opts.algorithm ?? DEFAULT_ALGORITHM,
@@ -194,7 +194,7 @@ function parseWallet(content: string): WalletData {
  * Connect to SDK and authenticate. Uses lazy import to avoid
  * module-level side effects from sdk.ts.
  */
-async function connectSdk(
+async function connectAndAuthenticate(
   wallet: WalletData,
   rpcUrl: string,
   algorithm: string,
@@ -221,13 +221,8 @@ async function connectSdk(
     }
 
     // Connect wallet with algorithm selection
-    const connectOpts: Record<string, unknown> = {};
-    if (algorithm !== "ed25519") {
-      connectOpts.algorithm = algorithm;
-    }
-
-    const address = Object.keys(connectOpts).length > 0
-      ? await demos.connectWallet(mnemonic, connectOpts)
+    const address = algorithm !== "ed25519"
+      ? await demos.connectWallet(mnemonic, { algorithm })
       : await demos.connectWallet(mnemonic);
 
     // Authenticate with SuperColony API
@@ -243,6 +238,7 @@ async function connectSdk(
 
     return { demos, address, authToken };
   } catch (e) {
+    // All SDK errors surface as AUTH_FAILED — granular codes deferred until SDK exposes typed errors
     throw demosError(
       "AUTH_FAILED",
       `SDK connection failed: ${(e as Error).message}`,

@@ -68,6 +68,7 @@ async function checkConfirmation(session: DemosSession, txHash: string): Promise
   // When API is down, this throws and verify() retries per its retry schedule.
   try {
     const bridge = session.getBridge();
+    // Note: only checks last 50 posts — transactions older than the feed window return as unconfirmed
     const result = await bridge.apiCall(`/api/feed?limit=50`);
     if (!result.ok) {
       throw new Error(`Feed API returned ${result.status} — SuperColony API may be down`);

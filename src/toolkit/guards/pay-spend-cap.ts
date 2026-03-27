@@ -23,7 +23,7 @@ interface PaySpendState {
 
 const DEFAULT_STATE: PaySpendState = { entries: [] };
 
-/** Check if a payment is allowed */
+/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback */
 export async function checkPaySpendCap(
   store: StateStore,
   walletAddress: string,
@@ -62,7 +62,7 @@ export async function checkPaySpendCap(
   return error ? demosError("SPEND_LIMIT", error, false) : null;
 }
 
-/** Record a successful payment */
+/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback */
 export async function recordPayment(
   store: StateStore,
   walletAddress: string,

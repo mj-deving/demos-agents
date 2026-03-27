@@ -1,0 +1,102 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 18,
+  "assessments": {"contract_coherence": 83.0},
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "All public tool functions (publish, reply, scan, tip, react, verify, attest, pay, discoverSources, connect) return typed ToolResult<T> or throw — return type annotations are accurate for all paths",
+        "connect() documents `@throws {DemosError}` and throws consistently on auth failure, bad permissions, symlink — no silent null returns",
+        "disconnect() return type is void and side-effect (expire session) matches the name — contract is sound",
+        "checkAndRecordDedup/checkAndRecordWrite/checkAndRecordTip: `record: boolean = false` parameter correctly documents check-only vs check+record behavior. Name uses 'checkAndRecord' which accurately signals both capabilities",
+        "DemosSession.getBridge() throws `Error` (not DemosError) when bridge unavailable — inconsistent with toolkit error pattern but documented in JSDoc",
+        "session.getAuthToken() and session.getSigningHandle() are named 'get' but also call checkExpired() which can mark the session as expired (side effect). This is documented in JSDoc `@throws` comment but the getter name hides the potential mutation",
+        "verify() returns ok({ confirmed: false }) when all retries exhaust without finding the tx AND no error occurred — caller cannot distinguish 'not yet confirmed' from 'permanently not on chain' without additional context",
+        "scan() accepts opts.domain but the domain is never applied to filtering — function contract implies domain filtering works but it silently no-ops (cross-references design_coherence finding)",
+        "discoverSources() docstring says 'Session required for withToolWrapper integration — only sourceCatalogPath is used for logic' — honest about the session being passed but not for auth",
+        "pay() step comments (1-9) align precisely with the code flow — inline documentation matches implementation",
+        "withToolWrapper's `defaultErrorCode` parameter is documented as the code to use 'when an unhandled exception is thrown' — accurate, this is exactly how it is used in practice",
+        "SdkBridge interface method `getDemos()` documents `@throws {Error}` when allowRawSdk is false — this throw is clearly documented and consistently implemented",
+        "VALID_STATUSES in discover-sources.ts is flagged deprecated with 0 importers but normalizeStatus() still calls it — deprecated annotation is on the Set but normalizeStatus internally uses it. This is internal use, not an exported contract issue"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "scan() domain parameter is accepted in contract but never applied — a concrete contract violation. session.getAuthToken()/getSigningHandle() are getter-named methods with an expiry side effect (checkExpired can set _expired=true) which is non-obvious from the name alone, though JSDoc does document it."
+    }
+  },
+  "dimension_judgment": {
+    "contract_coherence": {
+      "dimension_character": "The toolkit maintains strong contract coherence overall: return types are accurate across all code paths, error throwing vs returning is documented and consistent, and withToolWrapper provides a uniform error-normalization contract. Two concrete defects exist: scan()'s domain option is accepted in the signature but silently dropped in implementation (unfulfilled contract), and session getter methods (getAuthToken, getSigningHandle) carry a checkExpired() side effect that marks the session as expired — a mutation hidden behind a getter name, though it is JSDoc-documented.",
+      "score_rationale": "Score of 83 reflects a codebase with correct return type discipline and consistent throw-vs-return patterns, but two real contract violations: a silently no-op parameter that callers reasonably trust to work (scan domain), and getter methods with hidden mutation side effects. These are discrete, fixable issues rather than pervasive pattern failures, landing the score in the good-but-not-excellent range."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "scan_domain_contract_violation",
+      "summary": "scan() accepts opts.domain in its contract but never applies the filter — silently no-ops",
+      "related_files": ["src/toolkit/tools/scan.ts"],
+      "evidence": [
+        "ScanOptions type defines `domain?: string` as an accepted parameter",
+        "scan() passes opts?.domain to fetchFeed() which accepts but ignores it — no query param, no post-filter",
+        "Callers calling scan(session, { domain: 'crypto' }) receive ALL posts, not domain-filtered results",
+        "The function's API contract (parameter exists → filter applies) is violated silently with no error or warning"
+      ],
+      "suggestion": "Either implement domain filtering (post-parse: `const filtered = domain ? posts.filter(p => p.category === domain || p.tags?.includes(domain)) : posts`) or remove the domain parameter from ScanOptions and ScanOptionsSchema until it is implemented. Returning unfiltered results while accepting a filter parameter is a contract lie.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "session_getter_expiry_side_effect",
+      "summary": "getAuthToken() and getSigningHandle() are getter-named but call checkExpired() which mutates _expired state",
+      "related_files": ["src/toolkit/session.ts"],
+      "evidence": [
+        "getAuthToken() line 113-116: calls this.checkExpired() before returning token",
+        "checkExpired() at line 166-170: calls `this.expired` getter which can set `this._expired = true` on first detection of timeout",
+        "Getter name convention implies read-only access — mutation of `_expired` is unexpected",
+        "JSDoc on getAuthToken documents `@throws {Error} if session is expired. Side effect: marks session as expired on first check` — side effect is acknowledged but name is still misleading"
+      ],
+      "suggestion": "Rename to `requireAuthToken()` and `requireSigningHandle()` to signal that these methods enforce a precondition and may throw. Alternatively, keep getter names but move expiry-marking into touch() and expire() only, making the `expired` getter truly read-only by not setting `_expired` in the getter path (instead letting the inactivity check return true without persisting). The JSDoc acknowledgment reduces the severity but does not remove the contract confusion.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "scan domain parameter was likely added speculatively with intent to implement server-side filtering — the unfulfilled parameter is a contract promise made before the implementation existed",
+      "Session getter names follow JavaScript convention (getX) but the expiry check was added as a security guard, creating a name-behavior mismatch that the author partially acknowledged in JSDoc"
+    ],
+    "likely_symptoms": [
+      "scan_domain_contract_violation"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "Return type and throw contracts accurate throughout",
+          "description": "Every public tool function returns ToolResult<T> with accurate types across all code paths. connect() consistently throws DemosError on all failure paths. No undocumented null returns from functions that declare non-nullable return types.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "checkAndRecord* naming accurately signals dual behavior",
+          "description": "The checkAndRecord* naming convention (checkAndRecordTip, checkAndRecordWrite, checkAndRecordDedup) with a boolean `record` parameter is an honest contract — the name signals both operations are available and the parameter controls which occurs. This avoids hidden side effects.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "scan domain filter is unfulfilled contract promise",
+          "description": "ScanOptions.domain is accepted by scan() but never applied — neither as a query param nor post-parse filter. Any caller relying on domain filtering gets silently unfiltered results. The parameter is a contract lie.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

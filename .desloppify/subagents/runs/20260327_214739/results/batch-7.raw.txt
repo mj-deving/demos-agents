@@ -1,0 +1,74 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {"dependency_health": 87.0},
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "package.json production dependencies: @anthropic-ai/sdk, @kynesyslabs/demosdk, proper-lockfile, yaml, zod — all 5 are actively used in production src/toolkit/ code.",
+        "@anthropic-ai/sdk: previously flagged as unused in toolkit, resolved. Current scan confirms: src/lib/llm-provider.ts uses it, and the package.json note 'LLM provider-agnostic' suggests it is legitimately a runtime dep for the CLI harness.",
+        "proper-lockfile: used directly in src/toolkit/state-store.ts (import lockfile from 'proper-lockfile') — correctly scoped.",
+        "yaml: used in config loading and strategy parsing across the non-toolkit CLI path. Correctly a runtime dep.",
+        "zod: used extensively in src/toolkit/schemas.ts with 11 schemas — justified.",
+        "@kynesyslabs/demosdk: core SDK, imported via lazy dynamic imports in connect.ts, sdk-bridge.ts. Correctly a runtime dep.",
+        "No multiple-library duplicates detected: only one date/time utility pattern (Date.now()), no moment/dayjs conflict, no axios/fetch duplication (uses native fetch everywhere).",
+        "No circular dependency cycles visible in the import graph — the dependency directions are strictly: tools/ → toolkit/ → (none), guards/ → toolkit/, with no back-edges.",
+        "Dev dependencies are all appropriate: @auth/agent, playwright, tsx, typescript, vitest. No production logic leaked into devDependencies.",
+        "One version concern: @anthropic-ai/sdk at ^0.78.0 with no lock-file pinning visible in package.json (uses ^, not exact version). Lock file exists but is not evaluated here.",
+        "proper-lockfile is pulled in for cooperative file locking — it is a light, focused dependency for a specific use case. Not over-engineered.",
+        "issues_preventing_higher_score: @anthropic-ai/sdk at ^0.78.0 is a heavy SDK (~6MB) used only for LLM completions in the non-toolkit CLI layer; the toolkit itself (src/toolkit/) has no direct imports from it. This is a legitimate dependency given the project scope but represents a weight mismatch for anyone consuming only the toolkit package."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "@anthropic-ai/sdk is a heavy dependency (~6MB) whose use is confined to the LLM provider layer outside src/toolkit/ — toolkit consumers are unnecessarily burdened by it when the packages/core barrel exports only toolkit code."
+    }
+  },
+  "dimension_judgment": {
+    "dependency_health": {
+      "dimension_character": "The production dependency set is minimal and purposeful: 5 packages, each with clear direct usage in production code. No duplicate-purpose libraries, no circular cycles, no leak of dev tooling into production. The only concern is @anthropic-ai/sdk being a heavier dependency (~6MB Anthropic SDK) used exclusively outside src/toolkit/, which matters for future packaging but not for the current monorepo structure.",
+      "score_rationale": "Score 87/100 — above average, not perfect. The dependency set is clean and well-curated with no duplication or phantom deps. Held below 90 by the @anthropic-ai/sdk weight asymmetry: if packages/core is ever published as a standalone npm package, it would inherit this heavy dep despite having zero direct toolkit imports from it. For the current private monorepo this is low severity."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "anthropic_sdk_weight_asymmetry",
+      "summary": "@anthropic-ai/sdk is a heavy production dep (~6MB) with zero direct imports in src/toolkit/ — burdens future toolkit packaging",
+      "related_files": ["package.json", "packages/core/package.json"],
+      "evidence": [
+        "package.json lists @anthropic-ai/sdk as a production dependency at ^0.78.0",
+        "grep of src/toolkit/ shows zero direct imports from @anthropic-ai/sdk",
+        "packages/core/ re-exports from src/toolkit/ barrel — any consumer of @demos-agents/core inherits the full dependency graph including @anthropic-ai/sdk",
+        "The actual SDK usage is in src/lib/llm-provider.ts (CLI harness layer), which is outside the toolkit boundary"
+      ],
+      "suggestion": "When packages/core is published, move @anthropic-ai/sdk to a separate CLI/harness package or make it an optional peer dependency. For now, document that toolkit consumers will pull this dep transitively.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Monorepo structure means toolkit code and CLI harness share a single package.json — @anthropic-ai/sdk is legitimately needed by the CLI but the toolkit doesn't use it"],
+    "likely_symptoms": ["anthropic_sdk_weight_asymmetry"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Production dependency set is minimal and purposeful",
+          "description": "All 5 production dependencies (anthropic sdk, demosdk, proper-lockfile, yaml, zod) have clear direct usage. No phantom, duplicate, or over-engineered dependencies.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "@anthropic-ai/sdk weight asymmetry in toolkit packaging",
+          "description": "SDK is used only in src/lib/llm-provider.ts (CLI layer), not in src/toolkit/. When packages/core is published as a standalone package it will unnecessarily inherit this ~6MB dep.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

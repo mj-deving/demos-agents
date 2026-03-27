@@ -2416,6 +2416,264 @@
       }
     }
   ],
+  "narrative": {
+    "phase": "middle_grind",
+    "headline": "\u26a0 4 security issues \u2014 review before other cleanup. 58 issues open. API coherence (67.0%) needs attention \u2014 run `desloppify next` to start.",
+    "dimensions": {
+      "lowest_dimensions": [
+        {
+          "name": "API coherence",
+          "strict": 67.0,
+          "failing": 0,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        },
+        {
+          "name": "Error consistency",
+          "strict": 68.0,
+          "failing": 0,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        },
+        {
+          "name": "Mid elegance",
+          "strict": 68.0,
+          "failing": 0,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        }
+      ],
+      "biggest_gap_dimensions": [],
+      "stagnant_dimensions": [
+        {
+          "name": "File health",
+          "strict": 100.0,
+          "stuck_scans": 5
+        },
+        {
+          "name": "Duplication",
+          "strict": 100.0,
+          "stuck_scans": 5
+        },
+        {
+          "name": "Type safety",
+          "strict": 71.0,
+          "stuck_scans": 5
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "auto_fix",
+        "detector": "unused",
+        "count": 8,
+        "description": "8 unused issues \u2014 run `desloppify autofix unused-imports --dry-run` to preview, then apply",
+        "command": "desloppify autofix unused-imports --dry-run",
+        "impact": 0.0,
+        "dimension": "Code quality",
+        "priority": 1,
+        "lane": "cleanup"
+      },
+      {
+        "type": "auto_fix",
+        "detector": "logs",
+        "count": 5,
+        "description": "5 logs issues \u2014 run `desloppify autofix debug-logs --dry-run` to preview, then apply",
+        "command": "desloppify autofix debug-logs --dry-run",
+        "impact": 0.0,
+        "dimension": "Code quality",
+        "priority": 2,
+        "lane": "cleanup"
+      },
+      {
+        "type": "refactor",
+        "detector": "test_coverage",
+        "count": 7,
+        "description": "7 test_coverage work items \u2014 review test coverage gaps \u2014 focus on critical modules with many importers first; defer test writing until code quality issues are resolved",
+        "command": "desloppify show test_coverage --status open",
+        "impact": 0.0,
+        "dimension": "Test health",
+        "priority": 3,
+        "lane": "test_coverage"
+      },
+      {
+        "type": "manual_fix",
+        "detector": "smells",
+        "count": 30,
+        "description": "30 smells issues \u2014 inspect with `desloppify next` and fix manually",
+        "command": "desloppify show smells --status open",
+        "impact": 0.0,
+        "dimension": "Code quality",
+        "priority": 4,
+        "lane": "refactor"
+      },
+      {
+        "type": "manual_fix",
+        "detector": "deprecated",
+        "count": 4,
+        "description": "4 deprecated work items \u2014 remove deprecated symbols or migrate callers",
+        "command": "desloppify show deprecated --status open",
+        "impact": 0.0,
+        "dimension": "Code quality",
+        "priority": 5,
+        "lane": "refactor"
+      },
+      {
+        "type": "manual_fix",
+        "detector": "security",
+        "count": 4,
+        "description": "4 security work items \u2014 review and fix security issues \u2014 prioritize by severity",
+        "command": "desloppify show security --status open",
+        "impact": 0.0,
+        "dimension": "Security",
+        "priority": 6,
+        "lane": "refactor"
+      }
+    ],
+    "strategy": {
+      "fixer_leverage": {
+        "auto_fixable_count": 13,
+        "total_count": 58,
+        "coverage": 0.224,
+        "impact_ratio": 0.0,
+        "recommendation": "moderate"
+      },
+      "lanes": {
+        "cleanup": {
+          "actions": [
+            2,
+            1
+          ],
+          "file_count": 7,
+          "total_impact": 0.0,
+          "automation": "full",
+          "run_first": true
+        },
+        "refactor": {
+          "actions": [
+            4,
+            5,
+            6
+          ],
+          "file_count": 19,
+          "total_impact": 0.0,
+          "automation": "manual",
+          "run_first": false
+        },
+        "test_coverage": {
+          "actions": [
+            3
+          ],
+          "file_count": 7,
+          "total_impact": 0.0,
+          "automation": "manual",
+          "run_first": false
+        }
+      },
+      "can_parallelize": true,
+      "hint": "2 independent workstreams, safe to parallelize. Rescan after each phase to verify."
+    },
+    "tools": {
+      "fixers": [
+        {
+          "name": "unused-imports",
+          "detector": "unused",
+          "open_count": 8,
+          "command": "desloppify autofix unused-imports --dry-run"
+        },
+        {
+          "name": "unused-vars",
+          "detector": "unused",
+          "open_count": 8,
+          "command": "desloppify autofix unused-vars --dry-run"
+        },
+        {
+          "name": "unused-params",
+          "detector": "unused",
+          "open_count": 8,
+          "command": "desloppify autofix unused-params --dry-run"
+        },
+        {
+          "name": "debug-logs",
+          "detector": "logs",
+          "open_count": 5,
+          "command": "desloppify autofix debug-logs --dry-run"
+        },
+        {
+          "name": "dead-useeffect",
+          "detector": "smells",
+          "open_count": 30,
+          "command": "desloppify autofix dead-useeffect --dry-run"
+        },
+        {
+          "name": "empty-if-chain",
+          "detector": "smells",
+          "open_count": 30,
+          "command": "desloppify autofix empty-if-chain --dry-run"
+        }
+      ],
+      "move": {
+        "available": true,
+        "relevant": false,
+        "reason": null,
+        "usage": "desloppify move <source> <dest> [--dry-run]"
+      },
+      "plan": {
+        "command": "desloppify plan",
+        "description": "Generate prioritized markdown cleanup plan"
+      },
+      "badge": {
+        "generated": true,
+        "in_readme": false,
+        "path": "scorecard.png",
+        "recommendation": "Add to README: <img src=\"scorecard.png\" width=\"100%\">"
+      }
+    },
+    "debt": {
+      "overall_gap": 0.0,
+      "wontfix_count": 1,
+      "worst_dimension": null,
+      "worst_gap": 0.0,
+      "trend": "stable"
+    },
+    "milestone": null,
+    "primary_action": {
+      "command": "desloppify autofix unused-imports --dry-run",
+      "description": "8 unused issues \u2014 run `desloppify autofix unused-imports --dry-run` to preview, then apply"
+    },
+    "why_now": "2 independent workstreams, safe to parallelize. Rescan after each phase to verify.",
+    "verification_step": {
+      "command": "desloppify scan",
+      "reason": "revalidate after changes"
+    },
+    "risk_flags": [
+      {
+        "type": "wontfix_gap",
+        "severity": "medium",
+        "message": "Strict/lenient gap is 0.0 pts with 1 wontfix issues"
+      }
+    ],
+    "strict_target": {
+      "target": 85.0,
+      "current": 76.2,
+      "gap": 8.8,
+      "state": "below",
+      "warning": null
+    },
+    "reminders": [],
+    "reminder_history": {
+      "auto_fixers_available": 3,
+      "dry_run_first": 3,
+      "report_scores": 4,
+      "review_issues_pending": 3,
+      "stagnant_nudge": 5,
+      "feedback_nudge": 3,
+      "review_not_run": 2
+    }
+  },
   "config": {
     "review_max_age_days": 30,
     "review_batch_max_files": 80,
@@ -2454,5 +2712,6 @@
     "retrospective_max_issues": 30,
     "retrospective_max_batch_items": 20,
     "config_hash": "0b16d334353f5d48c8353a9d4b32020e949e8542399d0c6105d6ba3ad12eea79"
-  }
+  },
+  "next_command": "desloppify review --run-batches --runner codex --parallel --scan-after-import"
 }

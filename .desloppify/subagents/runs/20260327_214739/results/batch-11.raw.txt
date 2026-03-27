@@ -1,0 +1,75 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {"api_surface_coherence": 77.0},
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "All 10 public tools follow identical shape: (session: DemosSession, opts: XxxOptions) => Promise<ToolResult<XxxResult>>. Highly consistent parameter ordering.",
+        "connect() is a documented intentional exception — it throws DemosError rather than returning ToolResult. Previously flagged and resolved with @throws JSDoc annotation.",
+        "disconnect() returns void (not ToolResult) — matches session-lifecycle semantics but creates a mixed sync/async pair: connect() is async/throws, disconnect() is sync/void.",
+        "scan() and discoverSources() accept optional opts (opts?: ScanOptions) while all other tools require opts. Inconsistency is documented and schema-handles undefined.",
+        "reply() does Zod validation inline before delegating to publish(), rather than using withToolWrapper — different from every other tool which uses withToolWrapper as the outermost layer. If validation fails, reply() returns err() with latencyMs: 0 (no session.touch() called). This is a subtle deviation.",
+        "Guards exported from index.ts expose checkAndRecordWrite(store, walletAddress, record) while tool-facing APIs use (session, opts) — different abstraction levels side-by-side in public surface.",
+        "ConnectOptions has 12 fields — largest options object in the surface. Not unreasonable given session configuration needs, but notable.",
+        "All result types (PublishResult, TipResult, ReactResult etc.) are shallow and well-bounded — no bloat.",
+        "validateInput() helper is a uniform internal adapter used consistently across all 10 tools."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "api_surface_coherence": {
+      "dimension_character": "The toolkit public API is highly coherent for its core 10 tools — uniform (session, opts) shape, consistent ToolResult<T> return types, and Zod validation at every entry point. Two structural exceptions exist: connect/disconnect use throw/void semantics (intentional, documented), and reply() bypasses withToolWrapper for its validation path, silently skipping session.touch() on input errors.",
+      "score_rationale": "The codebase scores well above average for API surface coherence — consistent shape, typed contracts, and documented exceptions. The reply() validation bypass (no withToolWrapper wrapper, latencyMs:0, no touch()) is a genuine defect that creates an observable behavior difference from all sibling tools. The guard-vs-tool abstraction gap in the public export surface is a minor coherence cost. Score 77 reflects a strong surface with two actionable deviations."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "asc_reply_bypass_wrapper",
+      "summary": "reply() validates input outside withToolWrapper — session.touch() not called and latencyMs is 0 on validation failure",
+      "related_files": ["src/toolkit/tools/publish.ts"],
+      "evidence": [
+        "reply() calls validateInput() before delegating to publish(). On failure, returns err(inputError, { path: 'local', latencyMs: 0 }) with no session.touch() and no onToolCall notification.",
+        "Every other tool (publish, scan, tip, react, attest, verify, pay, discoverSources) wraps all logic inside withToolWrapper which handles touch(), timing, and onToolCall.",
+        "This means: (a) session inactivity timer is not reset on reply() input errors, (b) onToolCall observer never fires for reply() failures, (c) latencyMs is always 0 for validation errors instead of actual elapsed time."
+      ],
+      "suggestion": "Wrap reply()'s body in withToolWrapper, moving validateInput inside the wrapper fn. This aligns reply() with all sibling tools and ensures touch()/onToolCall fire consistently.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["reply() was written as a thin delegator and the withToolWrapper pattern was not applied at the outer boundary before delegation"],
+    "likely_symptoms": ["asc_reply_bypass_wrapper"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Uniform (session, opts) shape across all 10 tools",
+          "description": "Every tool follows the same parameter ordering and return type. This consistency is a deliberate design constraint enforced by the shared withToolWrapper and ToolResult<T> types.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "connect/disconnect exception is intentional and documented",
+          "description": "connect() throws DemosError and disconnect() returns void — these deviate from ToolResult by design because they manage session lifecycle rather than tool operations. The @throws JSDoc annotation documents this contract explicitly.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "reply() bypasses withToolWrapper on validation failure",
+          "description": "reply() validates before delegating to publish() rather than wrapping all logic in withToolWrapper. This silently breaks session.touch(), onToolCall notification, and latencyMs accuracy for validation error paths.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

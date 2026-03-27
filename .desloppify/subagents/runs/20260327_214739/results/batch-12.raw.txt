@@ -1,0 +1,79 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 12,
+  "assessments": {"authorization_consistency": 74.0},
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "URL allowlist enforcement pattern exists in publish.ts (executePublishPipeline), attest.ts, and pay.ts — all three apply the same allowlist check before SSRF validation. scan.ts, verify.ts, react.ts, and tip.ts do NOT apply allowlist checks before their API calls.",
+        "scan() calls bridge.apiCall('/api/feed') without any URL validation — the feed URL is hardcoded but the pattern is inconsistent with attest/pay/publish which validate all outbound URLs.",
+        "verify() calls bridge.apiCall('/api/feed') — same gap as scan().",
+        "react() calls bridge.apiCall('/api/react') — same gap.",
+        "tip() calls bridge.apiCall('/api/feed') for recipient resolution — same gap.",
+        "SSRF validateUrl() is called in: attest (line 41), pay (line 60), publish (executePublishPipeline line 93). Not called in: scan, verify, react, tip. The asymmetry is partially justified (apiCall goes to a configured supercolonyApi endpoint, not user-provided URLs), but the defense-in-depth gap is real.",
+        "requirePayeeApproval defaults to true in session.ts — strong positive default for pay().",
+        "connect() enforces HTTPS on rpcUrl and checks wallet file permissions (600 mode) — consistent security posture at session creation.",
+        "Auth token stored behind Symbol in DemosSession — not globally discoverable. toJSON() redacts sensitive fields. Consistent across the session.",
+        "No route-level auth decorators to compare (not a web framework) — auth is session-scoped and correct for the domain."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "authorization_consistency": {
+      "dimension_character": "The toolkit applies URL validation and allowlist checks consistently to tools that accept user-supplied URLs (attest, pay, publish), but skips these checks for tools that make outbound API calls to configured endpoints (scan, verify, react, tip). This asymmetry is partially justified by the distinction between user-controlled URLs and SDK-bridge-routed API calls, but creates an inconsistent trust model that is not documented as a design decision.",
+      "score_rationale": "The positive security foundations are solid: Symbol-based token storage, HTTPS enforcement, requirePayeeApproval default-true, SSRF blocklist on user URLs. The gap is that 4 of 10 tools (scan, verify, react, tip) make outbound network calls without the URL validation applied to their siblings — even if those calls go to a configured base URL, the pattern inconsistency reduces confidence and would surprise a security reviewer. Score 74 — good baseline, documented asymmetry is the primary drag."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "authc_scan_verify_react_tip_no_url_validation",
+      "summary": "scan/verify/react/tip make outbound API calls without SSRF validation applied to sibling tools (attest/pay/publish)",
+      "related_files": [
+        "src/toolkit/tools/scan.ts",
+        "src/toolkit/tools/verify.ts",
+        "src/toolkit/tools/react.ts",
+        "src/toolkit/tools/tip.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "scan.ts fetchFeed calls bridge.apiCall('/api/feed?limit=...') — no validateUrl(), no allowlist check.",
+        "verify.ts checkConfirmation calls bridge.apiCall('/api/feed?limit=50') — no URL validation.",
+        "react.ts calls bridge.apiCall('/api/react') — no URL validation.",
+        "tip.ts calls bridge.apiCall('/api/feed?limit=50') for recipient resolution — no URL validation.",
+        "In contrast, attest.ts, pay.ts, and publish.ts all call validateUrl() before any outbound request.",
+        "The supercolonyApi base URL is set at connect() time and not re-validated at call time — a SSRF mitigation could be centralized in the bridge's apiCall."
+      ],
+      "suggestion": "Add SSRF validation for the supercolonyApi base URL in SdkBridge at bridge construction time (once per session) rather than per-call. Document the trust model: 'user-supplied URLs are validated per-call; session-configured endpoints are validated at connect time.' This resolves the inconsistency without adding per-call overhead to scan/verify/react/tip.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["URL validation was applied at the tool level when user-supplied URLs were the concern (attest, pay, publish), but not centralized in the bridge for all outbound HTTP — creates a trust model split that is not documented"],
+    "likely_symptoms": ["authc_scan_verify_react_tip_no_url_validation"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "User-supplied URLs validated; bridge API calls not validated",
+          "description": "The trust model splits: tools accepting user URLs (attest, pay, publish) apply SSRF validation per-call. Tools using the session-configured supercolonyApi endpoint (scan, verify, react, tip) do not. This is partially justified but undocumented.",
+          "settled": false,
+          "positive": false
+        },
+        {
+          "header": "requirePayeeApproval defaults to true — strong security default",
+          "description": "pay() requires explicit trustedPayees or requirePayeeApproval:false to send funds. This is a secure-by-default configuration that prevents accidental payments to untrusted recipients.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

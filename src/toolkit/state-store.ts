@@ -14,14 +14,16 @@ import { homedir } from "node:os";
 import lockfile from "proper-lockfile";
 import type { StateStore, Unlock } from "./types.js";
 
-const DEFAULT_STATE_DIR = resolve(homedir(), ".config", "demos");
+function getDefaultStateDir(): string {
+  return resolve(homedir(), ".config", "demos");
+}
 
 export class FileStateStore implements StateStore {
   private readonly dir: string;
   private dirEnsured = false;
 
   constructor(dir?: string) {
-    this.dir = dir ?? DEFAULT_STATE_DIR;
+    this.dir = dir ?? getDefaultStateDir();
   }
 
   async get(key: string): Promise<string | null> {

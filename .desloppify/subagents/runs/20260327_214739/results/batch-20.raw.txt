@@ -1,0 +1,106 @@
+{
+  "batch": "type_safety",
+  "batch_index": 20,
+  "assessments": {"type_safety": 72.0},
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "schemas.ts: bidirectional compile-time type sync assertions (Forward: z.output<Schema> extends Interface, Reverse: Interface extends z.input<Schema>) for all 10 tool input types — strong positive pattern preventing schema/interface drift",
+        "sdk-bridge.ts lines 301-308: 6 chained `(result as any)?.` expressions to extract txHash from SDK broadcast response — necessary because SDK returns polymorphic shapes but the `any` chain bypasses type safety for the whole txHash extraction block",
+        "sdk-bridge.ts line 150: `const rpc = demos as unknown as DemosRpcMethods` — single cast at factory level, then typed `rpc` used throughout. This is a controlled cast pattern: one cast site, then typed from there.",
+        "sdk-bridge.ts: DemosRpcMethods interface defines the minimal typed surface expected from demos SDK — this is an intentional typing shell that isolates SDK volatility. The `as any` chains in publishHivePost are separate from this.",
+        "connect.ts: `signingHandle: unknown` in WalletData interface — the signing handle is typed as unknown because it is parsed from JSON. This is appropriate at the parsing boundary.",
+        "session.ts: `(this as Record<symbol, unknown>)[AUTH_TOKEN]` pattern for symbol-keyed storage — TypeScript does not support symbol-indexed access on typed classes, so the cast is necessary. No unsafe cast escapes the class boundary.",
+        "discover-sources.ts lines 72-84: `entries.map((entry: Record<string, unknown>) => ...)` — each field access is explicitly cast (`entry.id as string`). Verbose but type-accurate: each field is narrowed before use.",
+        "discover-sources.ts line 73: `safeParse(raw) as Record<string, unknown>` — cast is necessary because safeParse returns `unknown`. Acceptable at parse boundaries.",
+        "backoff.ts lines 50-54: `lastResult!.error!.code` — non-null assertions after loop; logically safe (attempt=0 always runs, error is checked before reaching this point) but TypeScript cannot verify this statically.",
+        "tool-wrapper.ts line 46: `(e as import('../types.js').DemosError)` — cast inside error handling, but only after a runtime check `isDemosError` confirmed the shape. This is a type narrowing pattern, not an unsafe cast.",
+        "ScanOptions, DiscoverSourcesOptions intentionally omitted from compile-time sync assertions in schemas.ts because they use .optional() which introduces undefined in the type — comment explains the omission.",
+        "connect.ts: `connectOpts: Record<string, unknown>` for SDK options passed to connectWallet — no stronger type exists since SDK options are opaque. Appropriate use of Record.",
+        "sdk-bridge.ts `TxModule` interface types `store/confirm/broadcast` returning `Promise<unknown>` — SDK tx module returns are untyped in the SDK itself, so unknown is the honest type here.",
+        "No `@ts-ignore` or `// @ts-expect-error` comments found across toolkit files — type suppressions are not used to paper over problems"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "sdk-bridge.ts publishHivePost uses 6 chained `(result as any)?.` expressions for txHash extraction — a typed interface for the broadcast response shape would eliminate these. The `as any` chains mean TypeScript provides no protection for the txHash extraction path, which is security-sensitive (on-chain tx confirmation). This is the most impactful type safety issue."
+    }
+  },
+  "dimension_judgment": {
+    "type_safety": {
+      "dimension_character": "The toolkit shows strong type discipline at the boundaries that matter most: Zod schemas with bidirectional compile-time assertions, single-point SDK casts with typed facades, and no ts-ignore suppressions. The significant weakness is sdk-bridge.ts publishHivePost's txHash extraction using 6 chained `(result as any)?.` expressions — the broadcast response shape is untyped, leaving a security-sensitive path without type protection. The rest of the `as unknown as Type` casting is controlled and isolated to genuine typing boundaries.",
+      "score_rationale": "Score of 72 reflects a codebase with strong type discipline in the contract/schema layer but meaningful weakness in the SDK response handling. The Zod bidirectional assertions are a best-practice positive, but the any-chain for txHash extraction in the most security-critical path (on-chain publish confirmation) is a real gap. Type safety is the weakest dimension per operational knowledge (71%), and the evidence confirms this pattern."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "sdk_bridge_any_chain_txhash",
+      "summary": "publishHivePost txHash extraction uses 6 chained `(result as any)?.` expressions — no type protection on on-chain confirmation path",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Lines 301-308: `const confirmHash = (validity as any)?.response?.data?.transaction?.hash;` + 5 more `(result as any)?.` chains",
+        "txHash is used as the return value of publishHivePost — if the SDK changes response shape, TypeScript provides no warning, and the function falls through to `throw new Error('HIVE post broadcast succeeded but txHash not found')`",
+        "The pattern `(x as any)?.a?.b?.c` is equivalent to unchecked JavaScript — TypeScript gives zero type errors even if the property names are wrong",
+        "The broadcast response is typed as `unknown` from TxModule.broadcast() — this is honest, but the extraction should use typed guards or a local interface for known shapes"
+      ],
+      "suggestion": "Define a local interface for the known SDK broadcast response shapes: `interface BroadcastResponse { response?: { data?: { transaction?: { hash?: string } }; results?: Record<string, { hash?: string }> }; hash?: string; txHash?: string; }`. Then cast `result as BroadcastResponse` once and access typed properties. This provides TypeScript validation of property names without requiring changes to the upstream SDK types.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "backoff_non_null_assertions",
+      "summary": "backoff.ts uses non-null assertions (!) on lastResult and lastResult.error after loop — TypeScript cannot verify safety",
+      "related_files": ["src/toolkit/guards/backoff.ts"],
+      "evidence": [
+        "Lines 50-54: `lastResult!.error!.code` and `lastResult!.error!.message` and `lastResult!.provenance`",
+        "lastResult is `ToolResult<T> | undefined` — the undefined case is reachable if loop never executes (MAX_RETRIES=0 would mean attempt 0 runs once, but the ! signals the developer cannot prove this to TypeScript)",
+        "The retry loop always runs attempt=0, so lastResult IS always set, but TypeScript cannot prove it from the type alone",
+        "The error assertion `lastResult!.error!` is also unsafe: a ToolResult can have `ok: true` with no error — this branch is only reached when the last result had a retryable error, but the type doesn't encode that"
+      ],
+      "suggestion": "Add a type-safe check before the exhaustion return: `if (!lastResult || lastResult.ok || !lastResult.error) { return err(demosError('NETWORK_ERROR', 'Retry loop exhausted without error', false), { path: 'local', latencyMs: 0 }); }`. This eliminates non-null assertions and makes the control flow verifiable without relying on implicit knowledge of MAX_RETRIES.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "sdk-bridge.ts any-chains reflect genuine SDK opacity — the Demos SDK does not publish TypeScript types for its broadcast response shapes, so the author used any-chaining rather than defining local interfaces for known shapes",
+      "Backoff non-null assertions reflect a pattern where the developer knows the invariant (loop runs at least once, error is set) but TypeScript cannot prove it — the fix is to add an explicit guard rather than assert"
+    ],
+    "likely_symptoms": [
+      "sdk_bridge_any_chain_txhash"
+    ],
+    "possible_false_positives": [
+      "session.ts symbol-indexed casts — necessary for TypeScript symbol storage, not a type safety defect",
+      "discover-sources.ts field casts — controlled boundary casts on parsed JSON, not type safety gaps"
+    ]
+  },
+  "context_updates": {
+    "type_safety": {
+      "add": [
+        {
+          "header": "Zod bidirectional compile-time assertions are best practice",
+          "description": "schemas.ts uses both forward (schema output extends interface) and reverse (interface extends schema input) type assertions to prevent drift. This is a proactive type safety measure that catches missing required fields and schema/interface divergence at compile time.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Single-point SDK cast with typed facade is controlled",
+          "description": "sdk-bridge.ts casts demos to DemosRpcMethods once at factory scope, then uses the typed `rpc` variable throughout the bridge. This isolates the cast to one location and provides type safety for all subsequent SDK method calls.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "publishHivePost txHash extraction is untyped any-chain",
+          "description": "The on-chain publish confirmation path uses 6 `(result as any)?.` chains to extract txHash from the SDK broadcast response. No TypeScript protection exists for this security-sensitive path. A local interface for known response shapes would address this.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

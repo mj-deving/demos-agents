@@ -52,7 +52,7 @@ export type {
   PayResult,
 } from "./types.js";
 
-export { ok, err, demosError } from "./types.js";
+export { ok, err, demosError, isDemosError } from "./types.js";
 
 // ── Session ─────────────────────────────────────────
 
