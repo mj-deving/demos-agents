@@ -6,8 +6,6 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import type { DiscoverSourcesOptions, DiscoverSourcesResult, Source, SourceStatus, ToolResult } from "../types.js";
 import { ok, err, demosError } from "../types.js";
@@ -19,13 +17,13 @@ import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 // Module-level catalog cache (keyed by path — catalog is static per process)
 const catalogCache = new Map<string, Source[]>();
 
-// Bundled catalog path (relative to project root)
-const BUNDLED_CATALOG_PATH = resolve(
-  fileURLToPath(import.meta.url).replace(/\/src\/toolkit\/tools\/.*$/, ""),
-  "config",
-  "sources",
-  "catalog.json",
-);
+/** Clear the catalog cache — exposed for test isolation (call in beforeEach). */
+export function clearCatalogCache(): void {
+  catalogCache.clear();
+}
+
+// Bundled catalog path — resolved relative to this file's location (no fragile regex)
+const BUNDLED_CATALOG_PATH = new URL("../../../config/sources/catalog.json", import.meta.url).pathname;
 
 /**
  * Discover available data sources from the bundled catalog.

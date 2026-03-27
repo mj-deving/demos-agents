@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DemosSession } from "../../../src/toolkit/session.js";
 import { FileStateStore } from "../../../src/toolkit/state-store.js";
-import { discoverSources } from "../../../src/toolkit/tools/discover-sources.js";
+import { discoverSources, clearCatalogCache } from "../../../src/toolkit/tools/discover-sources.js";
 
 function createTestSession(tempDir: string, overrides?: Partial<ConstructorParameters<typeof DemosSession>[0]>) {
   return new DemosSession({
@@ -25,7 +25,10 @@ function createTestSession(tempDir: string, overrides?: Partial<ConstructorParam
 describe("discoverSources()", () => {
   let tempDir: string;
 
-  beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), "demos-discover-test-")); });
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), "demos-discover-test-"));
+    clearCatalogCache();
+  });
   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
 
   it("returns sources filtered by domain", async () => {

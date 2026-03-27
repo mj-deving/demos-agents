@@ -45,13 +45,16 @@ export async function withBackoff<T>(
   }
 
   // All retries exhausted — return the last error with updated message
+  if (!lastResult?.error) {
+    throw new Error("backoff: no result after retries — this should be unreachable");
+  }
   return err<T>(
     demosError(
-      lastResult!.error!.code,
-      `${lastResult!.error!.message} (after ${MAX_RETRIES} retries)`,
+      lastResult.error.code,
+      `${lastResult.error.message} (after ${MAX_RETRIES} retries)`,
       false,
     ),
-    lastResult!.provenance,
+    lastResult.provenance,
   );
 }
 

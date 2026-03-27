@@ -10,6 +10,17 @@ import type { StateStore, DemosError, PayPolicy } from "../types.js";
 import { demosError } from "../types.js";
 import { stateKey, checkAndAppend, appendEntry, loadState, GUARD_LOCK_TTL_MS, DAY_MS } from "./state-helpers.js";
 
+/** Shared validation for payment amount — used by both check and reserve paths */
+function validatePayAmount(amount: number, maxPerCall: number): DemosError | null {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return demosError("INVALID_INPUT", "Payment amount must be a positive finite number", false);
+  }
+  if (amount > maxPerCall) {
+    return demosError("SPEND_LIMIT", `Payment ${amount} DEM exceeds per-call max ${maxPerCall} DEM`, false);
+  }
+  return null;
+}
+
 interface PayEntry {
   timestamp: number;
   amount: number;
@@ -30,19 +41,8 @@ export async function checkPaySpendCap(
   amount: number,
   policy: Required<PayPolicy>,
 ): Promise<DemosError | null> {
-  // Validate input before any comparison (NaN > X is always false, would bypass maxPerCall)
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return demosError("INVALID_INPUT", "Payment amount must be a positive finite number", false);
-  }
-
-  // Per-call max (no lock needed)
-  if (amount > policy.maxPerCall) {
-    return demosError(
-      "SPEND_LIMIT",
-      `Payment ${amount} DEM exceeds per-call max ${policy.maxPerCall} DEM`,
-      false,
-    );
-  }
+  const amountError = validatePayAmount(amount, policy.maxPerCall);
+  if (amountError) return amountError;
 
   const key = stateKey("pay-spend", walletAddress);
   const { error } = await checkAndAppend<PaySpendState, PayEntry>(
@@ -94,19 +94,9 @@ export async function reservePaySpend(
   url: string,
   policy: Required<PayPolicy>,
 ): Promise<{ error: DemosError | null; rollback: () => Promise<void> }> {
-  // Validate finiteness first (NaN > X is always false — would bypass maxPerCall)
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return {
-      error: demosError("INVALID_INPUT", "Payment amount must be a positive finite number", false),
-      rollback: async () => {},
-    };
-  }
-
-  if (amount > policy.maxPerCall) {
-    return {
-      error: demosError("SPEND_LIMIT", `Payment ${amount} DEM exceeds per-call max ${policy.maxPerCall} DEM`, false),
-      rollback: async () => {},
-    };
+  const amountError = validatePayAmount(amount, policy.maxPerCall);
+  if (amountError) {
+    return { error: amountError, rollback: async () => {} };
   }
 
   const key = stateKey("pay-spend", walletAddress);

@@ -149,7 +149,7 @@ describe("ISC-32: apiCall() typed errors with logging", () => {
 
     expect(result.ok).toBe(false);
     expect(result.status).toBe(0);
-    expect(result.data).toBe("network down");
+    expect(result.data).toBe("[Error] network down");
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("[demos-toolkit] apiCall failed: network down"),
     );
@@ -179,7 +179,7 @@ describe("ISC-32: apiCall() typed errors with logging", () => {
     const result = await bridge.apiCall("/api/test");
 
     expect(result.ok).toBe(false);
-    expect(result.data).toBe("string error");
+    expect(result.data).toBe("[Error] string error");
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("string error"),
     );

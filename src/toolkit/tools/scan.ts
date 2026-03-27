@@ -28,6 +28,8 @@ export async function scan(
 
     const limit = opts?.limit ?? 50;
 
+    // fetchFeed throws on API failure — scan catches to attempt Skill Dojo fallback.
+    // This is intentional error propagation, not throw-then-catch anti-pattern.
     try {
       const posts = await fetchFeed(session, limit, opts?.domain);
       const opportunities = identifyOpportunities(posts);

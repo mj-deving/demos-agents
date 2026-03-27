@@ -1,3 +1,5 @@
+/** @deprecated Use src/toolkit/guards/write-rate-limit.ts instead */
+
 /**
  * Persistent address-scoped write rate limiting.
  *

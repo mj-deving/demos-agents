@@ -124,6 +124,38 @@ export interface SdkBridge {
   getDemos(): Demos;
 }
 
+// ── Helpers ──────────────────────────────────────────
+
+/**
+ * Extract txHash from SDK store/confirm/broadcast response shapes.
+ * The SDK returns different shapes depending on version and method:
+ *   - confirm: { response: { data: { transaction: { hash } } } }
+ *   - broadcast: { response: { results: { [key]: { hash } } } }
+ *   - broadcast: { response: { data: { hash } } }
+ *   - fallback: { hash } or { txHash }
+ */
+function extractTxHash(confirmResult: unknown, broadcastResult: unknown): string | undefined {
+  const extract = (obj: unknown): string | undefined => {
+    if (!obj || typeof obj !== "object") return undefined;
+    const r = obj as Record<string, unknown>;
+    const resp = r.response as Record<string, unknown> | undefined;
+    if (resp) {
+      const txn = (resp.data as Record<string, unknown> | undefined)?.transaction as Record<string, unknown> | undefined;
+      if (txn?.hash) return String(txn.hash);
+      if ((resp.data as Record<string, unknown> | undefined)?.hash) return String((resp.data as Record<string, unknown>).hash);
+      const results = resp.results as Record<string, unknown> | undefined;
+      if (results) {
+        const first = Object.values(results)[0] as Record<string, unknown> | undefined;
+        if (first?.hash) return String(first.hash);
+      }
+    }
+    if (r.hash) return String(r.hash);
+    if (r.txHash) return String(r.txHash);
+    return undefined;
+  };
+  return extract(confirmResult) ?? extract(broadcastResult);
+}
+
 // ── Factory ─────────────────────────────────────────
 
 // HIVE post prefix (4 bytes: "HIVE")
@@ -257,8 +289,9 @@ export function createSdkBridge(
         return { ok: res.ok, status: res.status, data };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        const errorName = err instanceof Error ? err.constructor.name : "Error";
         console.warn(`[demos-toolkit] apiCall failed: ${message}`);
-        return { ok: false, status: 0, data: message };
+        return { ok: false, status: 0, data: `[${errorName}] ${message}` };
       }
     },
 
@@ -297,15 +330,9 @@ export function createSdkBridge(
       const validity = await tx.confirm(storeTx, demos);
       const result = await tx.broadcast(validity, demos);
 
-      // Extract txHash (multiple SDK response shapes)
-      const confirmHash = (validity as any)?.response?.data?.transaction?.hash;
-      const results = (result as any)?.response?.results;
-      const txHash = confirmHash
-        || (results ? results[Object.keys(results)[0]]?.hash : undefined)
-        || (result as any)?.response?.data?.transaction?.hash
-        || (result as any)?.response?.data?.hash
-        || (result as any)?.hash
-        || (result as any)?.txHash;
+      // Extract txHash — confirm response is the primary source (SDK convention),
+      // broadcast response is the fallback for alternate SDK versions.
+      const txHash = extractTxHash(validity, result);
 
       if (!txHash) {
         throw new Error("HIVE post broadcast succeeded but txHash not found in response");
