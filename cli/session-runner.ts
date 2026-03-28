@@ -2572,7 +2572,10 @@ async function runPublishAutonomous(
       });
 
       // Record publish in write-rate ledger (PR1 — persistent tracking)
-      await checkAndRecordWrite(writeRateStore, walletAddress, true);
+      const recordError = await checkAndRecordWrite(writeRateStore, walletAddress, true);
+      if (recordError) {
+        info(`Warning: failed to record publish in rate limiter: ${recordError.message}`);
+      }
 
       publishedHashes.push(pubResult.txHash);
       state.posts.push(pubResult.txHash);

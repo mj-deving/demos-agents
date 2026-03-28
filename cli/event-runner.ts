@@ -28,7 +28,7 @@ import { connectWallet, setLogAgent, apiCall, info, warn } from "../src/lib/netw
 import { ensureAuth, loadAuthCache } from "../src/lib/auth/auth.js";
 import { initObserver, observe } from "../src/lib/pipeline/observe.js";
 import { FileStateStore } from "../src/toolkit/state-store.js";
-import { checkAndRecordWrite } from "../src/toolkit/guards/write-rate-limit.js";
+import { checkAndRecordWrite, getWriteRateRemaining } from "../src/toolkit/guards/write-rate-limit.js";
 import type { StateStore } from "../src/toolkit/types.js";
 import { attestAndPublish, type PublishInput } from "../src/actions/publish-pipeline.js";
 import { generatePost, type GeneratePostInput } from "../src/actions/llm.js";
@@ -333,8 +333,19 @@ async function main(): Promise<void> {
     },
     stateStore: new FileStateStore(),
     checkWriteRate: async (store: StateStore, addr: string) => {
-      const error = await checkAndRecordWrite(store, addr, false);
-      return error ? { allowed: false, reason: error.message } : { allowed: true, reason: "Within rate limits" };
+      // Check against reactive budget limits (stricter than cron limits)
+      const remaining = await getWriteRateRemaining(store, addr);
+      const dailyBudget = dailyReactive;
+      const hourlyBudget = 2;
+      const dailyUsed = 14 - remaining.dailyRemaining; // 14 = DAILY_LIMIT in guard
+      const hourlyUsed = 4 - remaining.hourlyRemaining; // 4 = HOURLY_LIMIT in guard
+      if (dailyUsed >= dailyBudget) {
+        return { allowed: false, reason: `Reactive daily limit reached (${dailyBudget}/day)` };
+      }
+      if (hourlyUsed >= hourlyBudget) {
+        return { allowed: false, reason: `Reactive hourly limit reached (${hourlyBudget}/hour)` };
+      }
+      return { allowed: true, reason: "Within reactive limits" };
     },
     recordWrite: async (store: StateStore, addr: string) => {
       await checkAndRecordWrite(store, addr, true);

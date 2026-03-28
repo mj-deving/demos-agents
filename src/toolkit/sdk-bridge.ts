@@ -400,7 +400,7 @@ async function scanAddressStorage(
     }
   } else if (rpc.getTransactions) {
     const PAGE_SIZE = 100;
-    const MAX_PAGES = Math.min(Math.ceil(limit / PAGE_SIZE), 10);
+    const MAX_PAGES = 10; // Global scan — need more pages than ceil(limit/100) since most txs won't match
     let start: number | "latest" = "latest";
     const addrLower = address.toLowerCase();
 
@@ -761,16 +761,6 @@ export function createSdkBridge(
           } catch {
             // Skip malformed transactions
           }
-        }
-
-        // Early exit: stop scanning if all targets have at least one reaction
-        if (page >= 2) {
-          let allFound = true;
-          for (const h of targets) {
-            const c = result.get(h)!;
-            if (c.agree === 0 && c.disagree === 0) { allFound = false; break; }
-          }
-          if (allFound) break;
         }
 
         const lastTx = txs[txs.length - 1];
