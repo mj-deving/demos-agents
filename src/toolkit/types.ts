@@ -227,6 +227,36 @@ export interface VerifyResult {
   blockHeight?: number;
 }
 
+// ── Chain Analytics Types ────────────────────────────
+
+/** Decoded HIVE post from chain — richer than ScanPost, includes reply and block info */
+export interface ChainPost {
+  txHash: string;
+  text: string;
+  category: string;
+  author: string;
+  timestamp: number;
+  tags: string[];
+  replyTo?: string;
+  blockNumber: number;
+}
+
+/** Decoded HIVE reaction from chain */
+export interface ChainReaction {
+  txHash: string;
+  targetTxHash: string;
+  type: "agree" | "disagree";
+  author: string;
+  timestamp: number;
+}
+
+/** Activity for a single agent address — posts published + reactions cast */
+export interface AgentActivity {
+  address: string;
+  posts: ChainPost[];
+  reactionsGiven: ChainReaction[];
+}
+
 export interface AttestResult {
   responseHash: string;
   txHash: string;

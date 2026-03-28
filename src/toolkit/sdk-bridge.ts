@@ -186,6 +186,9 @@ export interface SdkBridge {
   /** Count HIVE reactions for given post txHashes — single chain scan, returns map of txHash → { agree, disagree } */
   getHiveReactions(targetTxHashes: string[]): Promise<Map<string, { agree: number; disagree: number }>>;
 
+  /** Query all HIVE activity for a specific address — posts + reactions cast. Uses getTransactionHistory for server-side type filtering. */
+  queryAgentActivity(address: string, options?: { limit?: number }): Promise<import("./types.js").AgentActivity>;
+
   /** Publish a HIVE reaction on-chain (agree/disagree as storage transaction) */
   publishHiveReaction(targetTxHash: string, reactionType: "agree" | "disagree"): Promise<{ txHash: string }>;
 
@@ -686,6 +689,135 @@ export function createSdkBridge(
       } catch {
         return null;
       }
+    },
+
+    async queryAgentActivity(address: string, options?: { limit?: number }): Promise<import("./types.js").AgentActivity> {
+      const limit = options?.limit ?? 500;
+      const posts: import("./types.js").ChainPost[] = [];
+      const reactionsGiven: import("./types.js").ChainReaction[] = [];
+
+      // Prefer getTransactionHistory (server-side type filter) over getTransactions (global scan)
+      if (rpc.getTransactionHistory) {
+        const PAGE_SIZE = 100;
+        const MAX_PAGES = Math.ceil(limit / PAGE_SIZE);
+        let start: number | undefined;
+
+        for (let page = 0; page < MAX_PAGES && (posts.length + reactionsGiven.length) < limit; page++) {
+          const txs = await rpc.getTransactionHistory(address, "storage", {
+            start,
+            limit: PAGE_SIZE,
+          });
+          if (!txs || txs.length === 0) break;
+
+          for (const tx of txs) {
+            try {
+              // Transaction type has parsed content (unlike RawTransaction which is stringified)
+              const contentData = tx.content?.data;
+              const data = Array.isArray(contentData) && contentData[0] === "storage" ? contentData[1] : contentData;
+              const decoded = decodeHiveData(data);
+              if (!decoded) continue;
+
+              const author = tx.content?.from ? String(tx.content.from) : address;
+              const timestamp = tx.content?.timestamp ?? 0;
+
+              if (decoded.action === "react") {
+                reactionsGiven.push({
+                  txHash: tx.hash,
+                  targetTxHash: String(decoded.target ?? ""),
+                  type: String(decoded.type ?? "agree") as "agree" | "disagree",
+                  author,
+                  timestamp,
+                });
+              } else if (decoded.text !== undefined) {
+                posts.push({
+                  txHash: tx.hash,
+                  text: String(decoded.text ?? ""),
+                  category: String(decoded.cat ?? decoded.category ?? ""),
+                  author,
+                  timestamp,
+                  tags: Array.isArray(decoded.tags) ? decoded.tags.map(String) : [],
+                  replyTo: decoded.replyTo ? String(decoded.replyTo) : undefined,
+                  blockNumber: tx.blockNumber,
+                });
+              }
+            } catch {
+              // Skip malformed transactions
+            }
+          }
+
+          // Cursor: use last tx blockNumber for next page
+          const lastTx = txs[txs.length - 1];
+          if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
+            const nextStart = lastTx.blockNumber - 1;
+            if (nextStart === start) break; // cursor didn't advance
+            start = nextStart;
+          } else {
+            break;
+          }
+        }
+      } else if (rpc.getTransactions) {
+        // Fallback: global scan filtered client-side (less efficient)
+        const MAX_PAGES = 10;
+        const PAGE_SIZE = 100;
+        let start: number | "latest" = "latest";
+        const addrLower = address.toLowerCase();
+
+        for (let page = 0; page < MAX_PAGES && (posts.length + reactionsGiven.length) < limit; page++) {
+          const txs = await rpc.getTransactions(start, PAGE_SIZE);
+          if (!txs || txs.length === 0) break;
+
+          for (const rawTx of txs) {
+            if (rawTx.type !== "storage") continue;
+            const from = String(rawTx.from ?? "").toLowerCase();
+            if (from !== addrLower) continue;
+
+            try {
+              const content = typeof rawTx.content === "string"
+                ? safeParse(rawTx.content) as Record<string, unknown>
+                : rawTx.content as Record<string, unknown>;
+              const rawData = content?.data;
+              const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
+              const decoded = decodeHiveData(data);
+              if (!decoded) continue;
+
+              const author = String(rawTx.from ?? content?.from ?? address);
+              const timestamp = rawTx.timestamp ?? Number(content?.timestamp ?? 0);
+
+              if (decoded.action === "react") {
+                reactionsGiven.push({
+                  txHash: rawTx.hash,
+                  targetTxHash: String(decoded.target ?? ""),
+                  type: String(decoded.type ?? "agree") as "agree" | "disagree",
+                  author,
+                  timestamp,
+                });
+              } else if (decoded.text !== undefined) {
+                posts.push({
+                  txHash: rawTx.hash,
+                  text: String(decoded.text ?? ""),
+                  category: String(decoded.cat ?? decoded.category ?? ""),
+                  author,
+                  timestamp,
+                  tags: Array.isArray(decoded.tags) ? decoded.tags.map(String) : [],
+                  replyTo: decoded.replyTo ? String(decoded.replyTo) : undefined,
+                  blockNumber: rawTx.blockNumber,
+                });
+              }
+            } catch {
+              // Skip malformed
+            }
+          }
+
+          const lastTx = txs[txs.length - 1];
+          const prevStart = start;
+          if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
+            start = lastTx.blockNumber - 1;
+          } else break;
+          if (start === prevStart) break;
+        }
+      }
+
+      return { address, posts, reactionsGiven };
     },
 
     async publishHiveReaction(targetTxHash: string, reactionType: "agree" | "disagree"): Promise<{ txHash: string }> {

@@ -47,6 +47,10 @@ export type {
   VerifyResult,
   AttestResult,
   DiscoverSourcesResult,
+  // Chain analytics types
+  ChainPost,
+  ChainReaction,
+  AgentActivity,
   Source,
   SourceStatus,
   PayResult,

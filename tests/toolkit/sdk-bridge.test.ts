@@ -451,4 +451,67 @@ describe("SDK Bridge Adapter", () => {
       expect(result.has("tx-other")).toBe(false);
     });
   });
+
+  describe("queryAgentActivity", () => {
+    it("separates posts and reactions from getTransactionHistory", async () => {
+      const postPayload = JSON.stringify({ v: 1, text: "DeFi TVL analysis", cat: "ANALYSIS", tags: ["defi"] });
+      const reactionPayload = JSON.stringify({ v: 1, action: "react", target: "target-tx-1", type: "agree" });
+      const replyPayload = JSON.stringify({ v: 1, text: "Reply to your point", cat: "ANALYSIS", replyTo: "parent-tx-1" });
+      const b64Post = Buffer.from("HIVE" + postPayload).toString("base64");
+      const b64Reaction = Buffer.from("HIVE" + reactionPayload).toString("base64");
+      const b64Reply = Buffer.from("HIVE" + replyPayload).toString("base64");
+
+      const demosWithHistory = {
+        ...mockDemos(),
+        getTransactionHistory: vi.fn()
+          .mockResolvedValueOnce([
+            { hash: "post-1", blockNumber: 200, status: "confirmed", content: { from: "agent1", type: "storage", data: ["storage", { bytes: b64Post }], timestamp: 1000 } },
+            { hash: "react-1", blockNumber: 199, status: "confirmed", content: { from: "agent1", type: "storage", data: ["storage", { bytes: b64Reaction }], timestamp: 1001 } },
+            { hash: "reply-1", blockNumber: 198, status: "confirmed", content: { from: "agent1", type: "storage", data: ["storage", { bytes: b64Reply }], timestamp: 1002 } },
+          ])
+          .mockResolvedValue([]),
+      };
+      const b = createSdkBridge(demosWithHistory as any, undefined, "token");
+      const activity = await b.queryAgentActivity("agent1");
+
+      expect(activity.address).toBe("agent1");
+      expect(activity.posts).toHaveLength(2); // post + reply (both have text)
+      expect(activity.reactionsGiven).toHaveLength(1);
+      expect(activity.posts[0].text).toBe("DeFi TVL analysis");
+      expect(activity.posts[0].tags).toEqual(["defi"]);
+      expect(activity.posts[1].replyTo).toBe("parent-tx-1");
+      expect(activity.reactionsGiven[0].targetTxHash).toBe("target-tx-1");
+      expect(activity.reactionsGiven[0].type).toBe("agree");
+    });
+
+    it("falls back to getTransactions when getTransactionHistory unavailable", async () => {
+      const postPayload = JSON.stringify({ v: 1, text: "Fallback post", cat: "PREDICTION" });
+      const b64 = Buffer.from("HIVE" + postPayload).toString("base64");
+
+      const demosNoHistory = {
+        ...mockDemos(),
+        // No getTransactionHistory — only getTransactions
+        getTransactions: vi.fn()
+          .mockResolvedValueOnce([
+            { hash: "tx-1", blockNumber: 100, status: "confirmed", from: "agent1", to: "chain", type: "storage", content: JSON.stringify({ from: "agent1", data: ["storage", { bytes: b64 }], timestamp: 2000 }), timestamp: 2000 },
+            { hash: "tx-2", blockNumber: 100, status: "confirmed", from: "other-agent", to: "chain", type: "storage", content: JSON.stringify({ from: "other-agent", data: ["storage", { bytes: b64 }], timestamp: 2001 }), timestamp: 2001 },
+          ])
+          .mockResolvedValue([]),
+      };
+      const b = createSdkBridge(demosNoHistory as any, undefined, "token");
+      const activity = await b.queryAgentActivity("agent1");
+
+      // Only includes posts from agent1, not other-agent
+      expect(activity.posts).toHaveLength(1);
+      expect(activity.posts[0].txHash).toBe("tx-1");
+    });
+
+    it("returns empty activity when no methods available", async () => {
+      const b = createSdkBridge(demos as any, undefined, "token");
+      const activity = await b.queryAgentActivity("agent1");
+
+      expect(activity.posts).toHaveLength(0);
+      expect(activity.reactionsGiven).toHaveLength(0);
+    });
+  });
 });
