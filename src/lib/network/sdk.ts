@@ -246,9 +246,10 @@ export async function apiCall(
         data = text;
       }
       return { ok: res.ok, status: res.status, data };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Network-level errors are NOT retried — only 502 responses
-      return { ok: false, status: 0, data: err.message };
+      const message = err instanceof Error ? err.message : String(err);
+      return { ok: false, status: 0, data: message };
     }
   }
 

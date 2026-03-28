@@ -6,6 +6,14 @@ import { createRequire } from "node:module";
 import { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
 import { info } from "./network/sdk.js";
 
+/** Extended Demos surface — SDK doesn't export types for crypto, nodeCall, getAddress */
+interface DemosExtended {
+  crypto: { getIdentity(algo: string): Promise<{ publicKey: Uint8Array }> };
+  nodeCall(method: string, params: Record<string, unknown>): Promise<unknown>;
+  getAddress?(): string;
+  web2: { createDahr(): Promise<{ startProxy(opts: { url: string; method: string }): Promise<unknown> }> };
+}
+
 const require = createRequire(import.meta.url);
 const TLSN_MAX_BYTES = 16_384;
 const TLSN_TOKEN_POLL_ATTEMPTS = 30;
@@ -34,7 +42,7 @@ export interface TlsnAttestPlaywrightResult {
   proofTxHash: string;
   tokenId: string;
   storageFee: number;
-  presentation: any;
+  presentation: unknown;
 }
 
 function uint8ArrayToHex(bytes: Uint8Array): string {
@@ -70,7 +78,7 @@ function coerceTlsnMethod(method: string): "GET" | "POST" | "PUT" | "DELETE" {
 
 async function createTlsnRequestTransaction(demos: Demos, targetUrl: string): Promise<any> {
   const tx = DemosTransactions.empty();
-  const { publicKey } = await (demos as any).crypto.getIdentity("ed25519");
+  const { publicKey } = await (demos as unknown as DemosExtended).crypto.getIdentity("ed25519");
   const publicKeyHex = uint8ArrayToHex(publicKey);
   const nonce = await demos.getAddressNonce(publicKeyHex);
 
@@ -98,7 +106,7 @@ async function createTlsnStoreTransaction(
   fee: number
 ): Promise<any> {
   const tx = DemosTransactions.empty();
-  const { publicKey } = await (demos as any).crypto.getIdentity("ed25519");
+  const { publicKey } = await (demos as unknown as DemosExtended).crypto.getIdentity("ed25519");
   const publicKeyHex = uint8ArrayToHex(publicKey);
   const nonce = await demos.getAddressNonce(publicKeyHex);
 
@@ -134,7 +142,7 @@ async function requestTlsnToken(
 
   let tokenId: string | null = null;
   for (let attempt = 0; attempt < TLSN_TOKEN_POLL_ATTEMPTS; attempt++) {
-    const tokenResponse = await (demos as any).nodeCall("tlsnotary.getToken", { txHash: requestTxHash });
+    const tokenResponse = await (demos as unknown as DemosExtended).nodeCall("tlsnotary.getToken", { txHash: requestTxHash });
     if (tokenResponse?.token?.id) {
       tokenId = String(tokenResponse.token.id);
       break;
@@ -147,16 +155,16 @@ async function requestTlsnToken(
     throw new Error(`TLSN token not created within ${TLSN_TOKEN_POLL_ATTEMPTS}s (tx=${requestTxHash.slice(0, 12)}...)`);
   }
 
-  const { publicKey } = await (demos as any).crypto.getIdentity("ed25519");
-  const ownerFromWallet = typeof (demos as any).getAddress === "function"
-    ? String((demos as any).getAddress())
+  const { publicKey } = await (demos as unknown as DemosExtended).crypto.getIdentity("ed25519");
+  const ownerFromWallet = typeof (demos as unknown as DemosExtended).getAddress === "function"
+    ? String((demos as unknown as DemosExtended).getAddress())
     : "";
   const owner = ownerFromWallet || `0x${uint8ArrayToHex(publicKey)}`;
 
   let proxyUrl = "";
   let lastProxyError = "";
   for (let attempt = 0; attempt < TLSN_TOKEN_POLL_ATTEMPTS; attempt++) {
-    const proxyResponse = await (demos as any).nodeCall("requestTLSNproxy", {
+    const proxyResponse = await (demos as unknown as DemosExtended).nodeCall("requestTLSNproxy", {
       tokenId,
       owner,
       targetUrl,
@@ -395,7 +403,7 @@ export async function attestTlsnViaPlaywrightBridge(
   const token = await requestTlsnToken(demos, parsed.toString());
   info(`TLSN token acquired: ${token.tokenId}`);
 
-  const notaryInfo = await (demos as any).nodeCall("tlsnotary.getInfo", {});
+  const notaryInfo = await (demos as unknown as DemosExtended).nodeCall("tlsnotary.getInfo", {});
   const notaryRaw = String(notaryInfo?.notaryUrl || "");
   if (!notaryRaw) {
     throw new Error("TLSN notary discovery failed: node did not return notaryUrl");

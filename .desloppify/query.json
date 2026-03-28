@@ -1,40 +1,26 @@
 {
-  "command": "show",
-  "query": "cycles",
-  "status_filter": "open",
-  "total": 1,
-  "summary": {
-    "by_tier": {
-      "T3": 1
-    },
-    "by_detector": {
-      "cycles": 1
-    },
-    "files": 1
-  },
-  "by_file": {
-    "src/lib/util/extensions.ts": [
-      {
-        "id": "cycles::src/lib/util/extensions.ts::src/lib/util/extensions.ts::src/plugins/calibrate-plugin.ts",
-        "tier": 3,
-        "confidence": "high",
-        "summary": "Import cycle (2 files): src/lib/util/extensions.ts -> src/plugins/calibrate-plugin.ts",
-        "detail": {
-          "files": [
-            "src/lib/util/extensions.ts",
-            "src/plugins/calibrate-plugin.ts"
-          ],
-          "length": 2
-        }
-      }
-    ]
-  },
-  "total_matching": 1,
-  "noise_budget": 0,
-  "noise_global_budget": 0,
+  "command": "resolve",
+  "patterns": [
+    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+  ],
+  "status": "fixed",
+  "resolved": [
+    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+  ],
+  "count": 1,
+  "next_command": "desloppify next",
+  "overall_score": 80.8,
+  "objective_score": 86.3,
+  "strict_score": 80.5,
+  "verified_strict_score": 86.3,
+  "prev_overall_score": 80.8,
+  "prev_objective_score": 86.3,
+  "prev_strict_score": 80.5,
+  "prev_verified_strict_score": 86.3,
+  "attestation": "I have actually Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63. and I am not gaming the score.",
   "narrative": {
     "phase": "refinement",
-    "headline": "\u26a0 7 security issues \u2014 review before other cleanup.  (26 review work items \u2014 run `desloppify show review --status open`)",
+    "headline": "\u26a0 7 security issues \u2014 review before other cleanup.  (13 review work items \u2014 run `desloppify show review --status open`)",
     "dimensions": {
       "lowest_dimensions": [
         {
@@ -46,7 +32,7 @@
         {
           "name": "Design coherence",
           "strict": 68.0,
-          "failing": 15,
+          "failing": 6,
           "impact": 0.0,
           "subjective": true,
           "impact_description": "re-review to improve"
@@ -305,8 +291,8 @@
       {
         "type": "refactor",
         "detector": "review",
-        "count": 26,
-        "description": "26 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
+        "count": 13,
+        "description": "13 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
         "command": "desloppify show review --status open",
         "impact": 0.0,
         "dimension": "Unknown",
@@ -350,8 +336,8 @@
     "strategy": {
       "fixer_leverage": {
         "auto_fixable_count": 33,
-        "total_count": 409,
-        "coverage": 0.081,
+        "total_count": 370,
+        "coverage": 0.089,
         "impact_ratio": 0.0,
         "recommendation": "none"
       },
@@ -414,7 +400,7 @@
         }
       },
       "can_parallelize": true,
-      "hint": "4 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 26 issue(s) \u2014 `desloppify show review --status open`."
+      "hint": "4 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 13 issue(s) \u2014 `desloppify show review --status open`."
     },
     "tools": {
       "fixers": [
@@ -484,7 +470,7 @@
       "command": "desloppify autofix unused-imports --dry-run",
       "description": "26 unused issues \u2014 run `desloppify autofix unused-imports --dry-run` to preview, then apply"
     },
-    "why_now": "4 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 26 issue(s) \u2014 `desloppify show review --status open`.",
+    "why_now": "4 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 13 issue(s) \u2014 `desloppify show review --status open`.",
     "verification_step": {
       "command": "desloppify scan",
       "reason": "revalidate after changes"
@@ -503,7 +489,22 @@
       "state": "below",
       "warning": null
     },
-    "reminders": [],
+    "reminders": [
+      {
+        "type": "rereview_needed",
+        "message": "Subjective results may be stale after resolve. Re-run `desloppify review --prepare` to refresh, or reset with `desloppify scan --reset-subjective` before a clean rerun.",
+        "command": "desloppify review --prepare",
+        "priority": 1,
+        "severity": "high"
+      },
+      {
+        "type": "rescan_needed",
+        "message": "Rescan to verify \u2014 cascading effects may create new issues.",
+        "command": "desloppify scan",
+        "priority": 1,
+        "severity": "high"
+      }
+    ],
     "reminder_history": {
       "auto_fixers_available": 3,
       "dry_run_first": 3,
@@ -511,7 +512,9 @@
       "review_issues_pending": 3,
       "stagnant_nudge": 5,
       "feedback_nudge": 3,
-      "review_not_run": 3
+      "review_not_run": 3,
+      "rereview_needed": 1,
+      "rescan_needed": 1
     }
   },
   "config": {

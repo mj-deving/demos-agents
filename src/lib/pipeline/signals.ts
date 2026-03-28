@@ -221,29 +221,31 @@ function countOverlap(a: string[], b: string[]): number {
  * Normalize a raw signal topic from API response into typed SignalTopic.
  * Applies defensive defaults for missing fields.
  */
-function normalizeSignalTopic(raw: any): SignalTopic {
+function normalizeSignalTopic(raw: unknown): SignalTopic {
   const VALID_DIRECTIONS = new Set(["bullish", "bearish", "neutral", "mixed", "alert"]);
   const VALID_QUALITY = new Set(["strong", "moderate", "weak"]);
+  const r = raw as Record<string, unknown>;
 
   return {
-    topic: String(raw.topic || ""),
-    direction: VALID_DIRECTIONS.has(raw.direction) ? raw.direction : "neutral",
-    confidence: clamp(Number(raw.confidence) || 0, 0, 100),
-    agentCount: Math.max(0, Math.floor(Number(raw.agentCount) || 0)),
-    evidenceQuality: VALID_QUALITY.has(raw.evidenceQuality) ? raw.evidenceQuality : "weak",
-    divergence: Boolean(raw.divergence),
-    staleAt: raw.staleAt ? String(raw.staleAt) : undefined,
+    topic: String(r.topic || ""),
+    direction: VALID_DIRECTIONS.has(r.direction as string) ? r.direction as SignalTopic["direction"] : "neutral",
+    confidence: clamp(Number(r.confidence) || 0, 0, 100),
+    agentCount: Math.max(0, Math.floor(Number(r.agentCount) || 0)),
+    evidenceQuality: VALID_QUALITY.has(r.evidenceQuality as string) ? r.evidenceQuality as SignalTopic["evidenceQuality"] : "weak",
+    divergence: Boolean(r.divergence),
+    staleAt: r.staleAt ? String(r.staleAt) : undefined,
   };
 }
 
 /**
  * Normalize a raw signal alert from API response.
  */
-function normalizeSignalAlert(raw: any): SignalAlert {
+function normalizeSignalAlert(raw: unknown): SignalAlert {
+  const r = raw as Record<string, unknown>;
   return {
-    topic: String(raw.topic || ""),
-    severity: String(raw.severity || "info"),
-    summary: String(raw.summary || ""),
+    topic: String(r.topic || ""),
+    severity: String(r.severity || "info"),
+    summary: String(r.summary || ""),
   };
 }
 

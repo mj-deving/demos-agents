@@ -117,6 +117,8 @@ export interface ApiCallResult {
   ok: boolean;
   status: number;
   data: unknown;
+  /** Error type name when ok=false and status=0 (network/transport error) */
+  errorType?: string;
 }
 
 /** HIVE post payload for on-chain publishing */
@@ -565,7 +567,7 @@ export function createSdkBridge(
         const message = err instanceof Error ? err.message : String(err);
         const errorName = err instanceof Error ? err.constructor.name : "Error";
         console.warn(`[demos-toolkit] apiCall failed: ${message}`);
-        return { ok: false, status: 0, data: `[${errorName}] ${message}` };
+        return { ok: false, status: 0, data: message, errorType: errorName };
       }
     },
 

@@ -20,6 +20,25 @@ const INDEXER_CHECK_DELAYS_MS = [5000, 10000, 15000] as const;
 
 let sessionIndexerLagDetected = false;
 
+// ── SDK Extended Interfaces (untyped in SDK) ───────
+
+/** DAHR proxy surface — SDK doesn't export types for web2.createDahr() */
+interface DahrProxy {
+  startProxy(opts: { url: string; method: string }): Promise<{
+    status?: number;
+    statusCode?: number;
+    httpStatus?: number;
+    responseHash?: string;
+    txHash?: string;
+    data?: string | unknown;
+  }>;
+}
+
+/** Demos instance with web2 DAHR surface (not in SDK types) */
+interface DemosWithDahr {
+  web2: { createDahr(): Promise<DahrProxy> };
+}
+
 // ── Types ──────────────────────────────────────────
 
 export interface PublishInput {
@@ -119,7 +138,7 @@ export async function attestDahr(
   // HN Algolia hitsPerPage guardrail moved to hn-algolia adapter (Phase 4).
   const attestUrl = url;
   info(`DAHR attesting: ${attestUrl}`);
-  const dahr = await (demos as any).web2.createDahr();
+  const dahr = await (demos as unknown as DemosWithDahr).web2.createDahr();
   const proxyResponse = await dahr.startProxy({ url: attestUrl, method });
 
   // GUARDRAIL: Reject non-2xx / auth-error / rate-limit responses before attesting.

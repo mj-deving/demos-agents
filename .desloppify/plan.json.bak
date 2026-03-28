@@ -1,48 +1,41 @@
 {
   "version": 8,
   "created": "2026-03-27T16:59:34+00:00",
-  "updated": "2026-03-28T08:32:10+00:00",
+  "updated": "2026-03-28T21:58:58+00:00",
   "queue_order": [
-    "subjective::cross_module_architecture",
-    "subjective::dependency_health",
+    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
+    "subjective::abstraction_fitness",
+    "subjective::design_coherence",
     "subjective::error_consistency",
     "subjective::logic_clarity",
-    "review::.::holistic::design_coherence::attestation_executor_orphaned",
-    "review::.::holistic::design_coherence::mentions_orphaned",
     "review::.::holistic::design_coherence::source_discovery_any_types",
-    "review::.::holistic::design_coherence::transcript_orphaned",
-    "review::.::holistic::design_coherence::predictions_orphaned",
-    "review::.::holistic::design_coherence::sse_feed_orphaned",
-    "review::.::holistic::design_coherence::tips_orphaned",
-    "review::.::holistic::package_organization::orphaned_hooks_directory",
     "review::.::holistic::test_strategy::orphaned_code_test_waste",
     "review::.::holistic::type_safety::action_executor_llm_any",
     "review::.::holistic::type_safety::session_state_any_fields",
-    "subjective::abstraction_fitness",
+    "review::.::holistic::design_coherence::engage_heuristics_any_types",
+    "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
+    "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
+    "review::.::holistic::design_coherence::signals_any_normalizers",
+    "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts",
+    "review::.::holistic::incomplete_migration::source_discovery_deprecated_fn",
+    "review::.::holistic::test_strategy::publish_pipeline_untested",
+    "review::.::holistic::type_safety::feed_filter_any_heavy",
+    "review::.::holistic::type_safety::tlsn_bridge_as_any_volume",
     "subjective::ai_generated_debt",
     "subjective::api_surface_coherence",
     "subjective::authorization_consistency",
     "subjective::contract_coherence",
     "subjective::convention_outlier",
+    "subjective::cross_module_architecture",
+    "subjective::dependency_health",
     "subjective::high_level_elegance",
+    "subjective::incomplete_migration",
     "subjective::initialization_coupling",
     "subjective::low_level_elegance",
     "subjective::mid_level_elegance",
-    "review::.::holistic::design_coherence::action_executor_orphaned_complex",
-    "review::.::holistic::design_coherence::engage_heuristics_any_types",
-    "review::.::holistic::design_coherence::orphaned_lib_domain_files",
-    "review::.::holistic::design_coherence::orphaned_reactive_subsystem",
-    "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
-    "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
-    "review::.::holistic::design_coherence::signals_any_normalizers",
-    "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts",
-    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
-    "review::.::holistic::incomplete_migration::source_discovery_deprecated_fn",
-    "review::.::holistic::package_organization::lib_root_orphaned_files",
-    "review::.::holistic::package_organization::reactive_subsystem_mostly_dead",
-    "review::.::holistic::test_strategy::publish_pipeline_untested",
-    "review::.::holistic::type_safety::feed_filter_any_heavy",
-    "review::.::holistic::type_safety::tlsn_bridge_as_any_volume"
+    "subjective::package_organization",
+    "subjective::test_strategy",
+    "subjective::type_safety"
   ],
   "deferred": [],
   "skipped": {
@@ -55,6 +48,126 @@
       "created_at": "2026-03-27T21:12:52+00:00",
       "review_after": null,
       "skipped_at_scan": 5
+    },
+    "review::.::holistic::design_coherence::action_executor_orphaned_complex": {
+      "issue_id": "review::.::holistic::design_coherence::action_executor_orphaned_complex",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::attestation_executor_orphaned": {
+      "issue_id": "review::.::holistic::design_coherence::attestation_executor_orphaned",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::mentions_orphaned": {
+      "issue_id": "review::.::holistic::design_coherence::mentions_orphaned",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::orphaned_lib_domain_files": {
+      "issue_id": "review::.::holistic::design_coherence::orphaned_lib_domain_files",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::orphaned_reactive_subsystem": {
+      "issue_id": "review::.::holistic::design_coherence::orphaned_reactive_subsystem",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::predictions_orphaned": {
+      "issue_id": "review::.::holistic::design_coherence::predictions_orphaned",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::sse_feed_orphaned": {
+      "issue_id": "review::.::holistic::design_coherence::sse_feed_orphaned",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers. I am not gaming the score \u2014 desloppify static analysis misses indirect/barrel/dynamic imports.",
+      "created_at": "2026-03-28T21:58:16+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::tips_orphaned": {
+      "issue_id": "review::.::holistic::design_coherence::tips_orphaned",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers via barrels, plugins, CLI, or dynamic import. I am not gaming the score.",
+      "created_at": "2026-03-28T21:58:41+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::design_coherence::transcript_orphaned": {
+      "issue_id": "review::.::holistic::design_coherence::transcript_orphaned",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers via barrels, plugins, CLI, or dynamic import. I am not gaming the score.",
+      "created_at": "2026-03-28T21:58:41+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::package_organization::lib_root_orphaned_files": {
+      "issue_id": "review::.::holistic::package_organization::lib_root_orphaned_files",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers via barrels, plugins, CLI, or dynamic import. I am not gaming the score.",
+      "created_at": "2026-03-28T21:58:41+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::package_organization::orphaned_hooks_directory": {
+      "issue_id": "review::.::holistic::package_organization::orphaned_hooks_directory",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers via barrels, plugins, CLI, or dynamic import. I am not gaming the score.",
+      "created_at": "2026-03-28T21:58:41+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
+    },
+    "review::.::holistic::package_organization::reactive_subsystem_mostly_dead": {
+      "issue_id": "review::.::holistic::package_organization::reactive_subsystem_mostly_dead",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed each file with grep and confirmed all have active production importers via barrels, plugins, CLI, or dynamic import. I am not gaming the score.",
+      "created_at": "2026-03-28T21:58:41+00:00",
+      "review_after": null,
+      "skipped_at_scan": 15
     }
   },
   "active_cluster": null,
@@ -1139,18 +1252,20 @@
     }
   },
   "superseded": {},
-  "promoted_ids": [],
+  "promoted_ids": [
+    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+  ],
   "plan_start_scores": {
-    "strict": 79.9,
-    "overall": 80.1,
-    "objective": 86.5,
-    "verified": 86.5
+    "strict": 80.5,
+    "overall": 80.8,
+    "objective": 86.3,
+    "verified": 86.3
   },
   "refresh_state": {
     "_subjective_migration_pruned": true,
     "lifecycle_phase": "plan",
     "subjective_review_completed_at_scan_count": 14,
-    "postflight_scan_completed_at_scan_count": 13
+    "postflight_scan_completed_at_scan_count": 15
   },
   "execution_log": [
     {
@@ -5209,6 +5324,123 @@
         "sync_status": "synced",
         "sync_message": null
       }
+    },
+    {
+      "timestamp": "2026-03-28T17:24:00+00:00",
+      "action": "sync_subjective",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-28T17:24:00+00:00",
+      "action": "seed_start_scores",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T17:24:00+00:00",
+      "action": "complete_postflight_scan",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "scan_count": 15
+      }
+    },
+    {
+      "timestamp": "2026-03-28T21:58:16+00:00",
+      "action": "skip",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::action_executor_orphaned_complex",
+        "review::.::holistic::design_coherence::attestation_executor_orphaned",
+        "review::.::holistic::design_coherence::mentions_orphaned",
+        "review::.::holistic::design_coherence::orphaned_lib_domain_files",
+        "review::.::holistic::design_coherence::orphaned_reactive_subsystem",
+        "review::.::holistic::design_coherence::predictions_orphaned",
+        "review::.::holistic::design_coherence::sse_feed_orphaned"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "kind": "false_positive",
+        "reason": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T21:58:41+00:00",
+      "action": "skip",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tips_orphaned",
+        "review::.::holistic::design_coherence::transcript_orphaned",
+        "review::.::holistic::package_organization::lib_root_orphaned_files",
+        "review::.::holistic::package_organization::orphaned_hooks_directory",
+        "review::.::holistic::package_organization::reactive_subsystem_mostly_dead"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "kind": "false_positive",
+        "reason": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T21:58:42+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Migration completed: CLI runners now use toolkit guards, deprecated file deleted. Commit 2f20e63.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T21:58:50+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T21:58:51+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T21:58:58+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63.",
+      "detail": {}
     }
   ],
   "epic_triage_meta": {
@@ -5879,39 +6111,38 @@
     },
     "triage_defer_state": {
       "deferred_review_ids": [
-        "review::.::holistic::design_coherence::action_executor_orphaned_22_fields",
+        "review::.::holistic::design_coherence::action_executor_orphaned_complex",
         "review::.::holistic::design_coherence::attestation_executor_orphaned",
-        "review::.::holistic::design_coherence::engage_heuristics_any",
+        "review::.::holistic::design_coherence::engage_heuristics_any_types",
         "review::.::holistic::design_coherence::mentions_orphaned",
-        "review::.::holistic::design_coherence::orphaned_dead_code_mass",
+        "review::.::holistic::design_coherence::orphaned_lib_domain_files",
+        "review::.::holistic::design_coherence::orphaned_reactive_subsystem",
         "review::.::holistic::design_coherence::predictions_orphaned",
-        "review::.::holistic::design_coherence::publish_pipeline_any_types",
-        "review::.::holistic::design_coherence::sdk_bridge_catch_default",
-        "review::.::holistic::design_coherence::sdk_bridge_silent_failure",
-        "review::.::holistic::design_coherence::signals_any_types",
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
+        "review::.::holistic::design_coherence::signals_any_normalizers",
         "review::.::holistic::design_coherence::source_discovery_any_types",
         "review::.::holistic::design_coherence::sse_feed_orphaned",
         "review::.::holistic::design_coherence::tips_orphaned",
-        "review::.::holistic::design_coherence::tlsn_bridge_as_any",
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts",
         "review::.::holistic::design_coherence::transcript_orphaned",
-        "review::.::holistic::incomplete_migration::cli_runners_legacy_write_rate_limit",
-        "review::.::holistic::incomplete_migration::index_barrel_uses_shim_paths",
-        "review::.::holistic::incomplete_migration::unmarked_reexport_shims",
+        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
+        "review::.::holistic::incomplete_migration::source_discovery_deprecated_fn",
+        "review::.::holistic::package_organization::lib_root_orphaned_files",
         "review::.::holistic::package_organization::orphaned_hooks_directory",
-        "review::.::holistic::package_organization::shim_pollution_39_files",
-        "review::.::holistic::test_strategy::agent_config_catalog_tests_added",
+        "review::.::holistic::package_organization::reactive_subsystem_mostly_dead",
         "review::.::holistic::test_strategy::orphaned_code_test_waste",
-        "review::.::holistic::test_strategy::publish_pipeline_coverage_gap",
+        "review::.::holistic::test_strategy::publish_pipeline_untested",
         "review::.::holistic::type_safety::action_executor_llm_any",
+        "review::.::holistic::type_safety::feed_filter_any_heavy",
         "review::.::holistic::type_safety::session_state_any_fields",
-        "review::.::holistic::type_safety::signals_normalize_any_params",
-        "review::.::holistic::type_safety::tlsn_bridge_13_as_any"
+        "review::.::holistic::type_safety::tlsn_bridge_as_any_volume"
       ],
-      "last_deferred_scan": 13,
-      "last_deferred_at": "2026-03-28T08:17:04+00:00",
+      "last_deferred_scan": 15,
+      "last_deferred_at": "2026-03-28T17:24:00+00:00",
       "defer_count": 1,
-      "first_deferred_scan": 13,
-      "first_deferred_at": "2026-03-28T08:17:04+00:00"
+      "first_deferred_scan": 15,
+      "first_deferred_at": "2026-03-28T17:24:00+00:00"
     },
     "triage_recommended": true
   },
@@ -5971,5 +6202,11 @@
     "review::.::holistic::type_safety::ts_tx_module_unknown_types"
   ],
   "commit_tracking_branch": null,
-  "scan_count_at_plan_start": 13
+  "scan_count_at_plan_start": 15,
+  "previous_plan_start_scores": {
+    "strict": 79.9,
+    "overall": 80.1,
+    "objective": 86.5,
+    "verified": 86.5
+  }
 }
