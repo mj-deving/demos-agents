@@ -1,0 +1,92 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {"error_consistency": 79.8},
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "Toolkit tools use a consistent typed error strategy: DemosError with 10 error codes, wrapped in ToolResult<T> via ok()/err()/demosError() helpers. All 8 toolkit tools follow this pattern via withToolWrapper",
+        "withToolWrapper provides uniform error wrapping: catches unknown errors, preserves DemosError codes when thrown intentionally, wraps others in typed errors with the tool name in the message",
+        "Plugin layer uses a different strategy: try-catch with silent swallowing — plugins/ has 18 try-catch blocks but only 1 throw. Most plugin errors are caught, logged, and swallowed",
+        "lib/ layer mixes three strategies: try_catch (24), throws (20), and returns_null (18) — within the same layer, different files handle errors differently",
+        "pipeline/ layer heavily favors returns_null (23) with some try_catch (12) — this is the most returns-null-heavy directory",
+        "providers/ layer is the most mixed: try_catch (22), returns_null (18), throws (11), result_type (1) — four different strategies in one directory",
+        "Shared toErrorMessage utility extracted from 8+ files that each defined it inline — indicates past error handling inconsistency that was partially cleaned up",
+        "Auth layer consistently returns null for failures (returns_null: 9) — deliberate graceful degradation"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "error_consistency": {
+      "dimension_character": "Error handling has a strong, well-designed pattern in the toolkit layer (typed DemosError, ToolResult envelope, withToolWrapper), but the consistency degrades outside that boundary. The lib/ and providers/ layers mix throws, returns_null, and try-catch within the same directories. Plugins systematically swallow errors (18 try-catch, 1 throw), which is intentional at the top-level boundary but creates silent failure modes. The auth layer's consistent null-return is a deliberate design choice for graceful degradation.",
+      "score_rationale": "The toolkit's error strategy is exemplary — a developer can predict error behavior across all 10 tools. This pulls the score up significantly. However, the lib/ and providers/ layers mix three error strategies within the same directories, meaning a developer cannot predict whether a lib function will throw, return null, or return a result type without reading the implementation. The plugin silent-swallowing is intentional but could mask real failures. Score of 80 reflects solid patterns in the toolkit paired with mixed strategies in the business logic layer."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "providers_four_error_strategies",
+      "summary": "src/lib/sources/providers/ uses 4 different error strategies (try_catch: 22, returns_null: 18, throws: 11, result_type: 1) in the same directory",
+      "related_files": ["src/lib/sources/providers/declarative-engine.ts", "src/lib/sources/providers/generic.ts", "src/lib/sources/providers/types.ts"],
+      "evidence": ["Provider adapter methods mix throws, returns_null, try_catch, and result_type within sibling files. declarative-engine.ts documentation says 'never throws from any adapter method' but the directory overall has 11 throws"],
+      "suggestion": "Align provider adapters to the returns_null or result_type strategy consistently. Since declarative-engine.ts already documents a never-throws contract, the generic.ts provider should follow the same contract. Functions that currently throw should return null/empty results with error metadata instead.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "plugin_silent_swallowing",
+      "summary": "Plugins have 18 try-catch blocks but only 1 throw — errors are systematically caught and swallowed",
+      "related_files": ["src/plugins/tips-plugin.ts", "src/plugins/sources-plugin.ts", "src/plugins/signals-plugin.ts"],
+      "evidence": ["Plugin directory error strategy: try_catch: 18, throws: 1. Most plugin hooks catch errors, log them via ctx.logger, and return without propagation. This is intentional at the boundary but means plugin failures produce no signal to the caller beyond log output."],
+      "suggestion": "Add a hookErrors accumulator pattern (already partially implemented in BeforeSenseContext.hookErrors) to all plugin hook contexts, so the session runner can inspect which hooks failed and decide whether to abort or continue. This preserves the graceful degradation while making failures visible to the orchestrator.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "lib_mixed_error_strategies",
+      "summary": "src/lib/ flat files mix try_catch (24), throws (20), and returns_null (18) without clear convention",
+      "related_files": ["src/lib/tips.ts", "src/lib/spending-policy.ts", "src/lib/agent-config.ts"],
+      "evidence": ["Within the same layer, tips.ts returns null on errors, agent-config.ts throws on invalid config, spending-policy.ts uses a mix. A developer calling lib functions cannot predict error behavior."],
+      "suggestion": "Establish a convention for the lib layer: functions that load/parse data should return null on failure (already dominant at 18 occurrences), while functions that validate invariants should throw. Document this split in a comment at the top of the lib barrel or in CLAUDE.md.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Toolkit layer was designed with error strategy upfront (DemosError + ToolResult), but lib/ and plugins/ grew organically without a unified error contract"],
+    "likely_symptoms": ["plugin_silent_swallowing may be masking real failures that appear as mysterious session failures"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "error_consistency": {
+      "add": [
+        {
+          "header": "Exemplary toolkit error strategy",
+          "description": "All toolkit tools use DemosError with 10 typed error codes wrapped in ToolResult<T>. withToolWrapper provides uniform error wrapping, preserving DemosError codes and wrapping unknowns with tool name context. A developer can switch on error.code reliably.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Shared toErrorMessage utility prevents inline duplication",
+          "description": "Error message extraction was deduplicated from 8+ files into a single toErrorMessage() utility in src/lib/util/errors.ts. This prevents the most common error handling inconsistency.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Auth returns null for graceful degradation",
+          "description": "The auth layer consistently returns null on failure (9 returns_null) as a deliberate design choice — ensureAuth() returns null when API is unreachable, allowing chain-only mode to function.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "batch": "test_strategy",
+  "batch_index": 10,
+  "assessments": {
+    "test_strategy": 81.5
+  },
+  "dimension_notes": {
+    "test_strategy": {
+      "evidence": [
+        "130 test files across the tests/ directory with 1943 tests across 129 suites — substantial investment in testing",
+        "Zero snapshot tests — all tests use behavioral assertions (expect().toBe, expect().toThrow, etc.)",
+        "TDD is enforced: vitest globalSetup + PostToolUse hook reject assertion-free tests. Test quality validator at src/lib/test-quality-validator.ts",
+        "Critical high-importer files mostly have test coverage: observe.test.ts, state-helpers.test.ts + state-helpers-direct.test.ts, extensions.test.ts + extensions-llm-wiring.test.ts, skill-dojo-proof.test.ts, agent-config-direct.test.ts, catalog-direct.test.ts",
+        "attestation-policy.ts (8 importers, core attestation logic) has no dedicated test file — tested indirectly through attestation-planner.test.ts and other downstream tests but lacks direct unit coverage",
+        "src/types.ts (65 importers) and src/toolkit/types.ts (23 importers) have no test files, but these are pure type declarations — correctly skipped per the dimension rubric",
+        "Orphaned test files still exist: tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts test production code (src/lib/tips.ts, etc.) with zero importers. These waste maintenance effort.",
+        "publish-pipeline.test.ts exists and tests attestDahr, publishPost, and attestAndPublish — the previously flagged open issue about this being untested appears resolved",
+        "Test files use consistent patterns: describe blocks per function, factory helpers (makeMockDemos, makeEntry, makeSource), temp directory lifecycle in beforeEach/afterEach"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "test_strategy": {
+      "dimension_character": "The test suite is substantial (1943 tests, 130 files) with strong behavioral testing practices — zero snapshots, TDD enforcement, and consistent test structure. Coverage of critical paths is mostly good but uneven: the toolkit and source pipeline have thorough test files, while some core modules (attestation-policy.ts) lack direct unit tests. Orphaned test files for dead production code create maintenance noise.",
+      "score_rationale": "A developer making changes would mostly find confidence from the test suite — the toolkit, guards, SDK bridge, and signal detection are well-covered with tests that validate behavior rather than implementation details. What pulls the score below 85 is the attestation-policy gap (core business logic with 8 importers), the 4 orphaned test files testing dead production code, and the absence of integration tests that verify cross-module flows end-to-end. The TDD enforcement and zero-snapshot discipline push the score above the 80 anchor."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "test_strategy",
+      "identifier": "orphaned_test_files_still_open",
+      "summary": "Test files for orphaned production code — tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts — waste maintenance effort",
+      "related_files": [
+        "tests/tips.test.ts",
+        "tests/predictions.test.ts",
+        "tests/mentions.test.ts",
+        "tests/transcript.test.ts",
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts"
+      ],
+      "evidence": [
+        "src/lib/mentions.ts has 0 importers, src/lib/transcript.ts has 0 importers. src/lib/tips.ts and src/lib/predictions.ts are similarly orphaned (marked as false_positive in historical issues, meaning they were intentionally kept but are dead code).",
+        "The corresponding test files run on every npm test invocation, consuming CI time and creating a false sense of coverage"
+      ],
+      "suggestion": "Delete the orphaned production files and their test files together. If functionality needs to be recovered later, it is available in git history. This is a straight cleanup with no risk.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "attestation_policy_no_direct_tests",
+      "summary": "attestation-policy.ts (8 importers, core attestation logic) lacks a dedicated test file",
+      "related_files": ["src/lib/attestation/attestation-policy.ts"],
+      "evidence": [
+        "attestation-policy.ts exports resolveAttestationPlan, inferAssetAlias, extractTopicVars, fillUrlTemplate, unresolvedPlaceholders — critical functions used by policy.ts, publish-pipeline.ts, and declarative-engine.ts",
+        "No tests/attestation-policy.test.ts exists. Some functions are tested indirectly via attestation-planner.test.ts and macro-entity.test.ts, but resolveAttestationPlan and fillUrlTemplate lack direct unit coverage"
+      ],
+      "suggestion": "Create tests/attestation-policy.test.ts covering resolveAttestationPlan with different config combinations, fillUrlTemplate with various placeholder patterns, and unresolvedPlaceholders edge cases. These are pure functions — easy to test directly.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "publish_pipeline_issue_resolved",
+      "summary": "publish-pipeline.ts now has a dedicated test file — prior open issue is resolved",
+      "related_files": ["tests/publish-pipeline.test.ts", "src/actions/publish-pipeline.ts"],
+      "evidence": ["publish-pipeline.test.ts exists and tests attestDahr, publishPost, and attestAndPublish with fully mocked SDK"],
+      "suggestion": "Close the previously flagged open issue about publish-pipeline.ts being untested.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The orphaned test files exist because the corresponding production files were marked as false_positive (intentionally kept) rather than deleted when they lost all importers",
+      "attestation-policy.ts was likely tested indirectly through downstream consumers rather than directly — a common pattern when modules evolve from monolithic code"
+    ],
+    "likely_symptoms": ["orphaned_test_files_still_open is a symptom of incomplete cleanup when production code becomes dead"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Zero snapshot tests, all behavioral assertions",
+          "description": "The entire test suite uses behavioral assertions (expect().toBe, toThrow, toEqual) with zero toMatchSnapshot calls. This means tests validate what the code does, not what it outputs, making them resilient to implementation changes.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "TDD enforcement via vitest globalSetup hook",
+          "description": "A PostToolUse hook and test quality validator reject assertion-free tests at commit time. This prevents the common AI-generated pattern of test files that only check 'does not throw' without meaningful assertions.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent test factory helper pattern",
+          "description": "Test files use consistent factory functions (makeMockDemos, makeEntry, makeSource, createTestSession) for creating test fixtures. This pattern reduces boilerplate and makes test intent clear.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "publish-pipeline test coverage now exists",
+          "description": "publish-pipeline.test.ts covers attestDahr, publishPost, and attestAndPublish with mocked SDK. The previously flagged gap has been filled.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,2646 @@
+{
+  "version": 3,
+  "created": "2026-03-28T22:33:05+00:00",
+  "last_scan": "2026-03-28T22:33:10+00:00",
+  "scan_count": 2,
+  "overall_score": 82.2,
+  "objective_score": 100.0,
+  "strict_score": 82.2,
+  "verified_strict_score": 100.0,
+  "stats": {
+    "total": 46,
+    "auto_resolved": 0,
+    "deferred": 0,
+    "false_positive": 3,
+    "fixed": 0,
+    "open": 43,
+    "triaged_out": 0,
+    "wontfix": 0,
+    "by_tier": {
+      "1": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 3,
+        "fixed": 0,
+        "open": 20,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "2": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 0,
+        "open": 19,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "3": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 0,
+        "open": 4,
+        "triaged_out": 0,
+        "wontfix": 0
+      }
+    }
+  },
+  "work_items": {
+    "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle": {
+      "id": "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/lib/util/extensions.ts",
+          "src/plugins/calibrate-plugin.ts"
+        ],
+        "evidence": [
+          "extensions.ts imports from calibrate-plugin.ts (or vice versa), creating a 2-file cycle confirmed by dependency scanner"
+        ],
+        "suggestion": "Extract the shared type or function that creates the cycle into a separate types file in src/lib/util/ that both can import without circular dependency. The BeforeSenseContext type likely needs to live in a file that calibrate-plugin.ts does not import back into.",
+        "reasoning": "",
+        "summary_hash": "1bf77bb6"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::cross_module_architecture::orphaned_reactive_subsystem": {
+      "id": "review::.::holistic::cross_module_architecture::orphaned_reactive_subsystem",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Entire reactive subsystem (event-loop, 7 handlers, 4 sources) is orphaned with zero importers",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/reactive/event-loop.ts",
+          "src/reactive/event-handlers/disagree-handler.ts",
+          "src/reactive/event-sources/sse-feed.ts",
+          "src/reactive/watermark-store.ts",
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "Scan evidence shows 21 orphaned files totaling ~2886 LOC including event-loop.ts (257), sse-feed.ts (244), all 7 event handlers, watermark-store.ts (90), action-executor.ts (312), storage-watcher.ts (139), balance-source.ts (104)"
+        ],
+        "suggestion": "Either delete the orphaned reactive subsystem (it is recoverable from git history) or wire it into the active module graph via event-runner.ts imports. The orphaned code blurs what constitutes active architecture.",
+        "reasoning": "",
+        "summary_hash": "237ff995"
+      },
+      "status": "false_positive",
+      "note": "",
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": "2026-03-28T22:33:43+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have reviewed each file with grep and confirmed all have active production importers via cli/event-runner.ts, plugins, and barrel re-exports. I am not gaming the score.",
+        "attested_at": "2026-03-28T22:33:43+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::cross_module_architecture::god_module_types": {
+      "id": "review::.::holistic::cross_module_architecture::god_module_types",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/types.ts has 65 importers across all subsystems creating a change-ripple hub",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/types.ts"
+        ],
+        "evidence": [
+          "65 importers from plugins/ (21), adapters/skill-dojo/ (18), reactive/event-sources/ (9), adapters/eliza/ (6), reactive/event-handlers/ (5) \u2014 every subsystem depends on this single file"
+        ],
+        "suggestion": "Split src/types.ts along domain boundaries: core plugin types (FrameworkPlugin, DataProvider, Evaluator) could remain at src/types.ts, while event-related types (AgentEvent, EventSource, EventHandler) could move to src/reactive/types.ts. This would reduce the blast radius for event-related type changes.",
+        "reasoning": "",
+        "summary_hash": "16dac01b"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::cross_module_architecture::flat_lib_mixed_concerns": {
+      "id": "review::.::holistic::cross_module_architecture::flat_lib_mixed_concerns",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/lib/ flat directory mixes 13 files of infrastructure and domain logic without sub-grouping",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/lib/tips.ts",
+          "src/lib/mentions.ts",
+          "src/lib/predictions.ts",
+          "src/lib/state.ts",
+          "src/lib/agent-config.ts"
+        ],
+        "evidence": [
+          "tips.ts (442 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) are domain-specific files sitting alongside infrastructure files like state.ts, agent-config.ts, budget-tracker.ts \u2014 many of which are also orphaned"
+        ],
+        "suggestion": "Move domain-specific orphaned files (tips.ts, predictions.ts, mentions.ts, transcript.ts) to a src/lib/domain/ subdirectory or delete them if truly unused. This separates active infrastructure from abandoned domain logic.",
+        "reasoning": "",
+        "summary_hash": "3e4056bd"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::high_level_elegance::lib_flat_mixed_roles": {
+      "id": "review::.::holistic::high_level_elegance::lib_flat_mixed_roles",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "src/lib/ flat directory (13 files, 3759 LOC) mixes active infrastructure with orphaned domain files",
+      "detail": {
+        "holistic": true,
+        "dimension": "high_level_elegance",
+        "related_files": [
+          "src/lib/tips.ts",
+          "src/lib/predictions.ts",
+          "src/lib/mentions.ts",
+          "src/lib/transcript.ts",
+          "src/lib/state.ts",
+          "src/lib/agent-config.ts"
+        ],
+        "evidence": [
+          "tips.ts (442 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) are orphaned domain files sitting alongside active infrastructure like state.ts, agent-config.ts, spending-policy.ts \u2014 a developer cannot tell which files are active without checking importers"
+        ],
+        "suggestion": "Delete confirmed orphaned files (they are in git history) or move them to a clearly labeled src/lib/deprecated/ directory. The active files should remain \u2014 the flat structure is fine for the ~8 remaining infrastructure files.",
+        "reasoning": "",
+        "summary_hash": "f7a61d87"
+      },
+      "status": "false_positive",
+      "note": "",
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": "2026-03-28T22:33:43+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have reviewed each file with grep and confirmed all have active production importers via cli/event-runner.ts, plugins, and barrel re-exports. I am not gaming the score.",
+        "attested_at": "2026-03-28T22:33:43+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::high_level_elegance::reactive_subsystem_unclear_status": {
+      "id": "review::.::holistic::high_level_elegance::reactive_subsystem_unclear_status",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Reactive subsystem is complete (event-loop, handlers, sources) but entirely orphaned \u2014 unclear if this is active architecture",
+      "detail": {
+        "holistic": true,
+        "dimension": "high_level_elegance",
+        "related_files": [
+          "src/reactive/event-loop.ts",
+          "src/reactive/event-handlers/severity-handler.ts",
+          "src/reactive/event-sources/social-mentions.ts"
+        ],
+        "evidence": [
+          "All 7 event handlers, event-loop.ts, watermark-store.ts, and several event sources have zero importers. cli/event-runner.ts exists as an entry point but the internal reactive module graph is disconnected."
+        ],
+        "suggestion": "If reactive mode is planned for future use, add a comment at src/reactive/README.md or at the top of event-loop.ts documenting its status. If it is abandoned, delete the subsystem. The current state makes it impossible for a new developer to know if this is production infrastructure.",
+        "reasoning": "",
+        "summary_hash": "77c66ed0"
+      },
+      "status": "false_positive",
+      "note": "",
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": "2026-03-28T22:33:43+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have reviewed each file with grep and confirmed all have active production importers via cli/event-runner.ts, plugins, and barrel re-exports. I am not gaming the score.",
+        "attested_at": "2026-03-28T22:33:43+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::convention_outlier::event_handler_protocol_drift": {
+      "id": "review::.::holistic::convention_outlier::event_handler_protocol_drift",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "2 of 7 event handlers skip direct EventHandler/EventAction type imports, delegating entirely to severity-handler factory",
+      "detail": {
+        "holistic": true,
+        "dimension": "convention_outlier",
+        "related_files": [
+          "src/reactive/event-handlers/incident-alert-handler.ts",
+          "src/reactive/event-handlers/market-alert-handler.ts",
+          "src/reactive/event-handlers/severity-handler.ts"
+        ],
+        "evidence": [
+          "incident-alert-handler.ts and market-alert-handler.ts import only createSeverityHandler, while disagree-handler.ts, mention-handler.ts, reply-handler.ts, tip-thanks-handler.ts import EventHandler and EventAction directly from types.ts"
+        ],
+        "suggestion": "This is a minor drift \u2014 the severity-handler factory returns the correct EventHandler type. Adding explicit type annotations (e.g., 'export function createIncidentAlertHandler(): EventHandler') would make the contract visible without changing behavior.",
+        "reasoning": "",
+        "summary_hash": "ae90d7c9"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::providers_four_error_strategies": {
+      "id": "review::.::holistic::error_consistency::providers_four_error_strategies",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/lib/sources/providers/ uses 4 different error strategies (try_catch: 22, returns_null: 18, throws: 11, result_type: 1) in the same directory",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/lib/sources/providers/declarative-engine.ts",
+          "src/lib/sources/providers/generic.ts",
+          "src/lib/sources/providers/types.ts"
+        ],
+        "evidence": [
+          "Provider adapter methods mix throws, returns_null, try_catch, and result_type within sibling files. declarative-engine.ts documentation says 'never throws from any adapter method' but the directory overall has 11 throws"
+        ],
+        "suggestion": "Align provider adapters to the returns_null or result_type strategy consistently. Since declarative-engine.ts already documents a never-throws contract, the generic.ts provider should follow the same contract. Functions that currently throw should return null/empty results with error metadata instead.",
+        "reasoning": "",
+        "summary_hash": "d691f9eb"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::plugin_silent_swallowing": {
+      "id": "review::.::holistic::error_consistency::plugin_silent_swallowing",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Plugins have 18 try-catch blocks but only 1 throw \u2014 errors are systematically caught and swallowed",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/plugins/tips-plugin.ts",
+          "src/plugins/sources-plugin.ts",
+          "src/plugins/signals-plugin.ts"
+        ],
+        "evidence": [
+          "Plugin directory error strategy: try_catch: 18, throws: 1. Most plugin hooks catch errors, log them via ctx.logger, and return without propagation. This is intentional at the boundary but means plugin failures produce no signal to the caller beyond log output."
+        ],
+        "suggestion": "Add a hookErrors accumulator pattern (already partially implemented in BeforeSenseContext.hookErrors) to all plugin hook contexts, so the session runner can inspect which hooks failed and decide whether to abort or continue. This preserves the graceful degradation while making failures visible to the orchestrator.",
+        "reasoning": "",
+        "summary_hash": "9826d99d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::lib_mixed_error_strategies": {
+      "id": "review::.::holistic::error_consistency::lib_mixed_error_strategies",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/lib/ flat files mix try_catch (24), throws (20), and returns_null (18) without clear convention",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/lib/tips.ts",
+          "src/lib/spending-policy.ts",
+          "src/lib/agent-config.ts"
+        ],
+        "evidence": [
+          "Within the same layer, tips.ts returns null on errors, agent-config.ts throws on invalid config, spending-policy.ts uses a mix. A developer calling lib functions cannot predict error behavior."
+        ],
+        "suggestion": "Establish a convention for the lib layer: functions that load/parse data should return null on failure (already dominant at 18 occurrences), while functions that validate invariants should throw. Document this split in a comment at the top of the lib barrel or in CLAUDE.md.",
+        "reasoning": "",
+        "summary_hash": "81f4276e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::naming_quality::info_generic_logging_name": {
+      "id": "review::.::holistic::naming_quality::info_generic_logging_name",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "sdk.ts exports 'info()' as a logging function \u2014 name is too generic and does not communicate logging behavior",
+      "detail": {
+        "holistic": true,
+        "dimension": "naming_quality",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "The function 'info' is exported from sdk.ts and used across the codebase for console logging with agent name prefix. The name 'info' alone does not communicate that this is a logging/output function."
+        ],
+        "suggestion": "Rename to 'logInfo' or 'agentLog' to communicate that this function logs to console with the agent name prefix. The current name conflicts with the common mental model of 'info' as a data accessor.",
+        "reasoning": "",
+        "summary_hash": "e0a348e3"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::abstraction_fitness::wide_action_executor_context": {
+      "id": "review::.::holistic::abstraction_fitness::wide_action_executor_context",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "ActionExecutorContext has 18+ fields creating a wide dependency injection bag",
+      "detail": {
+        "holistic": true,
+        "dimension": "abstraction_fitness",
+        "related_files": [
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "ActionExecutorContext interface has identity (3), auth (1), budget (2), config (3), LLM (1), state (1), platform abstractions (4), rate limiting (3), and telemetry (2) fields \u2014 totaling 18+ fields in one interface"
+        ],
+        "suggestion": "Group related fields into sub-interfaces (e.g., BudgetContext, PlatformAbstractions) to make dependencies clearer at call sites. This would also make partial mocking in tests more natural.",
+        "reasoning": "",
+        "summary_hash": "13c2e36b"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::abstraction_fitness::eliza_service_single_impl": {
+      "id": "review::.::holistic::abstraction_fitness::eliza_service_single_impl",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "ElizaService interface has exactly one implementation with no polymorphic usage",
+      "detail": {
+        "holistic": true,
+        "dimension": "abstraction_fitness",
+        "related_files": [
+          "src/adapters/eliza/types.ts",
+          "src/adapters/eliza/event-service.ts"
+        ],
+        "evidence": [
+          "ElizaService is declared in types.ts and implemented only by event-service.ts. Unlike StateStore/LLMProvider which are toolkit extension points, ElizaService exists within a single adapter with no substitution pressure."
+        ],
+        "suggestion": "Consider inlining the type directly in event-service.ts if no second implementation is planned. If it exists for documentation purposes, add a comment explaining the design intent.",
+        "reasoning": "",
+        "summary_hash": "f063534e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::dependency_health::extensions_calibrate_cycle": {
+      "id": "review::.::holistic::dependency_health::extensions_calibrate_cycle",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Import cycle between extensions.ts and calibrate-plugin.ts despite dynamic import mitigation",
+      "detail": {
+        "holistic": true,
+        "dimension": "dependency_health",
+        "related_files": [
+          "src/lib/util/extensions.ts",
+          "src/plugins/calibrate-plugin.ts"
+        ],
+        "evidence": [
+          "extensions.ts dynamically imports calibrate-plugin.ts at line 171, while calibrate-plugin.ts statically imports type BeforeSenseContext from extensions.ts. Static analysis tools flag this as a cycle."
+        ],
+        "suggestion": "Move BeforeSenseContext to a separate types file (e.g., lib/util/hook-types.ts) that both modules can import without creating a cycle. This eliminates the structural cycle entirely rather than relying on dynamic import as mitigation.",
+        "reasoning": "",
+        "summary_hash": "c012c0cc"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::extract_tx_hash_nested_casting": {
+      "id": "review::.::holistic::low_level_elegance::extract_tx_hash_nested_casting",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "extractTxHash uses deeply nested Record<string, unknown> casting chains that are hard to follow",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "Lines 220-240: The extract helper navigates 4-5 levels of (obj as Record<string, unknown>).response.data.transaction.hash with inline casting at every level, producing a dense expression like '(resp.data as Record<string, unknown> | undefined)?.transaction as Record<string, unknown> | undefined'"
+        ],
+        "suggestion": "Extract a typed helper like safeGet(obj, 'response.data.transaction.hash') or break the nested access into named intermediate variables with explicit null checks at each level. This would trade vertical space for readability.",
+        "reasoning": "",
+        "summary_hash": "a8bde2ae"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::detect_change_high_arity": {
+      "id": "review::.::holistic::low_level_elegance::detect_change_high_arity",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "detectChange takes 8 parameters where related params could be grouped",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/lib/pipeline/signal-detection.ts"
+        ],
+        "evidence": [
+          "detectChange(current, rule, metricKey, entry, ctx, baselineStore, config, getCachedMedian) \u2014 8 positional parameters. Other detection functions in the same file (detectThreshold) use 5 parameters."
+        ],
+        "suggestion": "Pass baselineStore, config, and getCachedMedian as a single BaselineContext object since they are always provided together and represent the baseline subsystem's dependencies.",
+        "reasoning": "",
+        "summary_hash": "1e7038ba"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::dual_publish_pipelines": {
+      "id": "review::.::holistic::mid_level_elegance::dual_publish_pipelines",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Two separate publish pipelines serve different consumers with partially overlapping logic",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/publish.ts",
+          "src/actions/publish-pipeline.ts"
+        ],
+        "evidence": [
+          "toolkit/tools/publish.ts orchestrates: validate -> guard check -> executePublishPipeline -> guard record, using sdk-bridge for chain operations",
+          "actions/publish-pipeline.ts orchestrates: DAHR attestation -> HIVE encoding -> DemosTransactions pipeline, used directly by session-runner",
+          "Both handle HIVE post encoding and chain transaction submission but through different SDK access patterns"
+        ],
+        "suggestion": "Document the intentional boundary: toolkit/publish.ts is the stable external API (for future @demos-agents/core consumers), while actions/publish-pipeline.ts is the internal session-runner pipeline. Add cross-references between the two files to prevent confusion.",
+        "reasoning": "",
+        "summary_hash": "69764e5a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::wide_action_executor_handoff": {
+      "id": "review::.::holistic::mid_level_elegance::wide_action_executor_handoff",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "ActionExecutorContext requires constructing an 18+ field object at the event-runner boundary",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "The event-runner must wire 18+ fields into ActionExecutorContext: identity (3), auth (1), budget (2), config (3), LLM (1), state (1), platform (4), rate-limiting (3), telemetry (2). This is the widest handoff seam in the codebase."
+        ],
+        "suggestion": "Group related fields into sub-contexts (e.g., AuthContext, BudgetContext, PlatformContext) that can be constructed independently and composed. This makes partial testing easier and the wiring site more readable.",
+        "reasoning": "",
+        "summary_hash": "9a1cfda4"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::orphaned_test_files_still_open": {
+      "id": "review::.::holistic::test_strategy::orphaned_test_files_still_open",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Test files for orphaned production code \u2014 tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts \u2014 waste maintenance effort",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "tests/tips.test.ts",
+          "tests/predictions.test.ts",
+          "tests/mentions.test.ts",
+          "tests/transcript.test.ts",
+          "src/lib/tips.ts",
+          "src/lib/predictions.ts",
+          "src/lib/mentions.ts",
+          "src/lib/transcript.ts"
+        ],
+        "evidence": [
+          "src/lib/mentions.ts has 0 importers, src/lib/transcript.ts has 0 importers. src/lib/tips.ts and src/lib/predictions.ts are similarly orphaned (marked as false_positive in historical issues, meaning they were intentionally kept but are dead code).",
+          "The corresponding test files run on every npm test invocation, consuming CI time and creating a false sense of coverage"
+        ],
+        "suggestion": "Delete the orphaned production files and their test files together. If functionality needs to be recovered later, it is available in git history. This is a straight cleanup with no risk.",
+        "reasoning": "",
+        "summary_hash": "588c8dd4"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::attestation_policy_no_direct_tests": {
+      "id": "review::.::holistic::test_strategy::attestation_policy_no_direct_tests",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "attestation-policy.ts (8 importers, core attestation logic) lacks a dedicated test file",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "src/lib/attestation/attestation-policy.ts"
+        ],
+        "evidence": [
+          "attestation-policy.ts exports resolveAttestationPlan, inferAssetAlias, extractTopicVars, fillUrlTemplate, unresolvedPlaceholders \u2014 critical functions used by policy.ts, publish-pipeline.ts, and declarative-engine.ts",
+          "No tests/attestation-policy.test.ts exists. Some functions are tested indirectly via attestation-planner.test.ts and macro-entity.test.ts, but resolveAttestationPlan and fillUrlTemplate lack direct unit coverage"
+        ],
+        "suggestion": "Create tests/attestation-policy.test.ts covering resolveAttestationPlan with different config combinations, fillUrlTemplate with various placeholder patterns, and unresolvedPlaceholders edge cases. These are pure functions \u2014 easy to test directly.",
+        "reasoning": "",
+        "summary_hash": "b44b8eb2"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::publish_pipeline_issue_resolved": {
+      "id": "review::.::holistic::test_strategy::publish_pipeline_issue_resolved",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "publish-pipeline.ts now has a dedicated test file \u2014 prior open issue is resolved",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "tests/publish-pipeline.test.ts",
+          "src/actions/publish-pipeline.ts"
+        ],
+        "evidence": [
+          "publish-pipeline.test.ts exists and tests attestDahr, publishPost, and attestAndPublish with fully mocked SDK"
+        ],
+        "suggestion": "Close the previously flagged open issue about publish-pipeline.ts being untested.",
+        "reasoning": "",
+        "summary_hash": "a387755e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::phantom_session_logger": {
+      "id": "review::.::holistic::api_surface_coherence::phantom_session_logger",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "scan.ts references session.logger which is never declared on DemosSession",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/toolkit/tools/scan.ts",
+          "src/toolkit/session.ts"
+        ],
+        "evidence": [
+          "scan.ts lines 68 and 75 call session.logger?.warn?.(...) but DemosSession has no logger property",
+          "Optional chaining prevents runtime errors but the calls are dead code \u2014 no warnings are ever emitted"
+        ],
+        "suggestion": "Either add an optional logger property to DemosSession (e.g., logger?: { warn?: (...args: unknown[]) => void }) and wire it through ConnectOptions, or replace the calls with console.warn to match the pattern used in react.ts line 44.",
+        "reasoning": "",
+        "summary_hash": "b703c285"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::paired_info_observe_overlap": {
+      "id": "review::.::holistic::ai_generated_debt::paired_info_observe_overlap",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "action-executor.ts pairs info()/warn() with observe() calls that partially duplicate context",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "Lines 153-166: ctx.info() logs the event, then ctx.observe() logs the same event with slightly more structured data",
+          "Lines 167-178: ctx.warn() logs a failure message, then ctx.observe() logs the same failure with structured data",
+          "12 observe() calls in the file, most paired with a preceding info()/warn() that conveys overlapping information"
+        ],
+        "suggestion": "Consider having observe() also emit to the console log when appropriate, reducing the need for separate info()/warn() calls. Alternatively, accept this as intentional dual-channel logging (human-readable console + structured JSONL) and document the pattern.",
+        "reasoning": "",
+        "summary_hash": "f58b6e47"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::incomplete_migration::dead_persistSourceToRegistry": {
+      "id": "review::.::holistic::incomplete_migration::dead_persistSourceToRegistry",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Deprecated persistSourceToRegistry has zero callers and should be deleted",
+      "detail": {
+        "holistic": true,
+        "dimension": "incomplete_migration",
+        "related_files": [
+          "src/lib/pipeline/source-discovery.ts"
+        ],
+        "evidence": [
+          "Line 320: @deprecated annotation pointing to persistSourceToCatalog as replacement",
+          "grep confirms zero callers across the entire codebase \u2014 only the definition exists",
+          "V2 replacement persistSourceToCatalog is fully implemented in the same file"
+        ],
+        "suggestion": "Delete the persistSourceToRegistry function (lines 315-347) and its associated V1 YAML registry types if no longer used elsewhere.",
+        "reasoning": "",
+        "summary_hash": "582669df"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::package_organization::src_lib_flat_mixed_concerns": {
+      "id": "review::.::holistic::package_organization::src_lib_flat_mixed_concerns",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/lib/ has 13 flat files with mixed concerns and low fan-in (avg 1.1)",
+      "detail": {
+        "holistic": true,
+        "dimension": "package_organization",
+        "related_files": [
+          "src/lib/mentions.ts",
+          "src/lib/predictions.ts",
+          "src/lib/transcript.ts",
+          "src/lib/tips.ts",
+          "src/lib/spending-policy.ts",
+          "src/lib/budget-tracker.ts",
+          "src/lib/improvement-utils.ts",
+          "src/lib/review-findings.ts",
+          "src/lib/test-quality-validator.ts",
+          "src/lib/state.ts",
+          "src/lib/agent-config.ts",
+          "src/lib/response-validator.ts",
+          "src/lib/tlsn-playwright-bridge.ts"
+        ],
+        "evidence": [
+          "13 files with avg_fan_in of 1.1 \u2014 most files are imported by 0-2 other files",
+          "Mixed concerns: agent config, session state management, spending/budget tracking, social features (mentions, tips), quality testing, and attestation tooling all coexist",
+          "mentions.ts, predictions.ts, and transcript.ts were flagged as orphaned in previous reviews \u2014 still present and inflating the directory",
+          "High-cohesion clusters exist but are not grouped: {tips.ts, spending-policy.ts, budget-tracker.ts} share spending/economic concerns; {test-quality-validator.ts, review-findings.ts, improvement-utils.ts} share quality/review concerns"
+        ],
+        "suggestion": "Staged reorg plan: (1) Delete confirmed orphans (mentions.ts, predictions.ts, transcript.ts) \u2014 verify zero importers first with grep. (2) Move spending-related files to src/lib/spending/ or merge budget-tracker into spending-policy. (3) Move quality/review files to src/lib/quality/ (test-quality-validator, review-findings, improvement-utils). (4) Update imports: grep for each moved file and fix paths. (5) Validate with npm test.",
+        "reasoning": "",
+        "summary_hash": "16a391d1"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::sdk_exported_mutable_state": {
+      "id": "review::.::holistic::initialization_coupling::sdk_exported_mutable_state",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "sdk.ts exports mutable `let` RPC_URL and SUPERCOLONY_API that can go stale after applyConfigOverrides()",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Lines 25-26: `export let RPC_URL` and `export let SUPERCOLONY_API` are mutated by applyConfigOverrides() called from loadMnemonic()",
+          "Any module importing RPC_URL gets the value at import time, but it may change later when loadMnemonic() is called \u2014 creating a stale-snapshot risk"
+        ],
+        "suggestion": "Replace exported mutable lets with getter functions: `export function getRpcUrl(): string` and `export function getApiUrl(): string`. Consumers call the getter at use-time instead of capturing a potentially stale binding.",
+        "reasoning": "",
+        "summary_hash": "4ae17642"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::providers_toplevel_await_io": {
+      "id": "review::.::holistic::initialization_coupling::providers_toplevel_await_io",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "providers/index.ts performs file I/O via top-level await at module scope, blocking all importers",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/lib/sources/providers/index.ts"
+        ],
+        "evidence": [
+          "Lines 27-39: top-level try block with `await import('./declarative-engine.js')` and `await loadDeclarativeProviderAdapters()` reads YAML specs from disk",
+          "Every module importing from providers/index.ts pays this I/O cost at import time and cannot control when it happens"
+        ],
+        "suggestion": "Wrap the spec loading in a lazy init function: `async function ensureLoaded()` called on first access from getProviderAdapter(). The registry starts with just the generic adapter and loads declarative specs on demand.",
+        "reasoning": "",
+        "summary_hash": "54304720"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::sdk_globalthis_polyfill": {
+      "id": "review::.::holistic::initialization_coupling::sdk_globalthis_polyfill",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "sdk.ts mutates globalThis.crypto at import time \u2014 side effect on every import",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Lines 16-18: `if (!globalThis.crypto) { (globalThis as any).crypto = webcrypto; }` runs at import time",
+          "This polyfill affects the global scope for all modules in the process, not just sdk.ts consumers"
+        ],
+        "suggestion": "Move the polyfill into connectWallet() or a dedicated setup function called by entry points. For Node 20+ (which has globalThis.crypto natively), the polyfill may no longer be needed at all.",
+        "reasoning": "",
+        "summary_hash": "bbc04abe"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::sdk_env_read_at_import": {
+      "id": "review::.::holistic::initialization_coupling::sdk_env_read_at_import",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "sdk.ts reads process.env.AGENT_NAME at module scope \u2014 fragile in tests",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Line 27: `let logAgentName = process.env.AGENT_NAME || 'agent'` captures the env var at import time",
+          "Tests that set AGENT_NAME after importing sdk.ts get the stale default value; setLogAgent() exists but must be called explicitly"
+        ],
+        "suggestion": "Change the default to read the env var lazily: in the info() function, use `process.env.AGENT_NAME || logAgentName` so the env var is checked at call time, not import time.",
+        "reasoning": "",
+        "summary_hash": "18437480"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::sdk_bridge_size": {
+      "id": "review::.::holistic::design_coherence::sdk_bridge_size",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "sdk-bridge.ts (917 LOC) combines type definitions, helpers, and a 15-method factory in one file",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "File contains: 7 interface/type definitions, 5 standalone helper functions (sanitizeUrl, encodeHivePayload, decodeHiveData, scanFilteredTransactions, extractTxHash), and a createSdkBridge factory returning 15+ methods",
+          "The HIVE encoding/decoding helpers and transaction scanning are reusable primitives that don't need the bridge context"
+        ],
+        "suggestion": "Extract HIVE encoding/decoding helpers (encodeHivePayload, decodeHiveData, scanFilteredTransactions) into a dedicated src/toolkit/hive-codec.ts. This keeps sdk-bridge.ts focused on the bridge factory and its methods. The type definitions can stay since they define the bridge's contract.",
+        "reasoning": "",
+        "summary_hash": "978f94ae"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::lifecycle_plugin_any_types": {
+      "id": "review::.::holistic::design_coherence::lifecycle_plugin_any_types",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "lifecycle-plugin.ts uses 7 `any` types in 95 lines despite typed catalog types existing",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/plugins/lifecycle-plugin.ts"
+        ],
+        "evidence": [
+          "Line 39: `const allSources = catalog.sources as any[]` \u2014 SourceRecordV2[] exists",
+          "Line 49-50: `const transitions: any[]` and `const updatedMap = new Map<string, any>()`",
+          "Line 68: `(s: any)` in map callback",
+          "Line 78: `catch (e: any)` instead of `catch (e: unknown)`"
+        ],
+        "suggestion": "Import SourceRecordV2 from catalog.ts and type allSources, updatedMap, and transitions properly. Use `catch (e: unknown)` with toErrorMessage() pattern used elsewhere in the codebase.",
+        "reasoning": "",
+        "summary_hash": "54043934"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::engage_heuristics_any": {
+      "id": "review::.::holistic::design_coherence::engage_heuristics_any",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "engage-heuristics.ts uses `any` for post types where ScanPost exists",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/lib/pipeline/engage-heuristics.ts"
+        ],
+        "evidence": [
+          "Line 28: `remainingPosts: any[]` in EnforceDisagreeInput interface",
+          "Line 47: `post: any` parameter \u2014 ScanPost type from toolkit/types.ts describes this shape"
+        ],
+        "suggestion": "Import ScanPost from toolkit/types.ts and replace `any[]` with `ScanPost[]` and `any` with `ScanPost`. The comment on line 10 says it avoids SDK import chain \u2014 ScanPost is in toolkit/types.ts which has no SDK deps.",
+        "reasoning": "",
+        "summary_hash": "23dddcca"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::source_discovery_any": {
+      "id": "review::.::holistic::design_coherence::source_discovery_any",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "source-discovery.ts has 4 explicit `any` types in typed domain code",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/lib/pipeline/source-discovery.ts"
+        ],
+        "evidence": [
+          "Line 125: `const extractTitles = (obj: any)` \u2014 extracting titles from API response",
+          "Lines 281, 343: `catch (err: any)` \u2014 should use unknown + type narrowing",
+          "Line 324: `let parsed: any` \u2014 YAML parse result has known shape"
+        ],
+        "suggestion": "Type extractTitles parameter as `Record<string, unknown>` with nested access guards. Use `catch (e: unknown)` with toErrorMessage(). Type the YAML parse result with the known source registry shape.",
+        "reasoning": "",
+        "summary_hash": "87dc1486"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::attestation_executor_orphaned": {
+      "id": "review::.::holistic::design_coherence::attestation_executor_orphaned",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "attestation-executor.ts (119 LOC) is orphaned with zero importers",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/actions/attestation-executor.ts"
+        ],
+        "evidence": [
+          "File has zero importers \u2014 not referenced by any other module, not a CLI entry point, not dynamically imported"
+        ],
+        "suggestion": "Delete the file if it is truly unused. If it is planned for future use, add a TODO comment explaining when it will be wired in.",
+        "reasoning": "",
+        "summary_hash": "7634a096"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::systemic_large_files": {
+      "id": "review::.::holistic::design_coherence::systemic_large_files",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "6 files (571-1534 LOC) share structural complexity pattern without clear extraction opportunities",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/lib/agent-config.ts",
+          "src/lib/pipeline/signal-detection.ts",
+          "src/lib/sources/catalog.ts",
+          "src/lib/sources/matcher.ts",
+          "src/lib/sources/providers/declarative-engine.ts",
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "All 6 files triggered both smells and structural detectors",
+          "declarative-engine.ts is 1534 LOC \u2014 the largest non-test file",
+          "sdk-bridge.ts is 917 LOC combining types, helpers, and factory"
+        ],
+        "suggestion": "For sdk-bridge.ts, extract HIVE codec helpers. For declarative-engine.ts, evaluate whether spec validation and adapter generation can be separated. The other files (agent-config, catalog, matcher, signal-detection) are large because their domains are genuinely complex \u2014 no forced extraction recommended.",
+        "reasoning": "",
+        "summary_hash": "0f9278e2"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::stale_error_code_count": {
+      "id": "review::.::holistic::contract_coherence::stale_error_code_count",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "types.ts docstring says '9 error codes' but DemosErrorCode has 10 members",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/toolkit/types.ts"
+        ],
+        "evidence": [
+          "Line 4: docstring says 'DemosError: typed error union with 9 error codes'",
+          "Lines 14-24: DemosErrorCode has 10 members including PARTIAL_SUCCESS (likely added after the docstring was written)"
+        ],
+        "suggestion": "Update the docstring to say '10 error codes' or remove the count entirely to avoid future staleness.",
+        "reasoning": "",
+        "summary_hash": "e466cebd"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::lifecycle_plugin_empty_hooks": {
+      "id": "review::.::holistic::contract_coherence::lifecycle_plugin_empty_hooks",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "createLifecyclePlugin() returns hooks: {} while actual hook is exported separately",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/plugins/lifecycle-plugin.ts",
+          "src/lib/util/extensions.ts"
+        ],
+        "evidence": [
+          "Line 93: createLifecyclePlugin returns hooks: {} \u2014 suggests no hooks",
+          "Line 23: lifecycleBeforeSense is exported as a standalone function",
+          "extensions.ts line 214-216: dynamically imports and wires lifecycleBeforeSense bypassing the FrameworkPlugin hooks contract"
+        ],
+        "suggestion": "Either wire the hook into the plugin's hooks map (`hooks: { beforeSense: lifecycleBeforeSense }`) so the plugin is self-describing, or remove createLifecyclePlugin() since the hook is wired via the extension system anyway.",
+        "reasoning": "",
+        "summary_hash": "378c1467"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::dahr_empty_response_hash": {
+      "id": "review::.::holistic::contract_coherence::dahr_empty_response_hash",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "attestDahr can return empty string for responseHash \u2014 surprising for a required field",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "Line 525: `responseHash: String(proxyResponse.responseHash ?? '')` \u2014 empty string is a valid return",
+          "DahrResult interface declares responseHash: string (required, not optional)",
+          "Callers checking `result.responseHash` for truthiness will silently skip empty strings"
+        ],
+        "suggestion": "Throw an error when responseHash is missing from the proxy response (the attestation failed if there is no hash), or make the field optional (`responseHash?: string`) to signal that absence is expected.",
+        "reasoning": "",
+        "summary_hash": "735d2462"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::llm_json_repair_bracket_mismatch": {
+      "id": "review::.::holistic::logic_clarity::llm_json_repair_bracket_mismatch",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "LLM JSON repair counts both { and [ but only appends } \u2014 incomplete repair for unmatched brackets",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/actions/llm.ts"
+        ],
+        "evidence": [
+          "Lines 238-243: `opens` counts `{` AND `[`, `closes` counts `}` AND `]`, but line 243 only appends `}`",
+          "If an LLM response has `{\"tags\":[\"a\"` (missing `]}`), the repair adds `}}` instead of `]}`"
+        ],
+        "suggestion": "Either count braces and brackets separately and append the correct closing characters in reverse order, or simplify to only counting `{`/`}` pairs since LLM output is always a top-level JSON object.",
+        "reasoning": "",
+        "summary_hash": "a2ba43c0"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::publish_pipeline_redundant_fallbacks": {
+      "id": "review::.::holistic::logic_clarity::publish_pipeline_redundant_fallbacks",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "publish-pipeline.ts uses || [] fallback on arrays already verified non-empty",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/actions/publish-pipeline.ts"
+        ],
+        "evidence": [
+          "Line 282: `hasDahr` guarantees `input.sourceAttestations` is a non-empty array",
+          "Line 289: `for (const att of input.sourceAttestations || [])` \u2014 the `|| []` is unreachable",
+          "Same pattern on line 296 for tlsnAttestations"
+        ],
+        "suggestion": "Remove the `|| []` fallbacks since the guard check already guarantees the arrays are non-empty. Alternatively, use `input.sourceAttestations!` to signal the assertion to readers.",
+        "reasoning": "",
+        "summary_hash": "2215f952"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::v2_state_undeclared_fields": {
+      "id": "review::.::holistic::type_safety::v2_state_undeclared_fields",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "3 plugins inject oracleSnapshot, priceSnapshot into V2SessionState via (as any) \u2014 fields not declared on type",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/plugins/sc-oracle-plugin.ts",
+          "src/plugins/sc-prices-plugin.ts",
+          "src/lib/state.ts"
+        ],
+        "evidence": [
+          "sc-oracle-plugin.ts line 32: (ctx.state as any).oracleSnapshot = result.data \u2014 field not on V2SessionState",
+          "sc-prices-plugin.ts line 36: (ctx.state as any).priceSnapshot = result.data \u2014 field not on V2SessionState",
+          "V2SessionState in state.ts has signalSnapshot and briefingContext but not oracleSnapshot or priceSnapshot"
+        ],
+        "suggestion": "Add `oracleSnapshot?: unknown` and `priceSnapshot?: unknown` to V2SessionState in state.ts. Then remove the as-any casts in the plugins.",
+        "reasoning": "",
+        "summary_hash": "e01d2c15"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::signals_plugin_unnecessary_casts": {
+      "id": "review::.::holistic::type_safety::signals_plugin_unnecessary_casts",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "signals-plugin.ts uses (ctx.state as any) for fields that exist on V2SessionState",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/plugins/signals-plugin.ts"
+        ],
+        "evidence": [
+          "Line 36: (ctx.state as any).signalSnapshot \u2014 but signalSnapshot is declared on V2SessionState",
+          "Line 40: (ctx.state as any).briefingContext \u2014 but briefingContext is declared on V2SessionState",
+          "BeforeSenseContext.state is typed as V2SessionState, so these assignments work without casts"
+        ],
+        "suggestion": "Remove the as-any casts: `ctx.state.signalSnapshot = signalResult.value` and `ctx.state.briefingContext = briefingResult.value`.",
+        "reasoning": "",
+        "summary_hash": "a76b255f"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::sources_plugin_any_hooks": {
+      "id": "review::.::holistic::type_safety::sources_plugin_any_hooks",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "sources-plugin.ts uses (ctx: any) for hook callbacks where typed contexts exist",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/plugins/sources-plugin.ts",
+          "src/lib/util/extensions.ts"
+        ],
+        "evidence": [
+          "Line 90: `beforePublishDraft: async (ctx: any)` \u2014 BeforePublishDraftContext exists in extensions.ts",
+          "Line 97: `afterPublishDraft: async (ctx: any)` \u2014 AfterPublishDraftContext exists in extensions.ts"
+        ],
+        "suggestion": "Import BeforePublishDraftContext and AfterPublishDraftContext from extensions.ts and replace the any annotations.",
+        "reasoning": "",
+        "summary_hash": "97d183ef"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::v2_state_engagements_any": {
+      "id": "review::.::holistic::type_safety::v2_state_engagements_any",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "V2SessionState.engagements typed as any[] \u2014 no engagement result type exists",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/lib/state.ts"
+        ],
+        "evidence": [
+          "Line 132: `engagements: any[]` \u2014 the engagement results pushed to this array have a known shape (reaction decisions with txHash, type, reason)",
+          "SessionState (v1) has `engagements: Record<string, unknown>[]` which is marginally better"
+        ],
+        "suggestion": "Define an EngagementRecord interface with the known fields (txHash, reactionType, reason, timestamp) and use `EngagementRecord[]` instead of `any[]`.",
+        "reasoning": "",
+        "summary_hash": "c9dfd985"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::catch_any_holdouts": {
+      "id": "review::.::holistic::type_safety::catch_any_holdouts",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "17 catch blocks use `catch (err: any)` instead of `catch (e: unknown)` with type narrowing",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/lib/auth/auth.ts",
+          "src/lib/pipeline/signals.ts",
+          "src/plugins/lifecycle-plugin.ts",
+          "src/plugins/signals-plugin.ts",
+          "src/lib/pipeline/source-discovery.ts"
+        ],
+        "evidence": [
+          "17 instances of `catch (err: any)` or `catch (e: any)` in non-test src/ code",
+          "106 instances already use `catch (e: unknown)` or bare `catch {}` \u2014 the correct pattern is established",
+          "The toErrorMessage() utility from lib/util/errors.ts exists specifically for safe error narrowing"
+        ],
+        "suggestion": "Replace `catch (err: any)` with `catch (err: unknown)` and use `toErrorMessage(err)` for the message. This is a straightforward find-and-replace across 17 sites.",
+        "reasoning": "",
+        "summary_hash": "703eb2de"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::engage_heuristics_any_posts": {
+      "id": "review::.::holistic::type_safety::engage_heuristics_any_posts",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "engage-heuristics.ts uses any for post types where ScanPost type exists",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/lib/pipeline/engage-heuristics.ts"
+        ],
+        "evidence": [
+          "Line 28: `remainingPosts: any[]` \u2014 ScanPost type from toolkit/types.ts describes this shape",
+          "Line 47: `post: any` parameter \u2014 same issue"
+        ],
+        "suggestion": "Import ScanPost from toolkit/types.ts (no SDK deps) and replace any with ScanPost.",
+        "reasoning": "",
+        "summary_hash": "222625dd"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-28T22:33:06+00:00",
+      "last_seen": "2026-03-28T22:33:06+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    }
+  },
+  "scan_coverage": {
+    "typescript": {
+      "status": "full",
+      "confidence": 1.0,
+      "detectors": {
+        "security": {
+          "detector": "security",
+          "status": "full",
+          "confidence": 1.0,
+          "summary": "Security coverage complete for enabled detectors.",
+          "impact": "",
+          "remediation": "",
+          "tool": "",
+          "reason": ""
+        }
+      },
+      "warnings": [],
+      "updated_at": "2026-03-28T22:33:10+00:00"
+    }
+  },
+  "score_confidence": {
+    "status": "full",
+    "confidence": 1.0,
+    "detectors": [],
+    "dimensions": []
+  },
+  "scan_metadata": {
+    "source": "scan"
+  },
+  "subjective_integrity": {
+    "status": "disabled",
+    "target_score": 85.0,
+    "matched_count": 0,
+    "matched_dimensions": [],
+    "reset_dimensions": []
+  },
+  "subjective_assessments": {
+    "abstraction_fitness": {
+      "score": 82.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00",
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty",
+        "Delegation Density",
+        "Definition Directness",
+        "Type Discipline"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 88.0,
+        "Indirection Cost": 85.0,
+        "Interface Honesty": 75.0,
+        "Delegation Density": 95.0,
+        "Definition Directness": 90.0,
+        "Type Discipline": 82.0
+      }
+    },
+    "ai_generated_debt": {
+      "score": 89.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "api_surface_coherence": {
+      "score": 88.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "authorization_consistency": {
+      "score": 90.2,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "contract_coherence": {
+      "score": 86.2,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "convention_outlier": {
+      "score": 83.4,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "cross_module_architecture": {
+      "score": 78.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "review_issue_false_positive",
+      "stale_since": "2026-03-28T22:33:43+00:00"
+    },
+    "dependency_health": {
+      "score": 91.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "design_coherence": {
+      "score": 76.3,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "error_consistency": {
+      "score": 79.8,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "high_level_elegance": {
+      "score": 81.2,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "review_issue_false_positive",
+      "stale_since": "2026-03-28T22:33:43+00:00"
+    },
+    "incomplete_migration": {
+      "score": 87.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "initialization_coupling": {
+      "score": 78.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "logic_clarity": {
+      "score": 87.4,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "low_level_elegance": {
+      "score": 83.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "mid_level_elegance": {
+      "score": 84.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "naming_quality": {
+      "score": 85.3,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "package_organization": {
+      "score": 82.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "test_strategy": {
+      "score": 81.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    },
+    "type_safety": {
+      "score": 74.8,
+      "source": "holistic",
+      "assessed_at": "2026-03-28T22:33:06+00:00"
+    }
+  },
+  "potentials": {
+    "typescript": {
+      "logs": 0,
+      "unused": 0,
+      "exports": 0,
+      "deprecated": 0,
+      "structural": 0,
+      "flat_dirs": 0,
+      "props": 0,
+      "single_use": 0,
+      "coupling": 0,
+      "cycles": 0,
+      "orphaned": 0,
+      "patterns": 0,
+      "naming": 0,
+      "facade": 0,
+      "test_coverage": 0,
+      "smells": 0,
+      "react": 0,
+      "security": 0,
+      "subjective_review": 20,
+      "dupes": 0,
+      "stale_wontfix": 0
+    }
+  },
+  "scan_history": [
+    {
+      "timestamp": "2026-03-28T22:33:06+00:00",
+      "lang": "typescript",
+      "strict_score": 82.2,
+      "verified_strict_score": 100.0,
+      "objective_score": 100.0,
+      "overall_score": 82.2,
+      "open": 46,
+      "diff_new": 46,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 46,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": null
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Abstraction fit": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "AI generated debt": {
+          "score": 89.0,
+          "strict": 89.0
+        },
+        "API coherence": {
+          "score": 88.5,
+          "strict": 88.5
+        },
+        "Auth consistency": {
+          "score": 90.2,
+          "strict": 90.2
+        },
+        "Contracts": {
+          "score": 86.2,
+          "strict": 86.2
+        },
+        "Convention drift": {
+          "score": 83.4,
+          "strict": 83.4
+        },
+        "Cross-module arch": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Dep health": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Design coherence": {
+          "score": 76.3,
+          "strict": 76.3
+        },
+        "Error consistency": {
+          "score": 79.8,
+          "strict": 79.8
+        },
+        "High elegance": {
+          "score": 81.2,
+          "strict": 81.2
+        },
+        "Stale migration": {
+          "score": 87.5,
+          "strict": 87.5
+        },
+        "Init coupling": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Logic clarity": {
+          "score": 87.4,
+          "strict": 87.4
+        },
+        "Low elegance": {
+          "score": 83.0,
+          "strict": 83.0
+        },
+        "Mid elegance": {
+          "score": 84.5,
+          "strict": 84.5
+        },
+        "Naming quality": {
+          "score": 85.3,
+          "strict": 85.3
+        },
+        "Structure nav": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Test strategy": {
+          "score": 81.5,
+          "strict": 81.5
+        },
+        "Type safety": {
+          "score": 74.8,
+          "strict": 74.8
+        }
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:33:10+00:00",
+      "lang": "typescript",
+      "strict_score": 82.2,
+      "verified_strict_score": 100.0,
+      "objective_score": 100.0,
+      "overall_score": 82.2,
+      "open": 46,
+      "diff_new": 0,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 0,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": 85.0
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Abstraction fit": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "AI generated debt": {
+          "score": 89.0,
+          "strict": 89.0
+        },
+        "API coherence": {
+          "score": 88.5,
+          "strict": 88.5
+        },
+        "Auth consistency": {
+          "score": 90.2,
+          "strict": 90.2
+        },
+        "Contracts": {
+          "score": 86.2,
+          "strict": 86.2
+        },
+        "Convention drift": {
+          "score": 83.4,
+          "strict": 83.4
+        },
+        "Cross-module arch": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Dep health": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Design coherence": {
+          "score": 76.3,
+          "strict": 76.3
+        },
+        "Error consistency": {
+          "score": 79.8,
+          "strict": 79.8
+        },
+        "High elegance": {
+          "score": 81.2,
+          "strict": 81.2
+        },
+        "Stale migration": {
+          "score": 87.5,
+          "strict": 87.5
+        },
+        "Init coupling": {
+          "score": 78.5,
+          "strict": 78.5
+        },
+        "Logic clarity": {
+          "score": 87.4,
+          "strict": 87.4
+        },
+        "Low elegance": {
+          "score": 83.0,
+          "strict": 83.0
+        },
+        "Mid elegance": {
+          "score": 84.5,
+          "strict": 84.5
+        },
+        "Naming quality": {
+          "score": 85.3,
+          "strict": 85.3
+        },
+        "Structure nav": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Test strategy": {
+          "score": 81.5,
+          "strict": 81.5
+        },
+        "Type safety": {
+          "score": 74.8,
+          "strict": 74.8
+        }
+      }
+    }
+  ],
+  "tool_hash": "ab097af7227e",
+  "scan_path": "src",
+  "scan_completeness": {
+    "typescript": "full"
+  },
+  "dimension_scores": {
+    "Abstraction fit": {
+      "score": 82.5,
+      "strict": 82.5,
+      "verified_strict_score": 82.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.825,
+          "failing": 2,
+          "weighted_failures": 1.75,
+          "assessment_score": 82.5,
+          "placeholder": false,
+          "dimension_key": "abstraction_fitness",
+          "configured_weight": 8.0,
+          "components": [
+            "Abstraction Leverage",
+            "Indirection Cost",
+            "Interface Honesty",
+            "Delegation Density",
+            "Definition Directness",
+            "Type Discipline"
+          ],
+          "component_scores": {
+            "Abstraction Leverage": 88.0,
+            "Indirection Cost": 85.0,
+            "Interface Honesty": 75.0,
+            "Delegation Density": 95.0,
+            "Definition Directness": 90.0,
+            "Type Discipline": 82.0
+          }
+        }
+      }
+    },
+    "AI generated debt": {
+      "score": 89.0,
+      "strict": 89.0,
+      "verified_strict_score": 89.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.89,
+          "failing": 1,
+          "weighted_failures": 1.1,
+          "assessment_score": 89.0,
+          "placeholder": false,
+          "dimension_key": "ai_generated_debt",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "API coherence": {
+      "score": 88.5,
+      "strict": 88.5,
+      "verified_strict_score": 88.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.885,
+          "failing": 1,
+          "weighted_failures": 1.15,
+          "assessment_score": 88.5,
+          "placeholder": false,
+          "dimension_key": "api_surface_coherence",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Auth consistency": {
+      "score": 90.2,
+      "strict": 90.2,
+      "verified_strict_score": 90.2,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.902,
+          "failing": 0,
+          "weighted_failures": 0.98,
+          "assessment_score": 90.2,
+          "placeholder": false,
+          "dimension_key": "authorization_consistency",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Contracts": {
+      "score": 86.2,
+      "strict": 86.2,
+      "verified_strict_score": 86.2,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.862,
+          "failing": 3,
+          "weighted_failures": 1.38,
+          "assessment_score": 86.2,
+          "placeholder": false,
+          "dimension_key": "contract_coherence",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    },
+    "Convention drift": {
+      "score": 83.4,
+      "strict": 83.4,
+      "verified_strict_score": 83.4,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.834,
+          "failing": 1,
+          "weighted_failures": 1.66,
+          "assessment_score": 83.4,
+          "placeholder": false,
+          "dimension_key": "convention_outlier",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Cross-module arch": {
+      "score": 78.5,
+      "strict": 78.5,
+      "verified_strict_score": 78.5,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.785,
+          "failing": 3,
+          "weighted_failures": 2.15,
+          "assessment_score": 78.5,
+          "placeholder": false,
+          "dimension_key": "cross_module_architecture",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Dep health": {
+      "score": 91.0,
+      "strict": 91.0,
+      "verified_strict_score": 91.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.91,
+          "failing": 1,
+          "weighted_failures": 0.9,
+          "assessment_score": 91.0,
+          "placeholder": false,
+          "dimension_key": "dependency_health",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Design coherence": {
+      "score": 76.3,
+      "strict": 76.3,
+      "verified_strict_score": 76.3,
+      "checks": 10,
+      "failing": 6,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.763,
+          "failing": 6,
+          "weighted_failures": 2.37,
+          "assessment_score": 76.3,
+          "placeholder": false,
+          "dimension_key": "design_coherence",
+          "configured_weight": 10.0,
+          "components": []
+        }
+      }
+    },
+    "Error consistency": {
+      "score": 79.8,
+      "strict": 79.8,
+      "verified_strict_score": 79.8,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.798,
+          "failing": 3,
+          "weighted_failures": 2.02,
+          "assessment_score": 79.8,
+          "placeholder": false,
+          "dimension_key": "error_consistency",
+          "configured_weight": 3.0,
+          "components": []
+        }
+      }
+    },
+    "High elegance": {
+      "score": 81.2,
+      "strict": 81.2,
+      "verified_strict_score": 81.2,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.812,
+          "failing": 0,
+          "weighted_failures": 1.88,
+          "assessment_score": 81.2,
+          "placeholder": false,
+          "dimension_key": "high_level_elegance",
+          "configured_weight": 22.0,
+          "components": []
+        }
+      }
+    },
+    "Stale migration": {
+      "score": 87.5,
+      "strict": 87.5,
+      "verified_strict_score": 87.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.875,
+          "failing": 1,
+          "weighted_failures": 1.25,
+          "assessment_score": 87.5,
+          "placeholder": false,
+          "dimension_key": "incomplete_migration",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Init coupling": {
+      "score": 78.5,
+      "strict": 78.5,
+      "verified_strict_score": 78.5,
+      "checks": 10,
+      "failing": 4,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.785,
+          "failing": 4,
+          "weighted_failures": 2.15,
+          "assessment_score": 78.5,
+          "placeholder": false,
+          "dimension_key": "initialization_coupling",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Logic clarity": {
+      "score": 87.4,
+      "strict": 87.4,
+      "verified_strict_score": 87.4,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.874,
+          "failing": 2,
+          "weighted_failures": 1.26,
+          "assessment_score": 87.4,
+          "placeholder": false,
+          "dimension_key": "logic_clarity",
+          "configured_weight": 6.0,
+          "components": []
+        }
+      }
+    },
+    "Low elegance": {
+      "score": 83.0,
+      "strict": 83.0,
+      "verified_strict_score": 83.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.83,
+          "failing": 2,
+          "weighted_failures": 1.7,
+          "assessment_score": 83.0,
+          "placeholder": false,
+          "dimension_key": "low_level_elegance",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    },
+    "Mid elegance": {
+      "score": 84.5,
+      "strict": 84.5,
+      "verified_strict_score": 84.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.845,
+          "failing": 2,
+          "weighted_failures": 1.55,
+          "assessment_score": 84.5,
+          "placeholder": false,
+          "dimension_key": "mid_level_elegance",
+          "configured_weight": 22.0,
+          "components": []
+        }
+      }
+    },
+    "Naming quality": {
+      "score": 85.3,
+      "strict": 85.3,
+      "verified_strict_score": 85.3,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.853,
+          "failing": 1,
+          "weighted_failures": 1.47,
+          "assessment_score": 85.3,
+          "placeholder": false,
+          "dimension_key": "naming_quality",
+          "configured_weight": 2.0,
+          "components": []
+        }
+      }
+    },
+    "Structure nav": {
+      "score": 82.0,
+      "strict": 82.0,
+      "verified_strict_score": 82.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.82,
+          "failing": 1,
+          "weighted_failures": 1.8,
+          "assessment_score": 82.0,
+          "placeholder": false,
+          "dimension_key": "package_organization",
+          "configured_weight": 5.0,
+          "components": []
+        }
+      }
+    },
+    "Test strategy": {
+      "score": 81.5,
+      "strict": 81.5,
+      "verified_strict_score": 81.5,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.815,
+          "failing": 3,
+          "weighted_failures": 1.85,
+          "assessment_score": 81.5,
+          "placeholder": false,
+          "dimension_key": "test_strategy",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Type safety": {
+      "score": 74.8,
+      "strict": 74.8,
+      "verified_strict_score": 74.8,
+      "checks": 10,
+      "failing": 6,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.748,
+          "failing": 6,
+          "weighted_failures": 2.52,
+          "assessment_score": 74.8,
+          "placeholder": false,
+          "dimension_key": "type_safety",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    }
+  },
+  "review_cache": {
+    "files": {},
+    "holistic": {
+      "reviewed_at": "2026-03-28T22:33:06+00:00",
+      "file_count_at_review": 163,
+      "issue_count": 46,
+      "reviewed_files_count": 0,
+      "full_sweep_included": false
+    },
+    "detectors": {
+      "boilerplate": {},
+      "security": {
+        "version": 1,
+        "fingerprint": "a1dd581c436bbcf914fbf135b17bb8bccb25fe02",
+        "entries": [],
+        "files_scanned": 0,
+        "coverage": null
+      },
+      "dupes": {}
+    }
+  },
+  "assessment_import_audit": [
+    {
+      "timestamp": "2026-03-28T22:33:06+00:00",
+      "mode": "trusted_internal",
+      "trusted": true,
+      "reason": "trusted import-run replay from 20260328_221710",
+      "override_used": false,
+      "attested_external": false,
+      "provisional": false,
+      "provisional_count": 0,
+      "attest": "",
+      "import_file": "/home/mj/projects/demos-agents/.desloppify/subagents/runs/20260328_221710/holistic_issues_merged.json",
+      "packet_sha256": "84ac193b8eaf8fb67d01f654cc025a38407587eb188cc0ffc32fb8cc01c0932b"
+    }
+  ],
+  "lang_capabilities": {
+    "typescript": {
+      "fixers": [
+        "dead-useeffect",
+        "debug-logs",
+        "empty-if-chain",
+        "unused-imports",
+        "unused-params",
+        "unused-vars"
+      ],
+      "typecheck_cmd": "npx tsc --noEmit"
+    }
+  },
+  "zone_distribution": {},
+  "codebase_metrics": {
+    "typescript": {
+      "total_files": 0,
+      "total_loc": 0,
+      "total_directories": 0
+    }
+  },
+  "reminder_history": {
+    "review_issues_pending": 1,
+    "feedback_nudge": 1,
+    "report_scores": 1,
+    "review_not_run": 1
+  }
+}

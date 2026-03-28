@@ -2,7 +2,7 @@
  * Core types for the Demos Toolkit.
  *
  * Defines the typed contracts that every tool uses:
- * - DemosError: typed error union with 9 error codes
+ * - DemosError: typed error union with 10 error codes
  * - ToolResult<T>: typed result envelope with provenance
  * - StateStore: pluggable persistence interface
  * - ConnectOptions: configuration for connect()

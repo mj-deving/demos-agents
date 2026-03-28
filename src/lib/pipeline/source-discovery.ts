@@ -122,16 +122,17 @@ function scoreContentRelevance(
   try {
     const parsed = JSON.parse(responseBody);
     const titles: string[] = [];
-    const extractTitles = (obj: any) => {
+    const extractTitles = (obj: unknown): void => {
       if (Array.isArray(obj)) {
         for (const item of obj) extractTitles(item);
       } else if (typeof obj === "object" && obj !== null) {
+        const r = obj as Record<string, unknown>;
         for (const key of ["title", "name", "headline", "story_title"]) {
-          if (typeof obj[key] === "string") titles.push(obj[key].toLowerCase());
+          if (typeof r[key] === "string") titles.push((r[key] as string).toLowerCase());
         }
-        if (obj.hits) extractTitles(obj.hits);
-        if (obj.items) extractTitles(obj.items);
-        if (obj.results) extractTitles(obj.results);
+        if (r.hits) extractTitles(r.hits);
+        if (r.items) extractTitles(r.items);
+        if (r.results) extractTitles(r.results);
       }
     };
     extractTitles(parsed);
@@ -278,8 +279,9 @@ export async function discoverSourceForTopic(
       if (relevance.score >= CONTENT_RELEVANCE_THRESHOLD) {
         scored.push({ candidate, relevance });
       }
-    } catch (err: any) {
-      info(`source-discovery: ${candidate.name} fetch failed (${err?.message || err})`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      info(`source-discovery: ${candidate.name} fetch failed (${msg})`);
     }
   }
 
@@ -321,9 +323,9 @@ export async function discoverSourceForTopic(
  */
 export function persistSourceToRegistry(registryPath: string, source: SourceRecord): boolean {
   try {
-    let parsed: any = { version: 1, sources: [] };
+    let parsed: Record<string, unknown> = { version: 1, sources: [] };
     if (existsSync(registryPath)) {
-      parsed = parseYaml(readFileSync(registryPath, "utf-8")) || { version: 1, sources: [] };
+      parsed = (parseYaml(readFileSync(registryPath, "utf-8")) as Record<string, unknown>) || { version: 1, sources: [] };
     }
 
     const sources: SourceRecord[] = Array.isArray(parsed.sources) ? parsed.sources : [];
@@ -340,8 +342,9 @@ export function persistSourceToRegistry(registryPath: string, source: SourceReco
     writeFileSync(registryPath, yaml, "utf-8");
     info(`source-discovery: persisted "${source.name}" to registry`);
     return true;
-  } catch (err: any) {
-    info(`source-discovery: failed to persist source (${err?.message || err})`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    info(`source-discovery: failed to persist source (${msg})`);
     return false;
   }
 }

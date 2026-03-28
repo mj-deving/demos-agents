@@ -1,0 +1,134 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 16,
+  "assessments": {"initialization_coupling": 78.5},
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "src/lib/network/sdk.ts exports mutable `let RPC_URL` and `let SUPERCOLONY_API` that are mutated by applyConfigOverrides() — consumers importing these get a snapshot that may become stale",
+        "src/lib/network/sdk.ts has import-time side effect: globalThis.crypto polyfill (lines 16-18)",
+        "src/lib/network/sdk.ts reads process.env.AGENT_NAME at import time (line 27)",
+        "src/lib/sources/providers/index.ts performs top-level await import() + file I/O at module scope — loads YAML specs from disk when the module is first imported (lines 27-39)",
+        "src/lib/pipeline/observe.ts uses module-level mutable state as a global singleton with order-dependent init/observe pattern",
+        "src/toolkit/index.ts barrel is pure re-exports — no import-time side effects (positive)",
+        "src/toolkit/tools/connect.ts explicitly uses lazy SDK imports to avoid module-level side effects (positive)",
+        "src/lib/util/log.ts defers process.env reads to call-time in resolveLogPath(), not import-time (positive)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "initialization_coupling": {
+      "dimension_character": "The codebase shows deliberate awareness of initialization coupling in the toolkit layer — connect.ts uses lazy imports, the barrel is side-effect-free, and log.ts defers env reads. However, the src/lib layer has several init-time side effects: sdk.ts mutates globalThis and reads process.env at import time, providers/index.ts performs file I/O via top-level await, and observe.ts relies on a singleton init pattern with mutable module state. The exported mutable `let` variables in sdk.ts are the most concerning pattern — they create a stale-snapshot risk for any consumer that imports RPC_URL before loadMnemonic() applies overrides.",
+      "score_rationale": "The toolkit layer is well-disciplined, but the lib layer has enough import-time side effects and mutable globals to create real fragility. The top-level await in providers/index.ts and the globalThis polyfill in sdk.ts would surprise a developer importing these modules in tests or new entry points. This lands below the 80 anchor because the mutable exported state in sdk.ts creates a genuine coupling hazard that affects multiple consumers."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_exported_mutable_state",
+      "summary": "sdk.ts exports mutable `let` RPC_URL and SUPERCOLONY_API that can go stale after applyConfigOverrides()",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": [
+        "Lines 25-26: `export let RPC_URL` and `export let SUPERCOLONY_API` are mutated by applyConfigOverrides() called from loadMnemonic()",
+        "Any module importing RPC_URL gets the value at import time, but it may change later when loadMnemonic() is called — creating a stale-snapshot risk"
+      ],
+      "suggestion": "Replace exported mutable lets with getter functions: `export function getRpcUrl(): string` and `export function getApiUrl(): string`. Consumers call the getter at use-time instead of capturing a potentially stale binding.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "mutable_module_state"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "providers_toplevel_await_io",
+      "summary": "providers/index.ts performs file I/O via top-level await at module scope, blocking all importers",
+      "related_files": ["src/lib/sources/providers/index.ts"],
+      "evidence": [
+        "Lines 27-39: top-level try block with `await import('./declarative-engine.js')` and `await loadDeclarativeProviderAdapters()` reads YAML specs from disk",
+        "Every module importing from providers/index.ts pays this I/O cost at import time and cannot control when it happens"
+      ],
+      "suggestion": "Wrap the spec loading in a lazy init function: `async function ensureLoaded()` called on first access from getProviderAdapter(). The registry starts with just the generic adapter and loads declarative specs on demand.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "import_time_side_effects"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_globalthis_polyfill",
+      "summary": "sdk.ts mutates globalThis.crypto at import time — side effect on every import",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": [
+        "Lines 16-18: `if (!globalThis.crypto) { (globalThis as any).crypto = webcrypto; }` runs at import time",
+        "This polyfill affects the global scope for all modules in the process, not just sdk.ts consumers"
+      ],
+      "suggestion": "Move the polyfill into connectWallet() or a dedicated setup function called by entry points. For Node 20+ (which has globalThis.crypto natively), the polyfill may no longer be needed at all.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "import_time_side_effects"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_env_read_at_import",
+      "summary": "sdk.ts reads process.env.AGENT_NAME at module scope — fragile in tests",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": [
+        "Line 27: `let logAgentName = process.env.AGENT_NAME || 'agent'` captures the env var at import time",
+        "Tests that set AGENT_NAME after importing sdk.ts get the stale default value; setLogAgent() exists but must be called explicitly"
+      ],
+      "suggestion": "Change the default to read the env var lazily: in the info() function, use `process.env.AGENT_NAME || logAgentName` so the env var is checked at call time, not import time.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "mutable_module_state"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Mutable module-level state in sdk.ts serves as a poor-man's config registry — exported lets and env reads at import time create coupling",
+      "Top-level await in providers/index.ts conflates module loading with initialization"
+    ],
+    "likely_symptoms": ["sdk_env_read_at_import is a minor symptom of the broader mutable_module_state pattern"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "Toolkit barrel is side-effect-free",
+          "description": "src/toolkit/index.ts is pure type and function re-exports with zero import-time side effects. The toolkit boundary is clean for consumers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "connect.ts uses lazy SDK imports",
+          "description": "The connect tool explicitly defers SDK loading to call-time via dynamic import(), documented in the file header. This prevents SDK initialization cost at import time.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Observer uses explicit init-before-use pattern",
+          "description": "observe.ts requires initObserver() before observe() works, with silent no-op as the safe default. Order-dependent but with safe degradation.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "sdk.ts has mutable exported state and import-time side effects",
+          "description": "RPC_URL and SUPERCOLONY_API are exported as mutable lets, globalThis.crypto is polyfilled at import time, and process.env.AGENT_NAME is captured at module scope. This creates stale-snapshot risk and test fragility.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "providers/index.ts performs file I/O at module scope",
+          "description": "Top-level await loads YAML spec files from disk when the module is first imported. All importers pay this cost and cannot defer it.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 14,
+  "assessments": {
+    "incomplete_migration": 87.5
+  },
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "Only one @deprecated annotation in the entire src/ directory: persistSourceToRegistry in source-discovery.ts (zero callers — dead code)",
+        "No mixed JS/TS files — all source is TypeScript",
+        "No stale migration TODOs or FIXMEs referencing 'migrate', 'legacy', or 'remove after'",
+        "Auth cache maintains intentional backward compatibility with legacy flat format for external consumer (skills/supercolony/scripts/supercolony.ts)",
+        "Credential resolution has an explicit fallback chain (XDG -> legacy .env) that is actively used",
+        "loadPersona in llm.ts has a fallback to legacy agents/{name}/personas/{name}.md path — this path still exists on disk",
+        "publish-pipeline.ts has a 'Legacy single-attestation path' that is still in active use by event-runner.ts",
+        "CLI write-rate-limit migration to toolkit guards is complete (confirmed by commit 2f20e63)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Dead deprecated persistSourceToRegistry function. Auth cache writes both legacy flat and namespaced formats permanently (not a transition shim but a permanent compat layer). Persona loading has a fallback to legacy path that may no longer be needed."
+    }
+  },
+  "dimension_judgment": {
+    "incomplete_migration": {
+      "dimension_character": "The codebase has completed its major migrations cleanly. The chain-first migration is done. The write-rate-limit migration from src/lib to toolkit guards is complete. The only @deprecated symbol is dead code with zero callers. The remaining legacy patterns (auth cache compat format, credential resolution fallback, persona path fallback) are intentional backward-compatibility for external consumers and active file layouts, not stale shims. A developer would find clear, unified patterns with no confusing dual-path ambiguity.",
+      "score_rationale": "Migrations are substantially complete with minimal residue. The deprecated persistSourceToRegistry is genuine dead code that should be removed, but it is a single isolated function. The auth cache legacy compat and persona fallback paths are intentional and documented. No mixed JS/TS, no stale migration TODOs. This places the score solidly above the 'mostly complete with minor legacy residue' 90 anchor, pulled down slightly by the dead deprecated function."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "dead_persistSourceToRegistry",
+      "summary": "Deprecated persistSourceToRegistry has zero callers and should be deleted",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": [
+        "Line 320: @deprecated annotation pointing to persistSourceToCatalog as replacement",
+        "grep confirms zero callers across the entire codebase — only the definition exists",
+        "V2 replacement persistSourceToCatalog is fully implemented in the same file"
+      ],
+      "suggestion": "Delete the persistSourceToRegistry function (lines 315-347) and its associated V1 YAML registry types if no longer used elsewhere.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "Chain-first migration fully complete",
+          "description": "All 8 session phases work chain-only. SDK bridge has verifyTransaction, getHivePosts, resolvePostAuthor, publishHiveReaction. CLI write-rate-limit migrated to toolkit guards (commit 2f20e63). No dual-path confusion remains.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No mixed JS/TS or stale migration TODOs",
+          "description": "All source files are TypeScript. Zero TODO/FIXME comments reference migration, legacy, or removal. The codebase has been cleaned of migration artifacts.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Auth cache maintains intentional legacy compat",
+          "description": "saveAuthCache writes both legacy flat fields (token, address, expiresAt) and namespaced entries because skills/supercolony/scripts/supercolony.ts still reads the flat format. This is a documented compat layer for an external consumer, not an incomplete migration.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Single dead @deprecated function remains",
+          "description": "persistSourceToRegistry is annotated @deprecated with zero callers. Its V2 replacement persistSourceToCatalog is fully functional. This is the only deprecated symbol in the codebase.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

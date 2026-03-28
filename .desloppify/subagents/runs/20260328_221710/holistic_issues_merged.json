@@ -1,0 +1,1903 @@
+{
+  "assessments": {
+    "abstraction_fitness": {
+      "score": 82.5,
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty",
+        "Delegation Density",
+        "Definition Directness",
+        "Type Discipline"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 88.0,
+        "Indirection Cost": 85.0,
+        "Interface Honesty": 75.0,
+        "Delegation Density": 95.0,
+        "Definition Directness": 90.0,
+        "Type Discipline": 82.0
+      }
+    },
+    "ai_generated_debt": 89.0,
+    "api_surface_coherence": 88.5,
+    "authorization_consistency": 90.2,
+    "contract_coherence": 86.2,
+    "convention_outlier": 83.4,
+    "cross_module_architecture": 78.5,
+    "dependency_health": 91.0,
+    "design_coherence": 76.3,
+    "error_consistency": 79.8,
+    "high_level_elegance": 81.2,
+    "incomplete_migration": 87.5,
+    "initialization_coupling": 78.5,
+    "logic_clarity": 87.4,
+    "low_level_elegance": 83.0,
+    "mid_level_elegance": 84.5,
+    "naming_quality": 85.3,
+    "package_organization": 82.0,
+    "test_strategy": 81.5,
+    "type_safety": 74.8
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts \u2014 extensions.ts defines hook context types consumed by plugins, but calibrate-plugin.ts is imported back from extensions.ts",
+        "src/types.ts is a god module with 65 importers spanning all subsystems \u2014 plugins, adapters, reactive, toolkit all depend on it, creating a hub that makes any type change ripple across the entire codebase",
+        "src/lib/ flat directory has 13 files (3759 LOC) with mixed concerns: tips.ts, mentions.ts, predictions.ts, transcript.ts are domain-specific but sit alongside infrastructure files like state.ts and agent-config.ts",
+        "21 orphaned files (2886 LOC total) remain in the codebase \u2014 entire reactive subsystem (event-loop, handlers, sources) appears unused, as does action-executor.ts, tips.ts in lib/, mentions.ts, predictions.ts",
+        "toolkit/tools/ imports toolkit/ 36 times and toolkit/ imports toolkit/tools/ 10 times \u2014 bidirectional coupling within the toolkit package",
+        "Clean layering between toolkit (framework-agnostic) and src/lib (business logic) \u2014 toolkit never imports from lib/ or plugins/",
+        "Adapters (eliza, skill-dojo) correctly depend on src/types.ts but not on each other \u2014 good boundary isolation"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "high_level_elegance": {
+      "evidence": [
+        "Top-level decomposition maps clearly to domain capabilities: toolkit/ (framework-agnostic primitives), lib/ (business logic), plugins/ (plugin factories), adapters/ (framework bridges), reactive/ (event-driven mode), actions/ (execution layer), cli/ (entry points)",
+        "Public surface in toolkit/index.ts is well-curated \u2014 10 tools, 6 guards, typed contracts, session management, all explicitly exported",
+        "Plugin barrel at plugins/index.ts exports 20 factory functions with consistent createXPlugin naming pattern",
+        "CLAUDE.md accurately describes the project structure, architecture principles, and key boundaries \u2014 docs match runtime reality",
+        "Ownership is generally clear \u2014 a new engineer could explain why each top-level dir exists",
+        "src/lib/ has 13 flat files mixing infrastructure (state.ts, agent-config.ts) with orphaned domain logic (tips.ts, predictions.ts, mentions.ts) \u2014 this area's role is less clear",
+        "adapters/ contains both framework adapters (eliza/, skill-dojo/) and an orphaned specs.ts at root level"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "convention_outlier": {
+      "evidence": [
+        "Consistent camelCase naming across all directories \u2014 every directory uses camelCase exclusively for functions/variables, no snake_case drift detected",
+        "Consistent kebab-case file naming across the entire codebase (e.g., sdk-bridge.ts, skill-dojo-client.ts, signal-detection.ts)",
+        "Plugin naming convention is highly consistent: all 20 plugins follow createXPlugin factory pattern with matching -plugin.ts filenames",
+        "Toolkit tools follow consistent patterns: 8 of 11 use ToolResult, err, demosError, localProvenance \u2014 the 3 outliers (connect.ts, feed-parser.ts, tool-wrapper.ts) are structurally different (connect returns DemosSession, feed-parser is a pure parser, tool-wrapper is the wrapper itself)",
+        "Event handlers have inconsistent behavioral protocols: 5/7 use EventHandler + EventAction types, but incident-alert-handler.ts and market-alert-handler.ts delegate to createSeverityHandler and don't import EventHandler/EventAction directly \u2014 they still return the correct types via the shared factory",
+        "Mixed export patterns in barrel files: some use 'export *' (adapters/skill-dojo/index.ts for types), others use explicit named exports (plugins/index.ts, toolkit/index.ts) \u2014 the explicit barrels are more intentional"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Event handler behavioral protocol inconsistency (incident-alert and market-alert skip direct EventHandler/EventAction imports, delegating entirely to severity-handler factory). The orphaned reactive subsystem's handler patterns cannot be validated as current convention since they are unused."
+    },
+    "error_consistency": {
+      "evidence": [
+        "Toolkit tools use a consistent typed error strategy: DemosError with 10 error codes, wrapped in ToolResult<T> via ok()/err()/demosError() helpers. All 8 toolkit tools follow this pattern via withToolWrapper",
+        "withToolWrapper provides uniform error wrapping: catches unknown errors, preserves DemosError codes when thrown intentionally, wraps others in typed errors with the tool name in the message",
+        "Plugin layer uses a different strategy: try-catch with silent swallowing \u2014 plugins/ has 18 try-catch blocks but only 1 throw. Most plugin errors are caught, logged, and swallowed",
+        "lib/ layer mixes three strategies: try_catch (24), throws (20), and returns_null (18) \u2014 within the same layer, different files handle errors differently",
+        "pipeline/ layer heavily favors returns_null (23) with some try_catch (12) \u2014 this is the most returns-null-heavy directory",
+        "providers/ layer is the most mixed: try_catch (22), returns_null (18), throws (11), result_type (1) \u2014 four different strategies in one directory",
+        "Shared toErrorMessage utility extracted from 8+ files that each defined it inline \u2014 indicates past error handling inconsistency that was partially cleaned up",
+        "Auth layer consistently returns null for failures (returns_null: 9) \u2014 deliberate graceful degradation"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "naming_quality": {
+      "evidence": [
+        "Function names across the toolkit are precise and domain-specific: publish(), reply(), react(), tip(), scan(), verify(), attest(), discoverSources(), pay() \u2014 each communicates exactly what it does",
+        "Helper names communicate purpose: checkAndRecordWrite, checkAndRecordTip, reservePaySpend, checkAndRecordDedup \u2014 the check-and-record pattern makes the guard's two-phase behavior visible in the name",
+        "Factory naming is consistent and descriptive: createSdkBridge, createSkillDojoClient, createSeverityHandler, createCalibrateBeforeSense \u2014 all use the createX pattern",
+        "Type names align with domain vocabulary: DemosError, ToolResult, ScanPost, ScanOpportunity, HiveReaction, ProviderAdapter, SurgicalCandidate \u2014 no generic TypeA/TypeB naming",
+        "File names match their primary export: sdk-bridge.ts exports createSdkBridge/SdkBridge, session.ts exports DemosSession, tool-wrapper.ts exports withToolWrapper",
+        "The 'info' function in sdk.ts is a generic name that could be clearer \u2014 it is a logging function but 'info' alone doesn't communicate it logs to console with agent prefix",
+        "ApiCallFn, ObserveFn, GeneratePostFn type aliases in action-executor.ts communicate intent well \u2014 each one describes what the function does"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The 'info' function in sdk.ts is a generic logging name. A few internal function names like 'guardAndPublish' are slightly generic but acceptable for their scope."
+    },
+    "abstraction_fitness": {
+      "evidence": [
+        "Wrapper rate is very low (1.5%) with only 3 pass-through wrappers across 205 function signatures, indicating the codebase avoids unnecessary delegation",
+        "Four one-implementation interfaces detected: StateStore, LLMProvider, ElizaService, FrameworkPlugin. StateStore and LLMProvider are intentional extension points (toolkit is designed to be framework-agnostic), FrameworkPlugin is a plugin system with 22 implementations, ElizaService is the only genuine single-impl concern",
+        "The incident-alert-handler and market-alert-handler are thin config wrappers around createSeverityHandler \u2014 but they provide domain-specific config (severity mappings, buildParams) rather than pure forwarding, so the indirection earns its cost",
+        "ActionExecutorContext has 18+ fields injected for testability \u2014 a wide context bag, though it serves a clear purpose (SDK-free testing). The tradeoff is intentional per the docstring",
+        "declarative-engine.ts has 75 indirection chain calls at depth 4 \u2014 highest in codebase \u2014 but this is the core abstraction engine that replaces ~250 lines of TS per provider with YAML specs, so the complexity is earned",
+        "toolkit/index.ts barrel re-exports 60+ symbols from 12 modules \u2014 intentional stable API surface for the @demos-agents/core package boundary"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "",
+      "sub_axes": {
+        "abstraction_leverage": 88.0,
+        "indirection_cost": 85.0,
+        "interface_honesty": 75.0,
+        "delegation_density": 95.0,
+        "definition_directness": 90.0,
+        "type_discipline": 82.0
+      }
+    },
+    "dependency_health": {
+      "evidence": [
+        "Production dependencies are minimal and purposeful: @kynesyslabs/demosdk (core SDK), @anthropic-ai/sdk (LLM provider, lazily imported), proper-lockfile (state store locking), yaml (config parsing, used in 5 files), zod (schema validation, used in 1 file)",
+        "No duplicate libraries for same purpose \u2014 single fetch wrapper (fetchWithTimeout) used consistently, single YAML parser, single schema library",
+        "No heavy dependencies pulled in for light use \u2014 each dependency is used for its core purpose",
+        "One circular dependency detected: src/lib/util/extensions.ts -> src/plugins/calibrate-plugin.ts \u2014 but it uses dynamic import() at runtime, making it a type-only cycle at static analysis level and safe at runtime",
+        "@anthropic-ai/sdk is lazily loaded via dynamic import only when ANTHROPIC_API_KEY is set, avoiding unnecessary weight for non-Anthropic deployments"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The extensions.ts <-> calibrate-plugin.ts import cycle exists as a structural concern even though mitigated by dynamic import. The @anthropic-ai/sdk is a heavy dependency even with lazy loading."
+    },
+    "low_level_elegance": {
+      "evidence": [
+        "connect.ts demonstrates exemplary low-level craft: guard clauses for validation, TOCTOU-safe file operations (open then fstat), clear error messages with security context in comments",
+        "signal-detection.ts detectSignals uses well-structured triple-nested loop (entries x rules x metrics) with early continues, memoized median cache, and extracted helpers (detectThreshold, detectChange) \u2014 avoids monolithic body",
+        "decodeHiveData in sdk-bridge.ts handles 6+ encoding variants (Uint8Array, hex, base64, string prefix, array tuple, SDK envelope) with clear branching and a 64KB size guard against OOM. Each branch is distinct and necessary.",
+        "jsonPathGet in declarative-engine.ts is a 60-line while loop with bracket/dot parsing \u2014 complex but deliberately minimal (no filters, no recursion). Documented scope prevents feature creep.",
+        "extractTxHash in sdk-bridge.ts has deeply nested property access chains (4-5 levels of Record<string, unknown> casting) that are hard to follow, though this reflects the SDK's untyped response shapes",
+        "detectChange function takes 8 parameters \u2014 high arity compared to the 3-5 param pattern used elsewhere in the same module",
+        "Helper extraction is consistent within modules: signal-detection.ts extracts detectThreshold, detectChange, winsorize, median as focused pure functions; sdk-bridge.ts extracts encodeHivePayload, decodeHiveData, hasHivePrefix, extractTxHash"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "mid_level_elegance": {
+      "evidence": [
+        "withToolWrapper provides a clean, consistent seam for all toolkit tools \u2014 handles timing, session.touch(), telemetry, and error wrapping in one place. Every tool function delegates through it with zero glue code.",
+        "The publish pipeline has a clear check-then-commit pattern: guards run without mutation first (checkAndRecordWrite with false), pipeline executes, then guards record on success (checkAndRecordWrite with true). Error at any stage means no side effects.",
+        "fetchSource centralizes retry, timeout, and rate-limit logic so provider adapters stay pure URL generators. Clean separation of concerns between fetch.ts (HTTP mechanics) and providers/ (URL construction).",
+        "Event loop orchestration reads as composition: SourceRegistration configs -> poll -> diff -> filter -> dispatch -> save watermark. Each step is a clean function boundary.",
+        "The ActionExecutorContext with 18+ fields creates a wide seam between event-runner.ts and action-executor.ts. While the fields are well-typed, the handoff requires constructing a large object.",
+        "Data translation between SDK responses and toolkit types happens in sdk-bridge.ts (decodeHiveData, extractTxHash, normalizeTransaction) \u2014 one obvious place for chain data translation.",
+        "The sources subsystem has clean layered handoffs: catalog.ts (registry) -> policy.ts (selection) -> fetch.ts (HTTP) -> providers/ (URL/parse). Each boundary is explicit and minimal."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "test_strategy": {
+      "evidence": [
+        "130 test files across the tests/ directory with 1943 tests across 129 suites \u2014 substantial investment in testing",
+        "Zero snapshot tests \u2014 all tests use behavioral assertions (expect().toBe, expect().toThrow, etc.)",
+        "TDD is enforced: vitest globalSetup + PostToolUse hook reject assertion-free tests. Test quality validator at src/lib/test-quality-validator.ts",
+        "Critical high-importer files mostly have test coverage: observe.test.ts, state-helpers.test.ts + state-helpers-direct.test.ts, extensions.test.ts + extensions-llm-wiring.test.ts, skill-dojo-proof.test.ts, agent-config-direct.test.ts, catalog-direct.test.ts",
+        "attestation-policy.ts (8 importers, core attestation logic) has no dedicated test file \u2014 tested indirectly through attestation-planner.test.ts and other downstream tests but lacks direct unit coverage",
+        "src/types.ts (65 importers) and src/toolkit/types.ts (23 importers) have no test files, but these are pure type declarations \u2014 correctly skipped per the dimension rubric",
+        "Orphaned test files still exist: tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts test production code (src/lib/tips.ts, etc.) with zero importers. These waste maintenance effort.",
+        "publish-pipeline.test.ts exists and tests attestDahr, publishPost, and attestAndPublish \u2014 the previously flagged open issue about this being untested appears resolved",
+        "Test files use consistent patterns: describe blocks per function, factory helpers (makeMockDemos, makeEntry, makeSource), temp directory lifecycle in beforeEach/afterEach"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "api_surface_coherence": {
+      "evidence": [
+        "All 9 toolkit tools (publish, reply, react, tip, scan, verify, attest, discoverSources, pay) follow the same (session, opts) => Promise<ToolResult<T>> signature pattern",
+        "Every tool uses withToolWrapper for timing, session.touch(), observer notification, and error wrapping \u2014 zero boilerplate duplication",
+        "Zod validation via validateInput() at every tool entry point ensures consistent input checking",
+        "Each tool has its own typed XxxOptions interface (ReactOptions, TipOptions, etc.) \u2014 no overloaded or ambiguous parameter bags",
+        "Guard APIs follow consistent checkAndRecordXxx(store, walletAddress, ..., record: boolean) => Promise<DemosError | null> pattern",
+        "connect/disconnect intentionally use throw/void semantics (documented deviation for lifecycle vs tool operations)",
+        "session.logger referenced in scan.ts lines 68 and 75 but logger property is never declared on DemosSession \u2014 optional chaining makes calls silently no-op"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Phantom session.logger property in scan.ts. ConnectOptions has 13 fields (large config surface). SdkBridge interface has 13+ methods which approaches the boundary of a coherent interface."
+    },
+    "authorization_consistency": {
+      "evidence": [
+        "Toolkit connect() enforces wallet file permissions (mode 600), symlink rejection, TOCTOU-safe file handle, and container/WSL2 detection for graceful degradation",
+        "Auth token stored via local Symbol on DemosSession \u2014 not globally discoverable, redacted in toJSON() and inspect()",
+        "3-state apiAccess ('none', 'configured', 'authenticated') consistently governs API fallback in react.ts, scan.ts, and sdk-bridge.ts",
+        "SSRF validation (DNS resolution + IP blocklist + HTTPS enforcement) consistently applied in all 3 URL-accepting tools (attest, publish, pay) plus connect",
+        "URL allowlist enforcement applied identically across attest, publish, and pay \u2014 same code pattern",
+        "Guards (write-rate, dedup, tip-spend, pay-spend) all use wallet-scoped StateStore with exclusive locking",
+        "Auth cache written with mode 0o600 (auth.ts line 91)",
+        "ensureAuth returns null on API unreachable \u2014 graceful degradation to chain-only mode"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "CLI-level connectWallet (sdk.ts) does not enforce wallet file permission checks like the toolkit's connect.ts does, creating two tiers of security posture. The auth.ts saveAuthCache uses Record<string, any> type (line 83) which weakens type safety at the auth boundary."
+    },
+    "ai_generated_debt": {
+      "evidence": [
+        "Comments consistently explain WHY, not WHAT \u2014 e.g., 'NaN > X is always false \u2014 would bypass maxPerTip' (tip-spend-cap.ts:34), 'Process-invariant: container status cannot change during process lifetime' (connect.ts:277)",
+        "No restating comments observed \u2014 checked across toolkit, guards, pipeline, and plugins modules",
+        "toErrorMessage() utility extracted from 8+ inline definitions into errors.ts \u2014 consolidation of boilerplate",
+        "withToolWrapper eliminates cross-cutting boilerplate (timing, error wrapping, observer) rather than duplicating it per tool",
+        "observe() calls in action-executor are purposeful telemetry for reactive event processing, not nosy entry/exit logging",
+        "Step-numbered comments in pay.ts (9-step D402 protocol) and publish.ts (2-step pipeline) aid navigation through multi-step protocols",
+        "No pass-through wrappers found \u2014 wrappers like withToolWrapper and createPinnedFetch add behavior (timing, DNS pinning), not just forwarding",
+        "Generic names avoided \u2014 domain terms used consistently (attestDahr, publishHivePost, transferDem, resolvePostAuthor, checkAndRecordWrite)"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "session-runner.ts at 4144 lines has accumulated significant orchestration logic. Some observe() calls in action-executor.ts are paired with info()/warn() calls that slightly duplicate context. A few files have section-header comments (// -- Types --, // -- Constants --) that add vertical noise without aiding IDE navigation."
+    },
+    "incomplete_migration": {
+      "evidence": [
+        "Only one @deprecated annotation in the entire src/ directory: persistSourceToRegistry in source-discovery.ts (zero callers \u2014 dead code)",
+        "No mixed JS/TS files \u2014 all source is TypeScript",
+        "No stale migration TODOs or FIXMEs referencing 'migrate', 'legacy', or 'remove after'",
+        "Auth cache maintains intentional backward compatibility with legacy flat format for external consumer (skills/supercolony/scripts/supercolony.ts)",
+        "Credential resolution has an explicit fallback chain (XDG -> legacy .env) that is actively used",
+        "loadPersona in llm.ts has a fallback to legacy agents/{name}/personas/{name}.md path \u2014 this path still exists on disk",
+        "publish-pipeline.ts has a 'Legacy single-attestation path' that is still in active use by event-runner.ts",
+        "CLI write-rate-limit migration to toolkit guards is complete (confirmed by commit 2f20e63)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Dead deprecated persistSourceToRegistry function. Auth cache writes both legacy flat and namespaced formats permanently (not a transition shim but a permanent compat layer). Persona loading has a fallback to legacy path that may no longer be needed."
+    },
+    "package_organization": {
+      "evidence": [
+        "src/toolkit/ is well-structured with clear sublayers: root (7 core files, avg fan-in 7.6), guards/ (7 files), tools/ (11 files) \u2014 all with clean unidirectional coupling (tools \u2192 toolkit \u2192 guards)",
+        "src/ root has only 2 files (types.ts at 65 importers, index.ts) \u2014 genuinely core, not stragglers",
+        "src/lib/ has 13 flat files with avg_fan_in of 1.1 \u2014 mixed concerns including config, state, spending, tips, mentions, predictions, transcript, and testing utilities",
+        "src/plugins/ has 22 files in one flat directory but they all follow the same *-plugin.ts pattern \u2014 consistency makes the flat layout navigable",
+        "Coupling matrix shows clean dependency direction: no bidirectional edges between major directories",
+        "src/adapters/ is well-partitioned: eliza/ (9 files) and skill-dojo/ (19 files) cleanly separated",
+        "src/reactive/ is well-decomposed: root (3 files), event-handlers/ (7), event-sources/ (10)",
+        "src/lib/sources/ has good internal organization: root (8 files), providers/ (4), providers/hooks/ (2)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "medium",
+      "issues_preventing_higher_score": "None"
+    },
+    "initialization_coupling": {
+      "evidence": [
+        "src/lib/network/sdk.ts exports mutable `let RPC_URL` and `let SUPERCOLONY_API` that are mutated by applyConfigOverrides() \u2014 consumers importing these get a snapshot that may become stale",
+        "src/lib/network/sdk.ts has import-time side effect: globalThis.crypto polyfill (lines 16-18)",
+        "src/lib/network/sdk.ts reads process.env.AGENT_NAME at import time (line 27)",
+        "src/lib/sources/providers/index.ts performs top-level await import() + file I/O at module scope \u2014 loads YAML specs from disk when the module is first imported (lines 27-39)",
+        "src/lib/pipeline/observe.ts uses module-level mutable state as a global singleton with order-dependent init/observe pattern",
+        "src/toolkit/index.ts barrel is pure re-exports \u2014 no import-time side effects (positive)",
+        "src/toolkit/tools/connect.ts explicitly uses lazy SDK imports to avoid module-level side effects (positive)",
+        "src/lib/util/log.ts defers process.env reads to call-time in resolveLogPath(), not import-time (positive)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "design_coherence": {
+      "evidence": [
+        "sdk-bridge.ts is 917 LOC \u2014 combines type definitions, interface contracts, helper functions (sanitizeUrl, encodeHivePayload, decodeHiveData, scanFilteredTransactions), and the 470+ line createSdkBridge factory. The factory returns an object literal with 15+ methods, each containing substantial logic.",
+        "action-executor.ts ActionExecutorContext has 22 fields (identity, auth, budget, config, LLM, mutable state, platform abstractions, rate limiting, telemetry) \u2014 mixing too many concerns in one context interface",
+        "lifecycle-plugin.ts uses 7 `any` types in 95 lines \u2014 catalog sources cast to any[], transitions typed as any[], updatedMap as Map<string, any>",
+        "engage-heuristics.ts uses any[] for remainingPosts and any for post parameter \u2014 known post shapes exist (ScanPost)",
+        "source-discovery.ts has 4 explicit any types including extractTitles closure and catch blocks",
+        "Positive: toolkit tools follow a consistent pattern \u2014 Zod validation + withToolWrapper + typed ToolResult",
+        "Positive: agent-config.ts cleanly separates resolution, path building, and loading into distinct functions",
+        "6 files share smells + structural detector pattern (agent-config, signal-detection, catalog, matcher, declarative-engine, sdk-bridge) \u2014 all are large files (571-1534 LOC) serving as domain complexity concentrators"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    },
+    "contract_coherence": {
+      "evidence": [
+        "All 10 toolkit tools consistently return Promise<ToolResult<T>> via withToolWrapper \u2014 error wrapping, timing, and observer notification are uniform",
+        "connect/disconnect explicitly document their different error contract (throw/void vs ToolResult) in the docstring",
+        "SdkBridge interface and implementation match \u2014 15+ methods all honor their declared signatures",
+        "types.ts docstring says '9 error codes' but DemosErrorCode has 10 members (PARTIAL_SUCCESS was added)",
+        "createLifecyclePlugin() returns hooks: {} but the actual hook (lifecycleBeforeSense) is exported separately and wired via extensions.ts \u2014 the FrameworkPlugin contract is technically honored since hooks is optional, but misleading",
+        "verify.ts correctly handles all edge cases: null (unsupported), confirmed, unconfirmed, error \u2014 return type is always ToolResult<VerifyResult>",
+        "attestDahr returns DahrResult with responseHash/txHash/data/url \u2014 all fields always populated (responseHash may be empty string)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Docstring on types.ts is stale (says 9 codes, has 10). createLifecyclePlugin() returns empty hooks which is misleading. attestDahr responseHash can be empty string which is surprising for a required field."
+    },
+    "logic_clarity": {
+      "evidence": [
+        "Control flow across toolkit tools is direct \u2014 withToolWrapper + early-return guards + ok/err result pattern eliminates nested branches",
+        "verify.ts retry loop is clear: immediate attempt + configurable delays, with distinct handling for null/confirmed/unconfirmed/error",
+        "publish.ts guard-then-execute-then-record pattern is clean and intentional (no side effects on rejection)",
+        "getHivePosts pagination loop has explicit safety breaks: empty results, no cursor advance, and page limit",
+        "lifecycle.ts state machine has well-defined constants, explicit valid-transition map, and clear priority sampling",
+        "llm.ts JSON repair logic counts { and [ together but only appends } \u2014 incomplete repair for unmatched brackets",
+        "publish-pipeline.ts lines 289/296: redundant || [] fallback on arrays already guaranteed non-empty by hasDahr/hasTlsn check"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "LLM JSON repair counts brackets but only appends braces. Minor redundant null guards after truthy checks in publish-pipeline.ts. sessionIndexerLagDetected is module-level mutable state that never resets."
+    },
+    "type_safety": {
+      "evidence": [
+        "Toolkit types.ts has comprehensive typed contracts: ToolResult<T>, DemosError with typed codes, SdkBridge interface with 15+ typed methods",
+        "67 any-typed locations across src/ (excluding tests) \u2014 concentrated in plugins, lib/pipeline, and SDK boundary code",
+        "17 `catch (err: any)` patterns vs 106 `catch (e: unknown)` \u2014 mostly migrated but holdouts remain",
+        "V2SessionState.engagements is typed as any[] \u2014 no typed engagement shape exists",
+        "3 plugins inject undeclared fields into V2SessionState via (ctx.state as any).fieldName \u2014 oracleSnapshot, priceSnapshot not on the type",
+        "2 plugins use (ctx.state as any).signalSnapshot and briefingContext \u2014 but these fields ARE on V2SessionState, so the casts are unnecessary",
+        "sources-plugin.ts uses (ctx: any) for hook callbacks where typed BeforePublishDraftContext and AfterPublishDraftContext exist",
+        "tlsn-playwright-bridge.ts has 12+ as any casts \u2014 justified SDK boundary but no DemosExtended-style interface covering all casts",
+        "feed-filter.ts any types appear to have been fixed (no any found in current file)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": ""
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The codebase has a clearly intentional three-tier architecture (toolkit -> lib -> cli) with good adapter isolation. However, the god module at src/types.ts (65 importers) creates a large blast radius, a confirmed import cycle exists between extensions and calibrate-plugin, and a significant volume of orphaned code (21 files, ~2886 LOC) blurs active boundaries. The toolkit-to-tools bidirectional coupling is structurally necessary but adds coupling pressure.",
+      "score_rationale": "The dependency direction is mostly coherent and a developer would generally trust the layer boundaries (toolkit, lib, plugins, adapters, reactive). The god module and import cycle create real friction \u2014 a change to src/types.ts ripples everywhere, and the orphaned reactive subsystem makes it unclear what is active architecture vs. abandoned code. This places the score solidly in the 'mixed' range \u2014 mostly coherent but with recurring boundary issues that require caution."
+    },
+    "high_level_elegance": {
+      "dimension_character": "The top-level package decomposition is intentional and domain-aligned \u2014 toolkit, lib, plugins, adapters, reactive, actions, and cli each have a clear role that a new developer could explain. The public surface is small and well-documented (toolkit barrel, plugin barrel). However, the src/lib/ flat directory is a mixed grab-bag where active infrastructure sits alongside orphaned domain files, and the reactive subsystem exists as a complete but unused package, creating confusion about what is production architecture.",
+      "score_rationale": "The decomposition is genuinely strong \u2014 top-level packages map to capabilities rather than historical accidents, docs are trustworthy, and ownership boundaries are mostly predictable. The score lands at 81 because src/lib/ flat files blur role clarity and the orphaned reactive subsystem represents a significant chunk of dead architecture (10+ files). A developer would mostly be well-served but would encounter 'why is this here?' moments in lib/ and reactive/."
+    },
+    "convention_outlier": {
+      "dimension_character": "The codebase is highly conventionally consistent. File naming (kebab-case), function naming (camelCase), and plugin patterns (createXPlugin) are uniform throughout. The toolkit tools follow a shared behavioral protocol with justified outliers (connect, feed-parser, tool-wrapper have structurally different roles). The main convention drift is minor: event handlers use slightly different import patterns due to the severity-handler factory abstraction, and barrel files mix export styles.",
+      "score_rationale": "A developer seeing a pattern in one area can mostly trust it holds everywhere. The 83 score reflects strong consistency across naming, file organization, and plugin structure. The slight deductions come from the minor behavioral protocol inconsistency in event handlers and the mixed barrel export styles. These are small enough that a developer would not be confused, but they do represent convention drift rather than intentional variation."
+    },
+    "error_consistency": {
+      "dimension_character": "Error handling has a strong, well-designed pattern in the toolkit layer (typed DemosError, ToolResult envelope, withToolWrapper), but the consistency degrades outside that boundary. The lib/ and providers/ layers mix throws, returns_null, and try-catch within the same directories. Plugins systematically swallow errors (18 try-catch, 1 throw), which is intentional at the top-level boundary but creates silent failure modes. The auth layer's consistent null-return is a deliberate design choice for graceful degradation.",
+      "score_rationale": "The toolkit's error strategy is exemplary \u2014 a developer can predict error behavior across all 10 tools. This pulls the score up significantly. However, the lib/ and providers/ layers mix three error strategies within the same directories, meaning a developer cannot predict whether a lib function will throw, return null, or return a result type without reading the implementation. The plugin silent-swallowing is intentional but could mask real failures. Score of 80 reflects solid patterns in the toolkit paired with mixed strategies in the business logic layer."
+    },
+    "naming_quality": {
+      "dimension_character": "Naming quality is strong and consistent across the codebase. A developer can read function, type, and file names and correctly predict behavior without checking implementations. The toolkit's public API names (publish, scan, verify, attest) are precise domain verbs. Internal helper names follow descriptive patterns (checkAndRecordX, createX, withX). Type names align with domain vocabulary throughout. The few generic names (info, guardAndPublish) are isolated to internal helpers where their scope limits confusion.",
+      "score_rationale": "A developer reading this codebase would find names reliably communicative. The toolkit API, plugin factories, guard functions, and type definitions all use precise, domain-aligned vocabulary. The score of 85 reflects that naming is a genuine strength \u2014 the few generic names are isolated and do not create real confusion. The info() logging function in sdk.ts is the most notable gap, but it is an internal helper called consistently across the codebase."
+    },
+    "abstraction_fitness": {
+      "dimension_character": "The codebase demonstrates disciplined abstraction choices overall. Most layers of indirection earn their cost through genuine behavior addition (severity mapping, YAML-to-code translation, SDK isolation). The main weakness is a cluster of wide context/config bags (ActionExecutorContext, AgentConfig) that pass many fields through layers, and a few one-implementation interfaces that exist for future extensibility rather than current polymorphic need.",
+      "score_rationale": "The very low wrapper rate (1.5%) and zero facade modules signal a codebase that avoids ceremony. The four one-impl interfaces are mostly intentional extension points for a toolkit designed for multiple consumers (ElizaOS, OpenClaw). The wide param bags in ActionExecutorContext and plugin configs create some indirection cost but serve documented purposes (testability, SDK-free testing). This places the codebase solidly above the 80 anchor (recurring friction) but below 90 (minor concerns only) due to the interface honesty gap and config bag breadth."
+    },
+    "dependency_health": {
+      "dimension_character": "The dependency set is remarkably lean for a project of this size and complexity. Five production dependencies, each serving a clear purpose with no redundancy or overlap. The codebase uses native Node.js APIs (fetch, crypto, fs) wherever possible and avoids pulling in utility libraries. The single import cycle is mitigated at runtime but represents minor structural debt.",
+      "score_rationale": "A developer working with these dependencies would find a cohesive, purposeful set with no surprises. No duplicate libraries, no heavy deps for light use, no version conflicts. The only friction point is the one import cycle, which is already mitigated by dynamic import. This is solidly above the 90 anchor (mostly healthy with minor concerns) but the cycle and the inherent weight of the SDK keep it from exemplary."
+    },
+    "low_level_elegance": {
+      "dimension_character": "Function internals are generally well-crafted with clear control flow, appropriate guard clauses, and balanced extraction. The codebase demonstrates a consistent pattern of extracting pure helpers while keeping orchestrators readable. The main friction points are in SDK-adjacent code where untyped response shapes force deeply nested property access and wide parameter lists.",
+      "score_rationale": "A developer would mostly find precise, intention-revealing code with good extraction balance \u2014 consistent with the 83 range. The connect.ts TOCTOU handling and signal-detection.ts helper extraction exemplify strong craft. What pulls the score down from 90 is the extractTxHash nested casting chains and the 8-parameter detectChange function, which represent localized rough spots rather than systemic issues. The SDK's untyped response shapes are an external constraint, but the adaptation code could be cleaner."
+    },
+    "mid_level_elegance": {
+      "dimension_character": "Module handoffs are largely explicit and well-designed. The toolkit uses a consistent wrapper pattern (withToolWrapper) that makes every tool's seam behavior predictable. The source pipeline (catalog -> policy -> fetch -> providers) demonstrates strong layered composition. The main friction is the wide ActionExecutorContext handoff and the dual publish paths (toolkit publish vs. actions/publish-pipeline) that serve different consumers but share conceptual responsibility.",
+      "score_rationale": "A developer crossing module boundaries would mostly find explicit, minimal handoffs \u2014 consistent with strong mid-level craft. The withToolWrapper pattern, the check-then-commit guard flow, and the layered source pipeline are all above the 85 threshold individually. The wide ActionExecutorContext and the two publish pipelines (toolkit publish.ts using sdk-bridge for chain ops vs. actions/publish-pipeline.ts using direct SDK for the session runner) introduce boundary friction that keeps the score below 90."
+    },
+    "test_strategy": {
+      "dimension_character": "The test suite is substantial (1943 tests, 130 files) with strong behavioral testing practices \u2014 zero snapshots, TDD enforcement, and consistent test structure. Coverage of critical paths is mostly good but uneven: the toolkit and source pipeline have thorough test files, while some core modules (attestation-policy.ts) lack direct unit tests. Orphaned test files for dead production code create maintenance noise.",
+      "score_rationale": "A developer making changes would mostly find confidence from the test suite \u2014 the toolkit, guards, SDK bridge, and signal detection are well-covered with tests that validate behavior rather than implementation details. What pulls the score below 85 is the attestation-policy gap (core business logic with 8 importers), the 4 orphaned test files testing dead production code, and the absence of integration tests that verify cross-module flows end-to-end. The TDD enforcement and zero-snapshot discipline push the score above the 80 anchor."
+    },
+    "api_surface_coherence": {
+      "dimension_character": "The toolkit API surface is remarkably coherent. A developer encountering any one tool can immediately predict the shape of all others \u2014 consistent (session, opts) => ToolResult<T> pattern, uniform Zod validation, shared withToolWrapper boilerplate, and typed per-tool options interfaces. The connect/disconnect deviation from ToolResult to throw/void is intentional, documented, and semantically justified. The only friction point is a phantom logger property on DemosSession that silently no-ops.",
+      "score_rationale": "The API surface approaches exemplary coherence. All tools share a predictable, type-safe contract, and the guard layer follows its own consistent pattern. The withToolWrapper abstraction eliminates cross-cutting boilerplate without adding indirection. The phantom session.logger and the growing SdkBridge interface are minor friction \u2014 they represent isolated rough edges rather than systemic inconsistency. This places the score solidly in the 88-90 range."
+    },
+    "authorization_consistency": {
+      "dimension_character": "Authorization patterns are consistently and intentionally applied across the toolkit. The session-scoped auth model with Symbol-based token storage, 3-state API access control, uniform SSRF validation, and wallet-scoped guards create a coherent security posture. A developer working with the toolkit can trust that auth and permission checks are uniformly applied. The CLI tools operate at a lower security tier (no file permission checks) but this is an intentional architecture boundary between the packaged toolkit and personal CLI scripts.",
+      "score_rationale": "The auth posture is strong and uniform within the toolkit boundary. SSRF validation, URL allowlisting, file permission checks, and spend guards are consistently applied. The 3-state apiAccess and graceful degradation pattern are well-designed. The only friction is the two-tier security gap between toolkit and CLI tools, and a minor any type in auth cache serialization. This places the score in the strong range around 90."
+    },
+    "ai_generated_debt": {
+      "dimension_character": "The codebase shows minimal AI-generated debt. Comments explain constraints and rationale rather than restating code. Error handling is consolidated via shared utilities (toErrorMessage, withToolWrapper) rather than copy-pasted boilerplate. Domain terminology is used consistently over generic names. The observe() telemetry calls serve production monitoring needs. The only minor AI-style patterns are paired info()/observe() calls that slightly overlap in context, and section-header comment blocks that add some vertical noise.",
+      "score_rationale": "A developer working here would find their attention spent on logic rather than noise. Comments are purpose-driven, abstractions add real behavior, and domain terms are precise. The code has clearly been through cleanup and consolidation (toErrorMessage extraction from 8 files, withToolWrapper eliminating per-tool boilerplate). The minor paired logging and section headers keep this from exemplary but represent isolated rough edges, not a systemic pattern. Score around 89."
+    },
+    "incomplete_migration": {
+      "dimension_character": "The codebase has completed its major migrations cleanly. The chain-first migration is done. The write-rate-limit migration from src/lib to toolkit guards is complete. The only @deprecated symbol is dead code with zero callers. The remaining legacy patterns (auth cache compat format, credential resolution fallback, persona path fallback) are intentional backward-compatibility for external consumers and active file layouts, not stale shims. A developer would find clear, unified patterns with no confusing dual-path ambiguity.",
+      "score_rationale": "Migrations are substantially complete with minimal residue. The deprecated persistSourceToRegistry is genuine dead code that should be removed, but it is a single isolated function. The auth cache legacy compat and persona fallback paths are intentional and documented. No mixed JS/TS, no stale migration TODOs. This places the score solidly above the 'mostly complete with minor legacy residue' 90 anchor, pulled down slightly by the dead deprecated function."
+    },
+    "package_organization": {
+      "dimension_character": "The directory layout largely reflects ownership and domain boundaries. The toolkit layer is exemplary with its toolkit/tools/guards decomposition and clean unidirectional coupling. The adapters, reactive, and sources subsystems are well-partitioned. The main weakness is the flat src/lib/ directory which accumulates 13 files of mixed concerns with low average fan-in (1.1), including several likely-orphaned modules (mentions, predictions, transcript) that inflate the directory without clear shared purpose.",
+      "score_rationale": "A developer can mostly predict where to find and put things. The toolkit, adapters, reactive, and sources directories have clear ownership boundaries. The coupling matrix shows clean dependency direction with no bidirectional edges. The src/lib/ flat directory with 13 mixed-concern files and several orphaned modules is the primary drag \u2014 a developer encountering this directory would need to read individual files to understand the organization principle. The plugins/ directory has 22 files but is navigable because they all follow the same naming convention. This places the score in the 'solid but uneven' range around 82."
+    },
+    "initialization_coupling": {
+      "dimension_character": "The codebase shows deliberate awareness of initialization coupling in the toolkit layer \u2014 connect.ts uses lazy imports, the barrel is side-effect-free, and log.ts defers env reads. However, the src/lib layer has several init-time side effects: sdk.ts mutates globalThis and reads process.env at import time, providers/index.ts performs file I/O via top-level await, and observe.ts relies on a singleton init pattern with mutable module state. The exported mutable `let` variables in sdk.ts are the most concerning pattern \u2014 they create a stale-snapshot risk for any consumer that imports RPC_URL before loadMnemonic() applies overrides.",
+      "score_rationale": "The toolkit layer is well-disciplined, but the lib layer has enough import-time side effects and mutable globals to create real fragility. The top-level await in providers/index.ts and the globalThis polyfill in sdk.ts would surprise a developer importing these modules in tests or new entry points. This lands below the 80 anchor because the mutable exported state in sdk.ts creates a genuine coupling hazard that affects multiple consumers."
+    },
+    "design_coherence": {
+      "dimension_character": "The toolkit layer demonstrates strong design coherence \u2014 tools follow a consistent pattern (Zod schema validation, withToolWrapper, typed ToolResult), and the session/guard/bridge separation is clean. However, the src/lib and src/actions layers show mixed coherence: sdk-bridge.ts accumulates too many responsibilities in a single 917-line factory, lifecycle-plugin.ts uses pervasive `any` despite available typed alternatives, and action-executor.ts has a 22-field context interface mixing identity, auth, budget, LLM, and telemetry concerns. Several `any` types persist in engage-heuristics.ts and source-discovery.ts where typed alternatives exist.",
+      "score_rationale": "The toolkit layer's consistent tool pattern and clean type contracts pull the score up, but sdk-bridge.ts as a 917-line concentration point, the 22-field ActionExecutorContext, and persistent any types across 4+ files in the lib layer create real design friction. This sits below the 80 anchor because a developer modifying sdk-bridge.ts or action-executor.ts faces tangled responsibilities, and the any types undermine the typed contracts established elsewhere."
+    },
+    "contract_coherence": {
+      "dimension_character": "The toolkit layer demonstrates strong contract coherence. All 10 tools consistently return ToolResult<T> via withToolWrapper, connect/disconnect clearly document their throw/void exception, and the SdkBridge interface faithfully mirrors its implementation. The few contract issues are minor: a stale docstring mentioning 9 error codes when 10 exist, and createLifecyclePlugin returning an empty hooks object while the actual hook is separately exported. A developer working here would generally trust that functions do what they promise.",
+      "score_rationale": "This scores above the 80 anchor because the core typed contracts (ToolResult, DemosError, SdkBridge) are consistently honored across the codebase. The defects are isolated and low-impact \u2014 a stale docstring count and a misleading empty-hooks plugin factory. These pull the score slightly below 90 because they require a developer to look past surface-level declarations, but they don't undermine the fundamental reliability of the contracts."
+    },
+    "logic_clarity": {
+      "dimension_character": "The codebase has consistently clear control flow. The toolkit layer uses a uniform pattern (withToolWrapper + early-return guards + ok/err) that makes the happy path immediately visible. Complex orchestration code like the pagination loops in sdk-bridge.ts includes explicit safety breaks. The few logic clarity issues are minor: an incomplete JSON repair heuristic in llm.ts and some redundant array fallbacks in publish-pipeline.ts. A developer tracing logic through this codebase would rarely be surprised.",
+      "score_rationale": "This scores above the 80 anchor and near the 90 mark because control flow is consistently direct across both the toolkit and lib layers. The early-return guard pattern and withToolWrapper composition eliminate most nested complexity. The issues found are localized and low-impact \u2014 the JSON repair imprecision is safely caught by the outer try/catch, and the redundant fallbacks are noise rather than bugs. The sessionIndexerLagDetected module state is the only pattern that meaningfully obscures intent."
+    },
+    "type_safety": {
+      "dimension_character": "The toolkit layer has strong type safety \u2014 typed error codes, generic ToolResult<T>, and comprehensive SdkBridge interface. However, the plugin and lib layers have a persistent any-type problem. 67 any-typed locations remain, concentrated in plugins that inject undeclared fields into session state via as-any casts, hook callbacks typed as any despite typed contexts existing, and catch blocks using any instead of unknown. The V2SessionState type itself has an any[] for engagements and is missing fields that plugins write to at runtime. A developer working in the toolkit would trust the types; a developer working in the plugins or lib layer would encounter regular gaps.",
+      "score_rationale": "This scores below the 80 anchor because a developer encounters enough any types in the plugin and lib layers to undermine type trust. The 67 any-typed locations are not cosmetic \u2014 they include undeclared state fields (oracleSnapshot, priceSnapshot), hook callbacks with available typed alternatives, and state interfaces using any[]. The toolkit layer's strong typing pulls the score up from the 60 range, but the two-tier quality creates friction when code crosses from toolkit into lib/plugins."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "extensions_calibrate_cycle",
+      "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
+      "confidence": "high",
+      "suggestion": "Extract the shared type or function that creates the cycle into a separate types file in src/lib/util/ that both can import without circular dependency. The BeforeSenseContext type likely needs to live in a file that calibrate-plugin.ts does not import back into.",
+      "related_files": [
+        "src/lib/util/extensions.ts",
+        "src/plugins/calibrate-plugin.ts"
+      ],
+      "evidence": [
+        "extensions.ts imports from calibrate-plugin.ts (or vice versa), creating a 2-file cycle confirmed by dependency scanner"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "orphaned_reactive_subsystem",
+      "summary": "Entire reactive subsystem (event-loop, 7 handlers, 4 sources) is orphaned with zero importers",
+      "confidence": "high",
+      "suggestion": "Either delete the orphaned reactive subsystem (it is recoverable from git history) or wire it into the active module graph via event-runner.ts imports. The orphaned code blurs what constitutes active architecture.",
+      "related_files": [
+        "src/reactive/event-loop.ts",
+        "src/reactive/event-handlers/disagree-handler.ts",
+        "src/reactive/event-sources/sse-feed.ts",
+        "src/reactive/watermark-store.ts",
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "Scan evidence shows 21 orphaned files totaling ~2886 LOC including event-loop.ts (257), sse-feed.ts (244), all 7 event handlers, watermark-store.ts (90), action-executor.ts (312), storage-watcher.ts (139), balance-source.ts (104)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "god_module_types",
+      "summary": "src/types.ts has 65 importers across all subsystems creating a change-ripple hub",
+      "confidence": "medium",
+      "suggestion": "Split src/types.ts along domain boundaries: core plugin types (FrameworkPlugin, DataProvider, Evaluator) could remain at src/types.ts, while event-related types (AgentEvent, EventSource, EventHandler) could move to src/reactive/types.ts. This would reduce the blast radius for event-related type changes.",
+      "related_files": [
+        "src/types.ts"
+      ],
+      "evidence": [
+        "65 importers from plugins/ (21), adapters/skill-dojo/ (18), reactive/event-sources/ (9), adapters/eliza/ (6), reactive/event-handlers/ (5) \u2014 every subsystem depends on this single file"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "flat_lib_mixed_concerns",
+      "summary": "src/lib/ flat directory mixes 13 files of infrastructure and domain logic without sub-grouping",
+      "confidence": "medium",
+      "suggestion": "Move domain-specific orphaned files (tips.ts, predictions.ts, mentions.ts, transcript.ts) to a src/lib/domain/ subdirectory or delete them if truly unused. This separates active infrastructure from abandoned domain logic.",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/mentions.ts",
+        "src/lib/predictions.ts",
+        "src/lib/state.ts",
+        "src/lib/agent-config.ts"
+      ],
+      "evidence": [
+        "tips.ts (442 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) are domain-specific files sitting alongside infrastructure files like state.ts, agent-config.ts, budget-tracker.ts \u2014 many of which are also orphaned"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "lib_flat_mixed_roles",
+      "summary": "src/lib/ flat directory (13 files, 3759 LOC) mixes active infrastructure with orphaned domain files",
+      "confidence": "high",
+      "suggestion": "Delete confirmed orphaned files (they are in git history) or move them to a clearly labeled src/lib/deprecated/ directory. The active files should remain \u2014 the flat structure is fine for the ~8 remaining infrastructure files.",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/state.ts",
+        "src/lib/agent-config.ts"
+      ],
+      "evidence": [
+        "tips.ts (442 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) are orphaned domain files sitting alongside active infrastructure like state.ts, agent-config.ts, spending-policy.ts \u2014 a developer cannot tell which files are active without checking importers"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "reactive_subsystem_unclear_status",
+      "summary": "Reactive subsystem is complete (event-loop, handlers, sources) but entirely orphaned \u2014 unclear if this is active architecture",
+      "confidence": "high",
+      "suggestion": "If reactive mode is planned for future use, add a comment at src/reactive/README.md or at the top of event-loop.ts documenting its status. If it is abandoned, delete the subsystem. The current state makes it impossible for a new developer to know if this is production infrastructure.",
+      "related_files": [
+        "src/reactive/event-loop.ts",
+        "src/reactive/event-handlers/severity-handler.ts",
+        "src/reactive/event-sources/social-mentions.ts"
+      ],
+      "evidence": [
+        "All 7 event handlers, event-loop.ts, watermark-store.ts, and several event sources have zero importers. cli/event-runner.ts exists as an entry point but the internal reactive module graph is disconnected."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "event_handler_protocol_drift",
+      "summary": "2 of 7 event handlers skip direct EventHandler/EventAction type imports, delegating entirely to severity-handler factory",
+      "confidence": "low",
+      "suggestion": "This is a minor drift \u2014 the severity-handler factory returns the correct EventHandler type. Adding explicit type annotations (e.g., 'export function createIncidentAlertHandler(): EventHandler') would make the contract visible without changing behavior.",
+      "related_files": [
+        "src/reactive/event-handlers/incident-alert-handler.ts",
+        "src/reactive/event-handlers/market-alert-handler.ts",
+        "src/reactive/event-handlers/severity-handler.ts"
+      ],
+      "evidence": [
+        "incident-alert-handler.ts and market-alert-handler.ts import only createSeverityHandler, while disagree-handler.ts, mention-handler.ts, reply-handler.ts, tip-thanks-handler.ts import EventHandler and EventAction directly from types.ts"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "providers_four_error_strategies",
+      "summary": "src/lib/sources/providers/ uses 4 different error strategies (try_catch: 22, returns_null: 18, throws: 11, result_type: 1) in the same directory",
+      "confidence": "medium",
+      "suggestion": "Align provider adapters to the returns_null or result_type strategy consistently. Since declarative-engine.ts already documents a never-throws contract, the generic.ts provider should follow the same contract. Functions that currently throw should return null/empty results with error metadata instead.",
+      "related_files": [
+        "src/lib/sources/providers/declarative-engine.ts",
+        "src/lib/sources/providers/generic.ts",
+        "src/lib/sources/providers/types.ts"
+      ],
+      "evidence": [
+        "Provider adapter methods mix throws, returns_null, try_catch, and result_type within sibling files. declarative-engine.ts documentation says 'never throws from any adapter method' but the directory overall has 11 throws"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "plugin_silent_swallowing",
+      "summary": "Plugins have 18 try-catch blocks but only 1 throw \u2014 errors are systematically caught and swallowed",
+      "confidence": "medium",
+      "suggestion": "Add a hookErrors accumulator pattern (already partially implemented in BeforeSenseContext.hookErrors) to all plugin hook contexts, so the session runner can inspect which hooks failed and decide whether to abort or continue. This preserves the graceful degradation while making failures visible to the orchestrator.",
+      "related_files": [
+        "src/plugins/tips-plugin.ts",
+        "src/plugins/sources-plugin.ts",
+        "src/plugins/signals-plugin.ts"
+      ],
+      "evidence": [
+        "Plugin directory error strategy: try_catch: 18, throws: 1. Most plugin hooks catch errors, log them via ctx.logger, and return without propagation. This is intentional at the boundary but means plugin failures produce no signal to the caller beyond log output."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "lib_mixed_error_strategies",
+      "summary": "src/lib/ flat files mix try_catch (24), throws (20), and returns_null (18) without clear convention",
+      "confidence": "medium",
+      "suggestion": "Establish a convention for the lib layer: functions that load/parse data should return null on failure (already dominant at 18 occurrences), while functions that validate invariants should throw. Document this split in a comment at the top of the lib barrel or in CLAUDE.md.",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/spending-policy.ts",
+        "src/lib/agent-config.ts"
+      ],
+      "evidence": [
+        "Within the same layer, tips.ts returns null on errors, agent-config.ts throws on invalid config, spending-policy.ts uses a mix. A developer calling lib functions cannot predict error behavior."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "info_generic_logging_name",
+      "summary": "sdk.ts exports 'info()' as a logging function \u2014 name is too generic and does not communicate logging behavior",
+      "confidence": "medium",
+      "suggestion": "Rename to 'logInfo' or 'agentLog' to communicate that this function logs to console with the agent name prefix. The current name conflicts with the common mental model of 'info' as a data accessor.",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "The function 'info' is exported from sdk.ts and used across the codebase for console logging with agent name prefix. The name 'info' alone does not communicate that this is a logging/output function."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "wide_action_executor_context",
+      "summary": "ActionExecutorContext has 18+ fields creating a wide dependency injection bag",
+      "confidence": "medium",
+      "suggestion": "Group related fields into sub-interfaces (e.g., BudgetContext, PlatformAbstractions) to make dependencies clearer at call sites. This would also make partial mocking in tests more natural.",
+      "related_files": [
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "ActionExecutorContext interface has identity (3), auth (1), budget (2), config (3), LLM (1), state (1), platform abstractions (4), rate limiting (3), and telemetry (2) fields \u2014 totaling 18+ fields in one interface"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "eliza_service_single_impl",
+      "summary": "ElizaService interface has exactly one implementation with no polymorphic usage",
+      "confidence": "low",
+      "suggestion": "Consider inlining the type directly in event-service.ts if no second implementation is planned. If it exists for documentation purposes, add a comment explaining the design intent.",
+      "related_files": [
+        "src/adapters/eliza/types.ts",
+        "src/adapters/eliza/event-service.ts"
+      ],
+      "evidence": [
+        "ElizaService is declared in types.ts and implemented only by event-service.ts. Unlike StateStore/LLMProvider which are toolkit extension points, ElizaService exists within a single adapter with no substitution pressure."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "dependency_health",
+      "identifier": "extensions_calibrate_cycle",
+      "summary": "Import cycle between extensions.ts and calibrate-plugin.ts despite dynamic import mitigation",
+      "confidence": "medium",
+      "suggestion": "Move BeforeSenseContext to a separate types file (e.g., lib/util/hook-types.ts) that both modules can import without creating a cycle. This eliminates the structural cycle entirely rather than relying on dynamic import as mitigation.",
+      "related_files": [
+        "src/lib/util/extensions.ts",
+        "src/plugins/calibrate-plugin.ts"
+      ],
+      "evidence": [
+        "extensions.ts dynamically imports calibrate-plugin.ts at line 171, while calibrate-plugin.ts statically imports type BeforeSenseContext from extensions.ts. Static analysis tools flag this as a cycle."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "low_level_elegance",
+      "identifier": "extract_tx_hash_nested_casting",
+      "summary": "extractTxHash uses deeply nested Record<string, unknown> casting chains that are hard to follow",
+      "confidence": "medium",
+      "suggestion": "Extract a typed helper like safeGet(obj, 'response.data.transaction.hash') or break the nested access into named intermediate variables with explicit null checks at each level. This would trade vertical space for readability.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Lines 220-240: The extract helper navigates 4-5 levels of (obj as Record<string, unknown>).response.data.transaction.hash with inline casting at every level, producing a dense expression like '(resp.data as Record<string, unknown> | undefined)?.transaction as Record<string, unknown> | undefined'"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "low_level_elegance",
+      "identifier": "detect_change_high_arity",
+      "summary": "detectChange takes 8 parameters where related params could be grouped",
+      "confidence": "low",
+      "suggestion": "Pass baselineStore, config, and getCachedMedian as a single BaselineContext object since they are always provided together and represent the baseline subsystem's dependencies.",
+      "related_files": [
+        "src/lib/pipeline/signal-detection.ts"
+      ],
+      "evidence": [
+        "detectChange(current, rule, metricKey, entry, ctx, baselineStore, config, getCachedMedian) \u2014 8 positional parameters. Other detection functions in the same file (detectThreshold) use 5 parameters."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "dual_publish_pipelines",
+      "summary": "Two separate publish pipelines serve different consumers with partially overlapping logic",
+      "confidence": "medium",
+      "suggestion": "Document the intentional boundary: toolkit/publish.ts is the stable external API (for future @demos-agents/core consumers), while actions/publish-pipeline.ts is the internal session-runner pipeline. Add cross-references between the two files to prevent confusion.",
+      "related_files": [
+        "src/toolkit/tools/publish.ts",
+        "src/actions/publish-pipeline.ts"
+      ],
+      "evidence": [
+        "toolkit/tools/publish.ts orchestrates: validate -> guard check -> executePublishPipeline -> guard record, using sdk-bridge for chain operations",
+        "actions/publish-pipeline.ts orchestrates: DAHR attestation -> HIVE encoding -> DemosTransactions pipeline, used directly by session-runner",
+        "Both handle HIVE post encoding and chain transaction submission but through different SDK access patterns"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "wide_action_executor_handoff",
+      "summary": "ActionExecutorContext requires constructing an 18+ field object at the event-runner boundary",
+      "confidence": "medium",
+      "suggestion": "Group related fields into sub-contexts (e.g., AuthContext, BudgetContext, PlatformContext) that can be constructed independently and composed. This makes partial testing easier and the wiring site more readable.",
+      "related_files": [
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "The event-runner must wire 18+ fields into ActionExecutorContext: identity (3), auth (1), budget (2), config (3), LLM (1), state (1), platform (4), rate-limiting (3), telemetry (2). This is the widest handoff seam in the codebase."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "orphaned_test_files_still_open",
+      "summary": "Test files for orphaned production code \u2014 tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts \u2014 waste maintenance effort",
+      "confidence": "high",
+      "suggestion": "Delete the orphaned production files and their test files together. If functionality needs to be recovered later, it is available in git history. This is a straight cleanup with no risk.",
+      "related_files": [
+        "tests/tips.test.ts",
+        "tests/predictions.test.ts",
+        "tests/mentions.test.ts",
+        "tests/transcript.test.ts",
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts"
+      ],
+      "evidence": [
+        "src/lib/mentions.ts has 0 importers, src/lib/transcript.ts has 0 importers. src/lib/tips.ts and src/lib/predictions.ts are similarly orphaned (marked as false_positive in historical issues, meaning they were intentionally kept but are dead code).",
+        "The corresponding test files run on every npm test invocation, consuming CI time and creating a false sense of coverage"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "attestation_policy_no_direct_tests",
+      "summary": "attestation-policy.ts (8 importers, core attestation logic) lacks a dedicated test file",
+      "confidence": "high",
+      "suggestion": "Create tests/attestation-policy.test.ts covering resolveAttestationPlan with different config combinations, fillUrlTemplate with various placeholder patterns, and unresolvedPlaceholders edge cases. These are pure functions \u2014 easy to test directly.",
+      "related_files": [
+        "src/lib/attestation/attestation-policy.ts"
+      ],
+      "evidence": [
+        "attestation-policy.ts exports resolveAttestationPlan, inferAssetAlias, extractTopicVars, fillUrlTemplate, unresolvedPlaceholders \u2014 critical functions used by policy.ts, publish-pipeline.ts, and declarative-engine.ts",
+        "No tests/attestation-policy.test.ts exists. Some functions are tested indirectly via attestation-planner.test.ts and macro-entity.test.ts, but resolveAttestationPlan and fillUrlTemplate lack direct unit coverage"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "publish_pipeline_issue_resolved",
+      "summary": "publish-pipeline.ts now has a dedicated test file \u2014 prior open issue is resolved",
+      "confidence": "high",
+      "suggestion": "Close the previously flagged open issue about publish-pipeline.ts being untested.",
+      "related_files": [
+        "tests/publish-pipeline.test.ts",
+        "src/actions/publish-pipeline.ts"
+      ],
+      "evidence": [
+        "publish-pipeline.test.ts exists and tests attestDahr, publishPost, and attestAndPublish with fully mocked SDK"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "phantom_session_logger",
+      "summary": "scan.ts references session.logger which is never declared on DemosSession",
+      "confidence": "high",
+      "suggestion": "Either add an optional logger property to DemosSession (e.g., logger?: { warn?: (...args: unknown[]) => void }) and wire it through ConnectOptions, or replace the calls with console.warn to match the pattern used in react.ts line 44.",
+      "related_files": [
+        "src/toolkit/tools/scan.ts",
+        "src/toolkit/session.ts"
+      ],
+      "evidence": [
+        "scan.ts lines 68 and 75 call session.logger?.warn?.(...) but DemosSession has no logger property",
+        "Optional chaining prevents runtime errors but the calls are dead code \u2014 no warnings are ever emitted"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "paired_info_observe_overlap",
+      "summary": "action-executor.ts pairs info()/warn() with observe() calls that partially duplicate context",
+      "confidence": "low",
+      "suggestion": "Consider having observe() also emit to the console log when appropriate, reducing the need for separate info()/warn() calls. Alternatively, accept this as intentional dual-channel logging (human-readable console + structured JSONL) and document the pattern.",
+      "related_files": [
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "Lines 153-166: ctx.info() logs the event, then ctx.observe() logs the same event with slightly more structured data",
+        "Lines 167-178: ctx.warn() logs a failure message, then ctx.observe() logs the same failure with structured data",
+        "12 observe() calls in the file, most paired with a preceding info()/warn() that conveys overlapping information"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "dead_persistSourceToRegistry",
+      "summary": "Deprecated persistSourceToRegistry has zero callers and should be deleted",
+      "confidence": "high",
+      "suggestion": "Delete the persistSourceToRegistry function (lines 315-347) and its associated V1 YAML registry types if no longer used elsewhere.",
+      "related_files": [
+        "src/lib/pipeline/source-discovery.ts"
+      ],
+      "evidence": [
+        "Line 320: @deprecated annotation pointing to persistSourceToCatalog as replacement",
+        "grep confirms zero callers across the entire codebase \u2014 only the definition exists",
+        "V2 replacement persistSourceToCatalog is fully implemented in the same file"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "src_lib_flat_mixed_concerns",
+      "summary": "src/lib/ has 13 flat files with mixed concerns and low fan-in (avg 1.1)",
+      "confidence": "medium",
+      "suggestion": "Staged reorg plan: (1) Delete confirmed orphans (mentions.ts, predictions.ts, transcript.ts) \u2014 verify zero importers first with grep. (2) Move spending-related files to src/lib/spending/ or merge budget-tracker into spending-policy. (3) Move quality/review files to src/lib/quality/ (test-quality-validator, review-findings, improvement-utils). (4) Update imports: grep for each moved file and fix paths. (5) Validate with npm test.",
+      "related_files": [
+        "src/lib/mentions.ts",
+        "src/lib/predictions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/tips.ts",
+        "src/lib/spending-policy.ts",
+        "src/lib/budget-tracker.ts",
+        "src/lib/improvement-utils.ts",
+        "src/lib/review-findings.ts",
+        "src/lib/test-quality-validator.ts",
+        "src/lib/state.ts",
+        "src/lib/agent-config.ts",
+        "src/lib/response-validator.ts",
+        "src/lib/tlsn-playwright-bridge.ts"
+      ],
+      "evidence": [
+        "13 files with avg_fan_in of 1.1 \u2014 most files are imported by 0-2 other files",
+        "Mixed concerns: agent config, session state management, spending/budget tracking, social features (mentions, tips), quality testing, and attestation tooling all coexist",
+        "mentions.ts, predictions.ts, and transcript.ts were flagged as orphaned in previous reviews \u2014 still present and inflating the directory",
+        "High-cohesion clusters exist but are not grouped: {tips.ts, spending-policy.ts, budget-tracker.ts} share spending/economic concerns; {test-quality-validator.ts, review-findings.ts, improvement-utils.ts} share quality/review concerns"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_exported_mutable_state",
+      "summary": "sdk.ts exports mutable `let` RPC_URL and SUPERCOLONY_API that can go stale after applyConfigOverrides()",
+      "confidence": "high",
+      "suggestion": "Replace exported mutable lets with getter functions: `export function getRpcUrl(): string` and `export function getApiUrl(): string`. Consumers call the getter at use-time instead of capturing a potentially stale binding.",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Lines 25-26: `export let RPC_URL` and `export let SUPERCOLONY_API` are mutated by applyConfigOverrides() called from loadMnemonic()",
+        "Any module importing RPC_URL gets the value at import time, but it may change later when loadMnemonic() is called \u2014 creating a stale-snapshot risk"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "providers_toplevel_await_io",
+      "summary": "providers/index.ts performs file I/O via top-level await at module scope, blocking all importers",
+      "confidence": "high",
+      "suggestion": "Wrap the spec loading in a lazy init function: `async function ensureLoaded()` called on first access from getProviderAdapter(). The registry starts with just the generic adapter and loads declarative specs on demand.",
+      "related_files": [
+        "src/lib/sources/providers/index.ts"
+      ],
+      "evidence": [
+        "Lines 27-39: top-level try block with `await import('./declarative-engine.js')` and `await loadDeclarativeProviderAdapters()` reads YAML specs from disk",
+        "Every module importing from providers/index.ts pays this I/O cost at import time and cannot control when it happens"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_globalthis_polyfill",
+      "summary": "sdk.ts mutates globalThis.crypto at import time \u2014 side effect on every import",
+      "confidence": "medium",
+      "suggestion": "Move the polyfill into connectWallet() or a dedicated setup function called by entry points. For Node 20+ (which has globalThis.crypto natively), the polyfill may no longer be needed at all.",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Lines 16-18: `if (!globalThis.crypto) { (globalThis as any).crypto = webcrypto; }` runs at import time",
+        "This polyfill affects the global scope for all modules in the process, not just sdk.ts consumers"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_env_read_at_import",
+      "summary": "sdk.ts reads process.env.AGENT_NAME at module scope \u2014 fragile in tests",
+      "confidence": "medium",
+      "suggestion": "Change the default to read the env var lazily: in the info() function, use `process.env.AGENT_NAME || logAgentName` so the env var is checked at call time, not import time.",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Line 27: `let logAgentName = process.env.AGENT_NAME || 'agent'` captures the env var at import time",
+        "Tests that set AGENT_NAME after importing sdk.ts get the stale default value; setLogAgent() exists but must be called explicitly"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_size",
+      "summary": "sdk-bridge.ts (917 LOC) combines type definitions, helpers, and a 15-method factory in one file",
+      "confidence": "high",
+      "suggestion": "Extract HIVE encoding/decoding helpers (encodeHivePayload, decodeHiveData, scanFilteredTransactions) into a dedicated src/toolkit/hive-codec.ts. This keeps sdk-bridge.ts focused on the bridge factory and its methods. The type definitions can stay since they define the bridge's contract.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "File contains: 7 interface/type definitions, 5 standalone helper functions (sanitizeUrl, encodeHivePayload, decodeHiveData, scanFilteredTransactions, extractTxHash), and a createSdkBridge factory returning 15+ methods",
+        "The HIVE encoding/decoding helpers and transaction scanning are reusable primitives that don't need the bridge context"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "lifecycle_plugin_any_types",
+      "summary": "lifecycle-plugin.ts uses 7 `any` types in 95 lines despite typed catalog types existing",
+      "confidence": "high",
+      "suggestion": "Import SourceRecordV2 from catalog.ts and type allSources, updatedMap, and transitions properly. Use `catch (e: unknown)` with toErrorMessage() pattern used elsewhere in the codebase.",
+      "related_files": [
+        "src/plugins/lifecycle-plugin.ts"
+      ],
+      "evidence": [
+        "Line 39: `const allSources = catalog.sources as any[]` \u2014 SourceRecordV2[] exists",
+        "Line 49-50: `const transitions: any[]` and `const updatedMap = new Map<string, any>()`",
+        "Line 68: `(s: any)` in map callback",
+        "Line 78: `catch (e: any)` instead of `catch (e: unknown)`"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "engage_heuristics_any",
+      "summary": "engage-heuristics.ts uses `any` for post types where ScanPost exists",
+      "confidence": "high",
+      "suggestion": "Import ScanPost from toolkit/types.ts and replace `any[]` with `ScanPost[]` and `any` with `ScanPost`. The comment on line 10 says it avoids SDK import chain \u2014 ScanPost is in toolkit/types.ts which has no SDK deps.",
+      "related_files": [
+        "src/lib/pipeline/engage-heuristics.ts"
+      ],
+      "evidence": [
+        "Line 28: `remainingPosts: any[]` in EnforceDisagreeInput interface",
+        "Line 47: `post: any` parameter \u2014 ScanPost type from toolkit/types.ts describes this shape"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "source_discovery_any",
+      "summary": "source-discovery.ts has 4 explicit `any` types in typed domain code",
+      "confidence": "high",
+      "suggestion": "Type extractTitles parameter as `Record<string, unknown>` with nested access guards. Use `catch (e: unknown)` with toErrorMessage(). Type the YAML parse result with the known source registry shape.",
+      "related_files": [
+        "src/lib/pipeline/source-discovery.ts"
+      ],
+      "evidence": [
+        "Line 125: `const extractTitles = (obj: any)` \u2014 extracting titles from API response",
+        "Lines 281, 343: `catch (err: any)` \u2014 should use unknown + type narrowing",
+        "Line 324: `let parsed: any` \u2014 YAML parse result has known shape"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "attestation_executor_orphaned",
+      "summary": "attestation-executor.ts (119 LOC) is orphaned with zero importers",
+      "confidence": "medium",
+      "suggestion": "Delete the file if it is truly unused. If it is planned for future use, add a TODO comment explaining when it will be wired in.",
+      "related_files": [
+        "src/actions/attestation-executor.ts"
+      ],
+      "evidence": [
+        "File has zero importers \u2014 not referenced by any other module, not a CLI entry point, not dynamically imported"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "systemic_large_files",
+      "summary": "6 files (571-1534 LOC) share structural complexity pattern without clear extraction opportunities",
+      "confidence": "medium",
+      "suggestion": "For sdk-bridge.ts, extract HIVE codec helpers. For declarative-engine.ts, evaluate whether spec validation and adapter generation can be separated. The other files (agent-config, catalog, matcher, signal-detection) are large because their domains are genuinely complex \u2014 no forced extraction recommended.",
+      "related_files": [
+        "src/lib/agent-config.ts",
+        "src/lib/pipeline/signal-detection.ts",
+        "src/lib/sources/catalog.ts",
+        "src/lib/sources/matcher.ts",
+        "src/lib/sources/providers/declarative-engine.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "All 6 files triggered both smells and structural detectors",
+        "declarative-engine.ts is 1534 LOC \u2014 the largest non-test file",
+        "sdk-bridge.ts is 917 LOC combining types, helpers, and factory"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "stale_error_code_count",
+      "summary": "types.ts docstring says '9 error codes' but DemosErrorCode has 10 members",
+      "confidence": "high",
+      "suggestion": "Update the docstring to say '10 error codes' or remove the count entirely to avoid future staleness.",
+      "related_files": [
+        "src/toolkit/types.ts"
+      ],
+      "evidence": [
+        "Line 4: docstring says 'DemosError: typed error union with 9 error codes'",
+        "Lines 14-24: DemosErrorCode has 10 members including PARTIAL_SUCCESS (likely added after the docstring was written)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "lifecycle_plugin_empty_hooks",
+      "summary": "createLifecyclePlugin() returns hooks: {} while actual hook is exported separately",
+      "confidence": "medium",
+      "suggestion": "Either wire the hook into the plugin's hooks map (`hooks: { beforeSense: lifecycleBeforeSense }`) so the plugin is self-describing, or remove createLifecyclePlugin() since the hook is wired via the extension system anyway.",
+      "related_files": [
+        "src/plugins/lifecycle-plugin.ts",
+        "src/lib/util/extensions.ts"
+      ],
+      "evidence": [
+        "Line 93: createLifecyclePlugin returns hooks: {} \u2014 suggests no hooks",
+        "Line 23: lifecycleBeforeSense is exported as a standalone function",
+        "extensions.ts line 214-216: dynamically imports and wires lifecycleBeforeSense bypassing the FrameworkPlugin hooks contract"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "dahr_empty_response_hash",
+      "summary": "attestDahr can return empty string for responseHash \u2014 surprising for a required field",
+      "confidence": "medium",
+      "suggestion": "Throw an error when responseHash is missing from the proxy response (the attestation failed if there is no hash), or make the field optional (`responseHash?: string`) to signal that absence is expected.",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Line 525: `responseHash: String(proxyResponse.responseHash ?? '')` \u2014 empty string is a valid return",
+        "DahrResult interface declares responseHash: string (required, not optional)",
+        "Callers checking `result.responseHash` for truthiness will silently skip empty strings"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "logic_clarity",
+      "identifier": "llm_json_repair_bracket_mismatch",
+      "summary": "LLM JSON repair counts both { and [ but only appends } \u2014 incomplete repair for unmatched brackets",
+      "confidence": "high",
+      "suggestion": "Either count braces and brackets separately and append the correct closing characters in reverse order, or simplify to only counting `{`/`}` pairs since LLM output is always a top-level JSON object.",
+      "related_files": [
+        "src/actions/llm.ts"
+      ],
+      "evidence": [
+        "Lines 238-243: `opens` counts `{` AND `[`, `closes` counts `}` AND `]`, but line 243 only appends `}`",
+        "If an LLM response has `{\"tags\":[\"a\"` (missing `]}`), the repair adds `}}` instead of `]}`"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "logic_clarity",
+      "identifier": "publish_pipeline_redundant_fallbacks",
+      "summary": "publish-pipeline.ts uses || [] fallback on arrays already verified non-empty",
+      "confidence": "medium",
+      "suggestion": "Remove the `|| []` fallbacks since the guard check already guarantees the arrays are non-empty. Alternatively, use `input.sourceAttestations!` to signal the assertion to readers.",
+      "related_files": [
+        "src/actions/publish-pipeline.ts"
+      ],
+      "evidence": [
+        "Line 282: `hasDahr` guarantees `input.sourceAttestations` is a non-empty array",
+        "Line 289: `for (const att of input.sourceAttestations || [])` \u2014 the `|| []` is unreachable",
+        "Same pattern on line 296 for tlsnAttestations"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "v2_state_undeclared_fields",
+      "summary": "3 plugins inject oracleSnapshot, priceSnapshot into V2SessionState via (as any) \u2014 fields not declared on type",
+      "confidence": "high",
+      "suggestion": "Add `oracleSnapshot?: unknown` and `priceSnapshot?: unknown` to V2SessionState in state.ts. Then remove the as-any casts in the plugins.",
+      "related_files": [
+        "src/plugins/sc-oracle-plugin.ts",
+        "src/plugins/sc-prices-plugin.ts",
+        "src/lib/state.ts"
+      ],
+      "evidence": [
+        "sc-oracle-plugin.ts line 32: (ctx.state as any).oracleSnapshot = result.data \u2014 field not on V2SessionState",
+        "sc-prices-plugin.ts line 36: (ctx.state as any).priceSnapshot = result.data \u2014 field not on V2SessionState",
+        "V2SessionState in state.ts has signalSnapshot and briefingContext but not oracleSnapshot or priceSnapshot"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "signals_plugin_unnecessary_casts",
+      "summary": "signals-plugin.ts uses (ctx.state as any) for fields that exist on V2SessionState",
+      "confidence": "high",
+      "suggestion": "Remove the as-any casts: `ctx.state.signalSnapshot = signalResult.value` and `ctx.state.briefingContext = briefingResult.value`.",
+      "related_files": [
+        "src/plugins/signals-plugin.ts"
+      ],
+      "evidence": [
+        "Line 36: (ctx.state as any).signalSnapshot \u2014 but signalSnapshot is declared on V2SessionState",
+        "Line 40: (ctx.state as any).briefingContext \u2014 but briefingContext is declared on V2SessionState",
+        "BeforeSenseContext.state is typed as V2SessionState, so these assignments work without casts"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "sources_plugin_any_hooks",
+      "summary": "sources-plugin.ts uses (ctx: any) for hook callbacks where typed contexts exist",
+      "confidence": "high",
+      "suggestion": "Import BeforePublishDraftContext and AfterPublishDraftContext from extensions.ts and replace the any annotations.",
+      "related_files": [
+        "src/plugins/sources-plugin.ts",
+        "src/lib/util/extensions.ts"
+      ],
+      "evidence": [
+        "Line 90: `beforePublishDraft: async (ctx: any)` \u2014 BeforePublishDraftContext exists in extensions.ts",
+        "Line 97: `afterPublishDraft: async (ctx: any)` \u2014 AfterPublishDraftContext exists in extensions.ts"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "v2_state_engagements_any",
+      "summary": "V2SessionState.engagements typed as any[] \u2014 no engagement result type exists",
+      "confidence": "high",
+      "suggestion": "Define an EngagementRecord interface with the known fields (txHash, reactionType, reason, timestamp) and use `EngagementRecord[]` instead of `any[]`.",
+      "related_files": [
+        "src/lib/state.ts"
+      ],
+      "evidence": [
+        "Line 132: `engagements: any[]` \u2014 the engagement results pushed to this array have a known shape (reaction decisions with txHash, type, reason)",
+        "SessionState (v1) has `engagements: Record<string, unknown>[]` which is marginally better"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "catch_any_holdouts",
+      "summary": "17 catch blocks use `catch (err: any)` instead of `catch (e: unknown)` with type narrowing",
+      "confidence": "high",
+      "suggestion": "Replace `catch (err: any)` with `catch (err: unknown)` and use `toErrorMessage(err)` for the message. This is a straightforward find-and-replace across 17 sites.",
+      "related_files": [
+        "src/lib/auth/auth.ts",
+        "src/lib/pipeline/signals.ts",
+        "src/plugins/lifecycle-plugin.ts",
+        "src/plugins/signals-plugin.ts",
+        "src/lib/pipeline/source-discovery.ts"
+      ],
+      "evidence": [
+        "17 instances of `catch (err: any)` or `catch (e: any)` in non-test src/ code",
+        "106 instances already use `catch (e: unknown)` or bare `catch {}` \u2014 the correct pattern is established",
+        "The toErrorMessage() utility from lib/util/errors.ts exists specifically for safe error narrowing"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "engage_heuristics_any_posts",
+      "summary": "engage-heuristics.ts uses any for post types where ScanPost type exists",
+      "confidence": "high",
+      "suggestion": "Import ScanPost from toolkit/types.ts (no SDK deps) and replace any with ScanPost.",
+      "related_files": [
+        "src/lib/pipeline/engage-heuristics.ts"
+      ],
+      "evidence": [
+        "Line 28: `remainingPosts: any[]` \u2014 ScanPost type from toolkit/types.ts describes this shape",
+        "Line 47: `post: any` parameter \u2014 same issue"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "review_quality": {
+    "batch_count": 20,
+    "dimension_coverage": 0.05,
+    "evidence_density": 4.429,
+    "high_score_missing_issue_note": 0
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Clean toolkit-to-lib boundary isolation",
+          "description": "The toolkit package (src/toolkit/) never imports from src/lib/ or src/plugins/, maintaining a clear framework-agnostic boundary. All toolkit tools depend only on toolkit-internal types and guards.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Adapter subsystems are properly isolated",
+          "description": "Eliza and skill-dojo adapters depend on src/types.ts but not on each other or on src/lib/ internals. This supports the stated goal of framework-agnostic adapters.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent dependency direction in toolkit",
+          "description": "toolkit/tools/ -> toolkit/ -> toolkit/guards/ follows a clear downward dependency direction, with the barrel index.ts properly re-exporting from leaves.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Large orphaned reactive subsystem",
+          "description": "21 orphaned files (~2886 LOC) spanning the reactive subsystem, domain logic, and action executor blur what constitutes active architecture vs. abandoned work.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "high_level_elegance": {
+      "add": [
+        {
+          "header": "Domain-aligned top-level package decomposition",
+          "description": "toolkit/, lib/, plugins/, adapters/, reactive/, actions/, cli/ each map to a clear domain capability. A new developer can predict where to find or put things from the directory names alone.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Well-curated public surfaces",
+          "description": "toolkit/index.ts and plugins/index.ts serve as explicit, minimal public API surfaces with consistent naming patterns (createXPlugin). This makes the package boundary trustworthy.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Documentation matches runtime reality",
+          "description": "CLAUDE.md accurately describes architecture boundaries, key gotchas, and CLI reference. Project contracts are trustworthy \u2014 a developer reading the docs would form correct mental models.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Uniform camelCase and kebab-case conventions",
+          "description": "Every directory uses camelCase for functions/variables and kebab-case for filenames. No naming convention drift was detected across the entire codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent createXPlugin factory pattern",
+          "description": "All 20 plugins follow the createXPlugin naming convention with matching -plugin.ts filenames. The plugin barrel re-exports them uniformly.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Toolkit tools follow shared behavioral protocol",
+          "description": "8 of 11 toolkit tools use the same import pattern (ToolResult, err, demosError, localProvenance). The 3 outliers (connect, feed-parser, tool-wrapper) have structurally different roles that justify different patterns.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "error_consistency": {
+      "add": [
+        {
+          "header": "Exemplary toolkit error strategy",
+          "description": "All toolkit tools use DemosError with 10 typed error codes wrapped in ToolResult<T>. withToolWrapper provides uniform error wrapping, preserving DemosError codes and wrapping unknowns with tool name context. A developer can switch on error.code reliably.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Shared toErrorMessage utility prevents inline duplication",
+          "description": "Error message extraction was deduplicated from 8+ files into a single toErrorMessage() utility in src/lib/util/errors.ts. This prevents the most common error handling inconsistency.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Auth returns null for graceful degradation",
+          "description": "The auth layer consistently returns null on failure (9 returns_null) as a deliberate design choice \u2014 ensureAuth() returns null when API is unreachable, allowing chain-only mode to function.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "naming_quality": {
+      "add": [
+        {
+          "header": "Precise domain verbs for toolkit API",
+          "description": "Toolkit public API uses specific domain verbs (publish, reply, react, tip, scan, verify, attest, pay) that map directly to SuperColony operations. A developer can predict behavior from the name alone.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Descriptive guard function naming pattern",
+          "description": "Guard functions follow checkAndRecordX naming that communicates their two-phase behavior: check-only on first call, record on second call after successful operation. This makes the guard contract visible at call sites.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "File names match primary exports",
+          "description": "Consistently, file names match their primary export across the codebase. sdk-bridge.ts exports SdkBridge, session.ts exports DemosSession, tool-wrapper.ts exports withToolWrapper. A developer can predict what a file contains from its name.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "Declarative engine earns its indirection depth",
+          "description": "declarative-engine.ts has the highest indirection depth (75 chains, depth 4) but replaces ~250 lines of TypeScript per provider with a YAML spec. The complexity is concentrated in one engine rather than spread across many adapter files.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Toolkit barrel is intentional API boundary",
+          "description": "toolkit/index.ts re-exports 60+ symbols, but this is the stable package entry point for @demos-agents/core. The barrel defines what is public API vs internal \u2014 it serves a real boundary purpose.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Very low pass-through wrapper rate",
+          "description": "Only 3 pass-through wrappers across 205 function signatures (1.5%). The codebase avoids the common AI-generated pattern of wrapper functions that add no behavior.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Severity handler factory pattern is well-calibrated",
+          "description": "incident-alert-handler and market-alert-handler appear to be thin wrappers but each provides domain-specific severity mappings and buildParams callbacks \u2014 they are configuration, not forwarding.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Minimal purposeful production dependency set",
+          "description": "Only 5 production dependencies, each serving a distinct purpose with no overlap. No utility libraries like lodash, no HTTP client libraries (uses native fetch). This is deliberate and well-maintained.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Lazy loading for optional heavy deps",
+          "description": "@anthropic-ai/sdk is loaded via dynamic import() only when ANTHROPIC_API_KEY is present. This prevents unnecessary module loading for deployments using other LLM providers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Single fetch abstraction used consistently",
+          "description": "All HTTP fetching goes through fetchWithTimeout wrapper using native fetch. No axios, node-fetch, or got \u2014 consistent single approach across the codebase.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "low_level_elegance": {
+      "add": [
+        {
+          "header": "TOCTOU-safe file operations in connect.ts",
+          "description": "connect.ts opens the wallet file then fstats the fd, preventing race conditions between permission check and read. This is uncommon attention to detail in application code.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent helper extraction pattern across modules",
+          "description": "Modules follow a consistent pattern: orchestration functions at the top, extracted pure helpers below. signal-detection.ts, sdk-bridge.ts, and declarative-engine.ts all follow this structure, making related code predictable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Size guards against malicious chain data",
+          "description": "decodeHiveData enforces a 64KB limit on decoded hex payloads to prevent OOM from malicious on-chain data. This is security-conscious edge-case handling done precisely.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "withToolWrapper provides consistent tool seam pattern",
+          "description": "Every toolkit tool delegates through withToolWrapper which handles timing, session.touch(), onToolCall telemetry, and error wrapping. This makes seam behavior completely predictable across 10 tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Check-then-commit guard flow prevents partial side effects",
+          "description": "publish.ts runs guards in check-only mode (false), executes the pipeline, then records on success (true). Failure at any step means no guard state mutation \u2014 clean transactional semantics at the boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Source pipeline has clean layered composition",
+          "description": "catalog.ts (registry) -> policy.ts (selection) -> fetch.ts (HTTP) -> providers/ (URL/parse). Each layer has a clear contract and data translation happens at explicit boundaries. No glue-code entropy.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SDK data translation centralized in sdk-bridge.ts",
+          "description": "All chain data decoding (HIVE payloads, transaction normalization, txHash extraction) happens in one file. Consumers never deal with raw SDK response shapes.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Zero snapshot tests, all behavioral assertions",
+          "description": "The entire test suite uses behavioral assertions (expect().toBe, toThrow, toEqual) with zero toMatchSnapshot calls. This means tests validate what the code does, not what it outputs, making them resilient to implementation changes.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "TDD enforcement via vitest globalSetup hook",
+          "description": "A PostToolUse hook and test quality validator reject assertion-free tests at commit time. This prevents the common AI-generated pattern of test files that only check 'does not throw' without meaningful assertions.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent test factory helper pattern",
+          "description": "Test files use consistent factory functions (makeMockDemos, makeEntry, makeSource, createTestSession) for creating test fixtures. This pattern reduces boilerplate and makes test intent clear.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "publish-pipeline test coverage now exists",
+          "description": "publish-pipeline.test.ts covers attestDahr, publishPost, and attestAndPublish with mocked SDK. The previously flagged gap has been filled.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Uniform (session, opts) => ToolResult<T> tool pattern",
+          "description": "All 9 toolkit tools follow the same function signature pattern with typed options and typed result envelopes, making API shape fully predictable from a single example.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "withToolWrapper eliminates cross-cutting boilerplate",
+          "description": "Timing, session.touch(), observer notification, and error wrapping are centralized in a single wrapper. Every tool delegates to it, ensuring consistent behavior without code duplication.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent Zod validation at every entry point",
+          "description": "Every tool calls validateInput(Schema, opts) as its first operation, providing uniform input validation and consistent INVALID_INPUT error shapes.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard APIs follow checkAndRecord pattern",
+          "description": "All guards (write-rate, dedup, tip-spend) use a consistent checkAndRecordXxx(store, walletAddress, ..., record: boolean) => Promise<DemosError | null> contract.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Intentional connect/disconnect deviation",
+          "description": "connect() returns DemosSession directly (throws on failure) and disconnect() returns void \u2014 documented as lifecycle operations distinct from ToolResult-returning tools. Semantically appropriate.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "Symbol-based auth token storage with redaction",
+          "description": "Auth tokens are stored via local Symbols on DemosSession, preventing accidental leakage through JSON.stringify or console.log. toJSON() and nodejs.util.inspect.custom both redact sensitive fields.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Uniform SSRF validation on all URL-accepting tools",
+          "description": "attest, publish, pay, and connect all use validateUrl() with DNS resolution, IP blocklist, and HTTPS enforcement. The pay tool additionally uses pinned fetch to prevent DNS rebinding after validation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "3-state apiAccess controls API fallback behavior",
+          "description": "The apiAccess field on SdkBridge uses 'none' | 'configured' | 'authenticated' to precisely control which API calls are attempted, preventing unauthorized API usage and enabling clean chain-only degradation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Wallet-scoped guards with exclusive locking",
+          "description": "All spending and rate guards are scoped by wallet address with StateStore-backed exclusive locking, preventing cross-agent interference and race conditions in concurrent scenarios.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Two-tier security between toolkit and CLI",
+          "description": "The toolkit's connect() enforces mode-600 file permissions and symlink rejection. CLI tools use sdk.ts connectWallet() which skips these checks. This is an intentional architecture boundary \u2014 toolkit is the packaged surface, CLI tools are personal scripts.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "Comments explain WHY, not WHAT",
+          "description": "Across toolkit, guards, and pipeline modules, comments consistently document constraints, invariants, and non-obvious decisions rather than restating code. Examples include NaN bypass prevention notes and process-invariant caching rationale.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Boilerplate consolidated via shared utilities",
+          "description": "toErrorMessage was extracted from 8+ inline definitions into errors.ts. withToolWrapper eliminates timing/error/observer boilerplate across all 9 toolkit tools. safeParse provides a single prototype-pollution-safe JSON parser.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Domain terms preferred over generic names",
+          "description": "SDK bridge methods use domain-specific names (attestDahr, publishHivePost, transferDem, resolvePostAuthor) rather than generic verbs. Guard functions are named checkAndRecordXxx following a clear verb+noun pattern.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual-channel logging pattern in action-executor",
+          "description": "action-executor.ts uses both console logging (info/warn) and structured observation logging (observe) for each event action. The overlap is intentional \u2014 console is for human operators, JSONL is for machine analysis \u2014 but could be reduced.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "Chain-first migration fully complete",
+          "description": "All 8 session phases work chain-only. SDK bridge has verifyTransaction, getHivePosts, resolvePostAuthor, publishHiveReaction. CLI write-rate-limit migrated to toolkit guards (commit 2f20e63). No dual-path confusion remains.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No mixed JS/TS or stale migration TODOs",
+          "description": "All source files are TypeScript. Zero TODO/FIXME comments reference migration, legacy, or removal. The codebase has been cleaned of migration artifacts.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Auth cache maintains intentional legacy compat",
+          "description": "saveAuthCache writes both legacy flat fields (token, address, expiresAt) and namespaced entries because skills/supercolony/scripts/supercolony.ts still reads the flat format. This is a documented compat layer for an external consumer, not an incomplete migration.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Single dead @deprecated function remains",
+          "description": "persistSourceToRegistry is annotated @deprecated with zero callers. Its V2 replacement persistSourceToCatalog is fully functional. This is the only deprecated symbol in the codebase.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "package_organization": {
+      "add": [
+        {
+          "header": "Toolkit layer has exemplary decomposition",
+          "description": "src/toolkit/ splits into root (7 core types/session files, avg fan-in 7.6), guards/ (7 guard files), and tools/ (11 tool implementations). Coupling is strictly unidirectional: tools \u2192 toolkit \u2192 guards. This is the best-organized subsystem in the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Coupling matrix shows clean dependency direction",
+          "description": "No bidirectional edges between major directories in the coupling matrix. Dependencies flow consistently: adapters/plugins \u2192 types, tools \u2192 toolkit \u2192 guards, pipeline \u2192 sources, handlers \u2192 event-sources.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugins use flat directory with consistent naming",
+          "description": "22 plugin files in src/plugins/ all follow the *-plugin.ts naming convention, making the flat directory navigable despite the file count. Adding a hierarchy would add indirection without improving discoverability.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "src/lib/ flat directory accumulates mixed concerns",
+          "description": "13 files covering agent config, state management, spending policy, social features, quality testing, and attestation tooling share the same flat directory with avg fan-in of 1.1. Several files (mentions, predictions, transcript) are orphaned, inflating the count.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "Toolkit barrel is side-effect-free",
+          "description": "src/toolkit/index.ts is pure type and function re-exports with zero import-time side effects. The toolkit boundary is clean for consumers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "connect.ts uses lazy SDK imports",
+          "description": "The connect tool explicitly defers SDK loading to call-time via dynamic import(), documented in the file header. This prevents SDK initialization cost at import time.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Observer uses explicit init-before-use pattern",
+          "description": "observe.ts requires initObserver() before observe() works, with silent no-op as the safe default. Order-dependent but with safe degradation.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "sdk.ts has mutable exported state and import-time side effects",
+          "description": "RPC_URL and SUPERCOLONY_API are exported as mutable lets, globalThis.crypto is polyfilled at import time, and process.env.AGENT_NAME is captured at module scope. This creates stale-snapshot risk and test fragility.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "providers/index.ts performs file I/O at module scope",
+          "description": "Top-level await loads YAML spec files from disk when the module is first imported. All importers pay this cost and cannot defer it.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Toolkit tools follow consistent pattern",
+          "description": "All 10 toolkit tools use the same structure: Zod schema validation, withToolWrapper for lifecycle, typed ToolResult<T> return. A developer can learn one tool and predict the shape of all others.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "sdk-bridge.ts is a responsibility accumulator",
+          "description": "At 917 LOC, sdk-bridge.ts combines type definitions, HIVE encoding helpers, transaction scanning utilities, and a 15-method factory. It grew through chain-first migration without periodic extraction.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Persistent any types in lib layer",
+          "description": "4+ files in src/lib/ and src/plugins/ use explicit `any` types where typed alternatives exist (ScanPost, SourceRecordV2, unknown). The toolkit layer is well-typed but the lib layer has gaps.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Large files serve domain complexity, not mixing",
+          "description": "Files like catalog.ts (698 LOC), matcher.ts (644 LOC), and agent-config.ts (571 LOC) are large because their domains are genuinely complex, not because they mix unrelated concerns. Each has a single coherent responsibility.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "ToolResult contract consistently honored",
+          "description": "All 10 toolkit tools return ToolResult<T> via withToolWrapper. Error wrapping, timing, and observer notification are uniform. connect/disconnect explicitly document their throw/void exception.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SdkBridge interface matches implementation",
+          "description": "The 15+ method SdkBridge interface faithfully mirrors the createSdkBridge factory's implementation. Return types, error behaviors, and optional fields are consistent between interface and implementation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual plugin wiring paths exist",
+          "description": "Lifecycle plugin has both a FrameworkPlugin factory (empty hooks) and a standalone hook export wired via extensions.ts. The two paths are not connected \u2014 the factory is misleading.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "logic_clarity": {
+      "add": [
+        {
+          "header": "Uniform early-return guard pattern in toolkit",
+          "description": "All toolkit tools use withToolWrapper + early-return err() for validation failures. This eliminates nested if/else and makes the happy path immediately visible at each function's top level.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Pagination loops have explicit safety breaks",
+          "description": "Both getHivePosts and getHiveReactions in sdk-bridge.ts include three safety mechanisms: page limit, empty-result break, and cursor-advance check. This prevents infinite loops without obscuring the main logic.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "State machine transitions use explicit maps",
+          "description": "lifecycle.ts defines VALID_TRANSITIONS as a static Record<SourceStatus, SourceStatus[]> that makes the state machine self-documenting and mechanically enforceable.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "type_safety": {
+      "add": [
+        {
+          "header": "Toolkit types are comprehensive and trusted",
+          "description": "ToolResult<T>, DemosError with 10 typed codes, SdkBridge interface with 15+ typed methods, and Zod schemas for all tool inputs provide strong type safety at the toolkit boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugin state injection bypasses type system",
+          "description": "3 plugins inject fields (oracleSnapshot, priceSnapshot) into V2SessionState via (as any) casts because the fields are not declared on the type. A 4th plugin (signals) uses unnecessary casts for fields that do exist.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "catch-any migration 85% complete",
+          "description": "106 catch blocks use the correct unknown/bare pattern, but 17 holdouts still use catch (err: any). The toErrorMessage() utility exists for safe narrowing.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "feed-filter.ts any types appear fixed",
+          "description": "Previous review flagged 10 any annotations in feed-filter.ts. Current scan finds zero \u2014 the issue appears resolved.",
+          "settled": false,
+          "positive": true
+        }
+      ]
+    }
+  },
+  "review_scope": {
+    "reviewed_files_count": 0,
+    "successful_batch_count": 20,
+    "full_sweep_included": false,
+    "total_files": 163,
+    "imported_dimensions": [
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "contract_coherence",
+      "convention_outlier",
+      "cross_module_architecture",
+      "dependency_health",
+      "design_coherence",
+      "error_consistency",
+      "high_level_elegance",
+      "incomplete_migration",
+      "initialization_coupling",
+      "logic_clarity",
+      "low_level_elegance",
+      "mid_level_elegance",
+      "naming_quality",
+      "package_organization",
+      "test_strategy",
+      "type_safety"
+    ]
+  },
+  "provenance": {
+    "kind": "blind_review_batch_import",
+    "blind": true,
+    "runner": "dry-run",
+    "run_stamp": "20260328_221710",
+    "created_at": "2026-03-28T22:33:06+00:00",
+    "batch_count": 20,
+    "batch_indexes": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "packet_path": "/home/mj/projects/demos-agents/.desloppify/review_packet_blind.json",
+    "packet_sha256": "84ac193b8eaf8fb67d01f654cc025a38407587eb188cc0ffc32fb8cc01c0932b"
+  },
+  "assessment_coverage": {
+    "scored_dimensions": [
+      "naming_quality",
+      "logic_clarity",
+      "type_safety",
+      "contract_coherence",
+      "error_consistency",
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "high_level_elegance",
+      "mid_level_elegance",
+      "low_level_elegance",
+      "cross_module_architecture",
+      "initialization_coupling",
+      "convention_outlier",
+      "dependency_health",
+      "test_strategy",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "incomplete_migration",
+      "package_organization",
+      "design_coherence"
+    ],
+    "selected_dimensions": [
+      "naming_quality",
+      "logic_clarity",
+      "type_safety",
+      "contract_coherence",
+      "error_consistency",
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "high_level_elegance",
+      "mid_level_elegance",
+      "low_level_elegance",
+      "cross_module_architecture",
+      "initialization_coupling",
+      "convention_outlier",
+      "dependency_health",
+      "test_strategy",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "incomplete_migration",
+      "package_organization",
+      "design_coherence"
+    ],
+    "imported_dimensions": [
+      "abstraction_fitness",
+      "ai_generated_debt",
+      "api_surface_coherence",
+      "authorization_consistency",
+      "contract_coherence",
+      "convention_outlier",
+      "cross_module_architecture",
+      "dependency_health",
+      "design_coherence",
+      "error_consistency",
+      "high_level_elegance",
+      "incomplete_migration",
+      "initialization_coupling",
+      "logic_clarity",
+      "low_level_elegance",
+      "mid_level_elegance",
+      "naming_quality",
+      "package_organization",
+      "test_strategy",
+      "type_safety"
+    ],
+    "missing_dimensions": []
+  }
+}

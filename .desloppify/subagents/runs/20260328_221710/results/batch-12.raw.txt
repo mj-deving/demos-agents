@@ -1,0 +1,73 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 12,
+  "assessments": {
+    "authorization_consistency": 90.2
+  },
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "Toolkit connect() enforces wallet file permissions (mode 600), symlink rejection, TOCTOU-safe file handle, and container/WSL2 detection for graceful degradation",
+        "Auth token stored via local Symbol on DemosSession — not globally discoverable, redacted in toJSON() and inspect()",
+        "3-state apiAccess ('none', 'configured', 'authenticated') consistently governs API fallback in react.ts, scan.ts, and sdk-bridge.ts",
+        "SSRF validation (DNS resolution + IP blocklist + HTTPS enforcement) consistently applied in all 3 URL-accepting tools (attest, publish, pay) plus connect",
+        "URL allowlist enforcement applied identically across attest, publish, and pay — same code pattern",
+        "Guards (write-rate, dedup, tip-spend, pay-spend) all use wallet-scoped StateStore with exclusive locking",
+        "Auth cache written with mode 0o600 (auth.ts line 91)",
+        "ensureAuth returns null on API unreachable — graceful degradation to chain-only mode"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "CLI-level connectWallet (sdk.ts) does not enforce wallet file permission checks like the toolkit's connect.ts does, creating two tiers of security posture. The auth.ts saveAuthCache uses Record<string, any> type (line 83) which weakens type safety at the auth boundary."
+    }
+  },
+  "dimension_judgment": {
+    "authorization_consistency": {
+      "dimension_character": "Authorization patterns are consistently and intentionally applied across the toolkit. The session-scoped auth model with Symbol-based token storage, 3-state API access control, uniform SSRF validation, and wallet-scoped guards create a coherent security posture. A developer working with the toolkit can trust that auth and permission checks are uniformly applied. The CLI tools operate at a lower security tier (no file permission checks) but this is an intentional architecture boundary between the packaged toolkit and personal CLI scripts.",
+      "score_rationale": "The auth posture is strong and uniform within the toolkit boundary. SSRF validation, URL allowlisting, file permission checks, and spend guards are consistently applied. The 3-state apiAccess and graceful degradation pattern are well-designed. The only friction is the two-tier security gap between toolkit and CLI tools, and a minor any type in auth cache serialization. This places the score in the strong range around 90."
+    }
+  },
+  "issues": [],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "Symbol-based auth token storage with redaction",
+          "description": "Auth tokens are stored via local Symbols on DemosSession, preventing accidental leakage through JSON.stringify or console.log. toJSON() and nodejs.util.inspect.custom both redact sensitive fields.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Uniform SSRF validation on all URL-accepting tools",
+          "description": "attest, publish, pay, and connect all use validateUrl() with DNS resolution, IP blocklist, and HTTPS enforcement. The pay tool additionally uses pinned fetch to prevent DNS rebinding after validation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "3-state apiAccess controls API fallback behavior",
+          "description": "The apiAccess field on SdkBridge uses 'none' | 'configured' | 'authenticated' to precisely control which API calls are attempted, preventing unauthorized API usage and enabling clean chain-only degradation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Wallet-scoped guards with exclusive locking",
+          "description": "All spending and rate guards are scoped by wallet address with StateStore-backed exclusive locking, preventing cross-agent interference and race conditions in concurrent scenarios.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Two-tier security between toolkit and CLI",
+          "description": "The toolkit's connect() enforces mode-600 file permissions and symlink rejection. CLI tools use sdk.ts connectWallet() which skips these checks. This is an intentional architecture boundary — toolkit is the packaged surface, CLI tools are personal scripts.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

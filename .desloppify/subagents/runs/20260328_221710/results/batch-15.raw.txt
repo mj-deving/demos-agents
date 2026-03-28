@@ -1,0 +1,98 @@
+{
+  "batch": "package_organization",
+  "batch_index": 15,
+  "assessments": {
+    "package_organization": 82.0
+  },
+  "dimension_notes": {
+    "package_organization": {
+      "evidence": [
+        "src/toolkit/ is well-structured with clear sublayers: root (7 core files, avg fan-in 7.6), guards/ (7 files), tools/ (11 files) — all with clean unidirectional coupling (tools → toolkit → guards)",
+        "src/ root has only 2 files (types.ts at 65 importers, index.ts) — genuinely core, not stragglers",
+        "src/lib/ has 13 flat files with avg_fan_in of 1.1 — mixed concerns including config, state, spending, tips, mentions, predictions, transcript, and testing utilities",
+        "src/plugins/ has 22 files in one flat directory but they all follow the same *-plugin.ts pattern — consistency makes the flat layout navigable",
+        "Coupling matrix shows clean dependency direction: no bidirectional edges between major directories",
+        "src/adapters/ is well-partitioned: eliza/ (9 files) and skill-dojo/ (19 files) cleanly separated",
+        "src/reactive/ is well-decomposed: root (3 files), event-handlers/ (7), event-sources/ (10)",
+        "src/lib/sources/ has good internal organization: root (8 files), providers/ (4), providers/hooks/ (2)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "medium",
+      "issues_preventing_higher_score": null
+    }
+  },
+  "dimension_judgment": {
+    "package_organization": {
+      "dimension_character": "The directory layout largely reflects ownership and domain boundaries. The toolkit layer is exemplary with its toolkit/tools/guards decomposition and clean unidirectional coupling. The adapters, reactive, and sources subsystems are well-partitioned. The main weakness is the flat src/lib/ directory which accumulates 13 files of mixed concerns with low average fan-in (1.1), including several likely-orphaned modules (mentions, predictions, transcript) that inflate the directory without clear shared purpose.",
+      "score_rationale": "A developer can mostly predict where to find and put things. The toolkit, adapters, reactive, and sources directories have clear ownership boundaries. The coupling matrix shows clean dependency direction with no bidirectional edges. The src/lib/ flat directory with 13 mixed-concern files and several orphaned modules is the primary drag — a developer encountering this directory would need to read individual files to understand the organization principle. The plugins/ directory has 22 files but is navigable because they all follow the same naming convention. This places the score in the 'solid but uneven' range around 82."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "package_organization",
+      "identifier": "src_lib_flat_mixed_concerns",
+      "summary": "src/lib/ has 13 flat files with mixed concerns and low fan-in (avg 1.1)",
+      "related_files": [
+        "src/lib/mentions.ts",
+        "src/lib/predictions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/tips.ts",
+        "src/lib/spending-policy.ts",
+        "src/lib/budget-tracker.ts",
+        "src/lib/improvement-utils.ts",
+        "src/lib/review-findings.ts",
+        "src/lib/test-quality-validator.ts",
+        "src/lib/state.ts",
+        "src/lib/agent-config.ts",
+        "src/lib/response-validator.ts",
+        "src/lib/tlsn-playwright-bridge.ts"
+      ],
+      "evidence": [
+        "13 files with avg_fan_in of 1.1 — most files are imported by 0-2 other files",
+        "Mixed concerns: agent config, session state management, spending/budget tracking, social features (mentions, tips), quality testing, and attestation tooling all coexist",
+        "mentions.ts, predictions.ts, and transcript.ts were flagged as orphaned in previous reviews — still present and inflating the directory",
+        "High-cohesion clusters exist but are not grouped: {tips.ts, spending-policy.ts, budget-tracker.ts} share spending/economic concerns; {test-quality-validator.ts, review-findings.ts, improvement-utils.ts} share quality/review concerns"
+      ],
+      "suggestion": "Staged reorg plan: (1) Delete confirmed orphans (mentions.ts, predictions.ts, transcript.ts) — verify zero importers first with grep. (2) Move spending-related files to src/lib/spending/ or merge budget-tracker into spending-policy. (3) Move quality/review files to src/lib/quality/ (test-quality-validator, review-findings, improvement-utils). (4) Update imports: grep for each moved file and fix paths. (5) Validate with npm test.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Incremental feature additions (tips, predictions, mentions) landed in src/lib/ as a catch-all rather than domain-specific subdirectories"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "package_organization": {
+      "add": [
+        {
+          "header": "Toolkit layer has exemplary decomposition",
+          "description": "src/toolkit/ splits into root (7 core types/session files, avg fan-in 7.6), guards/ (7 guard files), and tools/ (11 tool implementations). Coupling is strictly unidirectional: tools → toolkit → guards. This is the best-organized subsystem in the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Coupling matrix shows clean dependency direction",
+          "description": "No bidirectional edges between major directories in the coupling matrix. Dependencies flow consistently: adapters/plugins → types, tools → toolkit → guards, pipeline → sources, handlers → event-sources.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugins use flat directory with consistent naming",
+          "description": "22 plugin files in src/plugins/ all follow the *-plugin.ts naming convention, making the flat directory navigable despite the file count. Adding a hierarchy would add indirection without improving discoverability.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "src/lib/ flat directory accumulates mixed concerns",
+          "description": "13 files covering agent config, state management, spending policy, social features, quality testing, and attestation tooling share the same flat directory with avg fan-in of 1.1. Several files (mentions, predictions, transcript) are orphaned, inflating the count.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

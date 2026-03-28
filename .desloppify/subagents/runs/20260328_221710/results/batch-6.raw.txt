@@ -1,0 +1,95 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {
+    "abstraction_fitness": 82.5
+  },
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "Wrapper rate is very low (1.5%) with only 3 pass-through wrappers across 205 function signatures, indicating the codebase avoids unnecessary delegation",
+        "Four one-implementation interfaces detected: StateStore, LLMProvider, ElizaService, FrameworkPlugin. StateStore and LLMProvider are intentional extension points (toolkit is designed to be framework-agnostic), FrameworkPlugin is a plugin system with 22 implementations, ElizaService is the only genuine single-impl concern",
+        "The incident-alert-handler and market-alert-handler are thin config wrappers around createSeverityHandler — but they provide domain-specific config (severity mappings, buildParams) rather than pure forwarding, so the indirection earns its cost",
+        "ActionExecutorContext has 18+ fields injected for testability — a wide context bag, though it serves a clear purpose (SDK-free testing). The tradeoff is intentional per the docstring",
+        "declarative-engine.ts has 75 indirection chain calls at depth 4 — highest in codebase — but this is the core abstraction engine that replaces ~250 lines of TS per provider with YAML specs, so the complexity is earned",
+        "toolkit/index.ts barrel re-exports 60+ symbols from 12 modules — intentional stable API surface for the @demos-agents/core package boundary"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "sub_axes": {
+        "abstraction_leverage": 88.0,
+        "indirection_cost": 85.0,
+        "interface_honesty": 75.0,
+        "delegation_density": 95.0,
+        "definition_directness": 90.0,
+        "type_discipline": 82.0
+      }
+    }
+  },
+  "dimension_judgment": {
+    "abstraction_fitness": {
+      "dimension_character": "The codebase demonstrates disciplined abstraction choices overall. Most layers of indirection earn their cost through genuine behavior addition (severity mapping, YAML-to-code translation, SDK isolation). The main weakness is a cluster of wide context/config bags (ActionExecutorContext, AgentConfig) that pass many fields through layers, and a few one-implementation interfaces that exist for future extensibility rather than current polymorphic need.",
+      "score_rationale": "The very low wrapper rate (1.5%) and zero facade modules signal a codebase that avoids ceremony. The four one-impl interfaces are mostly intentional extension points for a toolkit designed for multiple consumers (ElizaOS, OpenClaw). The wide param bags in ActionExecutorContext and plugin configs create some indirection cost but serve documented purposes (testability, SDK-free testing). This places the codebase solidly above the 80 anchor (recurring friction) but below 90 (minor concerns only) due to the interface honesty gap and config bag breadth."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "wide_action_executor_context",
+      "summary": "ActionExecutorContext has 18+ fields creating a wide dependency injection bag",
+      "related_files": ["src/actions/action-executor.ts"],
+      "evidence": ["ActionExecutorContext interface has identity (3), auth (1), budget (2), config (3), LLM (1), state (1), platform abstractions (4), rate limiting (3), and telemetry (2) fields — totaling 18+ fields in one interface"],
+      "suggestion": "Group related fields into sub-interfaces (e.g., BudgetContext, PlatformAbstractions) to make dependencies clearer at call sites. This would also make partial mocking in tests more natural.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "eliza_service_single_impl",
+      "summary": "ElizaService interface has exactly one implementation with no polymorphic usage",
+      "related_files": ["src/adapters/eliza/types.ts", "src/adapters/eliza/event-service.ts"],
+      "evidence": ["ElizaService is declared in types.ts and implemented only by event-service.ts. Unlike StateStore/LLMProvider which are toolkit extension points, ElizaService exists within a single adapter with no substitution pressure."],
+      "suggestion": "Consider inlining the type directly in event-service.ts if no second implementation is planned. If it exists for documentation purposes, add a comment explaining the design intent.",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The codebase prioritizes testability and SDK isolation, which naturally produces wide context bags and explicit interface boundaries even where only one implementation exists"],
+    "likely_symptoms": ["wide_action_executor_context is a symptom of the dependency-injection-for-testability pattern"],
+    "possible_false_positives": ["The FrameworkPlugin 'one-impl' signal is incorrect — it has 22 plugin implementations across the plugins/ directory"]
+  },
+  "context_updates": {
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "Declarative engine earns its indirection depth",
+          "description": "declarative-engine.ts has the highest indirection depth (75 chains, depth 4) but replaces ~250 lines of TypeScript per provider with a YAML spec. The complexity is concentrated in one engine rather than spread across many adapter files.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Toolkit barrel is intentional API boundary",
+          "description": "toolkit/index.ts re-exports 60+ symbols, but this is the stable package entry point for @demos-agents/core. The barrel defines what is public API vs internal — it serves a real boundary purpose.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Very low pass-through wrapper rate",
+          "description": "Only 3 pass-through wrappers across 205 function signatures (1.5%). The codebase avoids the common AI-generated pattern of wrapper functions that add no behavior.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Severity handler factory pattern is well-calibrated",
+          "description": "incident-alert-handler and market-alert-handler appear to be thin wrappers but each provides domain-specific severity mappings and buildParams callbacks — they are configuration, not forwarding.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

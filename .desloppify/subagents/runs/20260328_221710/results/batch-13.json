@@ -1,0 +1,83 @@
+{
+  "batch": "ai_generated_debt",
+  "batch_index": 13,
+  "assessments": {
+    "ai_generated_debt": 89.0
+  },
+  "dimension_notes": {
+    "ai_generated_debt": {
+      "evidence": [
+        "Comments consistently explain WHY, not WHAT — e.g., 'NaN > X is always false — would bypass maxPerTip' (tip-spend-cap.ts:34), 'Process-invariant: container status cannot change during process lifetime' (connect.ts:277)",
+        "No restating comments observed — checked across toolkit, guards, pipeline, and plugins modules",
+        "toErrorMessage() utility extracted from 8+ inline definitions into errors.ts — consolidation of boilerplate",
+        "withToolWrapper eliminates cross-cutting boilerplate (timing, error wrapping, observer) rather than duplicating it per tool",
+        "observe() calls in action-executor are purposeful telemetry for reactive event processing, not nosy entry/exit logging",
+        "Step-numbered comments in pay.ts (9-step D402 protocol) and publish.ts (2-step pipeline) aid navigation through multi-step protocols",
+        "No pass-through wrappers found — wrappers like withToolWrapper and createPinnedFetch add behavior (timing, DNS pinning), not just forwarding",
+        "Generic names avoided — domain terms used consistently (attestDahr, publishHivePost, transferDem, resolvePostAuthor, checkAndRecordWrite)"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "session-runner.ts at 4144 lines has accumulated significant orchestration logic. Some observe() calls in action-executor.ts are paired with info()/warn() calls that slightly duplicate context. A few files have section-header comments (// -- Types --, // -- Constants --) that add vertical noise without aiding IDE navigation."
+    }
+  },
+  "dimension_judgment": {
+    "ai_generated_debt": {
+      "dimension_character": "The codebase shows minimal AI-generated debt. Comments explain constraints and rationale rather than restating code. Error handling is consolidated via shared utilities (toErrorMessage, withToolWrapper) rather than copy-pasted boilerplate. Domain terminology is used consistently over generic names. The observe() telemetry calls serve production monitoring needs. The only minor AI-style patterns are paired info()/observe() calls that slightly overlap in context, and section-header comment blocks that add some vertical noise.",
+      "score_rationale": "A developer working here would find their attention spent on logic rather than noise. Comments are purpose-driven, abstractions add real behavior, and domain terms are precise. The code has clearly been through cleanup and consolidation (toErrorMessage extraction from 8 files, withToolWrapper eliminating per-tool boilerplate). The minor paired logging and section headers keep this from exemplary but represent isolated rough edges, not a systemic pattern. Score around 89."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "paired_info_observe_overlap",
+      "summary": "action-executor.ts pairs info()/warn() with observe() calls that partially duplicate context",
+      "related_files": ["src/actions/action-executor.ts"],
+      "evidence": [
+        "Lines 153-166: ctx.info() logs the event, then ctx.observe() logs the same event with slightly more structured data",
+        "Lines 167-178: ctx.warn() logs a failure message, then ctx.observe() logs the same failure with structured data",
+        "12 observe() calls in the file, most paired with a preceding info()/warn() that conveys overlapping information"
+      ],
+      "suggestion": "Consider having observe() also emit to the console log when appropriate, reducing the need for separate info()/warn() calls. Alternatively, accept this as intentional dual-channel logging (human-readable console + structured JSONL) and document the pattern.",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": ["paired_info_observe_overlap"]
+  },
+  "context_updates": {
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "Comments explain WHY, not WHAT",
+          "description": "Across toolkit, guards, and pipeline modules, comments consistently document constraints, invariants, and non-obvious decisions rather than restating code. Examples include NaN bypass prevention notes and process-invariant caching rationale.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Boilerplate consolidated via shared utilities",
+          "description": "toErrorMessage was extracted from 8+ inline definitions into errors.ts. withToolWrapper eliminates timing/error/observer boilerplate across all 9 toolkit tools. safeParse provides a single prototype-pollution-safe JSON parser.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Domain terms preferred over generic names",
+          "description": "SDK bridge methods use domain-specific names (attestDahr, publishHivePost, transferDem, resolvePostAuthor) rather than generic verbs. Guard functions are named checkAndRecordXxx following a clear verb+noun pattern.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual-channel logging pattern in action-executor",
+          "description": "action-executor.ts uses both console logging (info/warn) and structured observation logging (observe) for each event action. The overlap is intentional — console is for human operators, JSONL is for machine analysis — but could be reduced.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

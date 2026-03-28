@@ -65,14 +65,14 @@ export async function scan(
           }
         } catch {
           // API enrichment is optional — chain data is primary
-          session.logger?.warn?.("scan: API enrichment failed, using chain-only data");
+          console.warn("scan: API enrichment failed, using chain-only data");
         }
       }
 
       const opportunities = identifyOpportunities(posts);
       return ok<ScanResult>({ posts, opportunities }, localProvenance(start));
     } catch (scanErr) {
-      session.logger?.warn?.("scan: chain scan failed", { error: (scanErr as Error).message });
+      console.warn("scan: chain scan failed", { error: (scanErr as Error).message });
       return err(
         demosError("NETWORK_ERROR", `Scan failed: ${(scanErr as Error).message}`, true),
         localProvenance(start),

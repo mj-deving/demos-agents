@@ -1,0 +1,92 @@
+{
+  "batch": "mid_level_elegance",
+  "batch_index": 9,
+  "assessments": {
+    "mid_level_elegance": 84.5
+  },
+  "dimension_notes": {
+    "mid_level_elegance": {
+      "evidence": [
+        "withToolWrapper provides a clean, consistent seam for all toolkit tools — handles timing, session.touch(), telemetry, and error wrapping in one place. Every tool function delegates through it with zero glue code.",
+        "The publish pipeline has a clear check-then-commit pattern: guards run without mutation first (checkAndRecordWrite with false), pipeline executes, then guards record on success (checkAndRecordWrite with true). Error at any stage means no side effects.",
+        "fetchSource centralizes retry, timeout, and rate-limit logic so provider adapters stay pure URL generators. Clean separation of concerns between fetch.ts (HTTP mechanics) and providers/ (URL construction).",
+        "Event loop orchestration reads as composition: SourceRegistration configs -> poll -> diff -> filter -> dispatch -> save watermark. Each step is a clean function boundary.",
+        "The ActionExecutorContext with 18+ fields creates a wide seam between event-runner.ts and action-executor.ts. While the fields are well-typed, the handoff requires constructing a large object.",
+        "Data translation between SDK responses and toolkit types happens in sdk-bridge.ts (decodeHiveData, extractTxHash, normalizeTransaction) — one obvious place for chain data translation.",
+        "The sources subsystem has clean layered handoffs: catalog.ts (registry) -> policy.ts (selection) -> fetch.ts (HTTP) -> providers/ (URL/parse). Each boundary is explicit and minimal."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "mid_level_elegance": {
+      "dimension_character": "Module handoffs are largely explicit and well-designed. The toolkit uses a consistent wrapper pattern (withToolWrapper) that makes every tool's seam behavior predictable. The source pipeline (catalog -> policy -> fetch -> providers) demonstrates strong layered composition. The main friction is the wide ActionExecutorContext handoff and the dual publish paths (toolkit publish vs. actions/publish-pipeline) that serve different consumers but share conceptual responsibility.",
+      "score_rationale": "A developer crossing module boundaries would mostly find explicit, minimal handoffs — consistent with strong mid-level craft. The withToolWrapper pattern, the check-then-commit guard flow, and the layered source pipeline are all above the 85 threshold individually. The wide ActionExecutorContext and the two publish pipelines (toolkit publish.ts using sdk-bridge for chain ops vs. actions/publish-pipeline.ts using direct SDK for the session runner) introduce boundary friction that keeps the score below 90."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "dual_publish_pipelines",
+      "summary": "Two separate publish pipelines serve different consumers with partially overlapping logic",
+      "related_files": ["src/toolkit/tools/publish.ts", "src/actions/publish-pipeline.ts"],
+      "evidence": [
+        "toolkit/tools/publish.ts orchestrates: validate -> guard check -> executePublishPipeline -> guard record, using sdk-bridge for chain operations",
+        "actions/publish-pipeline.ts orchestrates: DAHR attestation -> HIVE encoding -> DemosTransactions pipeline, used directly by session-runner",
+        "Both handle HIVE post encoding and chain transaction submission but through different SDK access patterns"
+      ],
+      "suggestion": "Document the intentional boundary: toolkit/publish.ts is the stable external API (for future @demos-agents/core consumers), while actions/publish-pipeline.ts is the internal session-runner pipeline. Add cross-references between the two files to prevent confusion.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "wide_action_executor_handoff",
+      "summary": "ActionExecutorContext requires constructing an 18+ field object at the event-runner boundary",
+      "related_files": ["src/actions/action-executor.ts"],
+      "evidence": ["The event-runner must wire 18+ fields into ActionExecutorContext: identity (3), auth (1), budget (2), config (3), LLM (1), state (1), platform (4), rate-limiting (3), telemetry (2). This is the widest handoff seam in the codebase."],
+      "suggestion": "Group related fields into sub-contexts (e.g., AuthContext, BudgetContext, PlatformContext) that can be constructed independently and composed. This makes partial testing easier and the wiring site more readable.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The dual publish pipeline exists because the toolkit API (stable external surface) and session-runner (internal orchestrator) evolved independently. The wide ActionExecutorContext is a consequence of extracting the executor for testability without grouping the dependencies."],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "withToolWrapper provides consistent tool seam pattern",
+          "description": "Every toolkit tool delegates through withToolWrapper which handles timing, session.touch(), onToolCall telemetry, and error wrapping. This makes seam behavior completely predictable across 10 tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Check-then-commit guard flow prevents partial side effects",
+          "description": "publish.ts runs guards in check-only mode (false), executes the pipeline, then records on success (true). Failure at any step means no guard state mutation — clean transactional semantics at the boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Source pipeline has clean layered composition",
+          "description": "catalog.ts (registry) -> policy.ts (selection) -> fetch.ts (HTTP) -> providers/ (URL/parse). Each layer has a clear contract and data translation happens at explicit boundaries. No glue-code entropy.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SDK data translation centralized in sdk-bridge.ts",
+          "description": "All chain data decoding (HIVE payloads, transaction normalization, txHash extraction) happens in one file. Consumers never deal with raw SDK response shapes.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

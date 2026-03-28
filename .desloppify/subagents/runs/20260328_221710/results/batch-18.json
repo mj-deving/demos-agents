@@ -1,0 +1,103 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 18,
+  "assessments": {"contract_coherence": 86.2},
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "All 10 toolkit tools consistently return Promise<ToolResult<T>> via withToolWrapper — error wrapping, timing, and observer notification are uniform",
+        "connect/disconnect explicitly document their different error contract (throw/void vs ToolResult) in the docstring",
+        "SdkBridge interface and implementation match — 15+ methods all honor their declared signatures",
+        "types.ts docstring says '9 error codes' but DemosErrorCode has 10 members (PARTIAL_SUCCESS was added)",
+        "createLifecyclePlugin() returns hooks: {} but the actual hook (lifecycleBeforeSense) is exported separately and wired via extensions.ts — the FrameworkPlugin contract is technically honored since hooks is optional, but misleading",
+        "verify.ts correctly handles all edge cases: null (unsupported), confirmed, unconfirmed, error — return type is always ToolResult<VerifyResult>",
+        "attestDahr returns DahrResult with responseHash/txHash/data/url — all fields always populated (responseHash may be empty string)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Docstring on types.ts is stale (says 9 codes, has 10). createLifecyclePlugin() returns empty hooks which is misleading. attestDahr responseHash can be empty string which is surprising for a required field."
+    }
+  },
+  "dimension_judgment": {
+    "contract_coherence": {
+      "dimension_character": "The toolkit layer demonstrates strong contract coherence. All 10 tools consistently return ToolResult<T> via withToolWrapper, connect/disconnect clearly document their throw/void exception, and the SdkBridge interface faithfully mirrors its implementation. The few contract issues are minor: a stale docstring mentioning 9 error codes when 10 exist, and createLifecyclePlugin returning an empty hooks object while the actual hook is separately exported. A developer working here would generally trust that functions do what they promise.",
+      "score_rationale": "This scores above the 80 anchor because the core typed contracts (ToolResult, DemosError, SdkBridge) are consistently honored across the codebase. The defects are isolated and low-impact — a stale docstring count and a misleading empty-hooks plugin factory. These pull the score slightly below 90 because they require a developer to look past surface-level declarations, but they don't undermine the fundamental reliability of the contracts."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "stale_error_code_count",
+      "summary": "types.ts docstring says '9 error codes' but DemosErrorCode has 10 members",
+      "related_files": ["src/toolkit/types.ts"],
+      "evidence": [
+        "Line 4: docstring says 'DemosError: typed error union with 9 error codes'",
+        "Lines 14-24: DemosErrorCode has 10 members including PARTIAL_SUCCESS (likely added after the docstring was written)"
+      ],
+      "suggestion": "Update the docstring to say '10 error codes' or remove the count entirely to avoid future staleness.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "lifecycle_plugin_empty_hooks",
+      "summary": "createLifecyclePlugin() returns hooks: {} while actual hook is exported separately",
+      "related_files": ["src/plugins/lifecycle-plugin.ts", "src/lib/util/extensions.ts"],
+      "evidence": [
+        "Line 93: createLifecyclePlugin returns hooks: {} — suggests no hooks",
+        "Line 23: lifecycleBeforeSense is exported as a standalone function",
+        "extensions.ts line 214-216: dynamically imports and wires lifecycleBeforeSense bypassing the FrameworkPlugin hooks contract"
+      ],
+      "suggestion": "Either wire the hook into the plugin's hooks map (`hooks: { beforeSense: lifecycleBeforeSense }`) so the plugin is self-describing, or remove createLifecyclePlugin() since the hook is wired via the extension system anyway.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "dahr_empty_response_hash",
+      "summary": "attestDahr can return empty string for responseHash — surprising for a required field",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Line 525: `responseHash: String(proxyResponse.responseHash ?? '')` — empty string is a valid return",
+        "DahrResult interface declares responseHash: string (required, not optional)",
+        "Callers checking `result.responseHash` for truthiness will silently skip empty strings"
+      ],
+      "suggestion": "Throw an error when responseHash is missing from the proxy response (the attestation failed if there is no hash), or make the field optional (`responseHash?: string`) to signal that absence is expected.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Minor docstring/interface drift during iterative development — the underlying typed contracts are sound"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "ToolResult contract consistently honored",
+          "description": "All 10 toolkit tools return ToolResult<T> via withToolWrapper. Error wrapping, timing, and observer notification are uniform. connect/disconnect explicitly document their throw/void exception.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SdkBridge interface matches implementation",
+          "description": "The 15+ method SdkBridge interface faithfully mirrors the createSdkBridge factory's implementation. Return types, error behaviors, and optional fields are consistent between interface and implementation.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual plugin wiring paths exist",
+          "description": "Lifecycle plugin has both a FrameworkPlugin factory (empty hooks) and a standalone hook export wired via extensions.ts. The two paths are not connected — the factory is misleading.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

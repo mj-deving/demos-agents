@@ -36,7 +36,7 @@ export async function lifecycleBeforeSense(ctx: BeforeSenseContext): Promise<voi
       return;
     }
 
-    const allSources = catalog.sources as any[];
+    const allSources = catalog.sources;
     const sampleSize = 10;
     const sampled = sampleSources(allSources, sampleSize);
 
@@ -46,8 +46,8 @@ export async function lifecycleBeforeSense(ctx: BeforeSenseContext): Promise<voi
     }
 
     ctx.logger?.info(`Lifecycle: testing ${sampled.length} sources...`);
-    const transitions: any[] = [];
-    const updatedMap = new Map<string, any>();
+    const transitions: Array<{ currentStatus: string; newStatus: string | null; reason: string }> = [];
+    const updatedMap = new Map<string, (typeof allSources)[number]>();
 
     for (const source of sampled) {
       const testResult = await testSource(source);
@@ -65,7 +65,7 @@ export async function lifecycleBeforeSense(ctx: BeforeSenseContext): Promise<voi
 
     // Persist: merge rating updates + transitions into full catalog
     if (!ctx.flags.dryRun) {
-      const fullSources = allSources.map((s: any) => updatedMap.get(s.id) || s);
+      const fullSources = allSources.map((s) => updatedMap.get(s.id) || s);
       const withTransitions = transitions.length > 0
         ? applyTransitions(fullSources, transitions)
         : fullSources;
@@ -75,13 +75,14 @@ export async function lifecycleBeforeSense(ctx: BeforeSenseContext): Promise<voi
     }
 
     ctx.logger?.result(`Lifecycle: ${sampled.length} tested, ${transitions.length} transition(s)${ctx.flags.dryRun ? " (dry-run)" : ""}`);
-  } catch (e: any) {
+  } catch (e: unknown) {
     // Non-fatal: lifecycle errors must not block other beforeSense hooks
+    const msg = e instanceof Error ? e.message : String(e);
     const { observe } = await import("../lib/pipeline/observe.js");
-    observe("error", `Lifecycle hook failed: ${e.message}`, {
+    observe("error", `Lifecycle hook failed: ${msg}`, {
       phase: "sense", source: "lifecycle-plugin.ts:beforeSense",
     });
-    ctx.logger?.info(`Lifecycle: error (non-fatal) — ${e.message}`);
+    ctx.logger?.info(`Lifecycle: error (non-fatal) — ${msg}`);
   }
 }
 

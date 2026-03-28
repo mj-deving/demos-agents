@@ -1,0 +1,167 @@
+{
+  "batch": "type_safety",
+  "batch_index": 20,
+  "assessments": {"type_safety": 74.8},
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "Toolkit types.ts has comprehensive typed contracts: ToolResult<T>, DemosError with typed codes, SdkBridge interface with 15+ typed methods",
+        "67 any-typed locations across src/ (excluding tests) — concentrated in plugins, lib/pipeline, and SDK boundary code",
+        "17 `catch (err: any)` patterns vs 106 `catch (e: unknown)` — mostly migrated but holdouts remain",
+        "V2SessionState.engagements is typed as any[] — no typed engagement shape exists",
+        "3 plugins inject undeclared fields into V2SessionState via (ctx.state as any).fieldName — oracleSnapshot, priceSnapshot not on the type",
+        "2 plugins use (ctx.state as any).signalSnapshot and briefingContext — but these fields ARE on V2SessionState, so the casts are unnecessary",
+        "sources-plugin.ts uses (ctx: any) for hook callbacks where typed BeforePublishDraftContext and AfterPublishDraftContext exist",
+        "tlsn-playwright-bridge.ts has 12+ as any casts — justified SDK boundary but no DemosExtended-style interface covering all casts",
+        "feed-filter.ts any types appear to have been fixed (no any found in current file)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "type_safety": {
+      "dimension_character": "The toolkit layer has strong type safety — typed error codes, generic ToolResult<T>, and comprehensive SdkBridge interface. However, the plugin and lib layers have a persistent any-type problem. 67 any-typed locations remain, concentrated in plugins that inject undeclared fields into session state via as-any casts, hook callbacks typed as any despite typed contexts existing, and catch blocks using any instead of unknown. The V2SessionState type itself has an any[] for engagements and is missing fields that plugins write to at runtime. A developer working in the toolkit would trust the types; a developer working in the plugins or lib layer would encounter regular gaps.",
+      "score_rationale": "This scores below the 80 anchor because a developer encounters enough any types in the plugin and lib layers to undermine type trust. The 67 any-typed locations are not cosmetic — they include undeclared state fields (oracleSnapshot, priceSnapshot), hook callbacks with available typed alternatives, and state interfaces using any[]. The toolkit layer's strong typing pulls the score up from the 60 range, but the two-tier quality creates friction when code crosses from toolkit into lib/plugins."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "v2_state_undeclared_fields",
+      "summary": "3 plugins inject oracleSnapshot, priceSnapshot into V2SessionState via (as any) — fields not declared on type",
+      "related_files": [
+        "src/plugins/sc-oracle-plugin.ts",
+        "src/plugins/sc-prices-plugin.ts",
+        "src/lib/state.ts"
+      ],
+      "evidence": [
+        "sc-oracle-plugin.ts line 32: (ctx.state as any).oracleSnapshot = result.data — field not on V2SessionState",
+        "sc-prices-plugin.ts line 36: (ctx.state as any).priceSnapshot = result.data — field not on V2SessionState",
+        "V2SessionState in state.ts has signalSnapshot and briefingContext but not oracleSnapshot or priceSnapshot"
+      ],
+      "suggestion": "Add `oracleSnapshot?: unknown` and `priceSnapshot?: unknown` to V2SessionState in state.ts. Then remove the as-any casts in the plugins.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "signals_plugin_unnecessary_casts",
+      "summary": "signals-plugin.ts uses (ctx.state as any) for fields that exist on V2SessionState",
+      "related_files": ["src/plugins/signals-plugin.ts"],
+      "evidence": [
+        "Line 36: (ctx.state as any).signalSnapshot — but signalSnapshot is declared on V2SessionState",
+        "Line 40: (ctx.state as any).briefingContext — but briefingContext is declared on V2SessionState",
+        "BeforeSenseContext.state is typed as V2SessionState, so these assignments work without casts"
+      ],
+      "suggestion": "Remove the as-any casts: `ctx.state.signalSnapshot = signalResult.value` and `ctx.state.briefingContext = briefingResult.value`.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "sources_plugin_any_hooks",
+      "summary": "sources-plugin.ts uses (ctx: any) for hook callbacks where typed contexts exist",
+      "related_files": ["src/plugins/sources-plugin.ts", "src/lib/util/extensions.ts"],
+      "evidence": [
+        "Line 90: `beforePublishDraft: async (ctx: any)` — BeforePublishDraftContext exists in extensions.ts",
+        "Line 97: `afterPublishDraft: async (ctx: any)` — AfterPublishDraftContext exists in extensions.ts"
+      ],
+      "suggestion": "Import BeforePublishDraftContext and AfterPublishDraftContext from extensions.ts and replace the any annotations.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "v2_state_engagements_any",
+      "summary": "V2SessionState.engagements typed as any[] — no engagement result type exists",
+      "related_files": ["src/lib/state.ts"],
+      "evidence": [
+        "Line 132: `engagements: any[]` — the engagement results pushed to this array have a known shape (reaction decisions with txHash, type, reason)",
+        "SessionState (v1) has `engagements: Record<string, unknown>[]` which is marginally better"
+      ],
+      "suggestion": "Define an EngagementRecord interface with the known fields (txHash, reactionType, reason, timestamp) and use `EngagementRecord[]` instead of `any[]`.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "catch_any_holdouts",
+      "summary": "17 catch blocks use `catch (err: any)` instead of `catch (e: unknown)` with type narrowing",
+      "related_files": [
+        "src/lib/auth/auth.ts",
+        "src/lib/pipeline/signals.ts",
+        "src/plugins/lifecycle-plugin.ts",
+        "src/plugins/signals-plugin.ts",
+        "src/lib/pipeline/source-discovery.ts"
+      ],
+      "evidence": [
+        "17 instances of `catch (err: any)` or `catch (e: any)` in non-test src/ code",
+        "106 instances already use `catch (e: unknown)` or bare `catch {}` — the correct pattern is established",
+        "The toErrorMessage() utility from lib/util/errors.ts exists specifically for safe error narrowing"
+      ],
+      "suggestion": "Replace `catch (err: any)` with `catch (err: unknown)` and use `toErrorMessage(err)` for the message. This is a straightforward find-and-replace across 17 sites.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "catch_any_migration"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "engage_heuristics_any_posts",
+      "summary": "engage-heuristics.ts uses any for post types where ScanPost type exists",
+      "related_files": ["src/lib/pipeline/engage-heuristics.ts"],
+      "evidence": [
+        "Line 28: `remainingPosts: any[]` — ScanPost type from toolkit/types.ts describes this shape",
+        "Line 47: `post: any` parameter — same issue"
+      ],
+      "suggestion": "Import ScanPost from toolkit/types.ts (no SDK deps) and replace any with ScanPost.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Plugin state injection uses as-any because fields were added to plugins before being declared on the state type — missing coordination between plugin and state type evolution",
+      "catch (err: any) is a holdover from pre-TypeScript strict migration that was partially but not fully completed"
+    ],
+    "likely_symptoms": ["signals_plugin_unnecessary_casts is a symptom of the broader plugin as-any pattern — the casts were likely copy-pasted from plugins that genuinely needed them"],
+    "possible_false_positives": ["feed-filter.ts appears to have been fixed — the open issue about 10 any annotations may be stale"]
+  },
+  "context_updates": {
+    "type_safety": {
+      "add": [
+        {
+          "header": "Toolkit types are comprehensive and trusted",
+          "description": "ToolResult<T>, DemosError with 10 typed codes, SdkBridge interface with 15+ typed methods, and Zod schemas for all tool inputs provide strong type safety at the toolkit boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugin state injection bypasses type system",
+          "description": "3 plugins inject fields (oracleSnapshot, priceSnapshot) into V2SessionState via (as any) casts because the fields are not declared on the type. A 4th plugin (signals) uses unnecessary casts for fields that do exist.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "catch-any migration 85% complete",
+          "description": "106 catch blocks use the correct unknown/bare pattern, but 17 holdouts still use catch (err: any). The toErrorMessage() utility exists for safe narrowing.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "feed-filter.ts any types appear fixed",
+          "description": "Previous review flagged 10 any annotations in feed-filter.ts. Current scan finds zero — the issue appears resolved.",
+          "settled": false,
+          "positive": true
+        }
+      ]
+    }
+  }
+}
