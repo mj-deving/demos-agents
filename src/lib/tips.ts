@@ -383,11 +383,10 @@ export async function executeTip(
   }
 
   const recipient = String(tipRes.data.recipient).toLowerCase();
-  const transferResult = await (demos.transfer as any)(
-    recipient,
-    candidate.amount,
-    `HIVE_TIP:${candidate.txHash}`
-  );
+  // SDK transfer() creates signed tx only (2 params) — must confirm+broadcast to submit
+  const signedTx = await demos.transfer(recipient, candidate.amount);
+  const validity = await demos.confirm(signedTx);
+  const transferResult = await demos.broadcast(validity);
 
   const tx: SpendingTransaction = {
     timestamp: new Date().toISOString(),

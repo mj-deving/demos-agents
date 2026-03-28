@@ -316,7 +316,12 @@ async function main(): Promise<void> {
     apiCall,
     generatePost,
     attestAndPublish: (input, url, opts) => attestAndPublish(demos, input, url, opts),
-    transfer: (recipient, amount, memo) => (demos.transfer as any)(recipient, amount, memo),
+    transfer: async (recipient, amount, _memo) => {
+      // SDK transfer() creates signed tx only (2 params) — must confirm+broadcast
+      const signedTx = await demos.transfer(recipient, amount);
+      const validity = await demos.confirm(signedTx);
+      return await demos.broadcast(validity);
+    },
     loadWriteRateLedger,
     canPublish,
     recordPublish,

@@ -368,16 +368,27 @@ async function cmdTip(flags: Record<string, string>): Promise<void> {
   const recipient = tipRes.data.recipient;
   info(`Recipient: ${recipient}`);
 
-  // Step 2: On-chain transfer with HIVE_TIP memo (per official spec)
+  // Step 2: On-chain transfer — SDK transfer() creates signed tx only (2 params, no memo)
+  // Must confirm+broadcast to actually submit to the network
   info(`Transferring ${amount} DEM on-chain...`);
-  const tipTx = await demos.transfer(recipient, amount, `HIVE_TIP:${tx}`);
+  const signedTx = await demos.transfer(recipient, amount);
+  info("Confirming transaction...");
+  const validity = await demos.confirm(signedTx);
+  info("Broadcasting transaction...");
+  const broadcastResult = await demos.broadcast(validity);
+
+  // Extract txHash from confirm or broadcast response
+  const txHash = (validity as any)?.response?.data?.transaction?.hash
+    ?? (broadcastResult as any)?.response?.data?.hash
+    ?? (broadcastResult as any)?.hash
+    ?? "unknown";
 
   output({
     status: "tipped",
     postTxHash: tx,
     recipient,
     amount,
-    memo: `HIVE_TIP:${tx}`,
+    txHash,
   }, flags["pretty"] === "true");
 }
 
