@@ -333,21 +333,27 @@ async function main(): Promise<void> {
     },
     stateStore: new FileStateStore(),
     checkWriteRate: async (store: StateStore, addr: string) => {
-      // Check against reactive budget limits (stricter than cron limits)
-      const remaining = await getWriteRateRemaining(store, addr);
-      const dailyBudget = dailyReactive;
-      const hourlyBudget = 2;
-      const dailyUsed = 14 - remaining.dailyRemaining; // 14 = DAILY_LIMIT in guard
-      const hourlyUsed = 4 - remaining.hourlyRemaining; // 4 = HOURLY_LIMIT in guard
-      if (dailyUsed >= dailyBudget) {
-        return { allowed: false, reason: `Reactive daily limit reached (${dailyBudget}/day)` };
+      // Check reactive-specific counter (separate from cron's shared ledger)
+      const remaining = await getWriteRateRemaining(store, `reactive-${addr}`);
+      // Reactive limits use their own state key, so remaining reflects reactive writes only
+      const reactiveDaily = 14 - remaining.dailyRemaining;
+      const reactiveHourly = 4 - remaining.hourlyRemaining;
+      if (reactiveDaily >= dailyReactive) {
+        return { allowed: false, reason: `Reactive daily limit reached (${dailyReactive}/day)` };
       }
-      if (hourlyUsed >= hourlyBudget) {
-        return { allowed: false, reason: `Reactive hourly limit reached (${hourlyBudget}/hour)` };
+      if (reactiveHourly >= 2) {
+        return { allowed: false, reason: `Reactive hourly limit reached (2/hour)` };
+      }
+      // Also check global shared limit (both cron + reactive together)
+      const globalError = await checkAndRecordWrite(store, addr, false);
+      if (globalError) {
+        return { allowed: false, reason: globalError.message };
       }
       return { allowed: true, reason: "Within reactive limits" };
     },
     recordWrite: async (store: StateStore, addr: string) => {
+      // Record in both reactive-specific and global shared ledgers
+      await checkAndRecordWrite(store, `reactive-${addr}`, true);
       await checkAndRecordWrite(store, addr, true);
     },
     observe,
