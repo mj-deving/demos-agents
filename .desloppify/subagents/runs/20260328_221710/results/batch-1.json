@@ -1,0 +1,108 @@
+{
+  "batch": "cross_module_architecture",
+  "batch_index": 1,
+  "assessments": {"cross_module_architecture": 78.5},
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts — extensions.ts defines hook context types consumed by plugins, but calibrate-plugin.ts is imported back from extensions.ts",
+        "src/types.ts is a god module with 65 importers spanning all subsystems — plugins, adapters, reactive, toolkit all depend on it, creating a hub that makes any type change ripple across the entire codebase",
+        "src/lib/ flat directory has 13 files (3759 LOC) with mixed concerns: tips.ts, mentions.ts, predictions.ts, transcript.ts are domain-specific but sit alongside infrastructure files like state.ts and agent-config.ts",
+        "21 orphaned files (2886 LOC total) remain in the codebase — entire reactive subsystem (event-loop, handlers, sources) appears unused, as does action-executor.ts, tips.ts in lib/, mentions.ts, predictions.ts",
+        "toolkit/tools/ imports toolkit/ 36 times and toolkit/ imports toolkit/tools/ 10 times — bidirectional coupling within the toolkit package",
+        "Clean layering between toolkit (framework-agnostic) and src/lib (business logic) — toolkit never imports from lib/ or plugins/",
+        "Adapters (eliza, skill-dojo) correctly depend on src/types.ts but not on each other — good boundary isolation"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The codebase has a clearly intentional three-tier architecture (toolkit -> lib -> cli) with good adapter isolation. However, the god module at src/types.ts (65 importers) creates a large blast radius, a confirmed import cycle exists between extensions and calibrate-plugin, and a significant volume of orphaned code (21 files, ~2886 LOC) blurs active boundaries. The toolkit-to-tools bidirectional coupling is structurally necessary but adds coupling pressure.",
+      "score_rationale": "The dependency direction is mostly coherent and a developer would generally trust the layer boundaries (toolkit, lib, plugins, adapters, reactive). The god module and import cycle create real friction — a change to src/types.ts ripples everywhere, and the orphaned reactive subsystem makes it unclear what is active architecture vs. abandoned code. This places the score solidly in the 'mixed' range — mostly coherent but with recurring boundary issues that require caution."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "extensions_calibrate_cycle",
+      "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
+      "related_files": ["src/lib/util/extensions.ts", "src/plugins/calibrate-plugin.ts"],
+      "evidence": ["extensions.ts imports from calibrate-plugin.ts (or vice versa), creating a 2-file cycle confirmed by dependency scanner"],
+      "suggestion": "Extract the shared type or function that creates the cycle into a separate types file in src/lib/util/ that both can import without circular dependency. The BeforeSenseContext type likely needs to live in a file that calibrate-plugin.ts does not import back into.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "orphaned_reactive_subsystem",
+      "summary": "Entire reactive subsystem (event-loop, 7 handlers, 4 sources) is orphaned with zero importers",
+      "related_files": ["src/reactive/event-loop.ts", "src/reactive/event-handlers/disagree-handler.ts", "src/reactive/event-sources/sse-feed.ts", "src/reactive/watermark-store.ts", "src/actions/action-executor.ts"],
+      "evidence": ["Scan evidence shows 21 orphaned files totaling ~2886 LOC including event-loop.ts (257), sse-feed.ts (244), all 7 event handlers, watermark-store.ts (90), action-executor.ts (312), storage-watcher.ts (139), balance-source.ts (104)"],
+      "suggestion": "Either delete the orphaned reactive subsystem (it is recoverable from git history) or wire it into the active module graph via event-runner.ts imports. The orphaned code blurs what constitutes active architecture.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "god_module_types",
+      "summary": "src/types.ts has 65 importers across all subsystems creating a change-ripple hub",
+      "related_files": ["src/types.ts"],
+      "evidence": ["65 importers from plugins/ (21), adapters/skill-dojo/ (18), reactive/event-sources/ (9), adapters/eliza/ (6), reactive/event-handlers/ (5) — every subsystem depends on this single file"],
+      "suggestion": "Split src/types.ts along domain boundaries: core plugin types (FrameworkPlugin, DataProvider, Evaluator) could remain at src/types.ts, while event-related types (AgentEvent, EventSource, EventHandler) could move to src/reactive/types.ts. This would reduce the blast radius for event-related type changes.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "flat_lib_mixed_concerns",
+      "summary": "src/lib/ flat directory mixes 13 files of infrastructure and domain logic without sub-grouping",
+      "related_files": ["src/lib/tips.ts", "src/lib/mentions.ts", "src/lib/predictions.ts", "src/lib/state.ts", "src/lib/agent-config.ts"],
+      "evidence": ["tips.ts (442 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) are domain-specific files sitting alongside infrastructure files like state.ts, agent-config.ts, budget-tracker.ts — many of which are also orphaned"],
+      "suggestion": "Move domain-specific orphaned files (tips.ts, predictions.ts, mentions.ts, transcript.ts) to a src/lib/domain/ subdirectory or delete them if truly unused. This separates active infrastructure from abandoned domain logic.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Reactive subsystem was built but never wired into the active import graph — likely deferred during chain-first migration", "Types accumulated in src/types.ts organically as the plugin system grew"],
+    "likely_symptoms": ["orphaned_reactive_subsystem is likely the root cause of several orphaned handler/source files"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Clean toolkit-to-lib boundary isolation",
+          "description": "The toolkit package (src/toolkit/) never imports from src/lib/ or src/plugins/, maintaining a clear framework-agnostic boundary. All toolkit tools depend only on toolkit-internal types and guards.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Adapter subsystems are properly isolated",
+          "description": "Eliza and skill-dojo adapters depend on src/types.ts but not on each other or on src/lib/ internals. This supports the stated goal of framework-agnostic adapters.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent dependency direction in toolkit",
+          "description": "toolkit/tools/ -> toolkit/ -> toolkit/guards/ follows a clear downward dependency direction, with the barrel index.ts properly re-exporting from leaves.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Large orphaned reactive subsystem",
+          "description": "21 orphaned files (~2886 LOC) spanning the reactive subsystem, domain logic, and action executor blur what constitutes active architecture vs. abandoned work.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

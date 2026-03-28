@@ -1,0 +1,87 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {
+    "api_surface_coherence": 88.5
+  },
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "All 9 toolkit tools (publish, reply, react, tip, scan, verify, attest, discoverSources, pay) follow the same (session, opts) => Promise<ToolResult<T>> signature pattern",
+        "Every tool uses withToolWrapper for timing, session.touch(), observer notification, and error wrapping — zero boilerplate duplication",
+        "Zod validation via validateInput() at every tool entry point ensures consistent input checking",
+        "Each tool has its own typed XxxOptions interface (ReactOptions, TipOptions, etc.) — no overloaded or ambiguous parameter bags",
+        "Guard APIs follow consistent checkAndRecordXxx(store, walletAddress, ..., record: boolean) => Promise<DemosError | null> pattern",
+        "connect/disconnect intentionally use throw/void semantics (documented deviation for lifecycle vs tool operations)",
+        "session.logger referenced in scan.ts lines 68 and 75 but logger property is never declared on DemosSession — optional chaining makes calls silently no-op"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Phantom session.logger property in scan.ts. ConnectOptions has 13 fields (large config surface). SdkBridge interface has 13+ methods which approaches the boundary of a coherent interface."
+    }
+  },
+  "dimension_judgment": {
+    "api_surface_coherence": {
+      "dimension_character": "The toolkit API surface is remarkably coherent. A developer encountering any one tool can immediately predict the shape of all others — consistent (session, opts) => ToolResult<T> pattern, uniform Zod validation, shared withToolWrapper boilerplate, and typed per-tool options interfaces. The connect/disconnect deviation from ToolResult to throw/void is intentional, documented, and semantically justified. The only friction point is a phantom logger property on DemosSession that silently no-ops.",
+      "score_rationale": "The API surface approaches exemplary coherence. All tools share a predictable, type-safe contract, and the guard layer follows its own consistent pattern. The withToolWrapper abstraction eliminates cross-cutting boilerplate without adding indirection. The phantom session.logger and the growing SdkBridge interface are minor friction — they represent isolated rough edges rather than systemic inconsistency. This places the score solidly in the 88-90 range."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "phantom_session_logger",
+      "summary": "scan.ts references session.logger which is never declared on DemosSession",
+      "related_files": ["src/toolkit/tools/scan.ts", "src/toolkit/session.ts"],
+      "evidence": [
+        "scan.ts lines 68 and 75 call session.logger?.warn?.(...) but DemosSession has no logger property",
+        "Optional chaining prevents runtime errors but the calls are dead code — no warnings are ever emitted"
+      ],
+      "suggestion": "Either add an optional logger property to DemosSession (e.g., logger?: { warn?: (...args: unknown[]) => void }) and wire it through ConnectOptions, or replace the calls with console.warn to match the pattern used in react.ts line 44.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Uniform (session, opts) => ToolResult<T> tool pattern",
+          "description": "All 9 toolkit tools follow the same function signature pattern with typed options and typed result envelopes, making API shape fully predictable from a single example.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "withToolWrapper eliminates cross-cutting boilerplate",
+          "description": "Timing, session.touch(), observer notification, and error wrapping are centralized in a single wrapper. Every tool delegates to it, ensuring consistent behavior without code duplication.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent Zod validation at every entry point",
+          "description": "Every tool calls validateInput(Schema, opts) as its first operation, providing uniform input validation and consistent INVALID_INPUT error shapes.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Guard APIs follow checkAndRecord pattern",
+          "description": "All guards (write-rate, dedup, tip-spend) use a consistent checkAndRecordXxx(store, walletAddress, ..., record: boolean) => Promise<DemosError | null> contract.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Intentional connect/disconnect deviation",
+          "description": "connect() returns DemosSession directly (throws on failure) and disconnect() returns void — documented as lifecycle operations distinct from ToolResult-returning tools. Semantically appropriate.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

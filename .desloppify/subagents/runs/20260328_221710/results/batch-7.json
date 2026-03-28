@@ -1,0 +1,70 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {
+    "dependency_health": 91.0
+  },
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "Production dependencies are minimal and purposeful: @kynesyslabs/demosdk (core SDK), @anthropic-ai/sdk (LLM provider, lazily imported), proper-lockfile (state store locking), yaml (config parsing, used in 5 files), zod (schema validation, used in 1 file)",
+        "No duplicate libraries for same purpose — single fetch wrapper (fetchWithTimeout) used consistently, single YAML parser, single schema library",
+        "No heavy dependencies pulled in for light use — each dependency is used for its core purpose",
+        "One circular dependency detected: src/lib/util/extensions.ts -> src/plugins/calibrate-plugin.ts — but it uses dynamic import() at runtime, making it a type-only cycle at static analysis level and safe at runtime",
+        "@anthropic-ai/sdk is lazily loaded via dynamic import only when ANTHROPIC_API_KEY is set, avoiding unnecessary weight for non-Anthropic deployments"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The extensions.ts <-> calibrate-plugin.ts import cycle exists as a structural concern even though mitigated by dynamic import. The @anthropic-ai/sdk is a heavy dependency even with lazy loading."
+    }
+  },
+  "dimension_judgment": {
+    "dependency_health": {
+      "dimension_character": "The dependency set is remarkably lean for a project of this size and complexity. Five production dependencies, each serving a clear purpose with no redundancy or overlap. The codebase uses native Node.js APIs (fetch, crypto, fs) wherever possible and avoids pulling in utility libraries. The single import cycle is mitigated at runtime but represents minor structural debt.",
+      "score_rationale": "A developer working with these dependencies would find a cohesive, purposeful set with no surprises. No duplicate libraries, no heavy deps for light use, no version conflicts. The only friction point is the one import cycle, which is already mitigated by dynamic import. This is solidly above the 90 anchor (mostly healthy with minor concerns) but the cycle and the inherent weight of the SDK keep it from exemplary."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "extensions_calibrate_cycle",
+      "summary": "Import cycle between extensions.ts and calibrate-plugin.ts despite dynamic import mitigation",
+      "related_files": ["src/lib/util/extensions.ts", "src/plugins/calibrate-plugin.ts"],
+      "evidence": ["extensions.ts dynamically imports calibrate-plugin.ts at line 171, while calibrate-plugin.ts statically imports type BeforeSenseContext from extensions.ts. Static analysis tools flag this as a cycle."],
+      "suggestion": "Move BeforeSenseContext to a separate types file (e.g., lib/util/hook-types.ts) that both modules can import without creating a cycle. This eliminates the structural cycle entirely rather than relying on dynamic import as mitigation.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The cycle exists because hook context types and hook loading logic live in the same module (extensions.ts), while the plugin that uses those types naturally needs to reference them"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Minimal purposeful production dependency set",
+          "description": "Only 5 production dependencies, each serving a distinct purpose with no overlap. No utility libraries like lodash, no HTTP client libraries (uses native fetch). This is deliberate and well-maintained.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Lazy loading for optional heavy deps",
+          "description": "@anthropic-ai/sdk is loaded via dynamic import() only when ANTHROPIC_API_KEY is present. This prevents unnecessary module loading for deployments using other LLM providers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Single fetch abstraction used consistently",
+          "description": "All HTTP fetching goes through fetchWithTimeout wrapper using native fetch. No axios, node-fetch, or got — consistent single approach across the codebase.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

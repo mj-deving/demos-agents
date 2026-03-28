@@ -1,0 +1,69 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {"convention_outlier": 83.4},
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "Consistent camelCase naming across all directories — every directory uses camelCase exclusively for functions/variables, no snake_case drift detected",
+        "Consistent kebab-case file naming across the entire codebase (e.g., sdk-bridge.ts, skill-dojo-client.ts, signal-detection.ts)",
+        "Plugin naming convention is highly consistent: all 20 plugins follow createXPlugin factory pattern with matching -plugin.ts filenames",
+        "Toolkit tools follow consistent patterns: 8 of 11 use ToolResult, err, demosError, localProvenance — the 3 outliers (connect.ts, feed-parser.ts, tool-wrapper.ts) are structurally different (connect returns DemosSession, feed-parser is a pure parser, tool-wrapper is the wrapper itself)",
+        "Event handlers have inconsistent behavioral protocols: 5/7 use EventHandler + EventAction types, but incident-alert-handler.ts and market-alert-handler.ts delegate to createSeverityHandler and don't import EventHandler/EventAction directly — they still return the correct types via the shared factory",
+        "Mixed export patterns in barrel files: some use 'export *' (adapters/skill-dojo/index.ts for types), others use explicit named exports (plugins/index.ts, toolkit/index.ts) — the explicit barrels are more intentional"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Event handler behavioral protocol inconsistency (incident-alert and market-alert skip direct EventHandler/EventAction imports, delegating entirely to severity-handler factory). The orphaned reactive subsystem's handler patterns cannot be validated as current convention since they are unused."
+    }
+  },
+  "dimension_judgment": {
+    "convention_outlier": {
+      "dimension_character": "The codebase is highly conventionally consistent. File naming (kebab-case), function naming (camelCase), and plugin patterns (createXPlugin) are uniform throughout. The toolkit tools follow a shared behavioral protocol with justified outliers (connect, feed-parser, tool-wrapper have structurally different roles). The main convention drift is minor: event handlers use slightly different import patterns due to the severity-handler factory abstraction, and barrel files mix export styles.",
+      "score_rationale": "A developer seeing a pattern in one area can mostly trust it holds everywhere. The 83 score reflects strong consistency across naming, file organization, and plugin structure. The slight deductions come from the minor behavioral protocol inconsistency in event handlers and the mixed barrel export styles. These are small enough that a developer would not be confused, but they do represent convention drift rather than intentional variation."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "event_handler_protocol_drift",
+      "summary": "2 of 7 event handlers skip direct EventHandler/EventAction type imports, delegating entirely to severity-handler factory",
+      "related_files": ["src/reactive/event-handlers/incident-alert-handler.ts", "src/reactive/event-handlers/market-alert-handler.ts", "src/reactive/event-handlers/severity-handler.ts"],
+      "evidence": ["incident-alert-handler.ts and market-alert-handler.ts import only createSeverityHandler, while disagree-handler.ts, mention-handler.ts, reply-handler.ts, tip-thanks-handler.ts import EventHandler and EventAction directly from types.ts"],
+      "suggestion": "This is a minor drift — the severity-handler factory returns the correct EventHandler type. Adding explicit type annotations (e.g., 'export function createIncidentAlertHandler(): EventHandler') would make the contract visible without changing behavior.",
+      "confidence": "low",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Severity-handler factory was introduced to reduce duplication, which naturally changed the import pattern for handlers that use it"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Uniform camelCase and kebab-case conventions",
+          "description": "Every directory uses camelCase for functions/variables and kebab-case for filenames. No naming convention drift was detected across the entire codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent createXPlugin factory pattern",
+          "description": "All 20 plugins follow the createXPlugin naming convention with matching -plugin.ts filenames. The plugin barrel re-exports them uniformly.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Toolkit tools follow shared behavioral protocol",
+          "description": "8 of 11 toolkit tools use the same import pattern (ToolResult, err, demosError, localProvenance). The 3 outliers (connect, feed-parser, tool-wrapper) have structurally different roles that justify different patterns.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

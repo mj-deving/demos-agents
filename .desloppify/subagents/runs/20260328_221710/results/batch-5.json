@@ -1,0 +1,70 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {"naming_quality": 85.3},
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "Function names across the toolkit are precise and domain-specific: publish(), reply(), react(), tip(), scan(), verify(), attest(), discoverSources(), pay() — each communicates exactly what it does",
+        "Helper names communicate purpose: checkAndRecordWrite, checkAndRecordTip, reservePaySpend, checkAndRecordDedup — the check-and-record pattern makes the guard's two-phase behavior visible in the name",
+        "Factory naming is consistent and descriptive: createSdkBridge, createSkillDojoClient, createSeverityHandler, createCalibrateBeforeSense — all use the createX pattern",
+        "Type names align with domain vocabulary: DemosError, ToolResult, ScanPost, ScanOpportunity, HiveReaction, ProviderAdapter, SurgicalCandidate — no generic TypeA/TypeB naming",
+        "File names match their primary export: sdk-bridge.ts exports createSdkBridge/SdkBridge, session.ts exports DemosSession, tool-wrapper.ts exports withToolWrapper",
+        "The 'info' function in sdk.ts is a generic name that could be clearer — it is a logging function but 'info' alone doesn't communicate it logs to console with agent prefix",
+        "ApiCallFn, ObserveFn, GeneratePostFn type aliases in action-executor.ts communicate intent well — each one describes what the function does"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The 'info' function in sdk.ts is a generic logging name. A few internal function names like 'guardAndPublish' are slightly generic but acceptable for their scope."
+    }
+  },
+  "dimension_judgment": {
+    "naming_quality": {
+      "dimension_character": "Naming quality is strong and consistent across the codebase. A developer can read function, type, and file names and correctly predict behavior without checking implementations. The toolkit's public API names (publish, scan, verify, attest) are precise domain verbs. Internal helper names follow descriptive patterns (checkAndRecordX, createX, withX). Type names align with domain vocabulary throughout. The few generic names (info, guardAndPublish) are isolated to internal helpers where their scope limits confusion.",
+      "score_rationale": "A developer reading this codebase would find names reliably communicative. The toolkit API, plugin factories, guard functions, and type definitions all use precise, domain-aligned vocabulary. The score of 85 reflects that naming is a genuine strength — the few generic names are isolated and do not create real confusion. The info() logging function in sdk.ts is the most notable gap, but it is an internal helper called consistently across the codebase."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "info_generic_logging_name",
+      "summary": "sdk.ts exports 'info()' as a logging function — name is too generic and does not communicate logging behavior",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": ["The function 'info' is exported from sdk.ts and used across the codebase for console logging with agent name prefix. The name 'info' alone does not communicate that this is a logging/output function."],
+      "suggestion": "Rename to 'logInfo' or 'agentLog' to communicate that this function logs to console with the agent name prefix. The current name conflicts with the common mental model of 'info' as a data accessor.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "naming_quality": {
+      "add": [
+        {
+          "header": "Precise domain verbs for toolkit API",
+          "description": "Toolkit public API uses specific domain verbs (publish, reply, react, tip, scan, verify, attest, pay) that map directly to SuperColony operations. A developer can predict behavior from the name alone.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Descriptive guard function naming pattern",
+          "description": "Guard functions follow checkAndRecordX naming that communicates their two-phase behavior: check-only on first call, record on second call after successful operation. This makes the guard contract visible at call sites.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "File names match primary exports",
+          "description": "Consistently, file names match their primary export across the codebase. sdk-bridge.ts exports SdkBridge, session.ts exports DemosSession, tool-wrapper.ts exports withToolWrapper. A developer can predict what a file contains from its name.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

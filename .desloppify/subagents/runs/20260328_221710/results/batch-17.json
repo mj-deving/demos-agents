@@ -1,0 +1,167 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 17,
+  "assessments": {"design_coherence": 76.3},
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "sdk-bridge.ts is 917 LOC — combines type definitions, interface contracts, helper functions (sanitizeUrl, encodeHivePayload, decodeHiveData, scanFilteredTransactions), and the 470+ line createSdkBridge factory. The factory returns an object literal with 15+ methods, each containing substantial logic.",
+        "action-executor.ts ActionExecutorContext has 22 fields (identity, auth, budget, config, LLM, mutable state, platform abstractions, rate limiting, telemetry) — mixing too many concerns in one context interface",
+        "lifecycle-plugin.ts uses 7 `any` types in 95 lines — catalog sources cast to any[], transitions typed as any[], updatedMap as Map<string, any>",
+        "engage-heuristics.ts uses any[] for remainingPosts and any for post parameter — known post shapes exist (ScanPost)",
+        "source-discovery.ts has 4 explicit any types including extractTitles closure and catch blocks",
+        "Positive: toolkit tools follow a consistent pattern — Zod validation + withToolWrapper + typed ToolResult",
+        "Positive: agent-config.ts cleanly separates resolution, path building, and loading into distinct functions",
+        "6 files share smells + structural detector pattern (agent-config, signal-detection, catalog, matcher, declarative-engine, sdk-bridge) — all are large files (571-1534 LOC) serving as domain complexity concentrators"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The toolkit layer demonstrates strong design coherence — tools follow a consistent pattern (Zod schema validation, withToolWrapper, typed ToolResult), and the session/guard/bridge separation is clean. However, the src/lib and src/actions layers show mixed coherence: sdk-bridge.ts accumulates too many responsibilities in a single 917-line factory, lifecycle-plugin.ts uses pervasive `any` despite available typed alternatives, and action-executor.ts has a 22-field context interface mixing identity, auth, budget, LLM, and telemetry concerns. Several `any` types persist in engage-heuristics.ts and source-discovery.ts where typed alternatives exist.",
+      "score_rationale": "The toolkit layer's consistent tool pattern and clean type contracts pull the score up, but sdk-bridge.ts as a 917-line concentration point, the 22-field ActionExecutorContext, and persistent any types across 4+ files in the lib layer create real design friction. This sits below the 80 anchor because a developer modifying sdk-bridge.ts or action-executor.ts faces tangled responsibilities, and the any types undermine the typed contracts established elsewhere."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_size",
+      "summary": "sdk-bridge.ts (917 LOC) combines type definitions, helpers, and a 15-method factory in one file",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "File contains: 7 interface/type definitions, 5 standalone helper functions (sanitizeUrl, encodeHivePayload, decodeHiveData, scanFilteredTransactions, extractTxHash), and a createSdkBridge factory returning 15+ methods",
+        "The HIVE encoding/decoding helpers and transaction scanning are reusable primitives that don't need the bridge context"
+      ],
+      "suggestion": "Extract HIVE encoding/decoding helpers (encodeHivePayload, decodeHiveData, scanFilteredTransactions) into a dedicated src/toolkit/hive-codec.ts. This keeps sdk-bridge.ts focused on the bridge factory and its methods. The type definitions can stay since they define the bridge's contract.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "2973c470c1119c80"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "lifecycle_plugin_any_types",
+      "summary": "lifecycle-plugin.ts uses 7 `any` types in 95 lines despite typed catalog types existing",
+      "related_files": ["src/plugins/lifecycle-plugin.ts"],
+      "evidence": [
+        "Line 39: `const allSources = catalog.sources as any[]` — SourceRecordV2[] exists",
+        "Line 49-50: `const transitions: any[]` and `const updatedMap = new Map<string, any>()`",
+        "Line 68: `(s: any)` in map callback",
+        "Line 78: `catch (e: any)` instead of `catch (e: unknown)`"
+      ],
+      "suggestion": "Import SourceRecordV2 from catalog.ts and type allSources, updatedMap, and transitions properly. Use `catch (e: unknown)` with toErrorMessage() pattern used elsewhere in the codebase.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "engage_heuristics_any",
+      "summary": "engage-heuristics.ts uses `any` for post types where ScanPost exists",
+      "related_files": ["src/lib/pipeline/engage-heuristics.ts"],
+      "evidence": [
+        "Line 28: `remainingPosts: any[]` in EnforceDisagreeInput interface",
+        "Line 47: `post: any` parameter — ScanPost type from toolkit/types.ts describes this shape"
+      ],
+      "suggestion": "Import ScanPost from toolkit/types.ts and replace `any[]` with `ScanPost[]` and `any` with `ScanPost`. The comment on line 10 says it avoids SDK import chain — ScanPost is in toolkit/types.ts which has no SDK deps.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "source_discovery_any",
+      "summary": "source-discovery.ts has 4 explicit `any` types in typed domain code",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": [
+        "Line 125: `const extractTitles = (obj: any)` — extracting titles from API response",
+        "Lines 281, 343: `catch (err: any)` — should use unknown + type narrowing",
+        "Line 324: `let parsed: any` — YAML parse result has known shape"
+      ],
+      "suggestion": "Type extractTitles parameter as `Record<string, unknown>` with nested access guards. Use `catch (e: unknown)` with toErrorMessage(). Type the YAML parse result with the known source registry shape.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "attestation_executor_orphaned",
+      "summary": "attestation-executor.ts (119 LOC) is orphaned with zero importers",
+      "related_files": ["src/actions/attestation-executor.ts"],
+      "evidence": ["File has zero importers — not referenced by any other module, not a CLI entry point, not dynamically imported"],
+      "suggestion": "Delete the file if it is truly unused. If it is planned for future use, add a TODO comment explaining when it will be wired in.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "56951e0173d7bbe2"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "systemic_large_files",
+      "summary": "6 files (571-1534 LOC) share structural complexity pattern without clear extraction opportunities",
+      "related_files": [
+        "src/lib/agent-config.ts",
+        "src/lib/pipeline/signal-detection.ts",
+        "src/lib/sources/catalog.ts",
+        "src/lib/sources/matcher.ts",
+        "src/lib/sources/providers/declarative-engine.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "All 6 files triggered both smells and structural detectors",
+        "declarative-engine.ts is 1534 LOC — the largest non-test file",
+        "sdk-bridge.ts is 917 LOC combining types, helpers, and factory"
+      ],
+      "suggestion": "For sdk-bridge.ts, extract HIVE codec helpers. For declarative-engine.ts, evaluate whether spec validation and adapter generation can be separated. The other files (agent-config, catalog, matcher, signal-detection) are large because their domains are genuinely complex — no forced extraction recommended.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "domain_complexity_concentrators",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "ac32950677f7ed98"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Persistent `any` types in 4+ files undermine the typed contracts established in the toolkit layer",
+      "sdk-bridge.ts accumulated responsibilities over multiple migration iterations without periodic extraction"
+    ],
+    "likely_symptoms": ["lifecycle_plugin_any_types and engage_heuristics_any are symptoms of incomplete type migration"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Toolkit tools follow consistent pattern",
+          "description": "All 10 toolkit tools use the same structure: Zod schema validation, withToolWrapper for lifecycle, typed ToolResult<T> return. A developer can learn one tool and predict the shape of all others.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "sdk-bridge.ts is a responsibility accumulator",
+          "description": "At 917 LOC, sdk-bridge.ts combines type definitions, HIVE encoding helpers, transaction scanning utilities, and a 15-method factory. It grew through chain-first migration without periodic extraction.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Persistent any types in lib layer",
+          "description": "4+ files in src/lib/ and src/plugins/ use explicit `any` types where typed alternatives exist (ScanPost, SourceRecordV2, unknown). The toolkit layer is well-typed but the lib layer has gaps.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Large files serve domain complexity, not mixing",
+          "description": "Files like catalog.ts (698 LOC), matcher.ts (644 LOC), and agent-config.ts (571 LOC) are large because their domains are genuinely complex, not because they mix unrelated concerns. Each has a single coherent responsibility.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

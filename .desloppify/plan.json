@@ -1,25 +1,23 @@
 {
   "version": 8,
   "created": "2026-03-27T16:59:34+00:00",
-  "updated": "2026-03-28T21:58:58+00:00",
+  "updated": "2026-03-28T22:11:10+00:00",
   "queue_order": [
-    "subjective::abstraction_fitness",
     "subjective::design_coherence",
     "subjective::error_consistency",
+    "subjective::incomplete_migration",
     "subjective::logic_clarity",
+    "subjective::package_organization",
     "review::.::holistic::design_coherence::source_discovery_any_types",
     "review::.::holistic::test_strategy::orphaned_code_test_waste",
     "review::.::holistic::type_safety::action_executor_llm_any",
     "review::.::holistic::type_safety::session_state_any_fields",
     "review::.::holistic::design_coherence::engage_heuristics_any_types",
-    "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
-    "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
-    "review::.::holistic::design_coherence::signals_any_normalizers",
-    "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts",
     "review::.::holistic::incomplete_migration::source_discovery_deprecated_fn",
     "review::.::holistic::test_strategy::publish_pipeline_untested",
     "review::.::holistic::type_safety::feed_filter_any_heavy",
     "review::.::holistic::type_safety::tlsn_bridge_as_any_volume",
+    "subjective::abstraction_fitness",
     "subjective::ai_generated_debt",
     "subjective::api_surface_coherence",
     "subjective::authorization_consistency",
@@ -28,11 +26,9 @@
     "subjective::cross_module_architecture",
     "subjective::dependency_health",
     "subjective::high_level_elegance",
-    "subjective::incomplete_migration",
     "subjective::initialization_coupling",
     "subjective::low_level_elegance",
     "subjective::mid_level_elegance",
-    "subjective::package_organization",
     "subjective::test_strategy",
     "subjective::type_safety"
   ],
@@ -1254,15 +1250,15 @@
   "promoted_ids": [],
   "plan_start_scores": {
     "strict": 80.5,
-    "overall": 80.8,
-    "objective": 86.3,
-    "verified": 86.3
+    "overall": 80.7,
+    "objective": 86.0,
+    "verified": 86.0
   },
   "refresh_state": {
     "_subjective_migration_pruned": true,
     "lifecycle_phase": "plan",
     "subjective_review_completed_at_scan_count": 14,
-    "postflight_scan_completed_at_scan_count": 15
+    "postflight_scan_completed_at_scan_count": 16
   },
   "execution_log": [
     {
@@ -5452,6 +5448,197 @@
         "status": "fixed",
         "attestation": "I have actually Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63. and I am not gaming the score."
       }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:13+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:14+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DahrProxy interface replaces (demos as any). normalizeFeedPosts already fixed (previous session). AttestResult.data typed as unknown.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:14+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DahrProxy interface replaces (demos as any). normalizeFeedPosts already fixed (previous session). AttestResult.data typed as unknown.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually DahrProxy interface replaces (demos as any). normalizeFeedPosts already fixed (previous session). AttestResult.data typed as unknown. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:14+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::signals_any_normalizers"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:15+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::signals_any_normalizers"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "normalizeSignalTopic and normalizeSignalAlert now use unknown with Record cast.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:15+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::signals_any_normalizers"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "normalizeSignalTopic and normalizeSignalAlert now use unknown with Record cast.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually normalizeSignalTopic and normalizeSignalAlert now use unknown with Record cast. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:15+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:16+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "ApiCallResult now has errorType field for structured error discrimination.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:16+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "ApiCallResult now has errorType field for structured error discrimination.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually ApiCallResult now has errorType field for structured error discrimination. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:16+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:17+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DemosExtended interface replaces all 7 (demos as any) casts.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:17+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DemosExtended interface replaces all 7 (demos as any) casts.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually DemosExtended interface replaces all 7 (demos as any) casts. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:11:10+00:00",
+      "action": "sync_subjective",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:11:10+00:00",
+      "action": "seed_start_scores",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:11:10+00:00",
+      "action": "complete_postflight_scan",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "scan_count": 16
+      }
     }
   ],
   "epic_triage_meta": {
@@ -6122,26 +6309,9 @@
     },
     "triage_defer_state": {
       "deferred_review_ids": [
-        "review::.::holistic::design_coherence::action_executor_orphaned_complex",
-        "review::.::holistic::design_coherence::attestation_executor_orphaned",
         "review::.::holistic::design_coherence::engage_heuristics_any_types",
-        "review::.::holistic::design_coherence::mentions_orphaned",
-        "review::.::holistic::design_coherence::orphaned_lib_domain_files",
-        "review::.::holistic::design_coherence::orphaned_reactive_subsystem",
-        "review::.::holistic::design_coherence::predictions_orphaned",
-        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
-        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
-        "review::.::holistic::design_coherence::signals_any_normalizers",
         "review::.::holistic::design_coherence::source_discovery_any_types",
-        "review::.::holistic::design_coherence::sse_feed_orphaned",
-        "review::.::holistic::design_coherence::tips_orphaned",
-        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts",
-        "review::.::holistic::design_coherence::transcript_orphaned",
-        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
         "review::.::holistic::incomplete_migration::source_discovery_deprecated_fn",
-        "review::.::holistic::package_organization::lib_root_orphaned_files",
-        "review::.::holistic::package_organization::orphaned_hooks_directory",
-        "review::.::holistic::package_organization::reactive_subsystem_mostly_dead",
         "review::.::holistic::test_strategy::orphaned_code_test_waste",
         "review::.::holistic::test_strategy::publish_pipeline_untested",
         "review::.::holistic::type_safety::action_executor_llm_any",
@@ -6149,11 +6319,11 @@
         "review::.::holistic::type_safety::session_state_any_fields",
         "review::.::holistic::type_safety::tlsn_bridge_as_any_volume"
       ],
-      "last_deferred_scan": 15,
-      "last_deferred_at": "2026-03-28T17:24:00+00:00",
+      "last_deferred_scan": 16,
+      "last_deferred_at": "2026-03-28T22:11:10+00:00",
       "defer_count": 1,
-      "first_deferred_scan": 15,
-      "first_deferred_at": "2026-03-28T17:24:00+00:00"
+      "first_deferred_scan": 16,
+      "first_deferred_at": "2026-03-28T22:11:10+00:00"
     },
     "triage_recommended": true
   },
@@ -6211,14 +6381,18 @@
     "review::.::holistic::type_safety::ts_feed_api_cast_chains",
     "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
     "review::.::holistic::type_safety::ts_tx_module_unknown_types",
-    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
+    "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
+    "review::.::holistic::design_coherence::signals_any_normalizers",
+    "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
+    "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
   ],
   "commit_tracking_branch": null,
-  "scan_count_at_plan_start": 15,
+  "scan_count_at_plan_start": 16,
   "previous_plan_start_scores": {
-    "strict": 79.9,
-    "overall": 80.1,
-    "objective": 86.5,
-    "verified": 86.5
+    "strict": 80.5,
+    "overall": 80.8,
+    "objective": 86.3,
+    "verified": 86.3
   }
 }

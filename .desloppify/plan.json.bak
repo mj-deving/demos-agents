@@ -1,9 +1,8 @@
 {
   "version": 8,
   "created": "2026-03-27T16:59:34+00:00",
-  "updated": "2026-03-28T21:58:58+00:00",
+  "updated": "2026-03-28T22:10:17+00:00",
   "queue_order": [
-    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
     "subjective::abstraction_fitness",
     "subjective::design_coherence",
     "subjective::error_consistency",
@@ -13,10 +12,6 @@
     "review::.::holistic::type_safety::action_executor_llm_any",
     "review::.::holistic::type_safety::session_state_any_fields",
     "review::.::holistic::design_coherence::engage_heuristics_any_types",
-    "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
-    "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
-    "review::.::holistic::design_coherence::signals_any_normalizers",
-    "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts",
     "review::.::holistic::incomplete_migration::source_discovery_deprecated_fn",
     "review::.::holistic::test_strategy::publish_pipeline_untested",
     "review::.::holistic::type_safety::feed_filter_any_heavy",
@@ -1252,9 +1247,7 @@
     }
   },
   "superseded": {},
-  "promoted_ids": [
-    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
-  ],
+  "promoted_ids": [],
   "plan_start_scores": {
     "strict": 80.5,
     "overall": 80.8,
@@ -5441,6 +5434,180 @@
       "actor": "user",
       "note": "Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63.",
       "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T21:58:58+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::cli_runners_deprecated_import"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually Migration completed: CLI runners use toolkit guards, deprecated file deleted. Commit 2f20e63. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:13+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:14+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DahrProxy interface replaces (demos as any). normalizeFeedPosts already fixed (previous session). AttestResult.data typed as unknown.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:14+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::publish_pipeline_any_accumulation"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DahrProxy interface replaces (demos as any). normalizeFeedPosts already fixed (previous session). AttestResult.data typed as unknown.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually DahrProxy interface replaces (demos as any). normalizeFeedPosts already fixed (previous session). AttestResult.data typed as unknown. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:14+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::signals_any_normalizers"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:15+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::signals_any_normalizers"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "normalizeSignalTopic and normalizeSignalAlert now use unknown with Record cast.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:15+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::signals_any_normalizers"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "normalizeSignalTopic and normalizeSignalAlert now use unknown with Record cast.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually normalizeSignalTopic and normalizeSignalAlert now use unknown with Record cast. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:15+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:16+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "ApiCallResult now has errorType field for structured error discrimination.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:16+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "ApiCallResult now has errorType field for structured error discrimination.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually ApiCallResult now has errorType field for structured error discrimination. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:16+00:00",
+      "action": "reorder",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "position": "top",
+        "target": null,
+        "offset": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:10:17+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DemosExtended interface replaces all 7 (demos as any) casts.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T22:10:17+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "DemosExtended interface replaces all 7 (demos as any) casts.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually DemosExtended interface replaces all 7 (demos as any) casts. and I am not gaming the score."
+      }
     }
   ],
   "epic_triage_meta": {
@@ -6199,7 +6366,12 @@
     "review::.::holistic::type_safety::ts_d402_client_unknown_cache",
     "review::.::holistic::type_safety::ts_feed_api_cast_chains",
     "review::.::holistic::type_safety::ts_demos_error_guard_duplication",
-    "review::.::holistic::type_safety::ts_tx_module_unknown_types"
+    "review::.::holistic::type_safety::ts_tx_module_unknown_types",
+    "review::.::holistic::incomplete_migration::cli_runners_deprecated_import",
+    "review::.::holistic::design_coherence::publish_pipeline_any_accumulation",
+    "review::.::holistic::design_coherence::signals_any_normalizers",
+    "review::.::holistic::design_coherence::sdk_bridge_silent_error_swallow",
+    "review::.::holistic::design_coherence::tlsn_bridge_as_any_casts"
   ],
   "commit_tracking_branch": null,
   "scan_count_at_plan_start": 15,
