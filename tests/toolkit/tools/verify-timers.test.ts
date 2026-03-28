@@ -2,7 +2,7 @@
  * Tests for verify() with mocked sleep — no real delays.
  *
  * Mocks the sleep function from state-helpers to avoid 3/5/10s waits.
- * Tests retry logic and confirmation behavior.
+ * Tests retry logic and chain-first confirmation behavior.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DemosSession } from "../../../src/toolkit/session.js";
 import { FileStateStore } from "../../../src/toolkit/state-store.js";
-import type { SdkBridge, ApiCallResult } from "../../../src/toolkit/sdk-bridge.js";
+import type { SdkBridge, ApiCallResult, D402SettlementResult } from "../../../src/toolkit/sdk-bridge.js";
 
 // Mock sleep to be instant
 vi.mock("../../../src/toolkit/guards/state-helpers.js", async (importOriginal) => {
@@ -26,15 +26,21 @@ vi.mock("../../../src/toolkit/guards/state-helpers.js", async (importOriginal) =
 const { verify } = await import("../../../src/toolkit/tools/verify.js");
 const { sleep } = await import("../../../src/toolkit/guards/state-helpers.js");
 
-function createMockBridge(apiCallFn: (path: string) => Promise<ApiCallResult>): SdkBridge {
+type VerifyResult = { confirmed: boolean; blockNumber?: number; from?: string } | null;
+
+function createMockBridge(verifyFn: (txHash: string) => Promise<VerifyResult>): SdkBridge {
   return {
     attestDahr: vi.fn(),
-    apiCall: apiCallFn as SdkBridge["apiCall"],
-    signAndBroadcast: vi.fn(),
+    apiCall: vi.fn(async (): Promise<ApiCallResult> => ({ ok: false, status: 0, data: "chain-only mode" })),
     publishHivePost: vi.fn(),
     transferDem: vi.fn(),
-    payD402: vi.fn(),
+    payD402: vi.fn(async (): Promise<D402SettlementResult> => ({ success: true, hash: "d" })),
     getDemos: vi.fn() as unknown as SdkBridge["getDemos"],
+    apiAccess: "none" as const,
+    verifyTransaction: verifyFn,
+    getHivePosts: vi.fn(async () => []),
+    resolvePostAuthor: vi.fn(async () => null),
+    publishHiveReaction: vi.fn(async () => ({ txHash: "r" })),
   };
 }
 
@@ -60,9 +66,9 @@ describe("verify() timer behavior", () => {
 
   it("returns confirmed on first attempt without retries", async () => {
     const bridge = createMockBridge(async () => ({
-      ok: true,
-      status: 200,
-      data: { posts: [{ txHash: "0xfound" }] },
+      confirmed: true,
+      blockNumber: 42,
+      from: "demos1author",
     }));
 
     const session = createTestSession(tempDir, bridge);
@@ -70,16 +76,13 @@ describe("verify() timer behavior", () => {
 
     expect(result.ok).toBe(true);
     expect(result.data!.confirmed).toBe(true);
+    expect(result.data!.blockHeight).toBe(42);
     // No retries needed — sleep should not be called
     expect(sleep).not.toHaveBeenCalled();
   });
 
-  it("retries and returns unconfirmed when post not found", async () => {
-    const bridge = createMockBridge(async () => ({
-      ok: true,
-      status: 200,
-      data: { posts: [{ txHash: "0xother" }] },
-    }));
+  it("retries and returns unconfirmed when tx not found on chain", async () => {
+    const bridge = createMockBridge(async () => null);
 
     const session = createTestSession(tempDir, bridge);
     const result = await verify(session, { txHash: "0xmissing" });
@@ -91,12 +94,10 @@ describe("verify() timer behavior", () => {
     expect(sleep).toHaveBeenCalledTimes(3);
   });
 
-  it("retries on API error and returns timeout", async () => {
-    const bridge = createMockBridge(async () => ({
-      ok: false,
-      status: 500,
-      data: "Internal Server Error",
-    }));
+  it("retries on RPC error and returns timeout", async () => {
+    const bridge = createMockBridge(async () => {
+      throw new Error("RPC connection refused");
+    });
 
     const session = createTestSession(tempDir, bridge);
     const result = await verify(session, { txHash: "0xfail" });
@@ -112,10 +113,8 @@ describe("verify() timer behavior", () => {
     let callCount = 0;
     const bridge = createMockBridge(async () => {
       callCount++;
-      if (callCount <= 2) {
-        return { ok: true, status: 200, data: { posts: [] } };
-      }
-      return { ok: true, status: 200, data: { posts: [{ txHash: "0xlate" }] } };
+      if (callCount <= 2) return null; // not found yet
+      return { confirmed: true, blockNumber: 55, from: "demos1a" };
     });
 
     const session = createTestSession(tempDir, bridge);
@@ -123,15 +122,15 @@ describe("verify() timer behavior", () => {
 
     expect(result.ok).toBe(true);
     expect(result.data!.confirmed).toBe(true);
+    expect(result.data!.blockHeight).toBe(55);
     // Sleep called for retries before the successful attempt
     expect(sleep).toHaveBeenCalledTimes(2);
   });
 
   it("passes correct retry delays to sleep", async () => {
     const bridge = createMockBridge(async () => ({
-      ok: true,
-      status: 200,
-      data: { posts: [] },
+      confirmed: false,
+      blockNumber: 0,
     }));
 
     const session = createTestSession(tempDir, bridge);
@@ -140,5 +139,20 @@ describe("verify() timer behavior", () => {
     expect(sleep).toHaveBeenCalledWith(3000);
     expect(sleep).toHaveBeenCalledWith(5000);
     expect(sleep).toHaveBeenCalledWith(10000);
+  });
+
+  it("returns blockHeight when confirmed", async () => {
+    const bridge = createMockBridge(async () => ({
+      confirmed: true,
+      blockNumber: 12345,
+      from: "demos1poster",
+    }));
+
+    const session = createTestSession(tempDir, bridge);
+    const result = await verify(session, { txHash: "0xwithblock" });
+
+    expect(result.ok).toBe(true);
+    expect(result.data!.confirmed).toBe(true);
+    expect(result.data!.blockHeight).toBe(12345);
   });
 });
