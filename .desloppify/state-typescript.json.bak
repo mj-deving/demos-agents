@@ -17330,10 +17330,7 @@
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "ai_generated_debt": {
       "score": 77.0,
@@ -17368,50 +17365,35 @@
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "cross_module_architecture": {
       "score": 82,
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "dependency_health": {
       "score": 90,
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "design_coherence": {
       "score": 76,
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "error_consistency": {
       "score": 80,
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "high_level_elegance": {
       "score": 87,
@@ -17439,10 +17421,7 @@
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "low_level_elegance": {
       "score": 84,
@@ -17463,20 +17442,14 @@
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "package_organization": {
       "score": 60.0,
       "source": "manual_override",
       "assessed_at": "2026-03-27T22:31:17+00:00",
       "provisional_override": true,
-      "provisional_until_scan": 9,
-      "needs_review_refresh": true,
-      "refresh_reason": "mechanical_issues_changed",
-      "stale_since": "2026-03-28T00:02:27+00:00"
+      "provisional_until_scan": 9
     },
     "test_strategy": {
       "score": 85,
@@ -21442,11 +21415,11 @@
   "reminder_history": {
     "auto_fixers_available": 3,
     "dry_run_first": 3,
-    "report_scores": 4,
+    "report_scores": 5,
     "review_issues_pending": 3,
     "stagnant_nudge": 5,
     "feedback_nudge": 3,
-    "review_not_run": 2
+    "review_not_run": 3
   },
   "concern_dismissals": {
     "ac-auth-pending-sentinel": {

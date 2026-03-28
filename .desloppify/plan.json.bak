@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-03-27T16:59:34+00:00",
-  "updated": "2026-03-28T00:02:27+00:00",
+  "updated": "2026-03-28T00:02:53+00:00",
   "queue_order": [
     "subjective::abstraction_fitness",
     "subjective::convention_outlier",
@@ -5458,7 +5458,23 @@
       },
       "strategy": "Execute 12 clusters in priority order: feed-normalization > guard-debt > type-safety > error-contract > dead-code > elegance-fixes > contract-fixes > test-quality > naming-fixes > boundary-cleanup > abstraction-cleanup > dependency-cleanup. Parallelize independent clusters (guard-debt + dead-code + elegance-fixes can run concurrently). Target: strict 85+ after first 6 clusters.",
       "completion_mode": "manual_triage"
-    }
+    },
+    "active_triage_issue_ids": [
+      "review::.::holistic::ai_generated_debt::dual_type_guards_wrapper",
+      "review::.::holistic::api_surface_coherence::dead_attest_claimtype",
+      "review::.::holistic::api_surface_coherence::dead_scan_filters",
+      "review::.::holistic::api_surface_coherence::reply_bypass_wrapper",
+      "review::.::holistic::authorization_consistency::apicall_base_url_not_ssrf_validated",
+      "review::.::holistic::contract_coherence::get_rate_remaining_stale_read",
+      "review::.::holistic::incomplete_migration::cli_runners_use_legacy_rate_limit",
+      "review::.::holistic::incomplete_migration::deprecated_guards_no_timeline",
+      "review::.::holistic::initialization_coupling::is_container_module_singleton",
+      "review::.::holistic::logic_clarity::verify_exhaustion_returns_ok",
+      "review::.::holistic::package_organization::adapter_specs_misplaced",
+      "review::.::holistic::package_organization::src_lib_flat_overload",
+      "review::.::holistic::type_safety::catalog_entry_untyped",
+      "review::.::holistic::type_safety::fetch_redirect_missing_return_type"
+    ]
   },
   "commit_log": [],
   "uncommitted_issues": [
