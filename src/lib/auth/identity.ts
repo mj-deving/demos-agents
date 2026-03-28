@@ -71,7 +71,9 @@ async function submitIdentityTx(
     };
 
     const signedTx = await demos.sign(tx);
-    const result = await demos.confirm(signedTx);
+    const validity = await demos.confirm(signedTx);
+    // SDK requires broadcast after confirm to actually submit to the network
+    const result = await demos.broadcast(validity);
     return { ok: true, data: result };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

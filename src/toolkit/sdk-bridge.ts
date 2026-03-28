@@ -62,8 +62,8 @@ interface DemosRpcMethods {
   /** Broadcasts a confirmed transaction to the network */
   broadcast(validityData: unknown): Promise<unknown>;
   sendTransaction(txData: unknown): Promise<{ hash?: string; txHash?: string }>;
-  queryTx?(txHash: string): Promise<{ sender?: string } | null>;
-  getTx?(txHash: string): Promise<{ sender?: string } | null>;
+  // NOTE: queryTx/getTx removed — these methods don't exist on the Demos SDK class.
+  // Use getTxByHash instead (chain-first migration).
   connect(rpcUrl: string): Promise<void>;
   connectWallet(mnemonic: string, opts?: Record<string, unknown>): Promise<string>;
   // Chain query methods (chain-first migration)
@@ -91,10 +91,10 @@ interface DemosRpcMethods {
   }>>;
 }
 
-/** Typed D402 client surface — replaces inline structural casts */
+/** Typed D402 client surface — mirrors SDK's D402Client API */
 interface D402ClientLike {
-  createPayment(req: unknown): Promise<unknown>;
-  settle(payment: unknown): Promise<D402SettlementResult>;
+  createPayment(req: D402PaymentRequirement): Promise<{ hash?: string; content?: Record<string, unknown> }>;
+  settle(payment: { hash?: string; content?: Record<string, unknown> }): Promise<D402SettlementResult>;
 }
 
 // ── Types ───────────────────────────────────────────
@@ -160,8 +160,7 @@ export interface SdkBridge {
   /** Settle a D402 payment (createPayment + settle, nonce-safe) */
   payD402(requirement: D402PaymentRequirement): Promise<D402SettlementResult>;
 
-  /** Query a transaction by hash to resolve sender address (RPC-based, trusted). Optional — SDK may not expose query methods. */
-  queryTransaction?(txHash: string): Promise<{ sender: string } | null>;
+  // queryTransaction removed — superseded by resolvePostAuthor (chain-first)
 
   // ── Chain-first methods ────────────────────────────
 
@@ -523,25 +522,6 @@ export function createSdkBridge(
       } catch (e) {
         if (e && typeof e === "object" && "success" in e && (e as D402SettlementResult).success === false) throw e;
         throw new Error(`D402 settlement failed: ${(e as Error).message}`);
-      }
-    },
-
-    async queryTransaction(txHash: string): Promise<{ sender: string } | null> {
-      try {
-        if (rpc.queryTx) {
-          const result = await rpc.queryTx(txHash);
-          if (result?.sender) return { sender: String(result.sender) };
-        }
-        // Try alternate SDK method
-        if (rpc.getTx) {
-          const result2 = await rpc.getTx(txHash);
-          if (result2?.sender) return { sender: String(result2.sender) };
-        }
-        return null;
-      } catch (e) {
-        // Best-effort RPC query — callers fall back to feed API
-        console.warn(`[demos-toolkit] queryTransaction failed for ${txHash.slice(0, 16)}...: ${(e as Error).name}`);
-        return null;
       }
     },
 

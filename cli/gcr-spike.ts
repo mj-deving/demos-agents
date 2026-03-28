@@ -77,7 +77,9 @@ async function main() {
   // Step 3: Try getBlocks (latest 3)
   console.log("\n── Test 2: getBlocks (latest 3) ──");
   try {
-    const blocks = await demos.getBlocks("latest", 3);
+    // SDK getBlocks(start, limit) — use last block number, not string "latest"
+    const lastBlockNum = await demos.getLastBlockNumber();
+    const blocks = await demos.getBlocks(lastBlockNum, 3);
     console.log(`✅ getBlocks returned ${blocks.length} blocks`);
     for (const block of blocks) {
       const txCount = block.content.ordered_transactions?.length || 0;

@@ -15,7 +15,7 @@
  *   npx tsx tools/nexus-bootstrap.ts [--env PATH] [--dry-run]
  */
 
-import { Demos } from "@kynesyslabs/demosdk/websdk";
+import { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
 import { StorageProgram } from "@kynesyslabs/demosdk/storage";
 import { connectWallet, info, setLogAgent } from "../src/lib/network/sdk.js";
 const warn = (msg: string) => console.warn(`[nexus] WARN: ${msg}`);
@@ -43,16 +43,16 @@ async function submitStorageTransaction(
   storageAddress: string,
   senderAddress: string,
 ): Promise<string> {
-  // Construct transaction with storageProgram type
-  const tx: any = {
-    content: {
-      type: "storageProgram",
-      from: senderAddress,
-      to: storageAddress,
-      data: ["storageProgram", payload],
-      amount: 0,
-      timestamp: Date.now(),
-    },
+  // Use DemosTransactions.empty() for proper base object (avoids missing fields)
+  const tx = DemosTransactions.empty();
+  tx.content = {
+    ...tx.content,
+    type: "storageProgram",
+    from: senderAddress,
+    to: storageAddress,
+    data: ["storageProgram", payload],
+    amount: 0,
+    timestamp: Date.now(),
   };
 
   info("Signing transaction...");
