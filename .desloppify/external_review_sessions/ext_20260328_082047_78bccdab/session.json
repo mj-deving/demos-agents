@@ -1,0 +1,17 @@
+{
+  "session_id": "ext_20260328_082047_78bccdab",
+  "status": "open",
+  "runner": "claude",
+  "created_at": "2026-03-28T08:20:47+00:00",
+  "expires_at": "2026-03-29T08:20:47+00:00",
+  "ttl_hours": 24,
+  "token": "8eec15fda1d11dfeaaaaacc291a3ea57",
+  "attest": "I validated this review was completed without awareness of overall score and is unbiased.",
+  "packet_path": "/home/mj/projects/demos-agents/.desloppify/review_packets/holistic_packet_20260328_082047.json",
+  "blind_packet_path": "/home/mj/projects/demos-agents/.desloppify/review_packet_blind.json",
+  "packet_sha256": "7e0cb5013fde305313365444277eaf51b33d45e14dc337428f10cd44b33313e0",
+  "template_path": "/home/mj/projects/demos-agents/.desloppify/external_review_sessions/ext_20260328_082047_78bccdab/review_result.template.json",
+  "launch_prompt_path": "/home/mj/projects/demos-agents/.desloppify/external_review_sessions/ext_20260328_082047_78bccdab/claude_launch_prompt.md",
+  "instructions_path": "/home/mj/projects/demos-agents/.desloppify/external_review_sessions/ext_20260328_082047_78bccdab/reviewer_instructions.md",
+  "expected_output_path": "/home/mj/projects/demos-agents/.desloppify/external_review_sessions/ext_20260328_082047_78bccdab/review_result.json"
+}

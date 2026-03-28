@@ -82,27 +82,3 @@ export async function checkAndRecordTip(
   return null;
 }
 
-/** @deprecated Use checkAndRecordTip() instead. Removal: v2.0 (2026-Q3). */
-export async function checkTipSpendCap(
-  store: StateStore,
-  walletAddress: string,
-  postTxHash: string,
-  amount: number,
-  policy: Required<TipPolicy>,
-): Promise<DemosError | null> {
-  return checkAndRecordTip(store, walletAddress, postTxHash, amount, policy, false);
-}
-
-/** @deprecated Use checkAndRecordTip() with record=true, or appendEntry() for record-only. Removal: v2.0 (2026-Q3). */
-export async function recordTip(
-  store: StateStore,
-  walletAddress: string,
-  postTxHash: string,
-  amount: number,
-): Promise<void> {
-  const key = stateKey("tip-spend", walletAddress);
-  await appendEntry<TipState, TipEntry>(
-    store, key, DEFAULT_STATE, DAY_MS,
-    { timestamp: Date.now(), postTxHash, amount },
-  );
-}

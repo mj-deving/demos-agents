@@ -1,0 +1,17 @@
+{
+  "session": {
+    "id": "ext_20260328_082047_78bccdab",
+    "token": "8eec15fda1d11dfeaaaaacc291a3ea57"
+  },
+  "assessments": {
+    "design_coherence": 0,
+    "incomplete_migration": 0,
+    "test_strategy": 0,
+    "type_safety": 0,
+    "package_organization": 0
+  },
+  "dimension_notes": {},
+  "dimension_judgment": {},
+  "context_updates": {},
+  "issues": []
+}

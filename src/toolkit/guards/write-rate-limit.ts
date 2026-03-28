@@ -50,26 +50,6 @@ export async function checkAndRecordWrite(
   return error ? demosError("RATE_LIMITED", error, true) : null;
 }
 
-/** @deprecated Use checkAndRecordWrite() instead. Removal: v2.0 (2026-Q3). */
-export function checkWriteRateLimit(
-  store: StateStore,
-  walletAddress: string,
-): Promise<DemosError | null> {
-  return checkAndRecordWrite(store, walletAddress, false);
-}
-
-/** @deprecated Use checkAndRecordWrite() with record=true, or appendEntry() for record-only. Removal: v2.0 (2026-Q3). */
-export async function recordWrite(
-  store: StateStore,
-  walletAddress: string,
-): Promise<void> {
-  const key = stateKey("write-rate", walletAddress);
-  await appendEntry<WriteRateState, { timestamp: number }>(
-    store, key, DEFAULT_STATE, DAY_MS,
-    { timestamp: Date.now() },
-  );
-}
-
 /** Get remaining capacity */
 export async function getWriteRateRemaining(
   store: StateStore,

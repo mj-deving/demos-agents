@@ -34,48 +34,6 @@ interface PaySpendState {
 
 const DEFAULT_STATE: PaySpendState = { entries: [] };
 
-/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback. Removal: v2.0 (2026-Q3). */
-export async function checkPaySpendCap(
-  store: StateStore,
-  walletAddress: string,
-  amount: number,
-  policy: Required<PayPolicy>,
-): Promise<DemosError | null> {
-  const amountError = validatePayAmount(amount, policy.maxPerCall);
-  if (amountError) return amountError;
-
-  const key = stateKey("pay-spend", walletAddress);
-  const { error } = await checkAndAppend<PaySpendState, PayEntry>(
-    store,
-    key,
-    DEFAULT_STATE,
-    DAY_MS,
-    (state) => {
-      const spent24h = state.entries.reduce((sum, e) => sum + e.amount, 0);
-      if (spent24h + amount > policy.rolling24hCap) {
-        return `Rolling 24h spend cap: ${spent24h.toFixed(1)}/${policy.rolling24hCap} DEM used, requested ${amount}`;
-      }
-      return null;
-    },
-  );
-
-  return error ? demosError("SPEND_LIMIT", error, false) : null;
-}
-
-/** @deprecated Use reservePaySpend() for atomic check-reserve-rollback. Removal: v2.0 (2026-Q3). */
-export async function recordPayment(
-  store: StateStore,
-  walletAddress: string,
-  amount: number,
-  url: string,
-): Promise<void> {
-  const key = stateKey("pay-spend", walletAddress);
-  await appendEntry<PaySpendState, PayEntry>(
-    store, key, DEFAULT_STATE, DAY_MS,
-    { timestamp: Date.now(), amount, url },
-  );
-}
-
 /**
  * Atomically check spend cap AND reserve the amount in one lock acquisition.
  *

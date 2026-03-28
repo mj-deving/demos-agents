@@ -49,25 +49,3 @@ export async function checkAndRecordDedup(
   return error ? demosError("DUPLICATE", error, false) : null;
 }
 
-/** @deprecated Use checkAndRecordDedup() instead. Removal: v2.0 (2026-Q3). */
-export function checkDedup(
-  store: StateStore,
-  walletAddress: string,
-  text: string,
-): Promise<DemosError | null> {
-  return checkAndRecordDedup(store, walletAddress, text, false);
-}
-
-/** @deprecated Use checkAndRecordDedup() with record=true, or appendEntry() for record-only. Removal: v2.0 (2026-Q3). */
-export async function recordPublish(
-  store: StateStore,
-  walletAddress: string,
-  text: string,
-): Promise<void> {
-  const hash = hashText(text);
-  const key = stateKey("dedup", walletAddress);
-  await appendEntry<DedupState, DedupEntry>(
-    store, key, DEFAULT_STATE, DAY_MS,
-    { timestamp: Date.now(), hash },
-  );
-}

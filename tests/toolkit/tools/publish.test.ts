@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { DemosSession } from "../../../src/toolkit/session.js";
 import { FileStateStore } from "../../../src/toolkit/state-store.js";
 import { publish, reply } from "../../../src/toolkit/tools/publish.js";
-import { recordWrite, checkAndRecordWrite } from "../../../src/toolkit/guards/write-rate-limit.js";
+import { checkAndRecordWrite } from "../../../src/toolkit/guards/write-rate-limit.js";
 
 function createTestSession(tempDir: string) {
   return new DemosSession({
@@ -68,7 +68,7 @@ describe("publish()", () => {
     const session = createTestSession(tempDir);
     // Fill up hourly limit
     for (let i = 0; i < 4; i++) {
-      await recordWrite(session.stateStore, session.walletAddress);
+      await checkAndRecordWrite(session.stateStore, session.walletAddress, true);
     }
 
     const result = await publish(session, { text: "Test post", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
@@ -80,8 +80,8 @@ describe("publish()", () => {
     const session = createTestSession(tempDir);
 
     // Manually record a publish (bypassing the pipeline that would fail)
-    const { recordPublish } = await import("../../../src/toolkit/guards/dedup-guard.js");
-    await recordPublish(session.stateStore, session.walletAddress, "Duplicate text");
+    const { checkAndRecordDedup } = await import("../../../src/toolkit/guards/dedup-guard.js");
+    await checkAndRecordDedup(session.stateStore, session.walletAddress, "Duplicate text", true);
 
     const result = await publish(session, { text: "Duplicate text", category: "ANALYSIS", attestUrl: "https://api.example.com/price" });
     expect(result.ok).toBe(false);

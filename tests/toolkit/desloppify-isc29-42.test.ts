@@ -233,7 +233,7 @@ describe("ISC-33: scan returns NETWORK_ERROR on API failure", () => {
 
 describe("ISC-34: pay-spend-cap isFinite check before maxPerCall", () => {
   it("rejects NaN amount before maxPerCall comparison", async () => {
-    const { checkPaySpendCap } = await import(
+    const { reservePaySpend } = await import(
       "../../src/toolkit/guards/pay-spend-cap.js"
     );
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
@@ -241,7 +241,7 @@ describe("ISC-34: pay-spend-cap isFinite check before maxPerCall", () => {
     const tempDir = mkdtempSync(join(tmpdir(), "demos-isc34-"));
     try {
       const store = new FileStateStore(tempDir);
-      const result = await checkPaySpendCap(store, "demos1test", NaN, {
+      const { error: result } = await reservePaySpend(store, "demos1test", NaN, "https://example.com", {
         maxPerCall: 100,
         rolling24hCap: 1000,
         trustedPayees: [],
@@ -256,7 +256,7 @@ describe("ISC-34: pay-spend-cap isFinite check before maxPerCall", () => {
   });
 
   it("rejects Infinity amount", async () => {
-    const { checkPaySpendCap } = await import(
+    const { reservePaySpend } = await import(
       "../../src/toolkit/guards/pay-spend-cap.js"
     );
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
@@ -264,7 +264,7 @@ describe("ISC-34: pay-spend-cap isFinite check before maxPerCall", () => {
     const tempDir = mkdtempSync(join(tmpdir(), "demos-isc34b-"));
     try {
       const store = new FileStateStore(tempDir);
-      const result = await checkPaySpendCap(store, "demos1test", Infinity, {
+      const { error: result } = await reservePaySpend(store, "demos1test", Infinity, "https://example.com", {
         maxPerCall: 100,
         rolling24hCap: 1000,
         trustedPayees: [],
@@ -278,7 +278,7 @@ describe("ISC-34: pay-spend-cap isFinite check before maxPerCall", () => {
   });
 
   it("rejects negative amount", async () => {
-    const { checkPaySpendCap } = await import(
+    const { reservePaySpend } = await import(
       "../../src/toolkit/guards/pay-spend-cap.js"
     );
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
@@ -286,7 +286,7 @@ describe("ISC-34: pay-spend-cap isFinite check before maxPerCall", () => {
     const tempDir = mkdtempSync(join(tmpdir(), "demos-isc34c-"));
     try {
       const store = new FileStateStore(tempDir);
-      const result = await checkPaySpendCap(store, "demos1test", -5, {
+      const { error: result } = await reservePaySpend(store, "demos1test", -5, "https://example.com", {
         maxPerCall: 100,
         rolling24hCap: 1000,
         trustedPayees: [],
@@ -407,16 +407,16 @@ describe("ISC-40: no stale TODO in attest.ts", () => {
 // ── ISC-41: recordX() uses checkAndAppend ────────────────────
 
 describe("ISC-41: record functions use checkAndAppend", () => {
-  it("recordWrite still works correctly", async () => {
+  it("checkAndRecordWrite (record=true) still works correctly", async () => {
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
-    const { recordWrite, getWriteRateRemaining } = await import(
+    const { checkAndRecordWrite, getWriteRateRemaining } = await import(
       "../../src/toolkit/guards/write-rate-limit.js"
     );
 
     const tempDir = mkdtempSync(join(tmpdir(), "demos-isc41a-"));
     try {
       const store = new FileStateStore(tempDir);
-      await recordWrite(store, "demos1test");
+      await checkAndRecordWrite(store, "demos1test", true);
       const remaining = await getWriteRateRemaining(store, "demos1test");
       expect(remaining.dailyRemaining).toBe(13);
       expect(remaining.hourlyRemaining).toBe(3);
@@ -425,17 +425,17 @@ describe("ISC-41: record functions use checkAndAppend", () => {
     }
   });
 
-  it("recordPublish (dedup) still works correctly", async () => {
+  it("checkAndRecordDedup (record=true) still works correctly", async () => {
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
-    const { recordPublish, checkDedup } = await import(
+    const { checkAndRecordDedup } = await import(
       "../../src/toolkit/guards/dedup-guard.js"
     );
 
     const tempDir = mkdtempSync(join(tmpdir(), "demos-isc41b-"));
     try {
       const store = new FileStateStore(tempDir);
-      await recordPublish(store, "demos1test", "duplicate text");
-      const result = await checkDedup(store, "demos1test", "duplicate text");
+      await checkAndRecordDedup(store, "demos1test", "duplicate text", true);
+      const result = await checkAndRecordDedup(store, "demos1test", "duplicate text", false);
       expect(result).not.toBeNull();
       expect(result!.code).toBe("DUPLICATE");
     } finally {
@@ -443,9 +443,9 @@ describe("ISC-41: record functions use checkAndAppend", () => {
     }
   });
 
-  it("recordTip still works correctly", async () => {
+  it("checkAndRecordTip (record=true) still works correctly", async () => {
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
-    const { recordTip, checkTipSpendCap } = await import(
+    const { checkAndRecordTip } = await import(
       "../../src/toolkit/guards/tip-spend-cap.js"
     );
 
@@ -453,10 +453,10 @@ describe("ISC-41: record functions use checkAndAppend", () => {
     try {
       const store = new FileStateStore(tempDir);
       const policy = { maxPerTip: 10, maxPerPost: 2, cooldownMs: 0 };
-      await recordTip(store, "demos1test", "post-tx-1", 5);
-      await recordTip(store, "demos1test", "post-tx-1", 3);
+      await checkAndRecordTip(store, "demos1test", "post-tx-1", 5, policy, true);
+      await checkAndRecordTip(store, "demos1test", "post-tx-1", 3, policy, true);
       // Third tip to same post should be rejected
-      const result = await checkTipSpendCap(store, "demos1test", "post-tx-1", 2, policy);
+      const result = await checkAndRecordTip(store, "demos1test", "post-tx-1", 2, policy, false);
       expect(result).not.toBeNull();
       expect(result!.code).toBe("SPEND_LIMIT");
     } finally {
@@ -464,9 +464,9 @@ describe("ISC-41: record functions use checkAndAppend", () => {
     }
   });
 
-  it("recordPayment still works correctly", async () => {
+  it("reservePaySpend records payment atomically", async () => {
     const { FileStateStore } = await import("../../src/toolkit/state-store.js");
-    const { recordPayment, checkPaySpendCap } = await import(
+    const { reservePaySpend } = await import(
       "../../src/toolkit/guards/pay-spend-cap.js"
     );
 
@@ -479,9 +479,9 @@ describe("ISC-41: record functions use checkAndAppend", () => {
         trustedPayees: [],
         requirePayeeApproval: false,
       };
-      await recordPayment(store, "demos1test", 8, "https://example.com");
+      await reservePaySpend(store, "demos1test", 8, "https://example.com", policy);
       // Next payment of 5 should exceed 10 DEM cap
-      const result = await checkPaySpendCap(store, "demos1test", 5, policy);
+      const { error: result } = await reservePaySpend(store, "demos1test", 5, "https://example.com/2", policy);
       expect(result).not.toBeNull();
       expect(result!.code).toBe("SPEND_LIMIT");
     } finally {

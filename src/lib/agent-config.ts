@@ -552,7 +552,7 @@ export function loadAgentConfig(name?: string): AgentConfig {
     phaseBudgets: yaml.phaseBudgets as Partial<Record<string, number>> | undefined,
     loopExtensions: parseLoopExtensions(yaml, personaYamlPath),
     sourceRegistryMode: ((): AgentConfig["sourceRegistryMode"] => {
-      const mode = (yaml as any).sourceRegistryMode;
+      const mode = (yaml as Record<string, unknown>).sourceRegistryMode as string | undefined;
       if (mode === "catalog-only" || mode === "yaml-only") return mode;
       if (mode && mode !== "catalog-preferred") {
         console.warn(`[agent-config] Unknown sourceRegistryMode "${mode}" in ${personaYamlPath}, defaulting to catalog-preferred`);

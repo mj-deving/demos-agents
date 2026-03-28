@@ -1,0 +1,664 @@
+{
+  "session": {
+    "id": "ext_20260328_082047_78bccdab",
+    "token": "8eec15fda1d11dfeaaaaacc291a3ea57"
+  },
+  "assessments": {
+    "design_coherence": 68.0,
+    "incomplete_migration": 76.0,
+    "test_strategy": 79.0,
+    "type_safety": 72.0,
+    "package_organization": 78.0
+  },
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "21 orphaned files totaling ~3046 LOC with zero importers: tips.ts (443), predictions.ts (391), action-executor.ts (320), sse-feed.ts (244), transcript.ts (175), mentions.ts (148), attestation-executor.ts (119), plus 14 more in reactive/ and hooks/",
+        "action-executor.ts has 22-field ActionExecutorContext interface with llm typed as 'any | null'",
+        "publish-pipeline.ts has 6 explicit 'any' types in data normalization and mixes attestation orchestration, feed normalization, indexer health checks, and HIVE encoding in one file",
+        "tlsn-playwright-bridge.ts has 15 'as any' casts forced by untyped SDK surface — all on (demos as any) calls",
+        "sdk-bridge.ts apiCall catch block (line 290-294) swallows error type into string, returning { ok: false, status: 0, data: message } — callers cannot distinguish network errors from auth failures",
+        "declarative-engine.ts is 1534 LOC with max chain depth 4 and 75 indirection chains — a complexity hotspot but has single coherent responsibility (YAML spec to data fetcher)"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    },
+    "incomplete_migration": {
+      "evidence": [
+        "src/lib/write-rate-limit.ts is marked @deprecated with TODO to migrate CLI runners, but cli/session-runner.ts and cli/event-runner.ts still import from it",
+        "8 deprecated guard compat functions have @deprecated markers with v2.0 (2026-Q3) timeline — properly tracked",
+        "source-discovery.ts line 320 has @deprecated persistSourceToCatalog for V2 catalog persistence",
+        "Previous issue about 25 re-export shims is RESOLVED — src/lib/ now has 14 real files and 8 subdirectories with proper barrel indexes, no shims remain",
+        "src/index.ts barrel imports from canonical subdirectory paths, not deprecated shim paths — previous issue RESOLVED"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    },
+    "test_strategy": {
+      "evidence": [
+        "128 test files with 1906 tests — strong coverage breadth",
+        "Test files exist for orphaned production code (tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts, action-executor.test.ts) — tests cover dead code",
+        "publish-pipeline.ts (346 LOC, high signal density) has no dedicated test file — normalization, error guardrails, and indexer health check are untested directly",
+        "toolkit/tools/publish.test.ts tests the toolkit layer, not the underlying publish-pipeline orchestration",
+        "Test quality enforcement via globalSetup + PostToolUse hook rejecting assertion-free tests — good structural guardrail",
+        "Tests use proper vi.mock patterns with vi.hoisted() — no timing or ordering dependencies observed",
+        "No snapshot tests found — zero snapshot overuse"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    },
+    "type_safety": {
+      "evidence": [
+        "31 'as any' casts across 9 production files, concentrated in tlsn-playwright-bridge.ts (15) and publish-pipeline.ts (8)",
+        "69 ': any' type annotations across 24 production files",
+        "SessionState.engagements typed as any[] (line 65), V2SessionState.engagements also any[] (line 132)",
+        "PhaseState.result typed as any (line 52), ActSubstageState.result also any (line 95)",
+        "action-executor.ts GeneratePostFn takes llm parameter typed as 'any' (line 41)",
+        "publish-pipeline.ts normalizeFeedPosts accepts any and returns any[] (line 86)",
+        "signals.ts normalizeSignalTopic and normalizeSignalAlert both accept any parameter (lines 224, 242)",
+        "source-discovery.ts has extractTitles typed as (obj: any) (line 125)",
+        "feed-filter.ts has 10 ': any' annotations — highest concentration outside bridge code",
+        "tlsn-playwright-bridge.ts 'as any' casts are SDK-forced — untyped third-party surface with no type definitions available"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    },
+    "package_organization": {
+      "evidence": [
+        "src/lib/ has 8 well-named subdirectories (attestation, auth, llm, network, pipeline, scoring, sources, util) with barrel indexes — good domain decomposition",
+        "14 flat files remain in src/lib/ root: agent-config.ts (571 LOC, high fan-in), state.ts (475 LOC), tips.ts/predictions.ts/mentions.ts/transcript.ts are all orphaned",
+        "src/lib/ avg_fan_in is 1.1 — most flat files are low-traffic; agent-config.ts and state.ts are genuine core files",
+        "hooks/ directory has 2 orphaned files (arxiv.ts, kraken.ts) with zero importers — wasted directory",
+        "src/plugins/ has 22 files in flat structure but all are plugin definitions with consistent pattern — cohesive despite size",
+        "src/reactive/ subsystem (20 files across 3 dirs) is almost entirely orphaned — event-loop.ts, most event-sources, all event-handlers have zero importers",
+        "Previous issue about 25 re-export shims inflating src/lib/ is RESOLVED — directory is now 14 real files"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The codebase has well-structured core modules (toolkit, sources, attestation) with clean interfaces and typed contracts. However, ~3046 LOC of orphaned production code across 21 files represents a significant design debt — dead code that maintains test suites, consumes review attention, and obscures the actual system architecture. The active code shows competent patterns (factory functions, typed error envelopes, lifecycle hooks) but several high-traffic files accumulate 'any' types in data normalization layers where typed alternatives would be straightforward.",
+      "score_rationale": "Below 70 because the orphaned code mass is structurally significant — it's not a few forgotten files but an entire reactive subsystem and several major domain modules (tips, predictions, mentions) that are dead yet maintained. The active code quality would score in the 78-82 range, but carrying ~3000 LOC of dead code with dedicated test files actively harms design coherence. A 70 codebase would have dead code limited to a few isolated files, not a systemic pattern across multiple subsystems."
+    },
+    "incomplete_migration": {
+      "dimension_character": "The codebase shows a well-executed migration from flat src/lib/ to domain subdirectories — the previously-flagged 25 re-export shims have been fully eliminated, and the barrel (src/index.ts) now imports from canonical paths. Deprecated guard functions have proper @deprecated markers with concrete v2.0 (2026-Q3) removal timelines. The one remaining active migration — CLI runners using deprecated sync write-rate-limit instead of async toolkit guards — is clearly documented with a TODO but has not progressed.",
+      "score_rationale": "Scores 76 because the major migration (lib restructuring) is complete and well-executed, deprecated symbols have proper timelines, and the barrel path issue is fully resolved. The residual CLI runner migration and one deprecated source-discovery function prevent a higher score. A codebase at 85 would have no callers of deprecated APIs still in active code paths."
+    },
+    "test_strategy": {
+      "dimension_character": "Test coverage is broad with 1906 tests across 128 files, using modern vitest patterns with quality enforcement hooks. There is zero snapshot test overuse and no fragility patterns. However, the strategy has two notable gaps: tests exist for orphaned production code (wasting maintenance effort), and the critical publish-pipeline.ts — which handles attestation orchestration, feed normalization, and error guardrails — has no dedicated test file despite being a high-signal-density module.",
+      "score_rationale": "Scores 79 because the testing infrastructure is strong (enforcement hooks, no snapshots, no fragility), coverage breadth is good, and patterns are modern. The untested publish-pipeline.ts is a meaningful gap since it's the single most important publishing path. Tests on orphaned code represent a misallocation of test resources but don't reduce quality of tests on active code. An 85 codebase would have critical paths covered and would not maintain tests for dead modules."
+    },
+    "type_safety": {
+      "dimension_character": "The codebase has strong type foundations — DemosError typed union with 9 codes, ToolResult<T> envelope, Zod schemas for validation, and typed plugin contracts. However, 69 explicit 'any' annotations and 31 'as any' casts persist across production code. The 'any' usage falls into three categories: SDK boundary casts in tlsn-playwright-bridge.ts (unavoidable given untyped SDK), data normalization functions that accept/return any where specific shapes are known (feed-filter, signals, source-discovery), and session state fields (engagements, result) that should have proper types.",
+      "score_rationale": "Scores 72 because the type infrastructure is well-designed (typed error codes, result envelopes, Zod schemas) but the 'any' escape hatches are too widespread. The SDK boundary casts are justified, but normalizer functions accepting 'any' when the shapes are known (feed posts, signal topics, signal alerts) and session state fields typed as 'any[]' are avoidable. A 70 codebase has type safety as an aspiration; at 72, the foundations are solid but discipline breaks down in data transformation layers."
+    },
+    "package_organization": {
+      "dimension_character": "The directory layout reflects a thoughtful domain decomposition: toolkit/ as framework-agnostic core, lib/ subdirectories for attestation/auth/llm/network/pipeline/scoring/sources/util, plugins/ for extension points, and adapters/ for framework bridges. The previous re-export shim problem has been fully resolved. The main organizational debt is the orphaned reactive/ subsystem (~939 LOC across 10 event sources and 7 event handlers, almost all with zero importers) and orphaned flat files in lib/ root that should either be archived or deleted.",
+      "score_rationale": "Scores 78 because the core layout is clean and well-navigable — subdirectories are properly named, barrel indexes work, and the major reorganization is complete. The orphaned reactive subsystem and residual flat files in lib/ root prevent a higher score. At 85, the dead directories and orphaned files would be cleaned up, and the hooks/ directory with zero-importer files would not exist."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "orphaned_reactive_subsystem",
+      "summary": "Entire reactive/ subsystem (~1650 LOC) is orphaned — event-loop.ts, most event-sources, all event-handlers have zero importers",
+      "related_files": [
+        "src/reactive/event-loop.ts",
+        "src/reactive/event-sources/sse-feed.ts",
+        "src/reactive/event-sources/storage-watcher.ts",
+        "src/reactive/event-sources/balance-source.ts",
+        "src/reactive/event-handlers/mention-handler.ts",
+        "src/reactive/event-handlers/reply-handler.ts",
+        "src/reactive/event-handlers/disagree-handler.ts",
+        "src/reactive/event-handlers/incident-alert-handler.ts",
+        "src/reactive/event-handlers/tip-thanks-handler.ts",
+        "src/reactive/event-handlers/market-alert-handler.ts",
+        "src/reactive/watermark-store.ts"
+      ],
+      "evidence": [
+        "event-loop.ts (257 LOC), sse-feed.ts (244 LOC), storage-watcher.ts (139 LOC), balance-source.ts (104 LOC) all have zero importers",
+        "All 6 event-handlers (mention, reply, disagree, incident-alert, tip-thanks, market-alert) have zero importers",
+        "watermark-store.ts (90 LOC) orphaned"
+      ],
+      "suggestion": "Archive or delete the orphaned reactive files. If they represent future planned work, move to a _future/ or _archive/ directory to signal intent. Remove their test files simultaneously to stop maintaining dead code.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_dead_code"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "orphaned_lib_domain_files",
+      "summary": "tips.ts (443 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) in src/lib/ are orphaned with zero importers",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts"
+      ],
+      "evidence": [
+        "grep for imports of tips.ts, predictions.ts, mentions.ts, transcript.ts across src/ returns zero results",
+        "Combined 1157 LOC of dead production code with active test suites"
+      ],
+      "suggestion": "Delete these files and their corresponding test files (tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts). If functionality is needed later, it can be recovered from git history.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_dead_code"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_silent_error_swallow",
+      "summary": "sdk-bridge.ts apiCall catch returns { ok: false, status: 0, data: errorMessage } — callers cannot distinguish error types",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "Lines 290-294: catch block converts error to string, returns status 0 with message as data field",
+        "Callers checking res.ok get no way to differentiate network timeout vs auth failure vs DNS error"
+      ],
+      "suggestion": "Return a structured error in the data field (e.g., { errorType: err.constructor.name, message: err.message }) or add an 'error' field to the return type so callers can switch on error category.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "d2b0d8fa890b94fe"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "publish_pipeline_any_accumulation",
+      "summary": "publish-pipeline.ts accumulates 6 explicit 'any' types and 8 'as any' casts in data normalization",
+      "related_files": ["src/actions/publish-pipeline.ts"],
+      "evidence": [
+        "normalizeFeedPosts (line 86) accepts any and returns any[]",
+        "attestDahr uses (demos as any) for 8 SDK calls",
+        "AttestResult.data typed as any (line 52)"
+      ],
+      "suggestion": "Type normalizeFeedPosts input as unknown and add type guards. For SDK calls, create a DahrProxy interface with the methods actually used. Type AttestResult.data as Record<string, unknown>.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "f9cc9607cbc7cd87"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "action_executor_orphaned_complex",
+      "summary": "action-executor.ts is orphaned (320 LOC) with 22-field context interface and has active test suite",
+      "related_files": ["src/actions/action-executor.ts", "tests/action-executor.test.ts"],
+      "evidence": [
+        "Zero importers found across src/ directory",
+        "ActionExecutorContext has 22 fields with llm typed as 'any | null'",
+        "Active test file imports and tests this orphaned module"
+      ],
+      "suggestion": "Delete action-executor.ts and action-executor.test.ts. The event-runner.ts that would have used it apparently inlined the logic or was rewritten.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "8402699e80d43225"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "attestation_executor_orphaned",
+      "summary": "attestation-executor.ts (119 LOC) is orphaned with zero importers",
+      "related_files": ["src/actions/attestation-executor.ts"],
+      "evidence": [
+        "Zero importers found",
+        "src/index.ts line 121-122 explicitly notes it is NOT exported because it is platform-bound"
+      ],
+      "suggestion": "Delete the file. The barrel already documents why it was excluded. If needed, recover from git.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "56951e0173d7bbe2"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "tlsn_bridge_as_any_casts",
+      "summary": "tlsn-playwright-bridge.ts has 15 'as any' casts for untyped SDK surface — justified but should have interface",
+      "related_files": ["src/lib/tlsn-playwright-bridge.ts"],
+      "evidence": [
+        "15 occurrences of (demos as any) for crypto.getIdentity, nodeCall, getAddress, web2.createDahr",
+        "SDK does not export types for these methods"
+      ],
+      "suggestion": "Create a TlsnDemosInterface with the 4-5 methods actually used (crypto.getIdentity, nodeCall, getAddress, web2.createDahr). Cast once at function entry instead of 15 times inline. This is the same pattern already used in sdk-bridge.ts.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "f66bc965a2bac8a7"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "engage_heuristics_any_types",
+      "summary": "engage-heuristics.ts has 2 explicit any types in engagement scoring",
+      "related_files": ["src/lib/pipeline/engage-heuristics.ts"],
+      "evidence": ["2 explicit any type annotations found"],
+      "suggestion": "Replace with proper types based on actual data shapes passed in.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "164dc3b3503fa619"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "signals_any_normalizers",
+      "summary": "signals.ts normalizeSignalTopic and normalizeSignalAlert accept 'any' parameter where API shapes are known",
+      "related_files": ["src/lib/pipeline/signals.ts"],
+      "evidence": [
+        "normalizeSignalTopic(raw: any) at line 224",
+        "normalizeSignalAlert(raw: any) at line 242",
+        "These functions transform API responses with known shapes"
+      ],
+      "suggestion": "Type the parameters as 'unknown' and add type narrowing, or create RawSignalTopic / RawSignalAlert interfaces matching the API response shapes.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "99037fdeeada6bb8"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "source_discovery_any_types",
+      "summary": "source-discovery.ts has 4 explicit any types including extractTitles closure",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": [
+        "extractTitles typed as (obj: any) at line 125",
+        "parsed variable typed as any at line 324",
+        "Two catch blocks with err: any"
+      ],
+      "suggestion": "Type extractTitles parameter as 'unknown' with runtime narrowing. Type parsed as the expected { version: number, sources: unknown[] } shape.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "66c05d8b32241962"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "mentions_orphaned",
+      "summary": "mentions.ts (148 LOC) is orphaned with zero importers",
+      "related_files": ["src/lib/mentions.ts"],
+      "evidence": ["Zero importers found across src/"],
+      "suggestion": "Delete along with mentions.test.ts.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "2c54138f0c5c11b9"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "predictions_orphaned",
+      "summary": "predictions.ts (391 LOC) is orphaned with zero importers",
+      "related_files": ["src/lib/predictions.ts"],
+      "evidence": ["Zero importers found across src/"],
+      "suggestion": "Delete along with predictions.test.ts.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "113391782ba4882e"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "tips_orphaned",
+      "summary": "tips.ts (443 LOC) is orphaned with zero importers — largest dead file",
+      "related_files": ["src/lib/tips.ts"],
+      "evidence": ["Zero importers found across src/"],
+      "suggestion": "Delete along with tips.test.ts.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "c59f6576bc09e56b"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "transcript_orphaned",
+      "summary": "transcript.ts (175 LOC) is orphaned with zero importers",
+      "related_files": ["src/lib/transcript.ts"],
+      "evidence": ["Zero importers found across src/"],
+      "suggestion": "Delete along with transcript.test.ts.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "3d0801ef220d2211"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "sse_feed_orphaned",
+      "summary": "sse-feed.ts (244 LOC) is orphaned reactive event source with zero importers",
+      "related_files": ["src/reactive/event-sources/sse-feed.ts"],
+      "evidence": ["Zero importers found across src/", "High signal density — flagged by 4 detectors"],
+      "suggestion": "Delete as part of reactive subsystem cleanup.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "c7b250c38e95483b"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_catch_default",
+      "summary": "sdk-bridge.ts DAHR flow has catch block returning default — already well-handled with re-throw",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "The DAHR catch at line 368-371 actually re-throws with proper error wrapping",
+        "The queryTransaction catch at line 386-390 returns null with console.warn — appropriate for best-effort RPC query"
+      ],
+      "suggestion": "No action needed — these catch patterns are appropriate for their contexts.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "3965224138dd1f19",
+      "reasoning": "DAHR catch re-throws with proper wrapping, queryTransaction catch returns null for best-effort semantics — both are intentional and correct"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "magic_numbers_systemic",
+      "summary": "Magic numbers appear across 21 files but are mostly domain-specific constants with clear context",
+      "related_files": ["src/lib/agent-config.ts"],
+      "evidence": [
+        "Affected files span agent-config, attestation-planner, auth, skill-dojo-client, observe, signal-detection, source-discovery, lifecycle, declarative-engine, rate-limit",
+        "Constants like DAILY_LIMIT=14, HOURLY_LIMIT=4, STALE_LOCK_MS are named and documented where they matter most"
+      ],
+      "suggestion": "No systemic change needed. The toolkit guards already extract constants. For remaining files, named constants at module level are sufficient — a shared constants file would add indirection without benefit.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "193400e1a8dc7bbc",
+      "reasoning": "Magic numbers in this codebase are mostly domain constants (timeouts, limits, thresholds) used near their definition — extracting to shared files would harm locality without improving clarity"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "cli_runners_deprecated_import",
+      "summary": "CLI runners still import from deprecated src/lib/write-rate-limit.ts instead of toolkit guards",
+      "related_files": [
+        "cli/session-runner.ts",
+        "cli/event-runner.ts",
+        "src/lib/write-rate-limit.ts"
+      ],
+      "evidence": [
+        "cli/session-runner.ts:80 imports loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger from deprecated path",
+        "cli/event-runner.ts:30 imports same functions from deprecated path",
+        "src/lib/write-rate-limit.ts has @deprecated marker and TODO to migrate"
+      ],
+      "suggestion": "Migrate CLI runners to use toolkit guards (async/StateStore-based write-rate-limit). This requires converting the CLI publish flow to async guard usage. Then delete src/lib/write-rate-limit.ts.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "source_discovery_deprecated_fn",
+      "summary": "source-discovery.ts has deprecated persistSourceToCatalog still in codebase",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": ["Line 320: @deprecated Use persistSourceToCatalog for V2 catalog persistence"],
+      "suggestion": "Check if this function has callers. If not, remove it. If it does, migrate callers to the V2 catalog persistence API.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "publish_pipeline_untested",
+      "summary": "publish-pipeline.ts has no dedicated test file — normalization, error guardrails, and attestation orchestration are untested",
+      "related_files": ["src/actions/publish-pipeline.ts"],
+      "evidence": [
+        "No file matching *publish-pipeline* in tests/ directory",
+        "normalizeFeedPosts, checkIndexerHealth, attestDahr error guardrails, encodeHivePost all lack tests",
+        "publish-pipeline.ts flagged by 3 detectors with 7 issues — high signal density"
+      ],
+      "suggestion": "Create tests/publish-pipeline.test.ts covering: normalizeFeedPosts with various payload shapes, attestDahr error guardrails (HTTP non-2xx, HTML response, auth error in JSON body), encodeHivePost encoding. Mock SDK calls but test normalization and guardrail logic directly.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "orphaned_code_test_waste",
+      "summary": "Test files for orphaned production code — tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts, action-executor.test.ts — waste maintenance effort",
+      "related_files": [
+        "tests/tips.test.ts",
+        "tests/predictions.test.ts",
+        "tests/mentions.test.ts",
+        "tests/transcript.test.ts",
+        "tests/action-executor.test.ts",
+        "tests/attestation-executor.test.ts"
+      ],
+      "evidence": [
+        "Each test file imports from the corresponding orphaned production file",
+        "These tests run on every test suite execution but cover dead code"
+      ],
+      "suggestion": "Delete test files alongside their orphaned production code. This reduces test suite runtime and removes maintenance burden for dead modules.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_dead_code"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "session_state_any_fields",
+      "summary": "SessionState and V2SessionState have any-typed fields (engagements, result) that should have proper types",
+      "related_files": ["src/lib/state.ts"],
+      "evidence": [
+        "SessionState.engagements: any[] (line 65)",
+        "V2SessionState.engagements: any[] (line 132)",
+        "PhaseState.result?: any (line 52)",
+        "ActSubstageState.result?: any (line 95)"
+      ],
+      "suggestion": "Define EngagementRecord interface matching actual engagement data shape. Type PhaseState.result as Record<string, unknown> | string | undefined. Type ActSubstageState.result similarly.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "feed_filter_any_heavy",
+      "summary": "feed-filter.ts has 10 ': any' annotations — highest any-density in active (non-bridge) code",
+      "related_files": ["src/lib/pipeline/feed-filter.ts"],
+      "evidence": ["10 explicit any type annotations in feed filtering logic"],
+      "suggestion": "Define FeedPost interface matching the actual post shape from the API. Replace any[] with FeedPost[] throughout.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "action_executor_llm_any",
+      "summary": "ActionExecutorContext.llm typed as 'any | null' instead of LLMProvider | null",
+      "related_files": ["src/actions/action-executor.ts"],
+      "evidence": [
+        "GeneratePostFn parameter llm: any at line 41",
+        "LLMProvider type exists in src/lib/llm/llm-provider.ts and is exported from barrel"
+      ],
+      "suggestion": "This file is orphaned — recommend deletion rather than type improvement. If kept, replace 'any' with LLMProvider from the LLM module.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "tlsn_bridge_as_any_volume",
+      "summary": "tlsn-playwright-bridge.ts has 15 'as any' casts — SDK boundary forces unsafe casts",
+      "related_files": ["src/lib/tlsn-playwright-bridge.ts"],
+      "evidence": [
+        "15 occurrences of 'as any' across crypto, nodeCall, getAddress, web2 methods",
+        "SDK (@kynesyslabs/demosdk) does not export types for these methods"
+      ],
+      "suggestion": "Create a DemosTlsnSurface interface declaring the 4-5 SDK methods used, then cast once at function entry: const sdk = demos as DemosTlsnSurface. Reduces 15 inline casts to 1.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "orphaned_hooks_directory",
+      "summary": "src/lib/sources/providers/hooks/ has 2 files (arxiv.ts, kraken.ts) both orphaned with zero importers",
+      "related_files": [
+        "src/lib/sources/providers/hooks/arxiv.ts",
+        "src/lib/sources/providers/hooks/kraken.ts"
+      ],
+      "evidence": [
+        "grep for imports from hooks/ returns zero results across src/",
+        "avg_fan_in for hooks/ directory is 0.0"
+      ],
+      "suggestion": "Delete the hooks/ directory and both files. If provider hooks are needed later, recreate from the declarative-engine extension point.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "lib_root_orphaned_files",
+      "summary": "src/lib/ root has 14 flat files but several (tips, predictions, mentions, transcript, review-findings) are orphaned — inflates directory",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/review-findings.ts"
+      ],
+      "evidence": [
+        "5 of 14 flat files have zero importers",
+        "Removing orphaned files would reduce src/lib/ root to 9 files — a cleaner, more navigable directory"
+      ],
+      "suggestion": "Stage 1: Delete orphaned files (tips, predictions, mentions, transcript, review-findings) and their tests. Stage 2: Evaluate remaining flat files — agent-config.ts (571 LOC, high fan-in) and state.ts (475 LOC) are genuine core; spending-policy.ts and budget-tracker.ts could form a 'budget/' subdirectory. Run `npx tsc --noEmit` and `npm test` after each stage.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_dead_code"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "reactive_subsystem_mostly_dead",
+      "summary": "src/reactive/ directory tree (20 files, 3 subdirs) is almost entirely orphaned — only 3-4 files have any importers",
+      "related_files": [
+        "src/reactive/event-loop.ts",
+        "src/reactive/event-sources/",
+        "src/reactive/event-handlers/"
+      ],
+      "evidence": [
+        "event-loop.ts, watermark-store.ts orphaned",
+        "6 of 7 event-handlers orphaned",
+        "4 of 10 event-sources orphaned (sse-feed, storage-watcher, balance-source plus others)",
+        "reactive/ avg_fan_in is 0.3"
+      ],
+      "suggestion": "Stage 1: Identify the 3-4 non-orphaned reactive files (likely own-tx-hashes.ts, some event sources used by cli/event-runner.ts). Stage 2: Delete all orphaned reactive files and their tests. Stage 3: If entire reactive/ becomes empty, remove the directory. Run `npm test` after deletion to verify no breakage.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_dead_code"
+    }
+  ],
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Orphaned code mass is systemic",
+          "description": "~3046 LOC across 21 files with zero importers, spanning reactive subsystem, domain modules (tips/predictions/mentions/transcript), and action executors. This is not isolated — it represents an entire subsystem (reactive event loop) that was superseded but never cleaned up.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Active toolkit code has clean design patterns",
+          "description": "src/toolkit/ uses typed contracts (DemosError union, ToolResult<T>), Zod validation schemas, factory patterns, and proper session lifecycle. The guards have consistent checkAndRecord pattern with deprecated compat exports. This is professional-quality API design.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SDK boundary casts concentrated in two files",
+          "description": "tlsn-playwright-bridge.ts (15 casts) and publish-pipeline.ts (8 casts) account for most 'as any' usage. The SDK lacks type exports for TLSN/DAHR/crypto methods. A single interface-and-cast pattern would reduce 23 inline casts to 2.",
+          "settled": true,
+          "positive": false
+        }
+      ],
+      "remove": [
+        "17 of 25 re-export shims in src/lib/ lack @deprecated markers"
+      ]
+    },
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "Lib restructuring migration complete",
+          "description": "The previous 25 re-export shims in src/lib/ have been fully eliminated. src/lib/ now has 14 real files and 8 subdirectories with proper barrel indexes. src/index.ts imports from canonical paths. This was the major migration and it is done.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Deprecated guards have proper timeline",
+          "description": "8 deprecated guard compat functions all have @deprecated JSDoc with concrete removal version (v2.0) and timeline (2026-Q3). This is textbook deprecation management.",
+          "settled": true,
+          "positive": true
+        }
+      ],
+      "remove": [
+        "17 of 25 re-export shims in src/lib/ lack @deprecated markers",
+        "src/index.ts barrel imports from deprecated shim paths instead of canonical subdirectory paths"
+      ]
+    },
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Strong test infrastructure with quality enforcement",
+          "description": "vitest globalSetup + PostToolUse hook reject assertion-free tests. vi.hoisted() pattern used correctly throughout. No snapshot tests. No timing-dependent or ordering-dependent tests observed. This prevents test quality regression.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Test count is 1906 across 128 files",
+          "description": "Updated from previous 1815/125. Growth indicates active TDD practice. Coverage breadth is strong for the codebase size.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    },
+    "type_safety": {
+      "add": [
+        {
+          "header": "Typed error infrastructure is well-designed",
+          "description": "DemosErrorCode union with 9 codes, DemosError interface with retryable flag, ToolResult<T> envelope — callers can switch on error code. This is better type safety than most TypeScript codebases achieve for error handling.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Any-type density concentrated in data normalization",
+          "description": "69 ': any' annotations cluster in feed-filter (10), publish-pipeline (6), state (5), signals (4), source-discovery (4). These are all data transformation/normalization functions where API response shapes are known but not typed. The toolkit and core type modules are clean.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    },
+    "package_organization": {
+      "add": [
+        {
+          "header": "Domain subdirectories are well-named and cohesive",
+          "description": "attestation/, auth/, llm/, network/, pipeline/, scoring/, sources/, util/ each contain related files with barrel indexes. Directory names reflect contained responsibilities accurately. Cross-directory imports follow a clear dependency direction.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Re-export shim problem fully resolved",
+          "description": "Previous issue flagging 25 shims inflating src/lib/ is no longer true. The directory now has 14 real production files and 8 subdirectories.",
+          "settled": true,
+          "positive": true
+        }
+      ],
+      "remove": [
+        "src/lib/ shows 39 files but 25 are 1-2 line re-export shims — inflates directory and impairs navigation"
+      ]
+    }
+  }
+}
