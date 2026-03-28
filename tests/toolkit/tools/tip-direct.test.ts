@@ -1,9 +1,8 @@
 /**
  * Direct test coverage for tip() tool.
  *
- * Tests: validation errors, spend cap exceeded, RPC resolution success,
- * feed API fallback when RPC unavailable.
- * Complements tip-chain-resolution.test.ts which focuses on resolution ordering.
+ * Tests: validation errors, spend cap exceeded, chain-first author resolution.
+ * Chain-first: tip uses bridge.resolvePostAuthor (no feed fallback).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -23,16 +22,16 @@ const AUTHOR_ADDR = "demos1postauthor";
 function mockBridge(overrides?: Partial<SdkBridge>): SdkBridge {
   return {
     attestDahr: vi.fn(async () => ({ responseHash: "h", txHash: "t", data: {}, url: "" })),
-    apiCall: vi.fn(async (): Promise<ApiCallResult> => ({
-      ok: true,
-      status: 200,
-      data: { posts: [{ txHash: TARGET_TX, sender: AUTHOR_ADDR, timestamp: Date.now(), reactions: { agree: 0, disagree: 0 }, payload: { text: "test", cat: "ANALYSIS", tags: [] } }] },
-    })),
+    apiCall: vi.fn(async (): Promise<ApiCallResult> => ({ ok: false, status: 0, data: "chain-only mode" })),
     publishHivePost: vi.fn(async () => ({ txHash: "p" })),
     transferDem: vi.fn(async () => ({ txHash: "tip-result-hash" })),
     getDemos: vi.fn(() => ({}) as any),
     payD402: vi.fn(async (): Promise<D402SettlementResult> => ({ success: true, hash: "d" })),
-    queryTransaction: vi.fn(async () => ({ sender: AUTHOR_ADDR })),
+    apiAccess: "none" as const,
+    verifyTransaction: vi.fn(async () => ({ confirmed: true, blockNumber: 42, from: AUTHOR_ADDR })),
+    getHivePosts: vi.fn(async () => []),
+    resolvePostAuthor: vi.fn(async () => AUTHOR_ADDR),
+    publishHiveReaction: vi.fn(async () => ({ txHash: "r" })),
     ...overrides,
   };
 }
@@ -149,10 +148,10 @@ describe("tip() direct tests", () => {
     });
   });
 
-  describe("success with RPC resolution", () => {
-    it("tips successfully when RPC resolves sender address", async () => {
+  describe("success with chain-first resolution", () => {
+    it("tips successfully using resolvePostAuthor", async () => {
       const bridge = mockBridge({
-        queryTransaction: vi.fn(async () => ({ sender: AUTHOR_ADDR })),
+        resolvePostAuthor: vi.fn(async () => AUTHOR_ADDR),
       });
       const session = createSession(tempDir, bridge);
 
@@ -167,76 +166,15 @@ describe("tip() direct tests", () => {
         `HIVE_TIP:${TARGET_TX}`,
       );
       expect(result.provenance.path).toBe("local");
-      // Feed API should NOT be called when RPC succeeds
+      // apiCall should NOT be called — chain-first
       expect(bridge.apiCall).not.toHaveBeenCalled();
     });
   });
 
-  describe("feed API fallback when RPC unavailable", () => {
-    it("falls back to feed API when bridge has no queryTransaction method", async () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  describe("chain resolution failure", () => {
+    it("returns INVALID_INPUT when resolvePostAuthor returns null", async () => {
       const bridge = mockBridge({
-        queryTransaction: undefined,
-        apiCall: vi.fn(async (): Promise<ApiCallResult> => ({
-          ok: true,
-          status: 200,
-          data: {
-            posts: [{
-              txHash: TARGET_TX,
-              sender: AUTHOR_ADDR,
-              timestamp: Date.now(),
-              reactions: { agree: 0, disagree: 0 },
-              payload: { text: "test", cat: "ANALYSIS", tags: [] },
-            }],
-          },
-        })),
-      });
-      const session = createSession(tempDir, bridge);
-
-      const result = await tip(session, { txHash: TARGET_TX, amount: 2 });
-
-      expect(result.ok).toBe(true);
-      expect(result.data!.txHash).toBe("tip-result-hash");
-      expect(bridge.transferDem).toHaveBeenCalledWith(
-        AUTHOR_ADDR,
-        2,
-        `HIVE_TIP:${TARGET_TX}`,
-      );
-      expect(bridge.apiCall).toHaveBeenCalledWith(`/api/feed?limit=50`);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("feed API"));
-      warnSpy.mockRestore();
-    });
-
-    it("returns NETWORK_ERROR when feed API also fails", async () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const bridge = mockBridge({
-        queryTransaction: vi.fn(async () => null),
-        apiCall: vi.fn(async (): Promise<ApiCallResult> => ({
-          ok: false,
-          status: 503,
-          data: "Service Unavailable",
-        })),
-      });
-      const session = createSession(tempDir, bridge);
-
-      const result = await tip(session, { txHash: TARGET_TX, amount: 2 });
-
-      expect(result.ok).toBe(false);
-      expect(result.error!.code).toBe("NETWORK_ERROR");
-      expect(result.error!.retryable).toBe(true);
-      expect(bridge.transferDem).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
-    });
-
-    it("returns INVALID_INPUT when post not found in feed", async () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const bridge = mockBridge({
-        queryTransaction: vi.fn(async () => null),
-        apiCall: vi.fn(async (): Promise<ApiCallResult> => ({
-          ok: true,
-          status: 200,
-          data: { posts: [{ txHash: "OTHER_TX", sender: "demos1other", timestamp: Date.now(), reactions: { agree: 0, disagree: 0 }, payload: { text: "other", cat: "ANALYSIS" } }] },
-        })),
+        resolvePostAuthor: vi.fn(async () => null),
       });
       const session = createSession(tempDir, bridge);
 
@@ -244,38 +182,8 @@ describe("tip() direct tests", () => {
 
       expect(result.ok).toBe(false);
       expect(result.error!.code).toBe("INVALID_INPUT");
-      expect(result.error!.message).toContain("not found in feed");
+      expect(result.error!.message).toContain("not found on chain");
       expect(bridge.transferDem).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
-    });
-
-    it("returns INVALID_INPUT when post found but has no sender address", async () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const bridge = mockBridge({
-        queryTransaction: vi.fn(async () => null),
-        apiCall: vi.fn(async (): Promise<ApiCallResult> => ({
-          ok: true,
-          status: 200,
-          data: {
-            posts: [{
-              txHash: TARGET_TX,
-              // no sender field — parseFeedPosts will set author to ""
-              timestamp: Date.now(),
-              reactions: { agree: 0, disagree: 0 },
-              payload: { text: "test", cat: "ANALYSIS" },
-            }],
-          },
-        })),
-      });
-      const session = createSession(tempDir, bridge);
-
-      const result = await tip(session, { txHash: TARGET_TX, amount: 2 });
-
-      expect(result.ok).toBe(false);
-      expect(result.error!.code).toBe("INVALID_INPUT");
-      expect(result.error!.message).toContain("no sender address");
-      expect(bridge.transferDem).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
     });
   });
 });

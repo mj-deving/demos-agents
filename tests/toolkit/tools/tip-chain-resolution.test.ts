@@ -1,14 +1,8 @@
 /**
- * TDD tests for S6: tip recipient resolution via chain (RPC) over feed API.
+ * Tests for tip() chain-first recipient resolution.
  *
- * Problem: tip() resolves post author from feed API which is untrusted.
- * Fix: try RPC queryTransaction first, fall back to feed API with warning.
- *
- * Tests verify:
- * - RPC resolution is preferred over feed API
- * - When RPC returns address A but feed returns address B, tip goes to A
- * - When RPC fails, falls back to feed API
- * - When both fail, returns error
+ * Chain-first: tip uses bridge.resolvePostAuthor (getTxByHash on-chain).
+ * No feed API fallback — resolution is entirely on-chain.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -17,7 +11,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DemosSession } from "../../../src/toolkit/session.js";
 import { FileStateStore } from "../../../src/toolkit/state-store.js";
-import type { SdkBridge, D402SettlementResult } from "../../../src/toolkit/sdk-bridge.js";
+import type { SdkBridge, D402SettlementResult, ApiCallResult } from "../../../src/toolkit/sdk-bridge.js";
 import { tip } from "../../../src/toolkit/tools/tip.js";
 
 // ── Helpers ──────────────────────────────────────────
@@ -25,13 +19,16 @@ import { tip } from "../../../src/toolkit/tools/tip.js";
 function mockBridge(overrides?: Partial<SdkBridge>): SdkBridge {
   return {
     attestDahr: vi.fn(async () => ({ responseHash: "h", txHash: "t", data: {}, url: "" })),
-    apiCall: vi.fn(async () => ({ ok: true, status: 200, data: { posts: [] } })),
-    signAndBroadcast: vi.fn(async () => ({ hash: "b" })),
+    apiCall: vi.fn(async (): Promise<ApiCallResult> => ({ ok: false, status: 0, data: "chain-only mode" })),
     publishHivePost: vi.fn(async () => ({ txHash: "p" })),
     transferDem: vi.fn(async () => ({ txHash: "tip-tx-123" })),
     getDemos: vi.fn(() => ({} as any)),
     payD402: vi.fn(async (): Promise<D402SettlementResult> => ({ success: true, hash: "d" })),
-    queryTransaction: vi.fn(async () => null),
+    apiAccess: "none" as const,
+    verifyTransaction: vi.fn(async () => ({ confirmed: true, blockNumber: 42, from: "demos1a" })),
+    getHivePosts: vi.fn(async () => []),
+    resolvePostAuthor: vi.fn(async () => "demos1author"),
+    publishHiveReaction: vi.fn(async () => ({ txHash: "r" })),
     ...overrides,
   };
 }
@@ -49,130 +46,77 @@ function createSession(tempDir: string, bridge: SdkBridge) {
 }
 
 const TARGET_TX_HASH = "AABBCCDD1122334455667788";
-const RPC_SENDER = "demos1rpc_resolved_author";
-const FEED_SENDER = "demos1feed_untrusted_author";
+const CHAIN_AUTHOR = "demos1chain_resolved_author";
 
 // ── Tests ────────────────────────────────────────────
 
-describe("tip() chain-first recipient resolution (S6)", () => {
+describe("tip() chain-first recipient resolution", () => {
   let tempDir: string;
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "demos-tip-s6-"));
+    tempDir = mkdtempSync(join(tmpdir(), "demos-tip-chain-"));
   });
 
   afterEach(() => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("uses RPC-resolved address when queryTransaction succeeds", async () => {
+  it("resolves author from chain via resolvePostAuthor", async () => {
     const bridge = mockBridge({
-      queryTransaction: vi.fn(async () => ({ sender: RPC_SENDER })),
-      apiCall: vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        data: { posts: [{ txHash: TARGET_TX_HASH, sender: FEED_SENDER }] },
-      })),
+      resolvePostAuthor: vi.fn(async () => CHAIN_AUTHOR),
     });
     const session = createSession(tempDir, bridge);
 
     const result = await tip(session, { txHash: TARGET_TX_HASH, amount: 2 });
 
     expect(result.ok).toBe(true);
-    // Must have called transferDem with RPC address, NOT feed address
     expect(bridge.transferDem).toHaveBeenCalledWith(
-      RPC_SENDER,
+      CHAIN_AUTHOR,
       2,
       expect.stringContaining(TARGET_TX_HASH),
     );
-    // Feed API should NOT have been called since RPC succeeded
+    // Feed API must NOT be called — chain-first
     expect(bridge.apiCall).not.toHaveBeenCalled();
   });
 
-  it("falls back to feed API when queryTransaction returns null", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("returns INVALID_INPUT when chain resolution fails", async () => {
     const bridge = mockBridge({
-      queryTransaction: vi.fn(async () => null),
-      apiCall: vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        data: { posts: [{ txHash: TARGET_TX_HASH, sender: FEED_SENDER }] },
-      })),
-    });
-    const session = createSession(tempDir, bridge);
-
-    const result = await tip(session, { txHash: TARGET_TX_HASH, amount: 2 });
-
-    expect(result.ok).toBe(true);
-    expect(bridge.transferDem).toHaveBeenCalledWith(
-      FEED_SENDER,
-      2,
-      expect.stringContaining(TARGET_TX_HASH),
-    );
-    // Must log a warning about untrusted feed data
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("feed API"),
-    );
-    warnSpy.mockRestore();
-  });
-
-  it("falls back to feed API when queryTransaction throws", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const bridge = mockBridge({
-      queryTransaction: vi.fn(async () => { throw new Error("RPC timeout"); }),
-      apiCall: vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        data: { posts: [{ txHash: TARGET_TX_HASH, sender: FEED_SENDER }] },
-      })),
-    });
-    const session = createSession(tempDir, bridge);
-
-    const result = await tip(session, { txHash: TARGET_TX_HASH, amount: 2 });
-
-    expect(result.ok).toBe(true);
-    expect(bridge.transferDem).toHaveBeenCalledWith(
-      FEED_SENDER,
-      2,
-      expect.any(String),
-    );
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("feed API"),
-    );
-    warnSpy.mockRestore();
-  });
-
-  it("returns error when both RPC and feed API fail", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const bridge = mockBridge({
-      queryTransaction: vi.fn(async () => null),
-      apiCall: vi.fn(async () => ({ ok: false, status: 0, data: "timeout" })),
+      resolvePostAuthor: vi.fn(async () => null),
     });
     const session = createSession(tempDir, bridge);
 
     const result = await tip(session, { txHash: TARGET_TX_HASH, amount: 2 });
 
     expect(result.ok).toBe(false);
-    expect(result.error!.code).toBe("NETWORK_ERROR");
+    expect(result.error!.code).toBe("INVALID_INPUT");
+    expect(result.error!.message).toContain("not found on chain");
     expect(bridge.transferDem).not.toHaveBeenCalled();
-    warnSpy.mockRestore();
   });
 
-  it("prefers RPC address over feed address even when both are available", async () => {
+  it("does not fall back to feed API when chain fails", async () => {
     const bridge = mockBridge({
-      queryTransaction: vi.fn(async () => ({ sender: RPC_SENDER })),
-      apiCall: vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        data: { posts: [{ txHash: TARGET_TX_HASH, sender: FEED_SENDER }] },
-      })),
+      resolvePostAuthor: vi.fn(async () => null),
     });
     const session = createSession(tempDir, bridge);
 
-    await tip(session, { txHash: TARGET_TX_HASH, amount: 1 });
+    await tip(session, { txHash: TARGET_TX_HASH, amount: 2 });
 
-    const transferCall = (bridge.transferDem as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(transferCall[0]).toBe(RPC_SENDER);
-    expect(transferCall[0]).not.toBe(FEED_SENDER);
+    // apiCall must NEVER be called for tip resolution
+    expect(bridge.apiCall).not.toHaveBeenCalled();
+  });
+
+  it("transfers correct amount and memo", async () => {
+    const bridge = mockBridge({
+      resolvePostAuthor: vi.fn(async () => CHAIN_AUTHOR),
+    });
+    const session = createSession(tempDir, bridge);
+
+    await tip(session, { txHash: TARGET_TX_HASH, amount: 5 });
+
+    expect(bridge.transferDem).toHaveBeenCalledWith(
+      CHAIN_AUTHOR,
+      5,
+      `HIVE_TIP:${TARGET_TX_HASH}`,
+    );
   });
 });

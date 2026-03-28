@@ -1,5 +1,8 @@
 /**
  * tip() — tip DEM to a post author with spending guards.
+ *
+ * Chain-first: uses bridge.resolvePostAuthor (getTxByHash) for recipient resolution.
+ * No feed API fallback — all resolution is on-chain.
  */
 
 import type { TipOptions, TipResult, ToolResult } from "../types.js";
@@ -8,10 +11,6 @@ import { DemosSession } from "../session.js";
 import { checkAndRecordTip } from "../guards/tip-spend-cap.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 import { validateInput, TipOptionsSchema } from "../schemas.js";
-import { parseFeedPosts } from "./feed-parser.js";
-
-const RPC_RESOLUTION_TIMEOUT_MS = 5_000;
-const FEED_LIMIT = 50;
 
 /**
  * Tip DEM to a post author. Guards: max per-tip, max per-post, cooldown.
@@ -39,49 +38,13 @@ export async function tip(
     const bridge = session.getBridge();
     const memo = `HIVE_TIP:${opts.txHash}`;
 
-    // Resolve post author address — prefer chain (RPC) over feed API
-    let recipientAddress: string | null = null;
-
-    // Try RPC resolution first (trusted — on-chain data), with 5s budget
-    if (bridge.queryTransaction) {
-      try {
-        const txResult = await Promise.race([
-          bridge.queryTransaction(opts.txHash),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), RPC_RESOLUTION_TIMEOUT_MS)),
-        ]);
-        if (txResult?.sender) {
-          recipientAddress = txResult.sender;
-        }
-      } catch {
-        // RPC failed — will fall back to feed API below
-      }
-    }
-
-    // Fall back to feed API if RPC resolution failed
+    // Chain-first: resolve post author address from on-chain transaction
+    const recipientAddress = await bridge.resolvePostAuthor(opts.txHash);
     if (!recipientAddress) {
-      console.warn("[demos-toolkit] WARNING: Resolving tip recipient from feed API — RPC unavailable. Feed data is untrusted.");
-      const feedResult = await bridge.apiCall(`/api/feed?limit=${FEED_LIMIT}`);
-      if (!feedResult.ok) {
-        return err(
-          demosError("NETWORK_ERROR", "Cannot resolve tip recipient: SuperColony feed API unavailable", true),
-          localProvenance(start),
-        );
-      }
-      const posts = parseFeedPosts(feedResult.data);
-      const targetPost = posts.find((p) => p.txHash === opts.txHash);
-      if (!targetPost) {
-        return err(
-          demosError("INVALID_INPUT", `Post ${opts.txHash.slice(0, 16)}... not found in feed — cannot resolve recipient`, false),
-          localProvenance(start),
-        );
-      }
-      recipientAddress = targetPost.author;
-      if (!recipientAddress) {
-        return err(
-          demosError("INVALID_INPUT", `Post ${opts.txHash.slice(0, 16)}... has no sender address`, false),
-          localProvenance(start),
-        );
-      }
+      return err(
+        demosError("INVALID_INPUT", `Transaction ${opts.txHash.slice(0, 16)}... not found on chain — cannot resolve recipient`, false),
+        localProvenance(start),
+      );
     }
 
     const result = await bridge.transferDem(recipientAddress, opts.amount, memo);
