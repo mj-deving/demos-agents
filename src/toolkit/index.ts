@@ -76,32 +76,22 @@ export { pay } from "./tools/pay.js";
 export { parseFeedPosts } from "./tools/feed-parser.js";
 
 // ── Guards (exposed for testing and advanced consumers) ──
-// @deprecated — check/record pairs scheduled for removal in v2.0.
-// Use checkAndRecord* unified API or checkAndAppend() from state-helpers.
 
 export {
   checkAndRecordWrite,
-  checkWriteRateLimit,
-  recordWrite,
   getWriteRateRemaining,
 } from "./guards/write-rate-limit.js";
 
 export {
   checkAndRecordTip,
-  checkTipSpendCap,
-  recordTip,
 } from "./guards/tip-spend-cap.js";
 
 export {
-  checkPaySpendCap,
-  recordPayment,
   reservePaySpend,
 } from "./guards/pay-spend-cap.js";
 
 export {
   checkAndRecordDedup,
-  checkDedup,
-  recordPublish,
 } from "./guards/dedup-guard.js";
 
 export { withBackoff } from "./guards/backoff.js";

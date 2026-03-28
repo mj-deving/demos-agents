@@ -7,7 +7,7 @@
 import type { PayOptions, PayResult, ToolResult } from "../types.js";
 import { ok, err, demosError, isDemosError } from "../types.js";
 import { DemosSession } from "../session.js";
-import { checkPaySpendCap, reservePaySpend } from "../guards/pay-spend-cap.js";
+import { reservePaySpend } from "../guards/pay-spend-cap.js";
 import { makeIdempotencyKey, checkPayReceipt, recordPayReceipt } from "../guards/pay-receipt-log.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 import { validateUrl, createPinnedFetch } from "../url-validator.js";
@@ -69,16 +69,14 @@ export async function pay(
       );
     }
 
-    // Guard: pre-flight spend cap check (maxSpend against rolling cap)
-    // The actual atomic reserve happens after 402 requirement reveals the real amount.
-    const capError = await checkPaySpendCap(
-      session.stateStore,
-      session.walletAddress,
-      opts.maxSpend,
-      session.payPolicy,
-    );
-    if (capError) {
-      return err(capError, localProvenance(start));
+    // Pre-flight spend cap check: fast-fail if maxSpend exceeds rolling cap
+    // before making any network request. The atomic reserve (reservePaySpend)
+    // happens after 402 reveals the real amount.
+    if (!Number.isFinite(opts.maxSpend) || opts.maxSpend <= 0) {
+      return err(demosError("INVALID_INPUT", "maxSpend must be a positive finite number", false), localProvenance(start));
+    }
+    if (opts.maxSpend > session.payPolicy.maxPerCall) {
+      return err(demosError("SPEND_LIMIT", `maxSpend ${opts.maxSpend} exceeds per-call max ${session.payPolicy.maxPerCall} DEM`, false), localProvenance(start));
     }
 
     // ── D402 challenge/response flow ────────────────────

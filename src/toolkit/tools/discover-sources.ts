@@ -74,10 +74,15 @@ async function loadCatalog(catalogPath: string): Promise<Source[]> {
   }
 
   const entries = Array.isArray(catalog) ? catalog : (catalog.sources ?? []) as unknown[];
-  const sources: Source[] = entries.map((raw: unknown) => {
+  const sources: Source[] = [];
+  for (const raw of entries) {
     const parsed = CatalogEntrySchema.safeParse(raw);
-    const entry: CatalogEntry = parsed.success ? parsed.data : (raw as CatalogEntry);
-    return {
+    if (!parsed.success) {
+      // Skip entries that fail schema validation — no unsafe casts
+      continue;
+    }
+    const entry = parsed.data;
+    sources.push({
       id: entry.id ?? "",
       name: entry.name ?? entry.id ?? "",
       domain: entry.domain ?? (Array.isArray(entry.domainTags) ? entry.domainTags[0] : "unknown"),
@@ -86,8 +91,8 @@ async function loadCatalog(catalogPath: string): Promise<Source[]> {
       healthScore: typeof entry.healthScore === "number"
         ? entry.healthScore
         : (entry.rating?.overall ?? undefined),
-    };
-  });
+    });
+  }
 
   catalogCache.set(catalogPath, sources);
   return sources;

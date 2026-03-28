@@ -65,11 +65,11 @@ describe("Barrel export", () => {
       const store = new toolkit.FileStateStore(tempDir);
 
       // Write rate limit check returns null (allowed) on empty state
-      const rateResult = await toolkit.checkWriteRateLimit(store, "demos1test");
+      const rateResult = await toolkit.checkAndRecordWrite(store, "demos1test", false);
       expect(rateResult).toBeNull();
 
       // Dedup check returns null (not duplicate) on empty state
-      const dedupResult = await toolkit.checkDedup(store, "demos1test", "unique text");
+      const dedupResult = await toolkit.checkAndRecordDedup(store, "demos1test", "unique text", false);
       expect(dedupResult).toBeNull();
 
       // Idempotency key is deterministic

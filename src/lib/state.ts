@@ -145,7 +145,7 @@ export interface V2SessionState {
 export type AnySessionState = SessionState | V2SessionState;
 
 export function isV2(state: AnySessionState): state is V2SessionState {
-  return (state as any).loopVersion === 2;
+  return "loopVersion" in state && state.loopVersion === 2;
 }
 
 // ── Path Helpers ───────────────────────────────────
@@ -185,8 +185,8 @@ export function acquireLock(sessionNumber: number, sessionsDir: string = DEFAULT
     writeFileSync(fd, lockContent);
     closeSync(fd);
     return;
-  } catch (e: any) {
-    if (e.code !== "EEXIST") throw e;
+  } catch (e: unknown) {
+    if (!(e instanceof Error && "code" in e && (e as NodeJS.ErrnoException).code === "EEXIST")) throw e;
     // Lock file exists — check if stale
   }
 
@@ -339,10 +339,9 @@ export function startSession(
   acquireLock(sessionNumber, sessionsDir, agentName);
 
   if (loopVersion === 2) {
-    const phases: Record<CorePhase, PhaseState> = {} as any;
-    for (const phase of CORE_PHASE_ORDER) {
-      phases[phase] = { status: "pending" };
-    }
+    const phases = Object.fromEntries(
+      CORE_PHASE_ORDER.map((phase) => [phase, { status: "pending" as const }])
+    ) as Record<CorePhase, PhaseState>;
 
     const state: V2SessionState = {
       loopVersion: 2,
@@ -360,10 +359,9 @@ export function startSession(
     return state;
   }
 
-  const phases: Record<PhaseName, PhaseState> = {} as any;
-  for (const phase of PHASE_ORDER) {
-    phases[phase] = { status: "pending" };
-  }
+  const phases = Object.fromEntries(
+    PHASE_ORDER.map((phase) => [phase, { status: "pending" as const }])
+  ) as Record<PhaseName, PhaseState>;
 
   const state: SessionState = {
     sessionNumber,
@@ -379,11 +377,16 @@ export function startSession(
   return state;
 }
 
+/** Type-safe accessor for the phases record on either session version. */
+function phasesRecord(state: AnySessionState): Record<string, PhaseState> {
+  return state.phases;
+}
+
 /**
  * Mark a phase as in_progress.
  */
 export function beginPhase(state: AnySessionState, phase: PhaseName | CorePhase, sessionsDir?: string): AnySessionState {
-  (state.phases as any)[phase] = {
+  phasesRecord(state)[phase] = {
     status: "in_progress",
     startedAt: new Date().toISOString(),
   };
@@ -400,8 +403,9 @@ export function completePhase(
   result?: any,
   sessionsDir?: string
 ): AnySessionState {
-  (state.phases as any)[phase] = {
-    ...(state.phases as any)[phase],
+  const phases = phasesRecord(state);
+  phases[phase] = {
+    ...phases[phase],
     status: "completed",
     completedAt: new Date().toISOString(),
     result,
@@ -419,8 +423,9 @@ export function failPhase(
   error: string,
   sessionsDir?: string
 ): AnySessionState {
-  (state.phases as any)[phase] = {
-    ...(state.phases as any)[phase],
+  const phases = phasesRecord(state);
+  phases[phase] = {
+    ...phases[phase],
     status: "failed",
     completedAt: new Date().toISOString(),
     error,
