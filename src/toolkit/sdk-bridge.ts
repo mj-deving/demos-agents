@@ -281,6 +281,13 @@ function decodeHiveData(data: unknown): Record<string, unknown> | null {
       }
     }
   }
+  // TransactionContentData tuple: ["storage", payload] — extract payload
+  else if (Array.isArray(data)) {
+    if (data.length >= 2 && data[0] === "storage") {
+      return decodeHiveData(data[1]); // recurse on the actual payload
+    }
+    return null;
+  }
   // Already-parsed object (from Transaction.content.data that was pre-decoded)
   else if (typeof data === "object" && data !== null) {
     const obj = data as Record<string, unknown>;
@@ -569,8 +576,9 @@ export function createSdkBridge(
             const content = typeof rawTx.content === "string"
               ? safeParse(rawTx.content) as Record<string, unknown>
               : rawTx.content as Record<string, unknown>;
-            const data = content?.data;
-            // Check for HIVE prefix in data
+            // TransactionContentData is a tuple ["storage", StoragePayload] — extract payload
+            const rawData = content?.data;
+            const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
             const decoded = decodeHiveData(data);
             if (!decoded) continue;
             posts.push({

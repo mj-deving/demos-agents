@@ -266,6 +266,37 @@ describe("ChainTransaction bridge methods", () => {
     expect(posts).toEqual([]);
   });
 
+  it("getHivePosts handles TransactionContentData tuple format ['storage', payload]", async () => {
+    const hiveJson = JSON.stringify({ v: 1, text: "Tuple post", cat: "ANALYSIS", tags: ["test"] });
+    let called = false;
+    const demos = mockDemos({
+      getTransactions: vi.fn(async () => {
+        if (called) return [];
+        called = true;
+        return [{
+          hash: "0xtuple",
+          blockNumber: 50,
+          status: "confirmed",
+          from: "demos1tuple",
+          to: "",
+          type: "storage",
+          // TransactionContentData is a tuple ["storage", StoragePayload]
+          content: JSON.stringify({
+            from: "demos1tuple", to: "", type: "storage",
+            data: ["storage", "HIVE" + hiveJson],
+            timestamp: 1700000000,
+          }),
+          timestamp: 1700000000,
+        }];
+      }),
+    });
+    const bridge = createSdkBridge(demos as any, undefined, AUTH_PENDING_TOKEN, undefined, mockTxModule);
+    const posts = await bridge.getHivePosts(10);
+    expect(posts).toHaveLength(1);
+    expect(posts[0].text).toBe("Tuple post");
+    expect(posts[0].author).toBe("demos1tuple");
+  });
+
   it("getHivePosts respects limit parameter", async () => {
     const makeHiveTx = (i: number) => {
       const hiveJson = JSON.stringify({ v: 1, text: `Post ${i}`, cat: "UPDATE" });
