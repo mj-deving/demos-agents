@@ -93,11 +93,11 @@ describe("Omniweb Plugins", () => {
       const plugin = createNetworkHealthPlugin({ rpcUrl: RPC_URL });
       await plugin.providers[0].fetch("health");
 
-      expect(mock).toHaveBeenCalledWith(RPC_URL, {
+      expect(mock).toHaveBeenCalledWith(RPC_URL, expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", method: "getLastBlock", params: [], id: 1 }),
-      });
+      }));
     });
   });
 

@@ -178,3 +178,107 @@ await demos.transfer(to, amount); // Matches SDK signature exactly
 | `/tlsnotary/service` | `TLSNotaryService` | Stable |
 
 **NAPI crash warning:** `demosdk` is incompatible with Bun runtime (NAPI crash). Always use Node.js + tsx.
+
+---
+
+## RPC Interaction Guidelines (Phase 2)
+
+> Added 2026-03-28 after RPC patterns audit.
+
+### Rule 9: Two RPC Formats Exist — Know Which You're Using
+
+**Statement:** The Demos node accepts two different wire formats. The SDK uses an internal `bundle.content` envelope. Direct `fetch()` calls use standard JSON-RPC 2.0. These are NOT interchangeable in code — choose one and be explicit.
+
+**SDK format** (via `demos.nodeCall()` / `demos.rpcCall()`):
+```json
+{
+  "method": "nodeCall",
+  "params": [{ "type": "nodeCall", "message": "getAddressInfo", "data": {"address": "..."} }]
+}
+```
+- Auth headers added automatically when `isAuthenticated=true`
+- Built-in retry with configurable `retries` and `sleepTime`
+- Returns `response.data` from axios
+
+**Direct JSON-RPC 2.0** (via `globalThis.fetch()`):
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "getAddressInfo",
+  "params": ["demos1abc"],
+  "id": 1
+}
+```
+- No auth headers — read-only queries only
+- No built-in retry — add your own if needed
+- Must handle HTTP errors AND JSON-RPC errors separately
+
+**When to use which:**
+- **SDK methods** — for anything that needs auth, signing, or the 3-step pipeline
+- **Direct fetch** — for read-only data provider queries in plugins (framework-agnostic, no SDK dependency)
+
+### Rule 10: Every Direct-Fetch RPC Call Needs a Timeout
+
+**Statement:** Always pass `signal: AbortSignal.timeout(N)` to `globalThis.fetch()` for RPC calls. RPC nodes can hang indefinitely. Default: 10s for queries, 5s for health checks.
+
+**Bad:**
+```typescript
+const response = await fetch(rpcUrl, { method: "POST", body }); // No timeout!
+```
+
+**Correct:**
+```typescript
+const response = await fetch(rpcUrl, {
+  method: "POST",
+  body,
+  signal: AbortSignal.timeout(10_000),
+});
+```
+
+### Rule 11: Always Check Both HTTP Status AND JSON-RPC Error
+
+**Statement:** A successful HTTP response (200 OK) can still contain a JSON-RPC error. Always check `json.error` after parsing.
+
+**Bad:**
+```typescript
+if (!response.ok) return error;
+const json = await response.json();
+return { ok: true, data: json.result }; // ← json.error not checked!
+```
+
+**Correct:**
+```typescript
+if (!response.ok) return error;
+const json = await response.json();
+if (json.error) return { ok: false, error: json.error.message };
+return { ok: true, data: json.result };
+```
+
+### Rule 12: Direct-Fetch Is Unauthenticated — Read-Only Queries Only
+
+**Statement:** Direct `fetch()` to the RPC node does NOT include SDK auth headers (`identity`, `signature`). Any RPC method requiring authentication will silently fail or return unauthorized. Use direct fetch ONLY for read-only public queries.
+
+**Safe for direct fetch:** `getLastBlock`, `getAddressInfo`, `getIdentities`, `getTransactions`
+**NOT safe (needs SDK):** `transfer`, `store`, `confirm`, `broadcast`, any write operation
+
+### Rule 13: RPC URL Must Not Have Trailing Slash
+
+**Statement:** The canonical RPC URL is `https://demosnode.discus.sh` (no trailing slash). Trailing slashes can cause double-slash in path construction. Use the constant from `src/lib/network/sdk.ts`.
+
+### Rule 14: Parallelize Independent RPC Queries
+
+**Statement:** When querying multiple addresses or transactions, use `Promise.all()` instead of sequential `for` loops. RPC calls are I/O-bound — parallelizing cuts wall-clock time by N×.
+
+**Bad:**
+```typescript
+for (const addr of addresses) {
+  const result = await fetch(rpcUrl, ...); // Sequential — N * latency
+}
+```
+
+**Correct:**
+```typescript
+const results = await Promise.all(
+  addresses.map(addr => fetch(rpcUrl, ...)), // Parallel — 1 * latency
+);
+```

@@ -1,7 +1,8 @@
 /**
  * Network Health Plugin — Demos network health monitoring via RPC.
  *
- * Thin DataProvider wrapper around JSON-RPC getLastBlock.
+ * Uses direct JSON-RPC 2.0 fetch (not SDK) — intentionally SDK-free for
+ * framework portability. Read-only query, no auth headers needed.
  */
 
 import type { FrameworkPlugin, DataProvider, ProviderResult } from "../types.js";
@@ -24,6 +25,7 @@ export function createNetworkHealthPlugin(config: NetworkHealthPluginConfig): Fr
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body,
+          signal: AbortSignal.timeout(10_000),
         });
 
         if (!response.ok) {
@@ -34,7 +36,10 @@ export function createNetworkHealthPlugin(config: NetworkHealthPluginConfig): Fr
           };
         }
 
-        const json = await response.json() as { result?: { height?: number; timestamp?: number } };
+        const json = await response.json() as { result?: { height?: number; timestamp?: number }; error?: { message?: string } };
+        if (json.error) {
+          return { ok: false, error: `RPC error: ${json.error.message ?? "unknown"}`, source: "network-health-plugin" };
+        }
         const result = json.result;
 
         return {

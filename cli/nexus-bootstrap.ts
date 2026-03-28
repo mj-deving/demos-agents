@@ -21,7 +21,7 @@ import { connectWallet, info, setLogAgent } from "../src/lib/network/sdk.js";
 const warn = (msg: string) => console.warn(`[nexus] WARN: ${msg}`);
 import type { Transaction } from "@kynesyslabs/demosdk/types";
 
-const RPC_URL = "https://demosnode.discus.sh/";
+const RPC_URL = "https://demosnode.discus.sh";
 
 // ── Args ────────────────────────────────────────────
 

@@ -63,6 +63,11 @@ export function createDemosWorkPlugin(config: DemosWorkPluginConfig): FrameworkP
           };
         }
 
+        const json = await response.json() as { result?: unknown; error?: { message?: string } };
+        if (json.error) {
+          return { ok: false, error: `DemosWork RPC error: ${json.error.message ?? "unknown"}`, source: "demoswork-plugin" };
+        }
+
         return {
           ok: true,
           data: { available: true, rpcUrl },

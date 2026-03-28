@@ -25,34 +25,33 @@ export function createAddressWatchPlugin(config: AddressWatchPluginConfig): Fram
       }
 
       try {
-        // Query each watched address for activity
-        const results: Array<{ address: string; balance?: number; nonce?: number; error?: string }> = [];
+        // Query all watched addresses in parallel (capped at 10)
+        const results = await Promise.all(
+          watchAddresses.slice(0, 10).map(async (address): Promise<{ address: string; balance?: number; nonce?: number; error?: string }> => {
+            try {
+              const body = JSON.stringify({
+                jsonrpc: "2.0",
+                method: "getAddressInfo",
+                params: [address],
+                id: 1,
+              });
+              const response = await globalThis.fetch(rpcUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body,
+                signal: AbortSignal.timeout(5_000),
+              });
 
-        for (const address of watchAddresses.slice(0, 10)) { // cap at 10 to avoid RPC flood
-          try {
-            const body = JSON.stringify({
-              jsonrpc: "2.0",
-              method: "getAddressInfo",
-              params: [address],
-              id: 1,
-            });
-            const response = await globalThis.fetch(rpcUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body,
-              signal: AbortSignal.timeout(5_000),
-            });
-
-            if (response.ok) {
-              const json = await response.json() as { result?: { balance?: number; nonce?: number } };
-              results.push({ address, balance: json.result?.balance, nonce: json.result?.nonce });
-            } else {
-              results.push({ address, error: `HTTP ${response.status}` });
+              if (response.ok) {
+                const json = await response.json() as { result?: { balance?: number; nonce?: number } };
+                return { address, balance: json.result?.balance, nonce: json.result?.nonce };
+              }
+              return { address, error: `HTTP ${response.status}` };
+            } catch (err) {
+              return { address, error: err instanceof Error ? err.message : String(err) };
             }
-          } catch (err) {
-            results.push({ address, error: err instanceof Error ? err.message : String(err) });
-          }
-        }
+          }),
+        );
 
         return {
           ok: true,
