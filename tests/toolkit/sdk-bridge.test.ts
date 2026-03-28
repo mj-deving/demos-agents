@@ -39,8 +39,16 @@ function mockDemos() {
     sendTransaction: vi.fn(async () => ({
       hash: "mock-send-tx-hash",
     })),
-    transfer: vi.fn(async (to: string, amount: number, memo: string) => ({
-      hash: "mock-transfer-hash",
+    // transfer creates a signed tx (step 1 of 3 — confirm + broadcast follow)
+    transfer: vi.fn(async (to: string, amount: number) => ({
+      hash: "mock-signed-tx-hash",
+      content: { to, amount, type: "native" },
+    })),
+    confirm: vi.fn(async () => ({
+      response: { data: { transaction: { hash: "mock-transfer-hash" } } },
+    })),
+    broadcast: vi.fn(async () => ({
+      response: { results: { tx1: { hash: "mock-broadcast-hash" } } },
     })),
   };
 }
@@ -261,16 +269,29 @@ describe("SDK Bridge Adapter", () => {
   });
 
   describe("transferDem", () => {
-    it("calls demos.transfer with recipient, amount, and memo", async () => {
+    it("calls transfer → confirm → broadcast pipeline", async () => {
       const result = await bridge.transferDem("demos1recipient", 5, "HIVE_TIP:tx123");
 
       expect(result.txHash).toBeDefined();
-      expect(demos.transfer).toHaveBeenCalledWith("demos1recipient", 5, "HIVE_TIP:tx123");
+      // Step 1: transfer creates signed tx (2 params — memo not passed to SDK)
+      expect(demos.transfer).toHaveBeenCalledWith("demos1recipient", 5);
+      // Step 2: confirm validates the signed tx
+      expect(demos.confirm).toHaveBeenCalled();
+      // Step 3: broadcast submits to network
+      expect(demos.broadcast).toHaveBeenCalled();
     });
 
-    it("returns txHash from transfer response", async () => {
+    it("extracts txHash from confirm response (SDK convention)", async () => {
       const result = await bridge.transferDem("demos1recipient", 3, "memo");
+      // extractTxHash checks confirm response first, then broadcast
       expect(result.txHash).toBe("mock-transfer-hash");
+    });
+
+    it("does not pass memo to SDK transfer (SDK only accepts 2 params)", async () => {
+      await bridge.transferDem("demos1recipient", 5, "HIVE_TIP:tx123");
+      // transfer should be called with exactly 2 args, not 3
+      expect(demos.transfer).toHaveBeenCalledWith("demos1recipient", 5);
+      expect(demos.transfer.mock.calls[0]).toHaveLength(2);
     });
   });
 });

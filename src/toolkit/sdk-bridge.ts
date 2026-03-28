@@ -55,7 +55,12 @@ const DAHR_ERROR_KEYWORDS = ["unauthorized", "forbidden", "rate limit", "api key
 /** Minimal typed surface for Demos SDK methods used by the bridge */
 interface DemosRpcMethods {
   web2: { createDahr(): Promise<{ startProxy(opts: { url: string; method: string }): Promise<Record<string, unknown>> }> };
-  transfer(to: string, amount: number, memo: string): Promise<{ hash?: string; txHash?: string }>;
+  /** Creates a signed native transfer transaction (does NOT broadcast — must call confirm+broadcast) */
+  transfer(to: string, amount: number): Promise<{ hash?: string; content?: Record<string, unknown>; [key: string]: unknown }>;
+  /** Confirms a signed transaction (validates gas/membership) */
+  confirm(transaction: unknown): Promise<unknown>;
+  /** Broadcasts a confirmed transaction to the network */
+  broadcast(validityData: unknown): Promise<unknown>;
   sendTransaction(txData: unknown): Promise<{ hash?: string; txHash?: string }>;
   queryTx?(txHash: string): Promise<{ sender?: string } | null>;
   getTx?(txHash: string): Promise<{ sender?: string } | null>;
@@ -494,10 +499,14 @@ export function createSdkBridge(
       if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error(`transferDem: invalid amount ${amount} — must be a positive finite number`);
       }
-      const result = await rpc.transfer(to, amount, memo);
-      const txHash = result?.hash ?? result?.txHash;
+      // SDK transfer() creates signed tx only (2 params — memo not supported at SDK level).
+      // Must confirm + broadcast to actually submit to the network.
+      const signedTx = await rpc.transfer(to, amount);
+      const validity = await rpc.confirm(signedTx);
+      const broadcastResult = await rpc.broadcast(validity);
+      const txHash = extractTxHash(validity, broadcastResult);
       if (!txHash) {
-        throw new Error("DEM transfer succeeded but txHash not found in response");
+        throw new Error("DEM transfer broadcast succeeded but txHash not found in response");
       }
       return { txHash: String(txHash) };
     },
