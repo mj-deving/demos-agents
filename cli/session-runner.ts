@@ -2233,6 +2233,13 @@ async function runPublishAutonomous(
               summary = fetchResult.response.bodyText.slice(0, 800);
             }
 
+            // Reject source data too thin for LLM to generate quality output
+            const MIN_SOURCE_CHARS = 50;
+            if (summary.length < MIN_SOURCE_CHARS) {
+              info(`Source data too thin for "${candidate.sourceId}" (${summary.length} chars < ${MIN_SOURCE_CHARS})${ci < candidates.length - 1 ? " — trying next candidate" : ""}`);
+              continue;
+            }
+
             attestedData = {
               source: candidate.source.name || candidate.sourceId,
               url: candidate.url,

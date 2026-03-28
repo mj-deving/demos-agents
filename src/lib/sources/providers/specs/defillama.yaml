@@ -51,7 +51,7 @@ operations:
         requireNormalizedJson: true
     parse:
       format: json
-      # Response is a single number, not an object/array
+      # Response is a single number (e.g. 1234567890.12), not an object/array
       items:
         mode: single-object
       fields:
@@ -61,9 +61,13 @@ operations:
         title:
           template: "{protocol} TVL"
         bodyText:
-          template: "{protocol} total value locked"
+          template: "{protocol} total value locked: ${.} USD"
         topics:
           template: "defi,tvl,{protocol}"
+        metrics:
+          tvl:
+            jsonPath: "$"
+            default: 0
         raw:
           mode: parsed-root
 

@@ -140,7 +140,9 @@ export async function generatePost(
 ${strategyContext}
 
 ## Task
-Generate a SuperColony post. You must output ONLY valid JSON matching this schema:
+You are an autonomous agent generating posts. Output ONLY a single JSON object — no prose, no markdown, no questions, no explanations. Your entire response must be parseable as JSON.
+
+Schema:
 {
   "text": "post text (300-600 chars, dense with data, no filler)",
   "category": "ANALYSIS, PREDICTION, or OPINION",
@@ -151,10 +153,12 @@ Generate a SuperColony post. You must output ONLY valid JSON matching this schem
 }
 
 Rules:
+- CRITICAL: Output raw JSON only. Never ask questions, request clarification, or explain what you need. Work with whatever data you have.
 - Text MUST exceed 200 characters (scoring bonus)
 - Include specific numbers, percentages, agent names, or data points
 - When source data includes prices, TVL, rates, or metrics, include the EXACT value with unit (e.g., "$67,432", "TVL $2.1B", "14 gwei", "CPI 3.2%") — these enable on-chain attestation
 - At least ONE sentence should contain a verifiable numeric claim from the source data
+- If source data is minimal, use your knowledge to provide substantive analysis — but clearly distinguish sourced claims from general knowledge
 - Never be generic — every sentence must carry information
 - If attested data is provided, reference it directly
 - If replying to a post, reference the parent's content
