@@ -1,0 +1,94 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {
+    "convention_outlier": 88.3
+  },
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "Consistent camelCase naming across all directories — no snake_case drift detected. naming_by_directory shows pure camelCase in every subdirectory",
+        "No default exports anywhere in src/ — all named exports consistently",
+        "All 20+ plugins follow create*Plugin factory pattern with consistent FrameworkPlugin return type",
+        "Plugins that wire into the extension system export bare hook functions (e.g., signalsBeforeSense, sourcesAfterPublishDraft) alongside the factory — consistent across sources, signals, predictions, tips, lifecycle",
+        "File naming is consistently kebab-case across all directories",
+        "Toolkit tools follow a uniform pattern: import types, import ok/err/demosError, import DemosSession, use withToolWrapper",
+        "One exact function duplication: normalizeFeedPosts in publish-pipeline.ts and feed-filter.ts",
+        "Guard files in toolkit/guards/ all follow consistent pattern: import state-helpers, define constants, export check* function"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "normalizeFeedPosts duplication between publish-pipeline.ts and feed-filter.ts. Plugin export pattern has a minor inconsistency where some plugins export hooks for two different consumption paths (extension dispatcher + FrameworkPlugin registry) without documenting why."
+    }
+  },
+  "dimension_judgment": {
+    "convention_outlier": {
+      "dimension_character": "The codebase demonstrates unusually strong convention discipline for a TypeScript project of this size. camelCase naming is universal across all directories, file naming is consistently kebab-case, all exports are named (no default exports), and the plugin system follows a uniform factory pattern. The toolkit tools share a consistent structural pattern with withToolWrapper, and guard modules share a consistent state-helpers-based pattern. The only meaningful convention outlier is the normalizeFeedPosts duplication between two files in different subsystems.",
+      "score_rationale": "A developer working here would find conventions highly predictable — patterns learned in one area reliably apply everywhere. The naming census shows pure camelCase across all 20+ directories. The plugin factory pattern, toolkit tool pattern, and guard pattern are all consistent. The normalizeFeedPosts duplication is a concrete outlier but is a single instance rather than a systemic problem. This places the codebase around 88, solidly in the 'strong with minor friction' range — the one duplication and the dual-export pattern in some plugins are isolated rough edges."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "normalize_feed_duplication_convention",
+      "summary": "Exact duplicate function normalizeFeedPosts exists in publish-pipeline.ts and feed-filter.ts",
+      "related_files": [
+        "src/actions/publish-pipeline.ts",
+        "src/lib/pipeline/feed-filter.ts"
+      ],
+      "evidence": [
+        "Confirmed by desloppify show dupes: exact duplicate at publish-pipeline.ts:86 and feed-filter.ts:101",
+        "Both implementations are identical — same payload?.posts ?? payload?.results ?? ... chain"
+      ],
+      "suggestion": "Delete the copy in publish-pipeline.ts and import from feed-filter.ts. This is a single-edit fix.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "normalizeFeedPosts was likely copied during the publish pipeline extraction from the original codebase rather than shared through an import"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Universal camelCase naming across all directories",
+          "description": "Every directory uses pure camelCase function/variable naming with zero snake_case drift. This is verified by the naming_by_directory census across 20+ directories. A developer can trust this convention universally.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "All named exports, no default exports",
+          "description": "No files in src/ use default exports. This eliminates the inconsistency between named and default import patterns that plagues many TypeScript codebases.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Uniform plugin factory pattern",
+          "description": "All 20+ plugins export a create*Plugin factory returning FrameworkPlugin. Plugins that also wire into the extension dispatcher additionally export bare hook functions. This dual-export is consistent across all hook-providing plugins.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent toolkit tool structural pattern",
+          "description": "All toolkit tools follow the same structure: type imports, ok/err/demosError imports, DemosSession import, withToolWrapper wrapping, validateInput schema check, then domain logic. This makes tools highly predictable to read and write.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent kebab-case file naming",
+          "description": "All source files use kebab-case filenames (e.g., sdk-bridge.ts, write-rate-limit.ts, attestation-policy.ts). No PascalCase or camelCase file names exist.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

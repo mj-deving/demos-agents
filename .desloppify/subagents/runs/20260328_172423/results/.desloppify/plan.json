@@ -1,0 +1,737 @@
+{
+  "version": 8,
+  "created": "2026-03-28T17:34:36+00:00",
+  "updated": "2026-03-28T17:34:36+00:00",
+  "queue_order": [
+    "subjective::ai_generated_debt",
+    "subjective::api_surface_coherence",
+    "subjective::contract_coherence",
+    "subjective::cross_module_architecture",
+    "subjective::design_coherence",
+    "subjective::error_consistency",
+    "subjective::high_level_elegance",
+    "subjective::incomplete_migration",
+    "subjective::initialization_coupling",
+    "subjective::logic_clarity",
+    "subjective::low_level_elegance",
+    "subjective::mid_level_elegance",
+    "subjective::package_organization",
+    "subjective::test_strategy",
+    "subjective::type_safety",
+    "triage::strategize",
+    "triage::observe",
+    "triage::reflect",
+    "triage::organize",
+    "triage::enrich",
+    "triage::sense-check",
+    "triage::commit"
+  ],
+  "deferred": [],
+  "skipped": {},
+  "active_cluster": null,
+  "overrides": {
+    "review::.::holistic::cross_module_architecture::extensions_plugin_cycle": {
+      "issue_id": "review::.::holistic::cross_module_architecture::extensions_plugin_cycle",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-cross_module_architecture",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::cross_module_architecture::sdk_module_mutable_state": {
+      "issue_id": "review::.::holistic::cross_module_architecture::sdk_module_mutable_state",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-cross_module_architecture",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::cross_module_architecture::normalize_feed_duplication": {
+      "issue_id": "review::.::holistic::cross_module_architecture::normalize_feed_duplication",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-cross_module_architecture",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::high_level_elegance::orphaned_reactive_subsystem": {
+      "issue_id": "review::.::holistic::high_level_elegance::orphaned_reactive_subsystem",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-high_level_elegance",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::high_level_elegance::orphaned_lib_flat_files": {
+      "issue_id": "review::.::holistic::high_level_elegance::orphaned_lib_flat_files",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-high_level_elegance",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::high_level_elegance::orphaned_action_executors": {
+      "issue_id": "review::.::holistic::high_level_elegance::orphaned_action_executors",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-high_level_elegance",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::error_consistency::bridge_apicall_untyped_errors": {
+      "issue_id": "review::.::holistic::error_consistency::bridge_apicall_untyped_errors",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-error_consistency",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::error_consistency::legacy_sdk_apicall_any_catch": {
+      "issue_id": "review::.::holistic::error_consistency::legacy_sdk_apicall_any_catch",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-error_consistency",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::error_consistency::unguarded_json_parse_subprocess": {
+      "issue_id": "review::.::holistic::error_consistency::unguarded_json_parse_subprocess",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-error_consistency",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::error_consistency::unguarded_json_parse_discover_sources": {
+      "issue_id": "review::.::holistic::error_consistency::unguarded_json_parse_discover_sources",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-error_consistency",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::error_consistency::bridge_silent_catch_density": {
+      "issue_id": "review::.::holistic::error_consistency::bridge_silent_catch_density",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-error_consistency",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::dual_publish_pipeline_types": {
+      "issue_id": "review::.::holistic::mid_level_elegance::dual_publish_pipeline_types",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-mid_level_elegance",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::session_runner_untyped_phase_data": {
+      "issue_id": "review::.::holistic::mid_level_elegance::session_runner_untyped_phase_data",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-mid_level_elegance",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::mid_level_elegance::session_runner_wide_coupling": {
+      "issue_id": "review::.::holistic::mid_level_elegance::session_runner_wide_coupling",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-mid_level_elegance",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::test_strategy::publish_pipeline_untested": {
+      "issue_id": "review::.::holistic::test_strategy::publish_pipeline_untested",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-test_strategy",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::test_strategy::orphaned_test_files": {
+      "issue_id": "review::.::holistic::test_strategy::orphaned_test_files",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-test_strategy",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::ai_generated_debt::barrel_docstring_bloat": {
+      "issue_id": "review::.::holistic::ai_generated_debt::barrel_docstring_bloat",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-ai_generated_debt",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::ai_generated_debt::observe_plugin_triple_restate": {
+      "issue_id": "review::.::holistic::ai_generated_debt::observe_plugin_triple_restate",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-ai_generated_debt",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::ai_generated_debt::trivial_constant_docstrings": {
+      "issue_id": "review::.::holistic::ai_generated_debt::trivial_constant_docstrings",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-ai_generated_debt",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::incomplete_migration::write_rate_limit_dual_path": {
+      "issue_id": "review::.::holistic::incomplete_migration::write_rate_limit_dual_path",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-incomplete_migration",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::incomplete_migration::deprecated_source_discovery_fn": {
+      "issue_id": "review::.::holistic::incomplete_migration::deprecated_source_discovery_fn",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-incomplete_migration",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::package_organization::reactive_mostly_orphaned": {
+      "issue_id": "review::.::holistic::package_organization::reactive_mostly_orphaned",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-package_organization",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::package_organization::lib_root_orphaned_files": {
+      "issue_id": "review::.::holistic::package_organization::lib_root_orphaned_files",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-package_organization",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::package_organization::hooks_dir_fully_orphaned": {
+      "issue_id": "review::.::holistic::package_organization::hooks_dir_fully_orphaned",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-package_organization",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::initialization_coupling::sdk_mutable_exported_lets": {
+      "issue_id": "review::.::holistic::initialization_coupling::sdk_mutable_exported_lets",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-initialization_coupling",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::initialization_coupling::sdk_crypto_polyfill_side_effect": {
+      "issue_id": "review::.::holistic::initialization_coupling::sdk_crypto_polyfill_side_effect",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-initialization_coupling",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::initialization_coupling::observe_implicit_init_ordering": {
+      "issue_id": "review::.::holistic::initialization_coupling::observe_implicit_init_ordering",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-initialization_coupling",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::design_coherence::action_executor_context_bloat": {
+      "issue_id": "review::.::holistic::design_coherence::action_executor_context_bloat",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-design_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::design_coherence::sdk_bridge_mixed_responsibilities": {
+      "issue_id": "review::.::holistic::design_coherence::sdk_bridge_mixed_responsibilities",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-design_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::design_coherence::orphaned_files_persist": {
+      "issue_id": "review::.::holistic::design_coherence::orphaned_files_persist",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-design_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::design_coherence::publish_pipeline_mixed_concerns": {
+      "issue_id": "review::.::holistic::design_coherence::publish_pipeline_mixed_concerns",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-design_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::design_coherence::systemic_large_file_pattern": {
+      "issue_id": "review::.::holistic::design_coherence::systemic_large_file_pattern",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-design_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::design_coherence::llm_ts_high_cyclomatic": {
+      "issue_id": "review::.::holistic::design_coherence::llm_ts_high_cyclomatic",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-design_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::contract_coherence::apicall_error_flattening": {
+      "issue_id": "review::.::holistic::contract_coherence::apicall_error_flattening",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-contract_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::contract_coherence::session_state_any_fields": {
+      "issue_id": "review::.::holistic::contract_coherence::session_state_any_fields",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-contract_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::contract_coherence::attest_result_data_any": {
+      "issue_id": "review::.::holistic::contract_coherence::attest_result_data_any",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-contract_coherence",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::logic_clarity::sticky_indexer_lag_flag": {
+      "issue_id": "review::.::holistic::logic_clarity::sticky_indexer_lag_flag",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-logic_clarity",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::logic_clarity::publish_txhash_extraction_chain": {
+      "issue_id": "review::.::holistic::logic_clarity::publish_txhash_extraction_chain",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-logic_clarity",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::logic_clarity::apicall_unreachable_fallback": {
+      "issue_id": "review::.::holistic::logic_clarity::apicall_unreachable_fallback",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-logic_clarity",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::type_safety::action_executor_llm_any": {
+      "issue_id": "review::.::holistic::type_safety::action_executor_llm_any",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-type_safety",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::type_safety::feed_filter_any_density": {
+      "issue_id": "review::.::holistic::type_safety::feed_filter_any_density",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-type_safety",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::type_safety::tlsn_bridge_as_any_casts": {
+      "issue_id": "review::.::holistic::type_safety::tlsn_bridge_as_any_casts",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-type_safety",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "review::.::holistic::type_safety::session_state_any_fields": {
+      "issue_id": "review::.::holistic::type_safety::session_state_any_fields",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/review-type_safety",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::ai_generated_debt": {
+      "issue_id": "subjective::ai_generated_debt",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::api_surface_coherence": {
+      "issue_id": "subjective::api_surface_coherence",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::contract_coherence": {
+      "issue_id": "subjective::contract_coherence",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::cross_module_architecture": {
+      "issue_id": "subjective::cross_module_architecture",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::design_coherence": {
+      "issue_id": "subjective::design_coherence",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::error_consistency": {
+      "issue_id": "subjective::error_consistency",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::high_level_elegance": {
+      "issue_id": "subjective::high_level_elegance",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::incomplete_migration": {
+      "issue_id": "subjective::incomplete_migration",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::initialization_coupling": {
+      "issue_id": "subjective::initialization_coupling",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::logic_clarity": {
+      "issue_id": "subjective::logic_clarity",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::low_level_elegance": {
+      "issue_id": "subjective::low_level_elegance",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::mid_level_elegance": {
+      "issue_id": "subjective::mid_level_elegance",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::package_organization": {
+      "issue_id": "subjective::package_organization",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::test_strategy": {
+      "issue_id": "subjective::test_strategy",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    },
+    "subjective::type_safety": {
+      "issue_id": "subjective::type_safety",
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "cluster": "auto/under-target-review",
+      "updated_at": "2026-03-28T17:34:36+00:00"
+    }
+  },
+  "clusters": {
+    "auto/review-cross_module_architecture": {
+      "name": "auto/review-cross_module_architecture",
+      "description": "Address 3 cross_module_architecture review issues",
+      "issue_ids": [
+        "review::.::holistic::cross_module_architecture::extensions_plugin_cycle",
+        "review::.::holistic::cross_module_architecture::sdk_module_mutable_state",
+        "review::.::holistic::cross_module_architecture::normalize_feed_duplication"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::cross_module_architecture",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-high_level_elegance": {
+      "name": "auto/review-high_level_elegance",
+      "description": "Address 3 high_level_elegance review issues",
+      "issue_ids": [
+        "review::.::holistic::high_level_elegance::orphaned_reactive_subsystem",
+        "review::.::holistic::high_level_elegance::orphaned_lib_flat_files",
+        "review::.::holistic::high_level_elegance::orphaned_action_executors"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::high_level_elegance",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-error_consistency": {
+      "name": "auto/review-error_consistency",
+      "description": "Address 5 error_consistency review issues",
+      "issue_ids": [
+        "review::.::holistic::error_consistency::bridge_apicall_untyped_errors",
+        "review::.::holistic::error_consistency::legacy_sdk_apicall_any_catch",
+        "review::.::holistic::error_consistency::unguarded_json_parse_subprocess",
+        "review::.::holistic::error_consistency::unguarded_json_parse_discover_sources",
+        "review::.::holistic::error_consistency::bridge_silent_catch_density"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::error_consistency",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-mid_level_elegance": {
+      "name": "auto/review-mid_level_elegance",
+      "description": "Address 3 mid_level_elegance review issues",
+      "issue_ids": [
+        "review::.::holistic::mid_level_elegance::dual_publish_pipeline_types",
+        "review::.::holistic::mid_level_elegance::session_runner_untyped_phase_data",
+        "review::.::holistic::mid_level_elegance::session_runner_wide_coupling"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::mid_level_elegance",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-test_strategy": {
+      "name": "auto/review-test_strategy",
+      "description": "Address 2 test_strategy review issues",
+      "issue_ids": [
+        "review::.::holistic::test_strategy::publish_pipeline_untested",
+        "review::.::holistic::test_strategy::orphaned_test_files"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::test_strategy",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-ai_generated_debt": {
+      "name": "auto/review-ai_generated_debt",
+      "description": "Address 3 ai_generated_debt review issues",
+      "issue_ids": [
+        "review::.::holistic::ai_generated_debt::barrel_docstring_bloat",
+        "review::.::holistic::ai_generated_debt::observe_plugin_triple_restate",
+        "review::.::holistic::ai_generated_debt::trivial_constant_docstrings"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::ai_generated_debt",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-incomplete_migration": {
+      "name": "auto/review-incomplete_migration",
+      "description": "Address 2 incomplete_migration review issues",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::write_rate_limit_dual_path",
+        "review::.::holistic::incomplete_migration::deprecated_source_discovery_fn"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::incomplete_migration",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-package_organization": {
+      "name": "auto/review-package_organization",
+      "description": "Address 3 package_organization review issues",
+      "issue_ids": [
+        "review::.::holistic::package_organization::reactive_mostly_orphaned",
+        "review::.::holistic::package_organization::lib_root_orphaned_files",
+        "review::.::holistic::package_organization::hooks_dir_fully_orphaned"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::package_organization",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-initialization_coupling": {
+      "name": "auto/review-initialization_coupling",
+      "description": "Address 3 initialization_coupling review issues",
+      "issue_ids": [
+        "review::.::holistic::initialization_coupling::sdk_mutable_exported_lets",
+        "review::.::holistic::initialization_coupling::sdk_crypto_polyfill_side_effect",
+        "review::.::holistic::initialization_coupling::observe_implicit_init_ordering"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::initialization_coupling",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-design_coherence": {
+      "name": "auto/review-design_coherence",
+      "description": "Address 6 design_coherence review issues",
+      "issue_ids": [
+        "review::.::holistic::design_coherence::action_executor_context_bloat",
+        "review::.::holistic::design_coherence::sdk_bridge_mixed_responsibilities",
+        "review::.::holistic::design_coherence::orphaned_files_persist",
+        "review::.::holistic::design_coherence::publish_pipeline_mixed_concerns",
+        "review::.::holistic::design_coherence::systemic_large_file_pattern",
+        "review::.::holistic::design_coherence::llm_ts_high_cyclomatic"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::design_coherence",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-contract_coherence": {
+      "name": "auto/review-contract_coherence",
+      "description": "Address 3 contract_coherence review issues",
+      "issue_ids": [
+        "review::.::holistic::contract_coherence::apicall_error_flattening",
+        "review::.::holistic::contract_coherence::session_state_any_fields",
+        "review::.::holistic::contract_coherence::attest_result_data_any"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::contract_coherence",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-logic_clarity": {
+      "name": "auto/review-logic_clarity",
+      "description": "Address 3 logic_clarity review issues",
+      "issue_ids": [
+        "review::.::holistic::logic_clarity::sticky_indexer_lag_flag",
+        "review::.::holistic::logic_clarity::publish_txhash_extraction_chain",
+        "review::.::holistic::logic_clarity::apicall_unreachable_fallback"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::logic_clarity",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/review-type_safety": {
+      "name": "auto/review-type_safety",
+      "description": "Address 4 type_safety review issues",
+      "issue_ids": [
+        "review::.::holistic::type_safety::action_executor_llm_any",
+        "review::.::holistic::type_safety::feed_filter_any_density",
+        "review::.::holistic::type_safety::tlsn_bridge_as_any_casts",
+        "review::.::holistic::type_safety::session_state_any_fields"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "review::type_safety",
+      "action": "address design quality issues from AI code review",
+      "execution_status": "review",
+      "user_modified": false,
+      "action_type": "refactor",
+      "execution_policy": "planned_only"
+    },
+    "auto/under-target-review": {
+      "name": "auto/under-target-review",
+      "description": "Consider re-reviewing 15 dimensions under target score",
+      "issue_ids": [
+        "subjective::ai_generated_debt",
+        "subjective::api_surface_coherence",
+        "subjective::contract_coherence",
+        "subjective::cross_module_architecture",
+        "subjective::design_coherence",
+        "subjective::error_consistency",
+        "subjective::high_level_elegance",
+        "subjective::incomplete_migration",
+        "subjective::initialization_coupling",
+        "subjective::logic_clarity",
+        "subjective::low_level_elegance",
+        "subjective::mid_level_elegance",
+        "subjective::package_organization",
+        "subjective::test_strategy",
+        "subjective::type_safety"
+      ],
+      "created_at": "2026-03-28T17:34:36+00:00",
+      "updated_at": "2026-03-28T17:34:36+00:00",
+      "auto": true,
+      "cluster_key": "subjective::under-target",
+      "action": "desloppify review --prepare --dimensions ai_generated_debt,api_surface_coherence,contract_coherence,cross_module_architecture,design_coherence,error_consistency,high_level_elegance,incomplete_migration,initialization_coupling,logic_clarity,low_level_elegance,mid_level_elegance,package_organization,test_strategy,type_safety",
+      "execution_status": "review",
+      "user_modified": false,
+      "optional": true,
+      "action_type": "manual_fix",
+      "execution_policy": "planned_only"
+    }
+  },
+  "superseded": {},
+  "promoted_ids": [],
+  "plan_start_scores": {
+    "strict": 79.0,
+    "overall": 79.0,
+    "objective": 100.0,
+    "verified": 100.0
+  },
+  "refresh_state": {
+    "_subjective_migration_pruned": true,
+    "lifecycle_phase": "plan",
+    "postflight_scan_completed_at_scan_count": 2
+  },
+  "execution_log": [
+    {
+      "timestamp": "2026-03-28T17:34:36+00:00",
+      "action": "sync_subjective",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-28T17:34:36+00:00",
+      "action": "auto_cluster",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-28T17:34:36+00:00",
+      "action": "sync_triage",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "injected": true
+      }
+    },
+    {
+      "timestamp": "2026-03-28T17:34:36+00:00",
+      "action": "sync_lifecycle_phase",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "phase": "assessment"
+      }
+    },
+    {
+      "timestamp": "2026-03-28T17:34:36+00:00",
+      "action": "seed_start_scores",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-28T17:34:36+00:00",
+      "action": "complete_postflight_scan",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "scan_count": 2
+      }
+    }
+  ],
+  "epic_triage_meta": {},
+  "commit_log": [],
+  "uncommitted_issues": [],
+  "commit_tracking_branch": null,
+  "scan_count_at_plan_start": 2
+}

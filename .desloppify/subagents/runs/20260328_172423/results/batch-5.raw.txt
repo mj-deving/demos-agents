@@ -1,0 +1,80 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {
+    "naming_quality": 88.5
+  },
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "Toolkit tools use precise domain verbs: scan(), tip(), pay(), connect(), verify() — all directly describe what they do",
+        "Pipeline functions use descriptive names: runSourceScan, detectSignals, loadBaselines, buildTopicIndex, buildAgentIndex",
+        "Guard functions communicate intent: checkAndRecordTip, reservePaySpend, checkPayReceipt, getWriteRateRemaining",
+        "Helper functions in feed-filter.ts use precise names: clampScore, normalizeTimestamp, dedupeFilteredPosts, normalizeFeedPosts",
+        "Type names match their domain: SourceRecordV2, AgentSourceView, ScanPost, ScanOpportunity, DetectedSignal, BaselineStore",
+        "Constants are self-documenting: MIN_REACTIONS_FOR_ENGAGEMENT, MIN_TEXT_LENGTH_FOR_SUBSTANCE, RING_BUFFER_CAPACITY, MAD_FLOOR",
+        "File naming is consistent kebab-case across all directories: sdk-bridge.ts, signal-detection.ts, feed-filter.ts, tip-spend-cap.ts",
+        "isDuplicate() in improvement-utils.ts returns { duplicate: boolean; existingId?: string } — name implies boolean return",
+        "Extension hook runners use lifecycle-specific names: runBeforeSense, runBeforePublishDraft, runAfterPublishDraft, runAfterAct"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "isDuplicate returns object instead of boolean (name/behavior mismatch). checkAndRecordTip dual-mode via boolean parameter could be two functions. Some feed-filter.ts helpers use 'any' in parameter types (getAuthor, getText, getCategory) — the 'get' prefix suggests pure retrieval from typed data but actually extracts from untyped payloads."
+    }
+  },
+  "dimension_judgment": {
+    "naming_quality": {
+      "dimension_character": "The codebase demonstrates strong naming discipline overall. Toolkit tools, pipeline functions, guards, and types consistently use domain-specific verbs and nouns that communicate intent. A developer reading function names across scan.ts, tip.ts, pay.ts, signal-detection.ts, and feed-filter.ts can predict behavior without checking implementations. The few naming issues are isolated to specific functions rather than systemic patterns.",
+      "score_rationale": "Names are predominantly precise and domain-aligned, placing this solidly above the 80 anchor. The consistent use of domain verbs (scan, tip, verify, attest, publish) and descriptive compound names (checkAndRecordTip, resolvePostAuthor, parseFeedPosts) across 164 files demonstrates a codebase convention that serves developers well. The isDuplicate name/behavior mismatch and a handful of 'any'-typed get helpers with misleading precision are isolated blemishes that prevent reaching 90."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "is_duplicate_returns_object",
+      "summary": "isDuplicate() returns { duplicate: boolean; existingId?: string } — name implies boolean return",
+      "related_files": ["src/lib/improvement-utils.ts"],
+      "evidence": ["Line 68: isDuplicate returns an object with duplicate and existingId fields, but the 'is' prefix convention universally implies a boolean predicate"],
+      "suggestion": "Rename to findDuplicate() or checkDuplicate() which better communicate the richer return type. Alternatively, split into isDuplicate(): boolean and findExistingDuplicate(): string | undefined.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Single isolated naming choice, not a systemic issue"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "naming_quality": {
+      "add": [
+        {
+          "header": "Domain-specific verb convention in toolkit",
+          "description": "All 10 toolkit tools use precise domain verbs (scan, tip, pay, verify, connect, disconnect, react, publish, attest, discover) that directly describe blockchain operations. No generic 'process' or 'handle' verbs in the public tool API.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent kebab-case file naming",
+          "description": "All source files across all directories use kebab-case (sdk-bridge.ts, signal-detection.ts, tip-spend-cap.ts). No camelCase or PascalCase file names exist, eliminating filesystem ambiguity.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Self-documenting constants throughout",
+          "description": "Numeric constants are named descriptively (MIN_REACTIONS_FOR_ENGAGEMENT, RING_BUFFER_CAPACITY, MAD_FLOOR, ANTI_SIGNAL_DIVERGENCE_THRESHOLD) rather than using magic numbers. This pattern holds consistently across toolkit guards, pipeline modules, and domain logic.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Lifecycle hook naming convention",
+          "description": "Extension hooks follow a strict before/after lifecycle pattern (runBeforeSense, runBeforePublishDraft, runAfterPublishDraft, runAfterAct, runAfterConfirm) that communicates execution timing. The 'run' prefix is intentional here — it denotes dispatching to registered hooks, not generic processing.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

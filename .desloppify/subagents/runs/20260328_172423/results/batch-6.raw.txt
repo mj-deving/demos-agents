@@ -1,0 +1,91 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {
+    "abstraction_fitness": 86.2
+  },
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "wrapper_rate is 1.4% (3 wrappers / 214 functions) — extremely low pass-through indirection",
+        "StateStore interface has one implementation (FileStateStore) but is the toolkit's public contract — intentional for pluggability",
+        "FrameworkPlugin has 5+ implementations (ethos, sc-oracle, tips, signals, calibrate) — genuine polymorphism",
+        "LLMProvider interface has one implementation but is designed for caller injection — intentional abstraction boundary",
+        "Three barrel index.ts files (lib/network, lib/pipeline, lib/util) have zero importers — dead facade code",
+        "toolkit/index.ts barrel is well-structured with explicit named exports grouped by concern — genuine stable entry point",
+        "withToolWrapper extracts cross-cutting concerns (timing, touch, telemetry, error wrapping) shared by all 10 tools",
+        "declarative-engine.ts createAdapterFromSpec implements full ProviderAdapter contract — single factory function replacing ~250 LOC per provider",
+        "Guard functions (checkAndRecordTip, reservePaySpend) directly implement domain logic without unnecessary layering"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Three unused barrel/facade index.ts files add dead indirection. Wide param bags in declarative-engine.ts (56 config_bag_mentions) suggest config threading that could be narrowed at call sites.",
+      "sub_axes": {
+        "abstraction_leverage": 92.0,
+        "indirection_cost": 8.0,
+        "interface_honesty": 82.0,
+        "delegation_density": 95.0,
+        "definition_directness": 90.0,
+        "type_discipline": 85.0
+      }
+    }
+  },
+  "dimension_judgment": {
+    "abstraction_fitness": {
+      "dimension_character": "Abstractions in this codebase are predominantly earned. The toolkit layer provides a clean public surface with genuine cross-cutting concern extraction (withToolWrapper), the plugin system uses real polymorphism (FrameworkPlugin with 5+ implementations), and the declarative engine replaces per-provider boilerplate with a data-driven factory. The few issues are isolated: three dead barrel files and some wide config bag threading in the largest module.",
+      "score_rationale": "With a 1.4% wrapper rate and clear value from every major abstraction layer, this sits comfortably above the 80 anchor. The toolkit barrel is intentional and well-organized, interfaces serve real polymorphic or pluggability needs, and pass-through wrappers are rare. The dead barrel files and config bag threading in declarative-engine.ts prevent reaching 90, but these are localized cleanup tasks, not structural problems."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "dead_barrel_facades",
+      "summary": "Three lib/ barrel index.ts files (network, pipeline, util) have zero importers — dead facades",
+      "related_files": ["src/lib/network/index.ts", "src/lib/pipeline/index.ts", "src/lib/util/index.ts"],
+      "evidence": [
+        "All three files are pure re-export barrels with 0 importers across the entire src/ tree",
+        "All consumers import from specific modules (e.g., from './pipeline/observe.js') rather than the barrel"
+      ],
+      "suggestion": "Delete these three index.ts files. They provide no value since all consumers already use direct imports. If barrel imports are desired in the future, add them when consumers actually need them.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Barrel files were likely created during initial directory restructuring but consumers were never migrated to use them"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "Low wrapper rate across codebase",
+          "description": "Only 3 of 214 function signatures are pass-through wrappers (1.4%). The codebase consistently avoids unnecessary indirection — functions add behavior, validation, or translation rather than forwarding.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Genuine polymorphism in plugin system",
+          "description": "FrameworkPlugin has 5+ implementations (ethos, sc-oracle, tips, signals, calibrate). StateStore is the toolkit's public contract for pluggable persistence. These are not ceremony interfaces — they serve real substitution needs.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "withToolWrapper earns its indirection",
+          "description": "The shared tool wrapper extracts timing, session touch, telemetry notification, and error wrapping into a single 50-line function used by all 10 toolkit tools. Clear cross-cutting concern with measurable deduplication.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Declarative engine as scaling mechanism",
+          "description": "createAdapterFromSpec replaces ~250 LOC per provider adapter with a data-driven YAML spec. This is abstraction that directly reduces code volume — adding a provider requires zero TypeScript.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

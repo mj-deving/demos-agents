@@ -1,0 +1,84 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 12,
+  "assessments": {
+    "authorization_consistency": 86.4
+  },
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "DemosSession stores authToken via local Symbol — prevents accidental leakage through JSON.stringify or console.log. checkExpired() is called on every token access.",
+        "All toolkit tools access the SDK bridge through session.getBridge() which enforces session expiry check — consistent auth gating.",
+        "apiCall() in sdk.ts uses origin-based check before attaching Bearer token — prevents token exfiltration to arbitrary URLs.",
+        "connect() enforces wallet file permissions (mode 600), symlink check, and TOCTOU-safe file handle (open then fstat).",
+        "SdkBridge.apiAccess 3-state (none/configured/authenticated) consistently gates API fallback in tools: scan checks apiAccess before enrichment, react checks before API fallback.",
+        "AUTH_PENDING_TOKEN sentinel prevents premature bearer token usage before authentication completes."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The legacy auth module (src/lib/auth/auth.ts) uses a file-based token cache at ~/.supercolony-auth.json that is separate from the toolkit session pattern. The two auth paths (toolkit DemosSession vs legacy auth cache) coexist, which could confuse developers about which is authoritative."
+    }
+  },
+  "dimension_judgment": {
+    "authorization_consistency": {
+      "dimension_character": "Authorization is consistently applied across the toolkit layer through a well-designed session abstraction. The DemosSession uses Symbol-based token storage, enforces expiry on every access, and all tools go through session.getBridge() which checks session validity. The apiCall helper prevents token exfiltration via origin checking. The connect() flow includes defense-in-depth: file permission validation, symlink rejection, and TOCTOU-safe reads. The main inconsistency is the coexistence of the toolkit session auth path and the legacy auth cache in src/lib/auth/auth.ts.",
+      "score_rationale": "A developer working in the toolkit can trust that auth patterns are uniformly applied — every tool accesses the bridge through session.getBridge() with expiry checks, and token storage is Symbol-isolated. The connect() security hardening (mode 600, symlink, TOCTOU) is thorough. The legacy auth cache coexistence is a minor concern since the toolkit is the intended public API. Score of 86.4 reflects strong, consistent auth patterns with limited legacy residue."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "legacy_auth_cache_coexistence",
+      "summary": "Legacy auth cache (src/lib/auth/auth.ts) coexists with toolkit DemosSession token management",
+      "related_files": ["src/lib/auth/auth.ts", "src/toolkit/session.ts", "src/toolkit/tools/connect.ts"],
+      "evidence": [
+        "auth.ts manages a file-based token cache at ~/.supercolony-auth.json with loadAuthCache/saveAuthCache",
+        "DemosSession manages its own authToken via Symbol storage with expiry",
+        "session-runner.ts appears to use the legacy auth path through connectWallet + apiCall from sdk.ts",
+        "The toolkit connect() handles authentication internally and stores the token in the session"
+      ],
+      "suggestion": "Since the codebase is moving toward toolkit-first, document that src/lib/auth/auth.ts is the legacy path used by session-runner, and DemosSession is the canonical auth boundary. Consider migrating session-runner to use toolkit connect() to unify the auth path.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The auth module in src/lib/auth/ predates the toolkit layer. When the toolkit was built, it internalized auth management in DemosSession/connect(), but the session-runner still uses the older path."
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "Symbol-based token storage prevents leakage",
+          "description": "DemosSession stores authToken via local Symbol (not Symbol.for) with toJSON redaction and custom inspect. This prevents accidental token exposure through serialization or logging.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Uniform session expiry gating on all tools",
+          "description": "Every tool accesses SDK through session.getBridge() which calls checkExpired(). The 30-minute inactivity timeout is consistently enforced without requiring per-tool expiry checks.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Origin-based bearer token attachment in apiCall",
+          "description": "The apiCall helper only attaches Bearer token to requests matching supercolony.ai origin, using URL origin comparison (not string prefix) to prevent subdomain spoofing attacks.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Connect enforces defense-in-depth wallet security",
+          "description": "connect() validates mode 600 permissions, rejects symlinks, and uses open-then-fstat to prevent TOCTOU attacks. Container environments get a documented downgrade to warning.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

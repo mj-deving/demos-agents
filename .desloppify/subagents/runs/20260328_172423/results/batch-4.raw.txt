@@ -1,0 +1,164 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {
+    "error_consistency": 80.8
+  },
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "Toolkit tools use a consistent error strategy: ToolResult<T> with typed DemosError (9 error codes), ok()/err() constructors, withToolWrapper catches exceptions and wraps in DemosError",
+        "connect/disconnect uses throw semantics (documented divergence from ToolResult pattern for lifecycle operations)",
+        "Guards return DemosError | null consistently — callers check with if (error) return err(error, ...)",
+        "toErrorMessage utility extracted into lib/util/errors.ts to standardize catch-value handling",
+        "sdk-bridge.ts apiCall catch returns { ok: false, status: 0, data: errorMessage } — callers cannot distinguish network errors from parse errors or auth failures",
+        "Legacy src/lib/network/sdk.ts apiCall has identical pattern: catch (err: any) returns { ok: false, status: 0, data: err.message } — no error type information preserved",
+        "sdk-bridge.ts has 15+ catch blocks — most return null for malformed data (appropriate for chain data parsing) but some silently swallow errors that could indicate auth or network issues",
+        "declarative-engine.ts has 20+ catch blocks — most are appropriate parse-failure guards returning null/empty, but the density makes it hard to trace which failures propagate",
+        "Plugins use dynamic imports with try/catch — error handling is inconsistent: some log and continue, others throw, some silently return",
+        "signals-plugin.ts uses Promise.allSettled correctly for independent API calls, then checks status — good pattern",
+        "JSON.parse without try/catch in subprocess.ts:11 (comment shows expected usage but actual callers must handle SyntaxError)",
+        "discover-sources.ts:80 has JSON.parse without try/catch on catalog file content"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "N/A — score is below 85"
+    }
+  },
+  "dimension_judgment": {
+    "error_consistency": {
+      "dimension_character": "The toolkit layer demonstrates excellent error consistency — typed DemosError codes, ToolResult envelope, consistent guard error patterns, and a central withToolWrapper that catches all unexpected exceptions. However, the bridge and legacy SDK layers have a weaker error strategy: apiCall returns { ok, status, data } where data is a string error message on failure, preventing callers from distinguishing error types. The declarative engine and bridge have high catch-block density with mostly appropriate parse-failure handling but some silent swallowing at boundaries where error context matters.",
+      "score_rationale": "The toolkit's error strategy is genuinely strong — a developer can predict how errors propagate through tools and guards. This would score in the high 80s alone. The bridge layer's catch-all pattern (returning string error messages without type discrimination) and the unguarded JSON.parse calls pull the score down because they create unpredictable failure modes at I/O boundaries. The overall score of around 81 reflects 'solid but uneven' — the toolkit layer is trustworthy but the bridge and legacy layers require reading each function to understand its failure modes."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "bridge_apicall_untyped_errors",
+      "summary": "sdk-bridge.ts apiCall catch returns string error data — callers cannot distinguish error types",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Line 563-567: catch block returns { ok: false, status: 0, data: `[${errorName}] ${message}` } — error type is lost in string interpolation",
+        "Callers like scan.ts, react.ts only check .ok — they cannot tell if the failure was network timeout, DNS failure, auth expiry, or rate limiting"
+      ],
+      "suggestion": "Return a structured error in the data field: { ok: false, status: 0, data: null, error: { type: err.constructor.name, message: err.message } }. Or add a dedicated 'errorType' field to ApiCallResult. This lets callers switch on error category without parsing strings.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "legacy_sdk_apicall_any_catch",
+      "summary": "Legacy sdk.ts apiCall uses catch (err: any) and returns bare err.message string — same untyped pattern as bridge",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Line 249: catch (err: any) { return { ok: false, status: 0, data: err.message } } — uses any type and loses all error context",
+        "Line 252: console.error logs warn but does not throw or propagate"
+      ],
+      "suggestion": "This is the legacy pre-toolkit code. If still actively used by CLI runners, apply the same typed error pattern suggested for sdk-bridge.ts. If it is only used by orphaned code, prioritize deletion alongside the orphaned files.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "unguarded_json_parse_subprocess",
+      "summary": "subprocess.ts usage pattern suggests callers will JSON.parse stdout without try/catch protection",
+      "related_files": [
+        "src/lib/util/subprocess.ts"
+      ],
+      "evidence": [
+        "Line 11 docstring: 'const data = JSON.parse(result.stdout)' — encourages unguarded parse",
+        "Security detector also flagged this at line 11 as json_parse_unguarded"
+      ],
+      "suggestion": "Export a parseToolOutput helper that wraps JSON.parse with a try/catch returning a typed result, or document in the docstring that callers must handle SyntaxError from malformed tool output.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "unguarded_json_parse_discover_sources",
+      "summary": "discover-sources.ts has JSON.parse without try/catch on catalog file content",
+      "related_files": [
+        "src/toolkit/tools/discover-sources.ts"
+      ],
+      "evidence": [
+        "Line 80: JSON.parse on file content — if catalog.json is malformed, this throws an uncaught SyntaxError",
+        "Security detector flagged: json_parse_unguarded at line 80"
+      ],
+      "suggestion": "Wrap in try/catch and return err(demosError('INVALID_INPUT', 'Malformed catalog file', false)) to match the toolkit's ToolResult error pattern.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "bridge_silent_catch_density",
+      "summary": "sdk-bridge.ts has 15+ catch blocks, several silently return null/empty without logging or propagation",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Lines 302, 325, 341, 391, 427, 503, 706, 761, 785, 866: catch blocks return null or skip entries without any logging",
+        "Most are appropriate for malformed chain data parsing (expected to encounter non-HIVE transactions), but catches at lines 641 and 564 handle auth/network errors where silent swallowing is problematic"
+      ],
+      "suggestion": "The parse-level catches (decodeHiveData, decodeHiveData recursion) are appropriate — chain data is untrusted. Focus on the apiCall catch (line 564) and publishHivePost catch (line 641) where silent failures can mask auth or network problems. Add structured error context to those specific catch blocks.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The toolkit layer was designed with a clean error strategy (DemosError + ToolResult) but the bridge layer predates this design and uses ad-hoc { ok, status, data } without typed errors",
+      "Chain data decoding inherently requires many catch blocks (untrusted input), making legitimate parse catches hard to distinguish from problematic error swallowing"
+    ],
+    "likely_symptoms": [
+      "unguarded_json_parse_subprocess",
+      "unguarded_json_parse_discover_sources"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "error_consistency": {
+      "add": [
+        {
+          "header": "Toolkit tools use consistent typed error strategy",
+          "description": "All toolkit tools return ToolResult<T> with typed DemosError (9 codes). ok()/err() constructors, withToolWrapper catches exceptions, guards return DemosError | null. A developer can predict error shape and handling across all tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "connect/disconnect uses throw semantics intentionally",
+          "description": "Unlike other toolkit tools, connect() throws DemosError directly. This is documented and intentional — lifecycle operations are not tool operations and follow different error semantics.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "toErrorMessage utility prevents raw catch-value handling",
+          "description": "lib/util/errors.ts exports toErrorMessage() to safely extract messages from unknown catch values. Used by health.ts and other modules to avoid (err as Error).message anti-pattern.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Bridge apiCall returns untyped string errors",
+          "description": "Both sdk-bridge.ts and legacy sdk.ts apiCall methods catch errors and return { ok: false, status: 0, data: errorMessage }. The string data field makes it impossible for callers to distinguish network, auth, rate-limit, or parse failures programmatically.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "High catch-block density in chain data decoding is appropriate",
+          "description": "sdk-bridge.ts decodeHiveData and related functions have 15+ catch blocks because chain transaction data is untrusted and arrives in multiple formats (hex, base64, raw, tuple). Returning null for malformed data is the correct strategy — these are expected non-HIVE transactions mixed in with HIVE posts.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

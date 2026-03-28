@@ -61,6 +61,9 @@ This toolkit handles real DEM tokens on mainnet. Every code change touching toke
 ### More Gotchas
 See `.ai/guides/gotchas-detail.md` for: credentials, scoring, quality gate, TLSN, source matching, LLM provider.
 
+### Architecture Decision Records
+Significant architectural decisions documented in `docs/decisions/` (ADR format). Check before proposing changes to established patterns. See `.ai/guides/sdk-rpc-reference.md` for SDK chain query methods.
+
 ## Conventions
 
 - Commit messages: clear "why", prefixed by area. File naming: kebab-case.

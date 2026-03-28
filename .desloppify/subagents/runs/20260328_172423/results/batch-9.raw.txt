@@ -1,0 +1,103 @@
+{
+  "batch": "mid_level_elegance",
+  "batch_index": 9,
+  "assessments": {
+    "mid_level_elegance": 79.5
+  },
+  "dimension_notes": {
+    "mid_level_elegance": {
+      "evidence": [
+        "Toolkit tools follow a uniform composition pattern: withToolWrapper -> validateInput -> guards -> bridge method -> ok/err. This is clean orchestration.",
+        "SdkBridge interface cleanly separates chain-first operations from API fallback, with explicit apiAccess state for conditional enrichment.",
+        "publish-pipeline.ts (actions/) and toolkit/tools/publish.ts define parallel AttestResult and PublishResult types with overlapping but different shapes — two translation boundaries for the same concept.",
+        "session-runner.ts imports from 15+ modules across actions/, lib/pipeline/, lib/sources/, lib/attestation/, lib/network/, lib/auth/, lib/util/ — the orchestrator has wide coupling surface.",
+        "Data translation between session-runner and publish-pipeline uses untyped 'any' intermediaries (extractPhaseData, extractPhaseMetrics switch blocks with result: any, state: any)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "mid_level_elegance": {
+      "dimension_character": "The toolkit layer demonstrates strong mid-level design: tool functions compose guards, validation, bridge calls, and result wrapping through a single withToolWrapper seam. The SdkBridge interface serves as a clean boundary between toolkit and SDK. However, the session-runner orchestrator has wide coupling (15+ direct imports) and relies on untyped intermediaries for phase data extraction. The parallel publish pipeline in actions/ duplicates types and concepts from the toolkit layer, creating a dual-boundary problem.",
+      "score_rationale": "The toolkit seams are genuinely well-designed — a developer can follow the flow from tool entry to bridge call without surprises. This pushes toward 85+. However, the session-runner's 15-module import fan and untyped phase data extraction, combined with the dual publish pipeline with duplicate types, create enough boundary friction to pull the score below 80. A developer modifying the publish flow must understand both actions/publish-pipeline.ts and toolkit/tools/publish.ts, which is the kind of integration confusion mid-level elegance measures."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "dual_publish_pipeline_types",
+      "summary": "actions/publish-pipeline.ts and toolkit/tools/publish.ts define parallel AttestResult and PublishResult types",
+      "related_files": ["src/actions/publish-pipeline.ts", "src/toolkit/tools/publish.ts", "src/toolkit/types.ts"],
+      "evidence": [
+        "publish-pipeline.ts defines its own AttestResult (type: 'dahr' | 'tlsn', url, requestedUrl, responseHash?, txHash, data?: any) and PublishResult (txHash, category, textLength, attestation?, warnings?)",
+        "toolkit/types.ts defines PublishResult (txHash only) and AttestResult (responseHash, txHash, url, data) with different shapes",
+        "session-runner.ts imports from actions/publish-pipeline.ts, not the toolkit — the toolkit publish path is a separate boundary"
+      ],
+      "suggestion": "Consolidate publish/attest result types into one canonical location (toolkit/types.ts) and have publish-pipeline.ts import from there. The pipeline's richer AttestResult (with requestedUrl, type) should become the canonical shape.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "session_runner_untyped_phase_data",
+      "summary": "session-runner.ts extractPhaseData/extractPhaseMetrics use result: any, state: any with fragile property access",
+      "related_files": ["cli/session-runner.ts"],
+      "evidence": [
+        "extractPhaseData(phase: string, result: any, state: any) at line ~110 accesses result.stats, result.activity, result.gaps, result.sourceSignals etc. with no type narrowing",
+        "extractPhaseMetrics(phase: string, result: any, state: any) similarly accesses untyped result properties",
+        "Comments say 'Paths verified against actual result shapes' but there is no compile-time enforcement"
+      ],
+      "suggestion": "Define a PhaseResult discriminated union (one variant per phase name) so the switch branches get type narrowing. This replaces the any with compile-time verification of property access.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "session_runner_wide_coupling",
+      "summary": "session-runner.ts imports from 15+ modules across 6 directories, creating a fragile orchestration surface",
+      "related_files": ["cli/session-runner.ts"],
+      "evidence": [
+        "Direct imports from: src/lib/util/subprocess, src/lib/scoring/quality-score, src/lib/state, src/lib/util/log, src/lib/review-findings, src/actions/llm, src/lib/llm/llm-provider, src/lib/network/sdk, src/actions/publish-pipeline, src/lib/attestation/claim-extraction, src/lib/attestation/attestation-planner, src/actions/attestation-executor, src/lib/sources/providers/declarative-engine, src/lib/attestation/attestation-policy, src/lib/agent-config, src/lib/pipeline/observe, src/lib/util/extensions, src/lib/write-rate-limit, src/lib/pipeline/signals, src/lib/sources/index, src/lib/pipeline/source-scanner, src/lib/pipeline/signal-detection, src/lib/transcript"
+      ],
+      "suggestion": "Extract a phase-context facade that bundles the dependencies each phase needs (e.g., a PublishPhaseContext with the pipeline, attestation, and rate limit modules). This reduces the top-level import surface without adding indirection — each phase function receives its context object instead of reaching into globals.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The session-runner predates the toolkit layer and uses a different publish pipeline (actions/). The two pipelines coexist because the toolkit was designed for external consumers while session-runner was the original internal orchestrator."
+    ],
+    "likely_symptoms": ["dual_publish_pipeline_types is root cause; session_runner_untyped_phase_data is a symptom of the same organic growth"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "Toolkit tools use uniform composition pattern",
+          "description": "All 10 toolkit tools follow the same withToolWrapper -> validateInput -> guards -> bridge -> ok/err pattern. This makes tool behavior predictable and the wrapper centralizes timing, error wrapping, and observer notification.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SdkBridge as clean toolkit-SDK boundary",
+          "description": "The SdkBridge interface cleanly separates toolkit tools from SDK internals. The 3-state apiAccess field (none/configured/authenticated) drives conditional API enrichment without leaking auth concerns into tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual publish pipeline creates boundary confusion",
+          "description": "actions/publish-pipeline.ts (used by session-runner) and toolkit/tools/publish.ts (toolkit layer) define overlapping but divergent type shapes for the same publish concept. A developer modifying publish behavior must understand which pipeline applies.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

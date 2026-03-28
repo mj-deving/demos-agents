@@ -1,0 +1,78 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {
+    "api_surface_coherence": 84.3
+  },
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "All 10 toolkit tools follow a consistent (session, opts?) -> Promise<ToolResult<T>> signature pattern. Session is always first, options second.",
+        "connect() and disconnect() break the ToolResult convention — they use throw/void semantics instead. This is documented and justified (lifecycle vs tool operations).",
+        "All tool option types are compact interfaces with 1-4 fields. No function has >5 parameters.",
+        "ToolResult<T> envelope is consistently applied: ok/data/error/provenance on every tool return.",
+        "ConnectOptions has 14 optional fields — this is the largest API surface, though it is a configuration object rather than a per-call API.",
+        "SdkBridge interface has consistent async-only methods with explicit return types for all 12+ methods.",
+        "demosError() factory and ok()/err() helpers provide consistent error and result construction."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "ConnectOptions has 14 fields which is a wide configuration surface. The connect/disconnect throw/void pattern vs ToolResult pattern creates a minor two-convention split. The actions/publish-pipeline exports (attestDahr, attestTlsn, publishPost) use raw throws and Demos SDK types instead of the ToolResult pattern."
+    }
+  },
+  "dimension_judgment": {
+    "api_surface_coherence": {
+      "dimension_character": "The toolkit's public API surface is notably coherent. All tool functions share the same (session, opts) -> Promise<ToolResult<T>> shape, with typed option interfaces and a uniform result envelope. Error construction uses consistent factory helpers. The main irregularity is the connect/disconnect lifecycle boundary, which uses throw/void — but this is explicitly documented and justified. The SdkBridge interface maintains consistent async patterns throughout. The actions/ layer (publish-pipeline) uses a different convention (raw throws, Demos SDK types) but this is an internal boundary rather than a public API.",
+      "score_rationale": "A developer using the toolkit can predict API shape from one example — the (session, opts) -> ToolResult<T> pattern holds across all 10 tools. The ToolResult envelope, DemosError codes, and Provenance metadata are used uniformly. The connect/disconnect exception is well-documented. ConnectOptions is wide but serves as configuration, not a per-call API. The score lands at 84.3 — solidly above the 80 threshold for recurring irregularities, with the connect pattern split and wide ConnectOptions preventing a higher score."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "actions_pipeline_convention_split",
+      "summary": "actions/publish-pipeline.ts exports use raw throws and SDK types instead of toolkit ToolResult convention",
+      "related_files": ["src/actions/publish-pipeline.ts"],
+      "evidence": [
+        "attestDahr() throws raw Error on failure instead of returning ToolResult with DemosError",
+        "publishPost() accepts raw Demos SDK instance and DemosTransactions instead of DemosSession",
+        "AttestResult in publish-pipeline.ts has different shape (type, url, requestedUrl, data?: any) than toolkit's AttestResult (responseHash, txHash)"
+      ],
+      "suggestion": "Since publish-pipeline.ts is consumed by session-runner (not external consumers), this is lower priority. If toolkit becomes the single API surface, migrate publish-pipeline to use ToolResult pattern and import types from toolkit/types.ts.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The actions/ layer predates the toolkit layer. When the toolkit was designed, it established clean conventions but the older actions/ code was not migrated."
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Uniform (session, opts) -> ToolResult<T> pattern",
+          "description": "All 10 toolkit tools use the same function signature: session as first param, typed options as second, returning Promise<ToolResult<T>>. This consistency means a developer can predict the API shape of any tool from seeing one.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "ToolResult envelope with typed error codes",
+          "description": "Every tool result carries ok/data/error/provenance. Errors use 10 typed DemosErrorCode values with retryable flag. ok() and err() factory helpers enforce the shape at construction.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Connect/disconnect uses throw/void not ToolResult",
+          "description": "The lifecycle boundary (connect/disconnect) deliberately uses different error semantics than tool operations. This is documented and justified — session creation failures are not recoverable via ToolResult.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

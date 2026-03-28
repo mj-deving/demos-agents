@@ -1,0 +1,106 @@
+{
+  "batch": "type_safety",
+  "batch_index": 20,
+  "assessments": {"type_safety": 72.8},
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "Toolkit types.ts defines a strong typed error system with DemosErrorCode union of 10 codes, DemosError interface, and ToolResult<T> generic — exemplary type discipline",
+        "feed-filter.ts has 10 explicit any annotations: 5 on internal normalizer functions (getAuthor, hasAttestation, getText, getCategory, normalizeFeedPosts) that process raw API posts, plus any[] in public API signatures",
+        "tlsn-playwright-bridge.ts has 15 as-any casts for Demos SDK methods like demos.crypto.getIdentity, demos.nodeCall, demos.getAddress — SDK types don't expose these undocumented methods",
+        "ActionExecutorContext.llm typed as 'any | null' (line 84) when LLMProvider interface exists at src/lib/llm/llm-provider.ts",
+        "GeneratePostFn type alias accepts llm: any (line 41) despite generatePost's actual parameter being typed as LLMProvider",
+        "SessionState.engagements: any[] and PhaseState.result?: any use any for persisted state",
+        "Source catalog types, signal detection types, and attestation types are all properly typed with specific interfaces — the any usage is concentrated in API boundaries and a few legacy interfaces",
+        "publish-pipeline.ts has 6 explicit any types — mostly in normalizeFeedPosts and txHash extraction"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "type_safety": {
+      "dimension_character": "The codebase has a dual personality on type safety. The toolkit layer and newer modules (sources, attestation, signals) use precise types with discriminated unions, branded types, and generic envelopes. But older modules (feed-filter, action-executor, state, publish-pipeline) retain any annotations from early development when API shapes were still being discovered. The tlsn-playwright-bridge any casts are externally forced by the SDK's incomplete type surface and are the least fixable.",
+      "score_rationale": "Score of 72.8 reflects that approximately 70% of the codebase has strong type discipline (toolkit, sources, attestation, signals) while the remaining 30% (feed-filter, action-executor, state, publish-pipeline) uses any at levels that reduce compiler safety. The toolkit layer alone would score 90+. The feed-filter any density and the llm:any in ActionExecutorContext are the most impactful fixable issues. Below the 75 anchor for 'mostly typed with scattered holes' because feed-filter's 10 any annotations affect a high-traffic module."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "action_executor_llm_any",
+      "summary": "ActionExecutorContext.llm typed as 'any | null' when LLMProvider interface exists",
+      "related_files": ["src/actions/action-executor.ts", "src/lib/llm/llm-provider.ts"],
+      "evidence": ["Line 84: `llm: any | null` — LLMProvider interface is defined in src/lib/llm/llm-provider.ts and already used by generatePost's actual parameter type. Line 41: GeneratePostFn also accepts `llm: any` when it should be LLMProvider."],
+      "suggestion": "Change `llm: any | null` to `llm: LLMProvider | null` and update GeneratePostFn to accept `llm: LLMProvider`",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "feed_filter_any_density",
+      "summary": "feed-filter.ts has 10 explicit any annotations — highest any-density in active non-bridge code",
+      "related_files": ["src/lib/pipeline/feed-filter.ts"],
+      "evidence": ["Functions getAuthor(raw: any), hasAttestation(raw: any), getText(raw: any), getCategory(raw: any), normalizeFeedPosts(payload: any) all accept any. Public APIs filterPosts(rawPosts: any[]) and combinedTopicSearch broadPool?: any[] propagate any to callers."],
+      "suggestion": "Define a RawFeedPost type as Record<string, unknown> with optional known fields (txHash?, author?, payload?, score?, etc.) — this preserves flexibility while narrowing from any. The normalizer functions already access specific fields defensively.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "tlsn_bridge_as_any_casts",
+      "summary": "tlsn-playwright-bridge.ts has 15 as-any casts for undocumented SDK methods",
+      "related_files": ["src/lib/tlsn-playwright-bridge.ts"],
+      "evidence": ["Casts like (demos as any).crypto.getIdentity, (demos as any).nodeCall, (demos as any).getAddress access SDK methods that exist at runtime but are not in the TypeScript type definitions for @kynesyslabs/demosdk"],
+      "suggestion": "Define a TlsnDemosExtensions interface with the 5 methods actually used (crypto.getIdentity, nodeCall, getAddress, etc.) and cast once at function entry: `const sdk = demos as Demos & TlsnDemosExtensions`. This centralizes the unsafe cast and documents the assumed API surface.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "session_state_any_fields",
+      "summary": "SessionState and V2SessionState have any-typed fields for persisted data",
+      "related_files": ["src/lib/state.ts"],
+      "evidence": ["SessionState.engagements: any[] (line 65), PhaseState.result?: any (line 52), ActSubstageState.result?: any (line 95) — these hold structured data that is JSON-serialized to disk and deserialized back, but the types provide no guidance on the expected shapes"],
+      "suggestion": "Define EngagementRecord and PhaseResult types (at least as Record<string, unknown> with known optional fields) to replace the any annotations",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "any types concentrate at two boundaries: external API responses (feed posts from SuperColony) and SDK methods not in type definitions. The former is fixable with a RawFeedPost type; the latter requires SDK-side type improvements.",
+      "ActionExecutorContext.llm:any is a simple oversight — the type exists and is used elsewhere, just not applied here"
+    ],
+    "likely_symptoms": ["session_state_any_fields is a symptom of early rapid prototyping where phase results were heterogeneous and not yet standardized"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "type_safety": {
+      "add": [
+        {
+          "header": "Toolkit layer has exemplary type discipline",
+          "description": "DemosErrorCode union, ToolResult<T> generic, typed ConnectOptions with Zod validation, and branded types in guards demonstrate what the codebase looks like at its best. This layer has near-zero any usage.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Any usage concentrated at two boundaries",
+          "description": "The any annotations cluster at (1) raw API response processing in feed-filter and publish-pipeline, and (2) undocumented SDK methods in tlsn-playwright-bridge. The former is fixable internally; the latter depends on SDK type improvements.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Source and attestation modules are well-typed",
+          "description": "SourceRecordV2, SurgicalCandidate, AttestationPlan, SignalTopic, DetectedSignal — the domain model types are specific and precise. This newer code shows the project's evolved type discipline.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

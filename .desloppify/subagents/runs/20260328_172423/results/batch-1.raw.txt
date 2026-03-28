@@ -1,0 +1,123 @@
+{
+  "batch": "cross_module_architecture",
+  "batch_index": 1,
+  "assessments": {
+    "cross_module_architecture": 82.5
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "src/types.ts has 64 importers — a legitimate god module as the plugin type hub, but creates a large blast radius for any type change",
+        "src/toolkit/types.ts (22 importers), src/lib/sources/catalog.ts (17 importers) are high-fan-in but domain-appropriate",
+        "Import cycle: src/lib/util/extensions.ts -> src/plugins/calibrate-plugin.ts (confirmed via desloppify show cycles)",
+        "src/lib/util/extensions.ts imports RunToolFn type from src/plugins/calibrate-plugin.ts — core util reaching up into plugins layer violates dependency direction",
+        "Toolkit barrel (src/toolkit/index.ts) cleanly exports typed public surface — no leaky abstractions",
+        "src/index.ts (core module) re-exports from lib/ subdirectories with documented boundary: zero platform-specific imports",
+        "src/lib/network/sdk.ts has module-level mutable state (exported let RPC_URL, SUPERCOLONY_API, resolvedAlgorithm) — shared mutable state across consumers",
+        "src/actions/publish-pipeline.ts duplicates normalizeFeedPosts from src/lib/pipeline/feed-filter.ts — cross-package duplication indicating a missing shared boundary"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Import cycle between extensions.ts and calibrate-plugin.ts violates layer direction. Module-level mutable state in sdk.ts creates hidden coupling. normalizeFeedPosts duplication across publish-pipeline and feed-filter indicates missing shared boundary."
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The codebase has a well-defined three-layer architecture (toolkit, lib/core, plugins/adapters) with clean barrel exports and documented boundaries. However, the architecture is undermined by a concrete import cycle between the extension dispatcher and the calibrate plugin, module-level mutable state in the legacy SDK module, and cross-package function duplication between the publish pipeline and feed filter. These are isolated structural debts rather than systemic boundary violations.",
+      "score_rationale": "The architecture is solid at the boundary level — toolkit/index.ts is clean, src/index.ts documents its portability contract, and the god modules (types.ts files) are legitimate type hubs. The import cycle, mutable module state, and duplication pull the score below 85 but do not create widespread trust issues. A developer can mostly predict dependency direction correctly, hitting friction only at the extensions/plugins seam and legacy SDK paths. This places the codebase around 82-83 on the scale."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "extensions_plugin_cycle",
+      "summary": "Import cycle: extensions.ts imports RunToolFn type from calibrate-plugin.ts, violating core->plugin direction",
+      "related_files": [
+        "src/lib/util/extensions.ts",
+        "src/plugins/calibrate-plugin.ts"
+      ],
+      "evidence": [
+        "Line 150 of extensions.ts: import type { RunToolFn } from '../../plugins/calibrate-plugin.js' — core utility reaching up into plugin layer",
+        "Confirmed by desloppify show cycles: 2-file cycle extensions.ts <-> calibrate-plugin.ts"
+      ],
+      "suggestion": "Move the RunToolFn type definition to src/lib/util/extensions.ts itself (or a shared types file in lib/). It is a simple function signature (toolPath: string, args: string[], label: string) => Promise<any> that does not depend on any plugin internals. calibrate-plugin.ts should import it from the core layer instead.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "sdk_module_mutable_state",
+      "summary": "src/lib/network/sdk.ts exports mutable module-level state (RPC_URL, SUPERCOLONY_API) creating hidden coupling",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Lines 25-27: export let RPC_URL, export let SUPERCOLONY_API, let logAgentName — module-level mutable values that any importer can read but only applyConfigOverrides mutates",
+        "12 importers of this file share this implicit mutable state — a mutation in one session affects all consumers"
+      ],
+      "suggestion": "Since the toolkit already has session-scoped state via SdkBridge, this legacy module-level mutable state is a relic of the pre-toolkit architecture. Either (1) make these constants truly const and pass overrides through function parameters, or (2) encapsulate in a config object returned by a factory function. The toolkit's sdk-bridge.ts already demonstrates the session-scoped pattern correctly.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "normalize_feed_duplication",
+      "summary": "normalizeFeedPosts duplicated between publish-pipeline.ts and feed-filter.ts — missing shared boundary",
+      "related_files": [
+        "src/actions/publish-pipeline.ts",
+        "src/lib/pipeline/feed-filter.ts"
+      ],
+      "evidence": [
+        "publish-pipeline.ts:86 and feed-filter.ts:101 both define normalizeFeedPosts with identical logic — exact duplication confirmed by desloppify show dupes"
+      ],
+      "suggestion": "Delete the copy in publish-pipeline.ts and import from feed-filter.ts (or from the toolkit's feed-parser.ts if it already normalizes). One canonical definition eliminates the drift risk.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Pre-toolkit legacy SDK module (sdk.ts) was not fully migrated to session-scoped patterns",
+      "Extension system was designed before the plugin architecture was formalized, leading to inverted dependency"
+    ],
+    "likely_symptoms": [
+      "normalize_feed_duplication"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Clean three-layer architecture with barrel exports",
+          "description": "The codebase separates toolkit (framework-agnostic tools), lib/core (portable business logic), and plugins/adapters (framework-specific). Each layer has a clean barrel export (toolkit/index.ts, src/index.ts, plugins/index.ts) with documented API surface. This layering is intentional and well-maintained.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "God modules are legitimate type hubs",
+          "description": "src/types.ts (64 importers) and src/toolkit/types.ts (22 importers) are high-fan-in because they define the plugin and toolkit type contracts respectively. This is a healthy hub pattern — the types are stable and changing them would appropriately require broad updates.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Session-scoped SDK bridge eliminates most mutable state",
+          "description": "The SdkBridge pattern in toolkit/sdk-bridge.ts gives each session its own auth token, API base URL, and SDK instance. This design correctly avoids the module-level mutable state problem that persists in the legacy src/lib/network/sdk.ts.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Legacy sdk.ts has module-level mutable exports",
+          "description": "src/lib/network/sdk.ts exports mutable let variables (RPC_URL, SUPERCOLONY_API) that can be mutated by applyConfigOverrides. This is a holdover from before the session-scoped toolkit architecture and creates hidden coupling for its 12 importers.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 18,
+  "assessments": {"contract_coherence": 78.4},
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "SdkBridge interface is well-documented with JSDoc for every method, return types match implementation, and error contracts are explicit (throws vs returns null)",
+        "apiCall in sdk.ts documents 'never throws' contract and all return paths honor { ok: boolean, status: number, data: any } — but status:0 on network error makes error type indistinguishable from parse failure",
+        "connect.ts correctly documents @throws {DemosError} in JSDoc and implementation matches — throws on auth failure, bad permissions, symlink, invalid wallet",
+        "ToolResult envelope pattern consistently applied across toolkit tools — success and error paths both return typed ToolResult",
+        "PublishResult type matches all return paths in publishPost — no return type lies detected",
+        "normalizeSignalTopic and normalizeSignalAlert correctly normalize unknown API responses into typed interfaces with defensive defaults",
+        "fetchSignals documents 'returns null on any failure, never throws' and implementation honors this contract across all code paths"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "contract_coherence": {
+      "dimension_character": "The codebase generally honors its stated contracts well. The toolkit layer has exemplary contract discipline with the ToolResult envelope, typed DemosError codes, and consistent throw/return semantics. The lib/ layer functions document their error contracts (never-throws vs throws) and follow through. The main weakness is sdk.ts apiCall returning status:0 for all network errors, making it impossible for callers to distinguish connection refused from DNS failure from timeout.",
+      "score_rationale": "Score of 78.4 reflects strong contract honoring across the codebase, with the toolkit layer at 85+ quality. The apiCall error flattening and a few any-typed return values (AttestResult.data, PhaseState.result, SessionState.engagements) prevent a higher score. Above the 75 anchor for 'mostly consistent with isolated exceptions' because the exceptions are few and well-documented."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "apicall_error_flattening",
+      "summary": "apiCall returns { ok: false, status: 0, data: errMessage } for all network errors — callers cannot distinguish error types",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": ["Line 251: catch block returns { ok: false, status: 0, data: err.message } for any network-level error (connection refused, DNS failure, timeout, TLS error). Callers like fetchSignals check res.ok but cannot tell if the server returned 500 vs the network was unreachable."],
+      "suggestion": "Add an 'error' or 'networkError' field to the return type that preserves the error class/code, or use a negative status range to signal network vs server errors",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "session_state_any_fields",
+      "summary": "SessionState.engagements and PhaseState.result typed as any — contract promises structure but delivers bag",
+      "related_files": ["src/lib/state.ts"],
+      "evidence": ["SessionState.engagements: any[] (line 65) and PhaseState.result?: any (line 52) bypass the type system. These are persisted to disk and loaded back — callers must know the shape without type guidance."],
+      "suggestion": "Define EngagementResult and PhaseResult union types that capture the actual shapes stored by each phase",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "attest_result_data_any",
+      "summary": "AttestResult.data typed as any despite having predictable shapes per attestation type",
+      "related_files": ["src/actions/publish-pipeline.ts"],
+      "evidence": ["AttestResult.data?: any (line 52) holds either DAHR proxy response data (JSON object) or TLSN proof metadata ({ tokenId, requestTxHash, storageFee }). These are distinct, known shapes that could be a discriminated union."],
+      "suggestion": "Use a discriminated union: type AttestResult = DahrAttestResult | TlsnAttestResult with typed data fields",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The any-typed fields in state and result objects likely date from early prototyping when the exact shapes were still evolving — they solidified but the types were never tightened"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "Toolkit tools consistently honor ToolResult contract",
+          "description": "All toolkit tools return ToolResult<T> on success and throw DemosError (or return ToolResult with error) on failure. connect/disconnect use throw/void semantics as explicitly documented. This is the strongest contract discipline in the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Never-throws functions consistently honored",
+          "description": "Functions documenting 'never throws' (fetchSignals, fetchLatestBriefing, normalizeSignalTopic) all have comprehensive try-catch wrappers returning null on failure. This pattern is reliable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "apiCall error flattening loses context",
+          "description": "apiCall returns status:0 for all network errors with only the error message string. This makes it impossible for callers to implement error-specific recovery (retry DNS vs abort on auth).",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 17,
+  "assessments": {"design_coherence": 71.2},
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "action-executor.ts ActionExecutorContext has 22 fields, mixing identity, auth, budget, config, LLM, mutable state, platform abstractions, rate limiting, and telemetry into one interface — a clear multi-concern bag",
+        "sdk-bridge.ts at 908 LOC is the largest active file, combining DAHR attestation, chain queries, transaction normalization, API wrappers, and wallet operations — multiple distinct responsibilities",
+        "publish-pipeline.ts mixes HIVE encoding, indexer health checking, DAHR attestation, TLSN attestation, and post publishing all in one 300+ LOC file with 6 explicit any types",
+        "6 files share smells+structural signals (agent-config, signal-detection, catalog, matcher, declarative-engine, sdk-bridge) indicating a systemic pattern of large files accumulating complexity",
+        "7 orphaned files totaling ~1650+ LOC persist in the codebase (attestation-executor, mentions, transcript, predictions, tips, sse-feed, action-executor) — dead code diluting design coherence",
+        "Toolkit tools follow a consistent pattern (ToolResult, demosError, localProvenance) showing good design discipline in the toolkit layer",
+        "Plugin system uses a well-defined FrameworkPlugin interface with clear lifecycle hooks — earned abstraction"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The codebase shows strong design discipline in its toolkit layer (consistent ToolResult pattern, typed error codes, guard state helpers) and plugin system. However, the actions/ and lib/ layers accumulate multiple responsibilities per file, with sdk-bridge.ts and publish-pipeline.ts being the clearest examples. A systemic pattern of large files with smells+structural signals across 6 core files suggests the project has outgrown its initial file boundaries without refactoring to match.",
+      "score_rationale": "Score of 71.2 reflects a codebase where the newest abstractions (toolkit, guards, plugin system) are well-designed, but older layers (actions, lib flat files) have accreted responsibilities without decomposition. The 7+ orphaned files totaling ~2000 LOC drag down coherence. The systemic pattern across 6 files with mixed concerns prevents a higher score. Above 65 (baseline for functional but messy) because the toolkit layer is genuinely well-structured."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "action_executor_context_bloat",
+      "summary": "ActionExecutorContext packs 22 fields spanning 7 distinct concerns into one interface",
+      "related_files": ["src/actions/action-executor.ts"],
+      "evidence": ["Interface mixes identity (agentName, address, dryRun), auth (getToken), budget (dailyReactive, hourlyReactive), config (calibrationOffset, personaMdPath, strategyYamlPath), LLM (llm), mutable state (ownTxHashes), platform abstractions (apiCall, generatePost, attestAndPublish, transfer), rate limiting (4 functions), and telemetry (observe, info, warn)"],
+      "suggestion": "Group into semantically meaningful sub-interfaces: ActionIdentity, ActionBudget, ActionPlatform, ActionRateLimiting — only where the grouping has independent meaning beyond parameter reduction",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "8402699e80d43225"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_mixed_responsibilities",
+      "summary": "sdk-bridge.ts (908 LOC) combines DAHR attestation, chain queries, tx normalization, and wallet ops",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": ["File handles: DAHR proxy attestation, chain transaction querying (getTxByHash, getTransactions, getMempool, getTransactionHistory), transaction normalization (ChainTransaction), DEM transfer pipeline, API call wrappers, and wallet connection — at least 4 distinct responsibility clusters"],
+      "suggestion": "Extract chain-query methods into a dedicated chain-reader module and DAHR attestation into its own file, leaving sdk-bridge as the session-scoped wallet adapter it was designed to be",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "2973c470c1119c80"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "orphaned_files_persist",
+      "summary": "7+ orphaned files (~2000 LOC) with zero importers persist in production source tree",
+      "related_files": ["src/actions/attestation-executor.ts", "src/lib/mentions.ts", "src/lib/transcript.ts", "src/lib/predictions.ts", "src/lib/tips.ts", "src/reactive/event-sources/sse-feed.ts", "src/actions/action-executor.ts"],
+      "evidence": ["attestation-executor.ts (119 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC), predictions.ts (391 LOC), tips.ts (443 LOC), sse-feed.ts (244 LOC), and action-executor.ts (320 LOC) all have zero importers per the orphaned detector"],
+      "suggestion": "Either delete or move to an archive/ directory. If these are planned-future code, add a // @planned marker and track in a migration plan",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_dead_code",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "56951e0173d7bbe2"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "publish_pipeline_mixed_concerns",
+      "summary": "publish-pipeline.ts mixes HIVE encoding, indexer health, DAHR/TLSN attestation, and post publishing",
+      "related_files": ["src/actions/publish-pipeline.ts"],
+      "evidence": ["Contains 5 distinct functions covering: encodeHivePost (encoding), checkIndexerHealth (monitoring), attestDahr (DAHR), attestTlsn (TLSN), publishPost (chain write) — plus 6 explicit any types from data normalization"],
+      "suggestion": "Extract attestDahr/attestTlsn into a dedicated attestation module (this was partially done with attestation-executor.ts which is now orphaned — resolve the duplication)",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "f9cc9607cbc7cd87"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "systemic_large_file_pattern",
+      "summary": "6 files share smells+structural signals indicating a systemic pattern of accumulated complexity",
+      "related_files": ["src/lib/agent-config.ts", "src/lib/pipeline/signal-detection.ts", "src/lib/sources/catalog.ts", "src/lib/sources/matcher.ts", "src/lib/sources/providers/declarative-engine.ts", "src/toolkit/sdk-bridge.ts"],
+      "evidence": ["All 6 files flagged by both smells and structural detectors. declarative-engine.ts (1534 LOC) has max chain depth 4 with 75 indirection chains. agent-config.ts (571 LOC) has 49 indirection chains. These are not simply large files — they have accumulated smell signals indicating responsibility mixing."],
+      "suggestion": "For the 3 largest (declarative-engine, sdk-bridge, signal-detection), identify responsibility clusters and extract. For catalog/matcher/agent-config, the complexity may be inherent but the smell signals suggest reviewing helper extraction opportunities",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "architectural_change",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "ac32950677f7ed98"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "llm_ts_high_cyclomatic",
+      "summary": "llm.ts generatePost function has high cyclomatic complexity from JSON parsing and validation",
+      "related_files": ["src/actions/llm.ts"],
+      "evidence": ["generatePost builds a complex system prompt, handles markdown fence stripping, JSON extraction from preamble text, truncated JSON repair, and field validation — all in one 150+ line function body with multiple conditional branches"],
+      "suggestion": "Extract JSON parsing/repair into a separate parseLLMResponse helper — this is a distinct responsibility from prompt construction and would be independently testable",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "90d6b667214e1a11"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_engage_heuristics_any",
+      "summary": "engage-heuristics.ts any types are at API boundary for raw feed posts — acceptable",
+      "related_files": ["src/lib/pipeline/engage-heuristics.ts"],
+      "evidence": ["The 2 any types are on selectReaction(post: any) and enforceDisagreeMinimum(remainingPosts: any[]) — these accept raw API response objects whose shape is not controlled by this codebase"],
+      "suggestion": "Could type as Record<string, unknown> for marginal improvement but the any is pragmatic at this API boundary",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "164dc3b3503fa619",
+      "reasoning": "The any types are at API response boundaries where the shape is externally determined and defensively accessed"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_signals_any",
+      "summary": "signals.ts normalizer functions accept any for API response normalization — pragmatic at API boundary",
+      "related_files": ["src/lib/pipeline/signals.ts"],
+      "evidence": ["normalizeSignalTopic(raw: any) and normalizeSignalAlert(raw: any) are defensive normalizers that coerce unknown API shapes into typed SignalTopic/SignalAlert — this is exactly where any is appropriate"],
+      "suggestion": "No change needed — these normalizers exist specifically to bridge untyped API responses to typed domain objects",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "99037fdeeada6bb8",
+      "reasoning": "API response normalizers are the correct place for any — they bridge untyped external data to typed internal domain objects"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_sdk_catch_default",
+      "summary": "sdk.ts apiCall catch returns default error object — documented never-throws contract",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": ["The catch returns { ok: false, status: 0, data: err.message } — this is the documented contract (never throws, callers check .ok)"],
+      "suggestion": "No change needed — the function's contract is explicitly never-throws",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "d2b0d8fa890b94fe",
+      "reasoning": "The catch-and-return-default pattern is the documented contract of apiCall — callers rely on .ok being false rather than catching exceptions"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_source_discovery_any",
+      "summary": "source-discovery.ts any types are in JSON parsing helpers — pragmatic for dynamic API responses",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": ["extractTitles(obj: any) recursively walks unknown JSON structures to find title fields — any is appropriate for this generic JSON traversal"],
+      "suggestion": "Could narrow to unknown with type guards but would add complexity without safety benefit in this helper",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "66c05d8b32241962",
+      "reasoning": "Generic JSON traversal helpers legitimately need flexible typing — the function defensively checks types at each step"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Files grew organically as features were added without periodic responsibility review — sdk-bridge and publish-pipeline are the clearest examples",
+      "Orphaned files represent abandoned migration paths (action-executor was extracted but never wired in, attestation-executor was superseded by publish-pipeline inlining)"
+    ],
+    "likely_symptoms": ["llm_ts_high_cyclomatic is a symptom of the generate-parse-validate pipeline being kept in one function rather than decomposed"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Toolkit layer has strong design discipline",
+          "description": "The toolkit/ directory follows consistent patterns (ToolResult envelope, demosError factory, localProvenance, guard state helpers) showing deliberate API design. This is the newest and best-designed layer.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugin system uses earned abstractions",
+          "description": "FrameworkPlugin interface with lifecycle hooks (beforeSense, afterConfirm, etc.) is well-justified by actual polymorphic usage across 20+ plugins. Not ceremony — genuinely used.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Actions layer has accumulated mixed concerns",
+          "description": "publish-pipeline.ts combines encoding, monitoring, attestation, and publishing. action-executor.ts has a 22-field context interface. These grew organically and need decomposition.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Systemic large-file pattern across 6 core files",
+          "description": "agent-config, signal-detection, catalog, matcher, declarative-engine, and sdk-bridge all triggered both smells and structural detectors. This is a codebase-wide pattern of files outgrowing their initial boundaries.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

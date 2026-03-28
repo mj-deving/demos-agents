@@ -1,0 +1,77 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {
+    "dependency_health": 91.5
+  },
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "Only 5 production dependencies: @anthropic-ai/sdk, @kynesyslabs/demosdk, proper-lockfile, yaml, zod",
+        "No duplicate utility libraries — no lodash, moment, dayjs, axios, or ramda present",
+        "proper-lockfile is used for a single specific purpose (file locking in state-store.ts) — targeted and appropriate",
+        "@anthropic-ai/sdk is dynamically imported (await import) only when ANTHROPIC_API_KEY is present — no boot-time cost",
+        "yaml is the sole YAML parser, zod is the sole validator — no competing libraries for same purpose",
+        "One type-only import cycle: extensions.ts -> calibrate-plugin.ts (RunToolFn type) — no runtime impact",
+        "packages/core workspace has @kynesyslabs/demosdk as peerDependency rather than duplicating it",
+        "Dev dependencies are minimal and appropriate: tsx, typescript, vitest, playwright, @types/proper-lockfile"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "@anthropic-ai/sdk as a production dependency (rather than optional/peer) means npm install pulls it even when unused. The type-only import cycle between extensions.ts and calibrate-plugin.ts is harmless but could be eliminated by moving the RunToolFn type to a shared location."
+    }
+  },
+  "dimension_judgment": {
+    "dependency_health": {
+      "dimension_character": "The dependency set is exceptionally lean and purposeful. Five production dependencies serve distinct, non-overlapping needs: SDK, LLM client, file locking, YAML parsing, and schema validation. There are no competing libraries for the same purpose, no heavy utility libraries pulled for light use, and no meaningful circular dependencies. The codebase relies primarily on Node.js builtins for file I/O, crypto, path handling, and process management.",
+      "score_rationale": "This is a strong dependency profile that earns a score above 90. A developer joining this project would find no conflicting libraries, no bloated dependencies, and a clear rationale for each production dependency. The only friction points are @anthropic-ai/sdk as a production dependency when it could be a peer dependency, and a single type-only import cycle — both minor issues that do not materially affect developer experience."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "anthropic_sdk_as_prod_dep",
+      "summary": "@anthropic-ai/sdk is a production dependency but only used via dynamic import when API key is present",
+      "related_files": ["package.json", "src/lib/llm/llm-provider.ts"],
+      "evidence": [
+        "package.json line 45: @anthropic-ai/sdk listed in dependencies",
+        "llm-provider.ts line 165: dynamically imported via await import() only when ANTHROPIC_API_KEY exists",
+        "No other file in src/ imports @anthropic-ai/sdk"
+      ],
+      "suggestion": "Move @anthropic-ai/sdk to peerDependencies (optional) or optionalDependencies. The dynamic import pattern already handles its absence gracefully. This would reduce install footprint for consumers who use a different LLM provider.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["LLM provider was likely the first integration and was added as a direct dependency before the provider-agnostic architecture was established"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Minimal production dependency set",
+          "description": "Only 5 production dependencies, each serving a distinct non-overlapping purpose. No utility libraries, no competing implementations. The codebase uses Node.js builtins for file I/O, crypto, path, and process management.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dynamic import for optional providers",
+          "description": "The Anthropic SDK is loaded via dynamic import() only when ANTHROPIC_API_KEY is present. This prevents boot-time costs and runtime errors when the SDK is not needed, supporting the provider-agnostic LLM architecture.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Type-only import cycle in extensions",
+          "description": "extensions.ts imports RunToolFn type from calibrate-plugin.ts, which imports from extensions.ts. This is a type-only cycle with no runtime impact — TypeScript erases the import. Present but harmless.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

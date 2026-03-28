@@ -1,0 +1,132 @@
+{
+  "batch": "high_level_elegance",
+  "batch_index": 2,
+  "assessments": {
+    "high_level_elegance": 79.2
+  },
+  "dimension_notes": {
+    "high_level_elegance": {
+      "evidence": [
+        "Top-level directories map cleanly to domain capabilities: toolkit/ (framework-agnostic tools), lib/ (shared logic), plugins/ (extension points), adapters/ (framework bridges), cli/ (entry points), config/ (data), agents/ (definitions)",
+        "docs/project-structure.md accurately describes the actual layout — trustworthy reference",
+        "Toolkit has a clear, focused public surface via index.ts barrel with 10 tools, 6 guards, typed contracts",
+        "src/reactive/ subsystem (~1650 LOC, 20 files) is almost entirely orphaned — event-loop.ts, most event-sources, all event-handlers have zero importers. Only cli/event-runner.ts references a fraction",
+        "src/lib/ root has 14 flat files of which 5+ are orphaned (tips.ts, predictions.ts, mentions.ts, transcript.ts, review-findings.ts) — inflates directory without serving any consumer",
+        "src/actions/ contains 3 files: publish-pipeline.ts (active), action-executor.ts (orphaned, 320 LOC), attestation-executor.ts (orphaned, 119 LOC) — 2 of 3 files are dead code",
+        "Ownership is clear for the active subsystems but muddied by the orphaned code: a new engineer would see reactive/, actions/, and flat lib/ files and assume they are active",
+        "The plugin system (20 FrameworkPlugin factories) is well-organized with consistent naming (create*Plugin) and a clean barrel export"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "N/A — score is below 85"
+    }
+  },
+  "dimension_judgment": {
+    "high_level_elegance": {
+      "dimension_character": "The codebase has a well-conceived domain-aligned decomposition with clear ownership boundaries for the active subsystems — particularly the toolkit, plugin system, and source catalog. However, the decomposition is undermined by significant dead-code accumulation: the reactive subsystem (~1650 LOC), multiple orphaned lib/ files (~1150 LOC), and orphaned action executors create a misleading picture of the codebase's actual shape. A new engineer would struggle to distinguish active from abandoned code without consulting git history.",
+      "score_rationale": "The active architecture is strong — clean barrels, domain-aligned directories, consistent patterns across plugins. This would score in the high 80s. However, the orphaned reactive subsystem, dead flat files in lib/, and orphaned action executors constitute roughly 15-20% of production code that no longer serves any purpose, materially blurring ownership and decomposition clarity. This pulls the score to around 79, between 'solid but uneven' (80) and 'mixed' (70), because the structural confusion is concentrated in specific areas rather than systemic."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "orphaned_reactive_subsystem",
+      "summary": "Entire reactive/ subsystem (~1650 LOC, 20 files) is almost entirely orphaned with zero importers",
+      "related_files": [
+        "src/reactive/event-loop.ts",
+        "src/reactive/event-sources/sse-feed.ts",
+        "src/reactive/event-sources/storage-watcher.ts",
+        "src/reactive/event-sources/balance-source.ts",
+        "src/reactive/event-handlers/mention-handler.ts",
+        "src/reactive/event-handlers/reply-handler.ts"
+      ],
+      "evidence": [
+        "desloppify scan evidence shows event-loop.ts (257 LOC), sse-feed.ts (244 LOC), storage-watcher.ts (139 LOC), balance-source.ts (104 LOC), and all 5 event-handlers (38-44 LOC each) are orphaned",
+        "Only own-tx-hashes.ts appears to have importers from the reactive subsystem"
+      ],
+      "suggestion": "Delete orphaned reactive files and their test files. Keep own-tx-hashes.ts if it has active importers. If the reactive subsystem represents planned future work, move to a _future/ directory to signal intent.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "dead_code_accumulation"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "orphaned_lib_flat_files",
+      "summary": "5+ orphaned files in src/lib/ root (tips.ts, predictions.ts, mentions.ts, transcript.ts, review-findings.ts) mislead about directory's purpose",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/review-findings.ts"
+      ],
+      "evidence": [
+        "tips.ts (442 LOC), predictions.ts (391 LOC), transcript.ts (175 LOC), mentions.ts (148 LOC), review-findings.ts (112 LOC) all have zero importers per scan evidence",
+        "These are the largest files in the flat lib/ root, yet none are consumed by any active code path"
+      ],
+      "suggestion": "Delete these files and their corresponding test files. The functionality can be recovered from git history if needed. This would reduce src/lib/ root from 14 to ~9 files, making the active code more visible.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "dead_code_accumulation"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "orphaned_action_executors",
+      "summary": "src/actions/ directory has 2 of 3 files orphaned (action-executor.ts, attestation-executor.ts), misleading about directory's role",
+      "related_files": [
+        "src/actions/action-executor.ts",
+        "src/actions/attestation-executor.ts"
+      ],
+      "evidence": [
+        "action-executor.ts (320 LOC) and attestation-executor.ts (119 LOC) have zero importers per scan evidence",
+        "Only publish-pipeline.ts is actively used in src/actions/"
+      ],
+      "suggestion": "Delete the orphaned files and their tests. If src/actions/ ends up with only publish-pipeline.ts, consider whether it warrants its own directory or should move to a more descriptive location.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "dead_code_accumulation"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Rapid architecture evolution (pre-toolkit -> toolkit, sync -> chain-first) left orphaned subsystems that were superseded but not cleaned up",
+      "The reactive subsystem appears to have been designed but never fully wired into the session loop"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "high_level_elegance": {
+      "add": [
+        {
+          "header": "Domain-aligned top-level decomposition",
+          "description": "Top-level directories (toolkit/, lib/, plugins/, adapters/, cli/, config/, agents/) each map to a distinct domain capability. A developer can navigate by domain intent — tools go in toolkit/, business logic in lib/, extension points in plugins/.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent plugin naming and barrel pattern",
+          "description": "All 20 FrameworkPlugin factories follow create*Plugin naming. The plugins/index.ts barrel cleanly re-exports all factories and config types. This makes plugin discovery and registration predictable.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Accurate project structure documentation",
+          "description": "docs/project-structure.md accurately reflects the actual directory layout including file counts, roles, and notes about deprecated files. A developer can trust this reference.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Significant dead-code accumulation blurs ownership",
+          "description": "Approximately 15-20% of production code (reactive subsystem, orphaned lib/ files, orphaned action executors) has zero importers. This dead code creates a misleading picture of the codebase's active shape and responsibilities.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

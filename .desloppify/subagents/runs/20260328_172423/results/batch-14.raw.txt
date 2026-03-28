@@ -1,0 +1,94 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 14,
+  "assessments": {"incomplete_migration": 74.0},
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "src/lib/write-rate-limit.ts is explicitly @deprecated with a TODO to migrate CLI runners, but cli/session-runner.ts and cli/event-runner.ts still import from it — confirmed still open",
+        "src/lib/pipeline/source-discovery.ts has @deprecated persistSourceToCatalog referenced in a JSDoc but the function itself at line 356 is NOT deprecated — the deprecation tag at line 320 is on a different function (persistSourceToYaml) which says 'use persistSourceToCatalog'",
+        "src/lib/sources/lifecycle.ts has 3 deprecated markers — these reference DEPRECATED_DAYS constant which is part of domain logic (status transitions), not a migration marker",
+        "Old sync/file-based write-rate-limit.ts (deprecated) coexists with new async/StateStore-based toolkit/guards/write-rate-limit.ts — classic old+new API coexistence",
+        "platform/index.ts re-exports the deprecated write-rate-limit.ts functions — propagating deprecated API to external consumers",
+        "actions/action-executor.ts imports WriteRateLedger and WriteRateCheck types from the deprecated module",
+        "The migration TODO in write-rate-limit.ts is clear and actionable: 'TODO: Migrate CLI runners to toolkit guards, then remove this file'",
+        "No mixed JS/TS files found — the codebase is fully TypeScript",
+        "var→let/const migration is 99.3% complete (1 var vs 136 let/const) — essentially done"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "incomplete_migration": {
+      "dimension_character": "The codebase has one clear incomplete migration: the write-rate-limit from sync/file-based to async/StateStore-based. This creates a real dual-path situation where CLI runners use the old API while toolkit tools use the new one. The migration is well-documented with clear deprecation markers and a TODO, but it has persisted across multiple sessions. Beyond this, the codebase is clean — no mixed JS/TS, no stale pattern coexistence.",
+      "score_rationale": "Score of 74.0 reflects a codebase with one active, documented but incomplete migration that affects 4+ files across CLI, actions, and platform layers. The write-rate-limit dual-path is a genuine maintenance burden — developers must understand both versions. However, the deprecation is clearly marked, the migration path is obvious, and no other significant migration debt exists. Anchored near 75 (one real migration gap with clear path forward)."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "write_rate_limit_dual_path",
+      "summary": "CLI runners still import from deprecated src/lib/write-rate-limit.ts instead of toolkit guards",
+      "related_files": [
+        "src/lib/write-rate-limit.ts",
+        "src/toolkit/guards/write-rate-limit.ts",
+        "cli/session-runner.ts",
+        "cli/event-runner.ts",
+        "src/actions/action-executor.ts",
+        "platform/index.ts"
+      ],
+      "evidence": [
+        "cli/session-runner.ts:80 imports loadWriteRateLedger, canPublish, recordPublish, saveWriteRateLedger from deprecated module",
+        "cli/event-runner.ts:30 imports the same deprecated functions",
+        "src/actions/action-executor.ts:14 imports types WriteRateLedger, WriteRateCheck from deprecated module",
+        "platform/index.ts:19 re-exports deprecated functions to external consumers",
+        "The deprecated file has clear TODO: 'Migrate CLI runners to toolkit guards, then remove this file'"
+      ],
+      "suggestion": "Migrate cli/session-runner.ts and cli/event-runner.ts to use toolkit/guards/write-rate-limit.ts (checkAndRecordWrite). Update action-executor.ts to use toolkit types. Remove deprecated re-exports from platform/index.ts. Then delete src/lib/write-rate-limit.ts.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "write_rate_limit_migration"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "deprecated_source_discovery_fn",
+      "summary": "source-discovery.ts has deprecated persistSourceToYaml still in codebase alongside V2 replacement",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": [
+        "Line 320: @deprecated marker on persistSourceToYaml saying 'Use persistSourceToCatalog for V2 catalog persistence'",
+        "Line 356: persistSourceToCatalog exists as the replacement",
+        "source-discovery.ts is only exported via pipeline/index.ts barrel — need to verify if the deprecated function is called anywhere"
+      ],
+      "suggestion": "Check if persistSourceToYaml has any callers. If not, remove it. If it does, migrate callers to persistSourceToCatalog.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The write-rate-limit migration was started (new toolkit guard created) but CLI runners were not updated, likely because they require a different integration pattern (StateStore injection vs file-based)"],
+    "likely_symptoms": ["deprecated_source_discovery_fn is a minor leftover, not a systemic issue"],
+    "possible_false_positives": ["lifecycle.ts DEPRECATED_DAYS is domain logic, not a migration marker — correctly excluded"]
+  },
+  "context_updates": {
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "var-to-let/const migration essentially complete",
+          "description": "Only 1 var remains vs 136 let/const. This migration is effectively done and not worth tracking.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No mixed JS/TS files in codebase",
+          "description": "Entire source tree is TypeScript. No incomplete JS-to-TS migration.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

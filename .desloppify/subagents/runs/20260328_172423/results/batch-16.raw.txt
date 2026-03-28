@@ -1,0 +1,107 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 16,
+  "assessments": {"initialization_coupling": 79.0},
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "src/lib/network/sdk.ts has mutable module-level state: 'export let RPC_URL', 'export let SUPERCOLONY_API', 'let logAgentName = process.env.AGENT_NAME', 'let resolvedAlgorithm', 'let resolvedDualSign' — these are mutated by applyConfigOverrides() which is called from loadMnemonic()",
+        "sdk.ts has an import-time side effect: 'if (!globalThis.crypto) { (globalThis as any).crypto = webcrypto; }' — polyfill runs when any file imports sdk.ts",
+        "sdk.ts XDG_CREDENTIALS path is computed at import time via resolve(homedir(), ...) — this is a constant, not mutable, so it's acceptable",
+        "src/lib/pipeline/observe.ts uses module-level mutable state (_agentName, _sessionNumber, _logPath, _currentPhase) but follows init/use pattern via initObserver() — callers must call initObserver() before observe() works",
+        "observe.ts gracefully handles uninitialized state: 'if (!_logPath) return' — silent no-op before init, not a crash",
+        "src/lib/state.ts has DEFAULT_SESSIONS_DIR computed at import time but this is a constant — no concern",
+        "src/toolkit/tools/connect.ts explicitly avoids module-level side effects: 'Uses lazy SDK imports to avoid module-level side effects' — good pattern",
+        "The calibrate-plugin.ts uses factory injection to avoid circular init dependencies — createCalibrateBeforeSense(runTool) receives its dependency at runtime",
+        "No circular init dependencies detected — the one import cycle (extensions.ts → calibrate-plugin.ts) is a runtime cycle resolved via lazy loading",
+        "process.env.AGENT_NAME read at module level in sdk.ts — fragile in testing but only used for log labeling, not control flow"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "initialization_coupling": {
+      "dimension_character": "The codebase has one significant initialization coupling hotspot in sdk.ts, which combines mutable exported lets, a globalThis polyfill side effect, and environment variable reads at module scope. The mutable state (RPC_URL, SUPERCOLONY_API) is modified by loadMnemonic() side effects, creating implicit ordering dependencies — callers must ensure loadMnemonic() runs before reading the exported URLs. Other modules (observe.ts) use init/use patterns with graceful degradation, and connect.ts explicitly documents its avoidance of module-level side effects.",
+      "score_rationale": "Score of 79.0 reflects a codebase where most modules avoid import-time coupling, but sdk.ts is a systemic concern — it's imported by 12 files and its mutable state mutation via loadMnemonic() creates hidden ordering dependencies. The globalThis polyfill is a minor concern (standard Node 18 practice). The observe.ts module-level state is properly gated. Anchored between 75 (one problematic module with wide blast radius) and 80 (mostly clean initialization)."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_mutable_exported_lets",
+      "summary": "sdk.ts exports mutable lets (RPC_URL, SUPERCOLONY_API) that are silently mutated by loadMnemonic() side effects",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": [
+        "Line 25: 'export let RPC_URL = \"https://demosnode.discus.sh/\"' — default value overwritten by applyConfigOverrides()",
+        "Line 26: 'export let SUPERCOLONY_API = \"https://www.supercolony.ai\"' — same pattern",
+        "applyConfigOverrides() is called inside loadMnemonic() — any importer reading RPC_URL before loadMnemonic() gets the default, after gets the override",
+        "12 files import from sdk.ts — wide blast radius for stale-snapshot bugs",
+        "connectWallet() reads resolvedAlgorithm which is set by the same side-effecting path"
+      ],
+      "suggestion": "Replace mutable module-level state with a config object returned by loadMnemonic() or a lazy getter. For example: export function getRpcUrl(): string { return _rpcUrl; } — or better, make loadMnemonic() return a config object { mnemonic, rpcUrl, apiUrl, algorithm, dualSign } and thread it to consumers explicitly.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_crypto_polyfill_side_effect",
+      "summary": "sdk.ts has import-time globalThis.crypto polyfill that runs on any import",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": [
+        "Lines 16-18: 'if (!globalThis.crypto) { (globalThis as any).crypto = webcrypto; }' — runs at import time",
+        "This is a common Node 18 pattern but it mutates global state as a side effect of importing a module"
+      ],
+      "suggestion": "This is low severity for Node 18 compatibility. If targeting Node 20+, remove the polyfill. Otherwise, consider moving it to a dedicated setup/polyfill.ts imported explicitly at entry points.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "observe_implicit_init_ordering",
+      "summary": "observe.ts requires initObserver() to be called before observe() works, creating implicit boot-order dependency",
+      "related_files": ["src/lib/pipeline/observe.ts"],
+      "evidence": [
+        "Lines 85-88: module-level mutable state (_agentName, _sessionNumber, _logPath, _currentPhase) with defaults",
+        "Line 96: initObserver() must be called to set up _logPath — without it, observe() silently no-ops",
+        "The silent no-op behavior (line 144) is graceful but hides misconfiguration in tests"
+      ],
+      "suggestion": "The current design is acceptable since observe is non-critical (best-effort logging). For stricter environments, consider a factory pattern: createObserver(agent, session) returning an Observer instance rather than relying on module-level state.",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["sdk.ts was originally written as a singleton module for CLI tools where init ordering was implicit — the mutable lets pattern doesn't scale to a library consumed by diverse callers"],
+    "likely_symptoms": ["observe_implicit_init_ordering is a mild version of the same singleton-module pattern"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "connect.ts explicitly avoids module-level side effects",
+          "description": "The toolkit connect.ts documents 'Uses lazy SDK imports to avoid module-level side effects' — showing awareness of the issue and deliberate mitigation in newer code.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Factory injection pattern used for circular avoidance",
+          "description": "calibrate-plugin.ts uses createCalibrateBeforeSense(runTool) factory pattern to break circular init dependencies between session-runner and plugins. This is a good pattern.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "sdk.ts mutable exports create ordering dependencies",
+          "description": "RPC_URL and SUPERCOLONY_API are exported as mutable lets, silently mutated by loadMnemonic(). Any importer reading them before wallet connection gets stale defaults. This is the primary init-coupling concern.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

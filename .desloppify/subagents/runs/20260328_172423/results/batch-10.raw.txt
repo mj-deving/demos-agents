@@ -1,0 +1,93 @@
+{
+  "batch": "test_strategy",
+  "batch_index": 10,
+  "assessments": {
+    "test_strategy": 76.2
+  },
+  "dimension_notes": {
+    "test_strategy": {
+      "evidence": [
+        "129 test files with 1930 tests across 128 suites — substantial coverage volume.",
+        "Toolkit layer has strong test coverage: 17 test files in tests/toolkit/tools/ covering all 10 tools plus guards, session, schemas, and state store.",
+        "publish-pipeline.ts (actions/) has no dedicated test file — this is the primary publish path for session-runner with DAHR attestation, error guardrails, and indexer health checks.",
+        "tips.test.ts, predictions.test.ts, mentions.test.ts test orphaned production code (0 importers) — maintenance effort with no production value.",
+        "Test quality enforcement via globalSetup hook rejects assertion-free tests — strong anti-fragility measure.",
+        "No integration tests that exercise the session-runner phase sequence end-to-end (even with mocked SDK)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "test_strategy": {
+      "dimension_character": "The test portfolio is large and strategically covers the toolkit layer thoroughly — every tool, guard, session, and schema has dedicated tests. The TDD enforcement and assertion-quality hooks are genuinely strong practices. However, there are two strategic gaps: the primary publish pipeline (actions/publish-pipeline.ts) used by session-runner lacks any dedicated tests, and several test files maintain coverage for orphaned production code that has zero importers. The absence of integration-level tests for the session-runner phase orchestration is a notable blind spot.",
+      "score_rationale": "The toolkit test coverage and quality enforcement push toward 85+. However, the untested publish pipeline is a critical path handling real money operations (DAHR attestation, chain publishing) — a developer modifying that code has no test safety net. The orphaned test files (tips, predictions, mentions) are active maintenance drag. These gaps pull the score into the mid-70s, where a developer would worry about changes in certain areas. Score of 76.2 reflects strong foundations with meaningful strategic holes."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "test_strategy",
+      "identifier": "publish_pipeline_untested",
+      "summary": "publish-pipeline.ts has no dedicated test file — normalization, error guardrails, and attestation orchestration are untested",
+      "related_files": ["src/actions/publish-pipeline.ts"],
+      "evidence": [
+        "publish-pipeline.ts (200+ LOC) contains attestDahr, attestTlsn, publishPost, normalizeFeedPosts, checkIndexerHealth, encodeHivePost — none have direct test coverage",
+        "attestDahr includes DAHR error keyword detection, HTTP status guardrails, XML/HTML rejection, JSON body error scanning — all untested guardrails",
+        "This is the primary publish path for session-runner.ts and handles real money operations (chain publishing, attestation)"
+      ],
+      "suggestion": "Create tests/actions/publish-pipeline.test.ts with mock SDK. Cover: encodeHivePost encoding, normalizeFeedPosts with various shapes (posts, results, items, data.posts), attestDahr error paths (non-2xx, XML response, JSON error payloads), and publishPost transaction flow.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "orphaned_test_files",
+      "summary": "Test files for orphaned production code — tips.test.ts, predictions.test.ts, mentions.test.ts — waste maintenance effort",
+      "related_files": ["tests/tips.test.ts", "tests/predictions.test.ts", "tests/mentions.test.ts"],
+      "evidence": [
+        "src/lib/tips.ts has 0 importers (orphaned, 442 LOC)",
+        "src/lib/predictions.ts has 0 importers (orphaned, 391 LOC)",
+        "src/lib/mentions.ts has 0 importers (orphaned, 148 LOC)",
+        "Their test files still run in the test suite consuming CI time and requiring maintenance on vitest upgrades"
+      ],
+      "suggestion": "Delete the orphaned production files and their test files together. If the code is needed later, recover from git history.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "The publish pipeline in actions/ predates the toolkit layer and was never backfilled with tests when TDD was adopted.",
+      "Orphaned test files persist because dead-code detection is not integrated into the test suite or CI pipeline."
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Toolkit layer has comprehensive test coverage",
+          "description": "All 10 toolkit tools have dedicated test files, plus guards, session, schemas, state store, URL validator, and security hardening. The toolkit is the best-tested subsystem.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Test quality enforcement prevents assertion-free tests",
+          "description": "A vitest globalSetup hook and PostToolUse hook reject tests without assertions. This prevents the common pattern of tests that run code but verify nothing.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No integration tests for session-runner phases",
+          "description": "The 8-phase session-runner orchestration (audit-scan-engage-gate-publish-verify-review-harden) has no end-to-end test, even with mocked dependencies. Phase interactions are only validated in production.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

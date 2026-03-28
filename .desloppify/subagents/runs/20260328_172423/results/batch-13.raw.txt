@@ -1,0 +1,112 @@
+{
+  "batch": "ai_generated_debt",
+  "batch_index": 13,
+  "assessments": {"ai_generated_debt": 82.5},
+  "dimension_notes": {
+    "ai_generated_debt": {
+      "evidence": [
+        "High comment ratios in index barrel files (src/lib/auth/index.ts 0.6, src/lib/scoring/index.ts 0.6, src/lib/llm/index.ts 0.6) — these 2-3 line re-export files have module-level docstring blocks that restate the directory name",
+        "src/plugins/observe-plugin.ts repeats the same explanation 3 times: module docstring, inline comment, and description field all say 'observe is inline, not hook-driven'",
+        "src/lib/scoring/scoring.ts has 43% comment ratio with multi-line docstrings on trivially self-explanatory constants (SCORE_BASE=20 has a comment 'Every post gets base points')",
+        "src/reactive/event-handlers/ files have 31-35% comment ratios — docstrings on small handler factories that are self-documenting via their type signatures",
+        "src/adapters/eliza/provider-bridge.ts has 33% comment ratio for an 18-line file where the docstring is longer than the code",
+        "src/lib/util/errors.ts has 60% comment ratio for an 11-line file with one trivially obvious function — the docstring and module comment are pure ceremony",
+        "Pass-through wrappers in incident-alert-handler.ts and market-alert-handler.ts are NOT pure pass-throughs — they configure severity mappings and buildParams callbacks, providing meaningful behavioral specialization via createSeverityHandler",
+        "Codebase average comment ratio is 21.4%, which is reasonable — the high-ratio files are concentrated in barrel/index files and small utility files",
+        "No evidence of entry/exit debug logging patterns — logging is used purposefully at meaningful points",
+        "Error handling is NOT copy-paste boilerplate — toolkit tools share patterns via tool-wrapper.ts and demosError helper, which is proper extraction, not duplication"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "ai_generated_debt": {
+      "dimension_character": "The codebase shows moderate AI-generated comment inflation concentrated in barrel files and small utilities, where docstrings restate obvious structure. However, the core business logic files have appropriate comment-to-code ratios, and error handling patterns are properly extracted rather than duplicated. The pass-through wrappers flagged mechanically are actually meaningful factory configurations.",
+      "score_rationale": "Score of 82.5 reflects a codebase with minor docstring bloat in peripheral files but no systemic AI-debt patterns. The ~20 files with high comment ratios are mostly barrel exports and tiny utilities where the overhead is cosmetic rather than maintenance-burdening. No debug logging spam, no defensive overengineering, and error handling is DRY via shared helpers. Anchored between 80 (minor scattered issues) and 85 (clean)."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "barrel_docstring_bloat",
+      "summary": "Barrel/index files have docstring blocks that restate the directory name without adding insight",
+      "related_files": [
+        "src/lib/auth/index.ts",
+        "src/lib/scoring/index.ts",
+        "src/lib/llm/index.ts",
+        "src/lib/attestation/index.ts",
+        "src/lib/sources/providers/index.ts"
+      ],
+      "evidence": [
+        "src/lib/auth/index.ts: '/** Auth subfolder — authentication and identity management. */' followed by 2 re-export lines — the docstring adds zero information beyond what the path already says",
+        "5 barrel files have 36-60% comment ratios for files that are purely re-export"
+      ],
+      "suggestion": "Remove module-level docstrings from barrel files that only re-export. The file path and export list are self-documenting.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "observe_plugin_triple_restate",
+      "summary": "observe-plugin.ts explains the same concept three times in 24 lines",
+      "related_files": ["src/plugins/observe-plugin.ts"],
+      "evidence": [
+        "Line 4: 'it ensures the observe capability is discoverable alongside other plugins even though its invocation pattern differs'",
+        "Line 21: '// Observe is inline (appendFileSync), not hook-driven.'",
+        "Line 22: '// This plugin exists for registry completeness and documentation.'",
+        "All three say the same thing: observe is inline, plugin is for discoverability"
+      ],
+      "suggestion": "Keep one comment (the module docstring) and remove the inline repetitions on lines 21-22.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "trivial_constant_docstrings",
+      "summary": "Scoring constants have docstrings that echo the constant name without adding domain insight",
+      "related_files": ["src/lib/scoring/scoring.ts"],
+      "evidence": [
+        "SCORE_BASE = 20 has comment '/** Every post gets base points */' — adds nothing beyond the name",
+        "SCORE_ATTESTATION = 40 has '/** DAHR attestation (sourceAttestations) present — TLSN proofs do NOT score */' — this one IS useful because it clarifies TLSN exclusion",
+        "SCORE_CONFIDENCE = 5 has '/** Confidence field set on post */' — restates the name"
+      ],
+      "suggestion": "Keep comments that add non-obvious domain rules (like the TLSN exclusion). Remove comments that restate the constant name (SCORE_BASE, SCORE_CONFIDENCE, SCORE_LONG_TEXT).",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["AI-generated docstrings applied uniformly regardless of whether the code is self-documenting"],
+    "likely_symptoms": ["barrel_docstring_bloat and observe_plugin_triple_restate share the root cause of AI over-documenting"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "Error handling is DRY via shared helpers",
+          "description": "Toolkit tools use demosError() and tool-wrapper.ts for consistent error handling rather than copy-pasting try-catch boilerplate. This is proper extraction, not AI-generated duplication.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No debug logging spam patterns detected",
+          "description": "Logging is used at meaningful business logic points (calibration results, phase transitions). No entry/exit logging or full object dumps found.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Barrel files have unnecessary docstrings",
+          "description": "Index/barrel files averaging 36-60% comment ratio for 2-5 line re-export files. The docstrings restate directory names without adding insight.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

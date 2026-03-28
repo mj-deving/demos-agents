@@ -1,0 +1,134 @@
+{
+  "batch": "package_organization",
+  "batch_index": 15,
+  "assessments": {"package_organization": 68.5},
+  "dimension_notes": {
+    "package_organization": {
+      "evidence": [
+        "src/lib/ root has 14 flat files (avg fan-in 1.1) — tips.ts (orphaned, 442 LOC), predictions.ts (orphaned, 391 LOC), mentions.ts (orphaned, 148 LOC), transcript.ts (orphaned, 175 LOC), review-findings.ts (orphaned, 112 LOC) are all dead code inflating the directory",
+        "src/reactive/ directory tree (20 files, 3 subdirs, 1654 LOC) is almost entirely orphaned — event-loop.ts (orphaned, 257 LOC), watermark-store.ts (orphaned, 90 LOC), 6 of 7 event-handlers are orphaned, multiple event-sources are orphaned. Only 3-4 files have any importers",
+        "src/lib/sources/providers/hooks/ has 2 files (arxiv.ts 24 LOC, kraken.ts 140 LOC) with zero importers — completely orphaned subdirectory",
+        "src/lib/ remaining 9 non-orphaned files have mixed concerns: agent-config.ts (configuration), spending-policy.ts (financial), budget-tracker.ts (financial), state.ts (session), test-quality-validator.ts (testing), improvement-utils.ts (self-improvement) — low cohesion",
+        "src/plugins/ has 22 files which is approaching flat-directory-overload territory, though all files follow consistent naming ({concern}-plugin.ts) and the concern is homogeneous (FrameworkPlugin implementations)",
+        "src/toolkit/ is well-organized: clear subdirs for tools/ and guards/, coherent types.ts + session.ts + sdk-bridge.ts at root — high fan-in (7.4) confirms these are genuinely core files",
+        "coupling_matrix shows clean dependency directions: toolkit/tools/ → toolkit/ (36 edges), plugins/ → src/ (21 edges) — no bidirectional coupling at directory level",
+        "src/adapters/ is well-structured with eliza/ and skill-dojo/ as clear adapter boundaries"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "package_organization": {
+      "dimension_character": "The codebase has a well-structured toolkit/ and adapters/ layer, but src/lib/ and src/reactive/ suffer from accumulated orphaned files and low cohesion. The lib/ root is a flat catch-all with 5+ orphaned files (1268 LOC of dead weight) and the remaining files span unrelated concerns. The reactive/ subsystem is ~85% orphaned, suggesting it was built speculatively or its integration was never completed. The hooks/ subdirectory is entirely dead code.",
+      "score_rationale": "Score of 68.5 reflects significant organizational debt concentrated in two areas: src/lib/ flat root with mixed concerns and orphaned files, and src/reactive/ as a largely dead subsystem. These issues inflate the codebase by ~2500 LOC of unreachable code and make navigation harder for new developers. However, the toolkit/, adapters/, and sources/ hierarchies are well-organized with clean boundaries, preventing the score from dropping lower. Anchored near 70 (clear structural issues with good areas balancing bad)."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "package_organization",
+      "identifier": "reactive_mostly_orphaned",
+      "summary": "src/reactive/ directory tree (20 files, 1654 LOC) is almost entirely orphaned with no importers",
+      "related_files": [
+        "src/reactive/event-loop.ts",
+        "src/reactive/watermark-store.ts",
+        "src/reactive/event-handlers/disagree-handler.ts",
+        "src/reactive/event-handlers/incident-alert-handler.ts",
+        "src/reactive/event-handlers/market-alert-handler.ts",
+        "src/reactive/event-handlers/mention-handler.ts",
+        "src/reactive/event-handlers/reply-handler.ts",
+        "src/reactive/event-handlers/tip-thanks-handler.ts",
+        "src/reactive/event-sources/sse-feed.ts",
+        "src/reactive/event-sources/balance-source.ts",
+        "src/reactive/event-sources/storage-watcher.ts"
+      ],
+      "evidence": [
+        "event-loop.ts (257 LOC), watermark-store.ts (90 LOC) — orphaned root files",
+        "6 of 7 event-handlers are orphaned (all except severity-handler.ts which is imported by the orphaned handlers)",
+        "sse-feed.ts (244 LOC), balance-source.ts (104 LOC), storage-watcher.ts (139 LOC) — orphaned event sources",
+        "avg fan-in for reactive/ root is 0.3, event-handlers/ is 0.3 — near-zero importers"
+      ],
+      "suggestion": "Stage 1: Verify reactive/ is truly unused by checking cli/event-runner.ts imports. Stage 2: If unused, move entire reactive/ to an archive or delete it. Stage 3: If partially used, prune orphaned files and document which files are entry points for the event-driven mode. Run `npx tsx -e 'import * as r from \"./src/reactive/event-loop.js\"'` to verify import chains.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_reactive_subsystem"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "lib_root_orphaned_files",
+      "summary": "src/lib/ root has 5+ orphaned files (1268 LOC) that inflate the directory without being imported",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/review-findings.ts"
+      ],
+      "evidence": [
+        "tips.ts (442 LOC) — zero importers in src/",
+        "predictions.ts (391 LOC) — zero importers in src/",
+        "mentions.ts (148 LOC) — zero importers in src/",
+        "transcript.ts (175 LOC) — zero importers in src/",
+        "review-findings.ts (112 LOC) — zero importers in src/",
+        "Total: 1268 LOC of dead code in the lib/ root"
+      ],
+      "suggestion": "Stage 1: Verify these files have zero callers (grep for import paths). Stage 2: Delete orphaned files or move to an archive directory. Stage 3: Consider whether the remaining 9 files in src/lib/ should be further organized (financial: spending-policy.ts + budget-tracker.ts; session: state.ts; config: agent-config.ts).",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "orphaned_lib_files"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "hooks_dir_fully_orphaned",
+      "summary": "src/lib/sources/providers/hooks/ has 2 files with zero importers — entire subdirectory is dead",
+      "related_files": [
+        "src/lib/sources/providers/hooks/arxiv.ts",
+        "src/lib/sources/providers/hooks/kraken.ts"
+      ],
+      "evidence": [
+        "arxiv.ts (24 LOC) — zero importers confirmed via grep",
+        "kraken.ts (140 LOC) — zero importers confirmed via grep",
+        "avg fan-in for hooks/ directory is 0.0"
+      ],
+      "suggestion": "Delete both files and the hooks/ directory. If the hook pattern is needed in the future, re-implement when there are actual consumers.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Speculative implementation of reactive subsystem before integration was complete",
+      "Feature code (tips, predictions, mentions) was written but never wired into the session loop or was superseded by toolkit alternatives"
+    ],
+    "likely_symptoms": ["hooks_dir_fully_orphaned is a symptom of the same pattern as reactive — built but never integrated"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "package_organization": {
+      "add": [
+        {
+          "header": "Toolkit directory is well-organized with clear boundaries",
+          "description": "src/toolkit/ has coherent subdirs (tools/, guards/), high fan-in core files, and clean dependency direction (tools/ → toolkit/ → guards/). This is the best-organized subsystem.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Adapters directory has clean adapter boundaries",
+          "description": "src/adapters/ with eliza/ and skill-dojo/ subdirectories follows proper adapter isolation. Each adapter has its own types.ts and index.ts barrel.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "~2500 LOC of orphaned code across lib and reactive",
+          "description": "Combined orphaned code in src/lib/ (1268 LOC) and src/reactive/ (~1200 LOC) inflates the codebase by ~10% with unreachable code, hindering navigation.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}
