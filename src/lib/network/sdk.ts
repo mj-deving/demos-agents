@@ -13,24 +13,26 @@ import { resolve } from "node:path";
 import { homedir } from "node:os";
 
 import { Demos } from "@kynesyslabs/demosdk/websdk";
-import type { SigningAlgorithm } from "@kynesyslabs/demosdk/types/cryptography";
 
-type RuntimeConfig = Readonly<{
+/** Signing algorithm — matches SDK's internal type without deep import */
+type SigningAlgorithm = "ed25519" | "falcon" | "ml-dsa";
+
+interface RuntimeConfig {
   rpcUrl: string;
   apiUrl: string;
   algorithm?: SigningAlgorithm;
   dualSign?: boolean;
-}>;
+}
 
-const DEFAULT_CONFIG: RuntimeConfig = Object.freeze({
-  rpcUrl: "https://demosnode.discus.sh/",
-  apiUrl: "https://www.supercolony.ai",
-});
+const DEFAULT_RPC = "https://demosnode.discus.sh/";
+const DEFAULT_API = "https://www.supercolony.ai";
 
-export const RPC_URL = DEFAULT_CONFIG.rpcUrl;
-export const SUPERCOLONY_API = DEFAULT_CONFIG.apiUrl;
+let runtimeConfig: RuntimeConfig = { rpcUrl: DEFAULT_RPC, apiUrl: DEFAULT_API };
 
-let runtimeConfig: RuntimeConfig = DEFAULT_CONFIG;
+/** @deprecated Use getRpcUrl() — this constant doesn't reflect credential overrides */
+export const RPC_URL = DEFAULT_RPC;
+/** @deprecated Use getApiUrl() — this constant doesn't reflect credential overrides */
+export const SUPERCOLONY_API = DEFAULT_API;
 let cryptoInitialized = false;
 let logAgentName: string | undefined;
 
@@ -125,10 +127,11 @@ function readConfigOverrides(content: string): Partial<RuntimeConfig> {
 }
 
 function applyConfigOverrides(content: string): void {
-  runtimeConfig = Object.freeze({
-    ...DEFAULT_CONFIG,
+  runtimeConfig = {
+    rpcUrl: DEFAULT_RPC,
+    apiUrl: DEFAULT_API,
     ...readConfigOverrides(content),
-  });
+  };
 }
 
 export function getRpcUrl(): string {
