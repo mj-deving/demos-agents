@@ -1,0 +1,98 @@
+{
+  "batch": "package_organization",
+  "batch_index": 15,
+  "assessments": {
+    "package_organization": 83.0
+  },
+  "dimension_notes": {
+    "package_organization": {
+      "evidence": [
+        "The top-level src/ split (toolkit/, lib/, plugins/, reactive/, actions/, adapters/) maps cleanly to domain capabilities: reusable SDK tools, business logic, plugin extensions, event-driven loop, execution pipeline, and framework adapters",
+        "toolkit/ has strong internal cohesion: tools/, guards/, and root files form a clear layered structure with coupling_matrix showing toolkit/tools/ -> toolkit/ at 36 edges (highest coupling is internal)",
+        "src/lib/ root has 13 flat files (3904 LOC) with avg_fan_in of only 1.1 — this is a mixed-concern flat directory with files like tips.ts, predictions.ts, mentions.ts, transcript.ts that have low fan-in and could be organized into subdirectories",
+        "src/lib/ subdirectories are well-organized: attestation/ (4 files), auth/ (3), llm/ (3), network/ (6), pipeline/ (8), scoring/ (3), sources/ (8+), util/ (5) — clear domain boundaries",
+        "src/plugins/ has 22 files in a flat directory, but all follow the consistent *-plugin.ts naming convention and share the FrameworkPlugin type — cohesion is high despite file count",
+        "src/lib/sources/providers/hooks/ has 2 files (arxiv.ts, kraken.ts) with avg_fan_in of 0.0 — completely orphaned with no importers, but batch-15 notes this was a false_positive in prior review",
+        "Coupling direction is generally clean: toolkit/tools/ imports from toolkit/ (not vice versa beyond barrel), plugins/ imports from src/ types (not vice versa), reactive/ imports from src/ types",
+        "The coupling_matrix shows reciprocal edges between src/toolkit/ and src/toolkit/tools/ (36 down, 10 up) — the 10 up-edges are the barrel re-exports in index.ts, which is the expected pattern"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "package_organization": {
+      "dimension_character": "The top-level package decomposition is clean and domain-aligned, with toolkit/, plugins/, reactive/, and adapters/ having clear ownership boundaries. The main organizational weakness is the src/lib/ root directory: 13 files with avg_fan_in of 1.1, mixing domain-specific modules (tips, predictions, mentions) with infrastructure (state, budget-tracker, spending-policy). This flat directory makes it harder for a developer to predict where domain logic lives. The toolkit and plugin directories are well-organized internally.",
+      "score_rationale": "A developer navigating the top-level structure would find it intuitive — toolkit vs. plugins vs. reactive makes sense. The 80-level friction shows up in src/lib/ where 13 flat files require scanning to find things. The well-structured subdirectories (attestation/, pipeline/, sources/) demonstrate the project knows how to organize — the root lib/ files are a lag indicator rather than a pattern choice. Score reflects solid top-level design with one subsystem needing reorganization."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "package_organization",
+      "identifier": "lib_root_flat_mixed_concerns",
+      "summary": "src/lib/ root has 13 flat files (3904 LOC) mixing domain logic with infrastructure at low fan-in",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts",
+        "src/lib/review-findings.ts",
+        "src/lib/spending-policy.ts",
+        "src/lib/budget-tracker.ts",
+        "src/lib/state.ts",
+        "src/lib/improvement-utils.ts",
+        "src/lib/response-validator.ts",
+        "src/lib/test-quality-validator.ts",
+        "src/lib/tlsn-playwright-bridge.ts",
+        "src/lib/agent-config.ts"
+      ],
+      "evidence": [
+        "avg_fan_in is 1.1 across these 13 files — most are imported by only 1-2 files",
+        "tips.ts, mentions.ts, predictions.ts are domain features that could group under a 'social/' or 'engagement/' subdirectory",
+        "spending-policy.ts, budget-tracker.ts are financial concerns that could group under 'budget/'",
+        "agent-config.ts alone is 571 LOC and is a complexity hotspot — it serves as the primary config loader",
+        "The existing subdirectories (attestation/, pipeline/, scoring/) show the project's preferred organization pattern"
+      ],
+      "suggestion": "Staged reorganization: (1) Group tips.ts + mentions.ts + predictions.ts into src/lib/engagement/ (social/community features), (2) Group spending-policy.ts + budget-tracker.ts into src/lib/budget/ (financial concerns), (3) Leave agent-config.ts, state.ts, and tlsn-playwright-bridge.ts at root as they are genuinely cross-cutting. Update imports with: find src -name '*.ts' -exec sed to fix import paths, then run npm test to validate.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Organic growth — files were added to src/lib/ as the simplest location during feature development, and subdirectory organization was applied selectively to larger clusters (sources, pipeline, attestation) but not to smaller feature files"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "package_organization": {
+      "add": [
+        {
+          "header": "Clean top-level domain decomposition",
+          "description": "The src/ split into toolkit/ (reusable SDK tools), lib/ (business logic), plugins/ (extensions), reactive/ (event loop), actions/ (execution), and adapters/ (framework bridges) maps cleanly to domain capabilities. A developer can predict ownership from directory names.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Toolkit has strong internal layering",
+          "description": "toolkit/ is structured as tools/ (public API), guards/ (spending/rate controls), and root files (types, session, bridge). Coupling flows downward (tools -> guards -> types) with the barrel index.ts as the only upward reference, matching the intended package boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugins directory is flat but cohesive",
+          "description": "22 plugin files in a flat directory, but all share *-plugin.ts naming and the FrameworkPlugin type contract. The high file count is appropriate because plugins are independent units that should be discoverable by scanning the directory.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "src/lib root accumulates low-fan-in files",
+          "description": "13 files at the lib/ root with avg_fan_in of 1.1 represent organic growth. The existing subdirectory pattern (attestation/, pipeline/, scoring/) shows the preferred organization, but smaller feature files have not been grouped yet.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

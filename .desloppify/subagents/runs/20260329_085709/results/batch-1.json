@@ -1,0 +1,115 @@
+{
+  "batch": "cross_module_architecture",
+  "batch_index": 1,
+  "assessments": {
+    "cross_module_architecture": 81.2
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "src/types.ts is imported by 65 files — a genuine god module acting as the central type hub for the entire codebase. While type-only modules are less harmful than logic hubs, changes here ripple everywhere.",
+        "src/toolkit/types.ts (23 importers) and src/adapters/skill-dojo/types.ts (18 importers) form secondary type hubs, creating a clear three-tier type hierarchy.",
+        "Import cycle detected: src/lib/util/extensions.ts -> src/plugins/calibrate-plugin.ts. extensions.ts imports KNOWN_EXTENSIONS from state.ts and calibrate-plugin.ts imports BeforeSenseContext from extensions.ts while extensions.ts uses calibrate-plugin via dynamic loadExtensions().",
+        "Clear boundary between toolkit/ (framework-agnostic) and src/lib/ (business logic) — toolkit never imports from lib/, actions/, or plugins/. This is a well-enforced architectural contract.",
+        "plugins/ directory has 22 files all importing from src/types.ts — consistent pattern but creates a massive fan-in hub.",
+        "src/lib/ has 13 flat files alongside 8 subdirectories — the flat files (tips.ts, predictions.ts, mentions.ts, transcript.ts) are documented as orphaned, indicating incomplete restructuring.",
+        "adapters/skill-dojo/ (19 files) imports heavily from src/ (18 times) and src/lib/network/ (12 times) — tight coupling to both the type hub and network layer."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "One import cycle between extensions.ts and calibrate-plugin.ts. src/types.ts at 65 importers is a significant hub module. Orphaned flat files in src/lib/ blur the restructuring boundary."
+    }
+  },
+  "dimension_judgment": {
+    "cross_module_architecture": {
+      "dimension_character": "The codebase has a well-designed two-layer architecture with a clean toolkit/business-logic boundary that is consistently enforced. The main structural weakness is the god-module pattern at src/types.ts (65 importers), a single import cycle between extensions.ts and calibrate-plugin.ts, and orphaned files in src/lib/ that represent incomplete restructuring. Dependencies generally flow downward (plugins -> types, tools -> toolkit types, pipeline -> sources), with the cycle being the notable exception.",
+      "score_rationale": "The toolkit boundary is a genuine architectural strength — it is enforced and meaningful. The 65-importer type hub is concerning but is type-only (no logic), limiting blast radius. The single import cycle is real but contained. Orphaned flat files in src/lib/ are a boundary hygiene issue. Overall, a developer would mostly trust dependency direction but would encounter the hub module as a recurring friction point. Score lands at 81, reflecting 'solid but uneven' — strong boundaries with identifiable hub and cycle issues."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "extensions_calibrate_cycle",
+      "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
+      "related_files": [
+        "src/lib/util/extensions.ts",
+        "src/plugins/calibrate-plugin.ts"
+      ],
+      "evidence": [
+        "extensions.ts imports KNOWN_EXTENSIONS from state.ts and provides BeforeSenseContext type. calibrate-plugin.ts imports BeforeSenseContext from extensions.ts. loadExtensions() in extensions.ts dynamically loads calibrate-plugin, creating a circular dependency path."
+      ],
+      "suggestion": "Extract the BeforeSenseContext and related hook context types into a dedicated src/lib/util/hook-types.ts file that both extensions.ts and calibrate-plugin.ts can import without creating a cycle.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "types_god_module",
+      "summary": "src/types.ts has 65 importers — god module creating massive blast radius",
+      "related_files": [
+        "src/types.ts"
+      ],
+      "evidence": [
+        "src/types.ts is imported by 65 of 165 production files (39%). It defines FrameworkPlugin, DataProvider, Evaluator, Action, EventPlugin, and numerous supporting types. Any change to this file's exports could affect nearly half the codebase."
+      ],
+      "suggestion": "Split src/types.ts into domain-aligned type modules: plugin-types.ts (FrameworkPlugin, HookFn), provider-types.ts (DataProvider, ProviderResult), action-types.ts (Action, ActionInput, ActionResult), evaluator-types.ts (Evaluator, EvaluatorInput). Re-export from types.ts for backward compatibility while allowing targeted imports.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "orphaned_flat_files_boundary_blur",
+      "summary": "4+ orphaned files in src/lib/ blur the restructured subdirectory boundaries",
+      "related_files": [
+        "src/lib/tips.ts",
+        "src/lib/predictions.ts",
+        "src/lib/mentions.ts",
+        "src/lib/transcript.ts"
+      ],
+      "evidence": [
+        "src/lib/ has 13 flat files alongside 8 structured subdirectories (auth/, llm/, attestation/, scoring/, sources/, network/, pipeline/, util/). At least 4 flat files (tips.ts, predictions.ts, mentions.ts, transcript.ts) are documented as orphaned with zero importers, yet they persist and blur the boundary between restructured and legacy code."
+      ],
+      "suggestion": "Delete the orphaned flat files (they are recoverable from git). This clarifies the restructured src/lib/ boundary and reduces the flat file count from 13 to 9.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Incremental restructuring of src/lib/ from flat files to subdirectories left orphaned files behind",
+      "Central type file grew organically as plugin system expanded"
+    ],
+    "likely_symptoms": [
+      "orphaned_flat_files_boundary_blur"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "cross_module_architecture": {
+      "add": [
+        {
+          "header": "Clean toolkit/business-logic boundary",
+          "description": "src/toolkit/ never imports from src/lib/, src/actions/, or src/plugins/. This architectural boundary is consistently enforced and meaningful — toolkit remains framework-agnostic.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Type-only hub modules limit blast radius",
+          "description": "The three type hubs (src/types.ts at 65, src/toolkit/types.ts at 23, src/adapters/skill-dojo/types.ts at 18) are all type-definition files with no runtime logic. Changes propagate at compile-time only, reducing the practical blast radius compared to logic hubs.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Consistent downward dependency flow in plugins",
+          "description": "All 22 plugins import from src/types.ts and optionally from src/lib/ — none import from each other or from cli/. This enforces a clean unidirectional dependency graph.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

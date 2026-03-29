@@ -1,0 +1,103 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {
+    "convention_outlier": 84.3
+  },
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "All directories consistently use camelCase for function/variable names — naming_by_directory shows zero snake_case outliers across 20+ directories. This is a strong convention signal.",
+        "Module export pattern is consistently named exports (no default exports) across all directories — module_patterns shows named_export dominance in every directory.",
+        "Plugin organization is highly consistent: 21/22 plugins use the 'type' import pattern. Only plugins/index.ts is the outlier (expected for a barrel file).",
+        "toolkit/tools/ has a strong shared behavioral protocol: 11/11 use 'type', 8/11 use 'localProvenance', 'err', 'ToolResult', 'demosError'. Outliers are connect.ts (lifecycle, not tool), feed-parser.ts (utility, not tool), and tool-wrapper.ts (infrastructure).",
+        "reactive/event-handlers/ has 2 outliers: incident-alert-handler.ts and market-alert-handler.ts don't use EventHandler/EventAction types directly — they delegate to createSeverityHandler which handles it internally. This is structural delegation, not a convention violation.",
+        "src/lib/network/sdk.ts has deprecated module-level constants (RPC_URL, SUPERCOLONY_API) alongside their replacements (getRpcUrl(), getApiUrl()) — old/new pattern coexistence.",
+        "File naming is consistently kebab-case across the entire codebase."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Deprecated constants coexisting with replacement functions in sdk.ts. Minor behavioral protocol variations in event handlers (delegation vs direct implementation)."
+    }
+  },
+  "dimension_judgment": {
+    "convention_outlier": {
+      "dimension_character": "The codebase demonstrates strong convention consistency. camelCase naming, named exports, kebab-case file naming, and plugin structural patterns are applied uniformly. The few outliers are explainable: barrel files naturally differ from their siblings, and toolkit/tools/ outliers (connect.ts, feed-parser.ts) have distinct roles that justify their pattern differences. The main convention drift is the coexistence of deprecated module-level constants with their replacement functions in sdk.ts.",
+      "score_rationale": "A developer can learn patterns in one area and trust they hold everywhere — naming, exports, file organization, and plugin structure are all consistent. The score is pulled slightly below 85 by the deprecated constant coexistence in sdk.ts and the minor behavioral protocol variations in event handlers. These are isolated rather than systemic, placing the score firmly in the 'solid' range at 84.3."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "deprecated_constants_coexistence",
+      "summary": "sdk.ts exports deprecated module-level constants alongside their replacement getter functions",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Lines 32-35: 'export const RPC_URL = DEFAULT_RPC' and 'export const SUPERCOLONY_API = DEFAULT_API' are marked @deprecated with comments pointing to getRpcUrl() and getApiUrl(). Both deprecated and replacement exports coexist, creating confusion about which to use."
+      ],
+      "suggestion": "Remove the deprecated const exports (RPC_URL, SUPERCOLONY_API). Any remaining consumers should be migrated to getRpcUrl()/getApiUrl(). This eliminates the dual-path confusion.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "event_handler_protocol_drift",
+      "summary": "reactive/event-handlers/ siblings use different structural patterns — some use EventHandler/EventAction directly, others delegate to createSeverityHandler",
+      "related_files": [
+        "src/reactive/event-handlers/incident-alert-handler.ts",
+        "src/reactive/event-handlers/market-alert-handler.ts"
+      ],
+      "evidence": [
+        "5/7 event handlers use EventHandler and EventAction types directly. incident-alert-handler.ts and market-alert-handler.ts instead call createSeverityHandler() which wraps these types internally. While functionally equivalent, a developer reading sibling files would see inconsistent structural patterns."
+      ],
+      "suggestion": "This is a minor convention drift since the delegation is intentional DRY behavior. Document the two handler patterns (direct implementation vs. severity-handler delegation) with a brief comment in the directory or in one of the delegating handlers explaining why.",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Deprecated constants left behind during credential system migration",
+      "Event handler DRY refactoring created a secondary pattern without documenting the rationale"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": [
+      "event_handler_protocol_drift"
+    ]
+  },
+  "context_updates": {
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Uniform camelCase naming across all directories",
+          "description": "Every directory in the codebase uses camelCase for function and variable names with zero snake_case outliers. This eliminates a common source of convention drift in TypeScript projects.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent named-export-only module pattern",
+          "description": "All modules use named exports exclusively — no default exports anywhere. This makes imports predictable and grep-able across the entire codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent kebab-case file naming",
+          "description": "All source files use kebab-case naming (e.g., sdk-bridge.ts, publish-pipeline.ts, state-helpers.ts). No PascalCase or camelCase files exist.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugin structural consistency at 95%+",
+          "description": "21 of 22 plugins follow the same structural pattern with consistent type imports. The sole outlier is the barrel index.ts which naturally differs.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "batch": "type_safety",
+  "batch_index": 20,
+  "assessments": {
+    "type_safety": 79.5
+  },
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "Total explicit 'any' usage across production code is now very low: 11 instances in 4 files. Previously flagged files (feed-filter.ts, tlsn-playwright-bridge.ts, signals.ts, engage-heuristics.ts, source-discovery.ts) have all been cleaned up to use unknown or typed interfaces.",
+        "publish-pipeline.ts accounts for 7 of 11 remaining 'any' instances (lines 342-350), all in txHash extraction. sdk-bridge.ts has the same logic implemented with typed narrowing (extractTxHash), making these a known duplication issue.",
+        "action-executor.ts ApiCallFn has data?: any (line 29) — the sole remaining explicit any type annotation in a function signature.",
+        "types.ts EventSource<any>[] (line 427) uses any as a generic type parameter — this is in a base class method and is semantically correct (event sources can produce any event type).",
+        "schemas.ts uses z.any() for stateStore and onToolCall (lines 75-76) — runtime objects that can't be validated with Zod schemas. These are documented with comments explaining why.",
+        "SessionState and V2SessionState use unknown instead of any for result, engagements, signalSnapshot, priceSnapshot, oracleSnapshot fields — positive improvement from prior review.",
+        "ActionExecutorContext.llm is now typed as LLMProvider | null (line 84) — previously flagged as 'any | null', now resolved.",
+        "SdkBridge interface uses inline import() types for return values (e.g., Promise<import('./types.js').ScanPost[]>) throughout chain query methods — while slightly verbose, these are accurate type annotations.",
+        "DemosRpcMethods interface (sdk-bridge.ts lines 58-100) provides typed surfaces for SDK methods that lack type exports, with optional method markers (?) for methods that may not exist on older SDK versions."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "type_safety": {
+      "dimension_character": "The codebase has undergone significant type safety improvements, with previously flagged files (tlsn-playwright-bridge, feed-filter, signals, engage-heuristics) now fully typed using unknown and typed interfaces. The remaining 'any' usage is concentrated in two areas: publish-pipeline.ts txHash extraction (7 as-any casts) and action-executor.ts ApiCallFn (1 explicit any). The former has a typed solution available in extractTxHash but not yet applied. Unknown-typed fields in session state (result, engagements, signalSnapshot) are semantically appropriate — these hold heterogeneous data from different phases — but could benefit from discriminated union types for consumers that need to narrow.",
+      "score_rationale": "Type annotations are mostly accurate across the codebase. The major improvement cycle has brought the any count from high double digits to 11 instances in 4 files. However, publish-pipeline.ts still has 7 as-any casts that bypass type safety in a critical path (transaction hash extraction), and V2SessionState's unknown-typed fields mean consumers must cast without type system guidance. Score at 79.5 is just below the 80 'solid but uneven' anchor — the remaining as-any cluster in publish-pipeline and the weakly-typed session state fields represent recurring friction that a developer would encounter when working in the publish path."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "publish_pipeline_as_any_cluster",
+      "summary": "publish-pipeline.ts has 7 'as any' casts in txHash extraction — typed alternative exists",
+      "related_files": [
+        "src/actions/publish-pipeline.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Lines 342-350: (validity as any)?.response?.data?.transaction?.hash and 6 more 'as any' casts. sdk-bridge.ts extractTxHash() (line 222) implements identical logic with typed Record<string, unknown> narrowing."
+      ],
+      "suggestion": "Extract extractTxHash() to a shared utility and import in publish-pipeline.ts. Replace lines 342-350 with: const txHash = extractTxHash(validity, result);",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "action_executor_apicall_any",
+      "summary": "ApiCallFn type alias has data?: any — should use unknown",
+      "related_files": [
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "Line 29: Promise<{ ok: boolean; status?: number; data?: any }>. This is the only remaining explicit 'any' type annotation in a public function signature across all production code."
+      ],
+      "suggestion": "Change data?: any to data?: unknown. Callers already use conditional checks before accessing data properties, so narrowing from unknown is compatible.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "session_state_unknown_fields",
+      "summary": "V2SessionState has 5 unknown-typed fields that consumers must unsafely narrow",
+      "related_files": [
+        "src/lib/state.ts"
+      ],
+      "evidence": [
+        "result?: unknown (line 52, 95), engagements: Record<string, unknown>[] (line 65, 132), signalSnapshot?: unknown (line 138), priceSnapshot?: unknown (line 140), oracleSnapshot?: unknown (line 142). These are correct over 'any' but force consumers to use unsafe casts when reading values."
+      ],
+      "suggestion": "Define specific types for signalSnapshot (SignalSnapshot from signals.ts), priceSnapshot, and oracleSnapshot based on their actual runtime shapes. For engagements, define an EngagementRecord type capturing the known fields. For result, use a union of phase-specific result types.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "publish-pipeline.ts predates the typed extractTxHash utility and was never updated to use it",
+      "Session state was designed for heterogeneous phase outputs before the type system matured"
+    ],
+    "likely_symptoms": [
+      "publish_pipeline_as_any_cluster"
+    ],
+    "possible_false_positives": [
+      "Previously flagged: feed-filter.ts 10 any types — now resolved",
+      "Previously flagged: tlsn-playwright-bridge.ts 15 as-any casts — now resolved",
+      "Previously flagged: ActionExecutorContext.llm typed as any — now LLMProvider | null",
+      "Previously flagged: SessionState any-typed fields — now unknown-typed"
+    ]
+  },
+  "context_updates": {
+    "type_safety": {
+      "add": [
+        {
+          "header": "Major any cleanup cycle completed",
+          "description": "feed-filter.ts, tlsn-playwright-bridge.ts, signals.ts, engage-heuristics.ts, source-discovery.ts, and sc-oracle/sc-prices plugins have all been cleaned of explicit any types. The codebase went from high-dozens of any instances to 11 across 4 files.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "DemosExtended interface replaces SDK as-any casts",
+          "description": "tlsn-playwright-bridge.ts now uses DemosExtended and other typed interfaces instead of (demos as any) casts. This pattern was applied systematically to all 7 previous cast sites.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "DemosRpcMethods provides typed SDK surface",
+          "description": "sdk-bridge.ts defines DemosRpcMethods with optional methods (getTxByHash?, getTransactions?) for SDK capabilities that may not exist on all versions. This avoids as-any while being honest about optional SDK surface.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "z.any() used for runtime objects in schemas",
+          "description": "schemas.ts uses z.any() for stateStore and onToolCall — runtime objects with methods that cannot be validated via Zod. Each is documented with a comment explaining the limitation. This is acceptable boundary typing.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "publish-pipeline.ts retains 7 as-any casts",
+          "description": "The txHash extraction chain in publish-pipeline.ts uses 7 'as any' casts for SDK response shapes. A typed extractTxHash() function exists in sdk-bridge.ts but hasn't been adopted here yet.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

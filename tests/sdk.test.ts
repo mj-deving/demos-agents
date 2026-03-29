@@ -33,8 +33,8 @@ vi.mock("@kynesyslabs/demosdk/websdk", () => {
 import { readFileSync, existsSync } from "node:fs";
 import { Demos } from "@kynesyslabs/demosdk/websdk";
 import {
-  RPC_URL,
-  SUPERCOLONY_API,
+  getRpcUrl,
+  getApiUrl,
   loadMnemonic,
   connectWallet,
   apiCall,
@@ -59,13 +59,13 @@ afterEach(() => {
 
 // ── Constants ──────────────────────────────────────
 
-describe("exported constants", () => {
-  it("RPC_URL points to demosnode", () => {
-    expect(RPC_URL).toBe("https://demosnode.discus.sh/");
+describe("config getters", () => {
+  it("getRpcUrl returns the default demosnode URL", () => {
+    expect(getRpcUrl()).toBe("https://demosnode.discus.sh/");
   });
 
-  it("SUPERCOLONY_API points to www.supercolony.ai", () => {
-    expect(SUPERCOLONY_API).toBe("https://www.supercolony.ai");
+  it("getApiUrl returns the default SuperColony URL", () => {
+    expect(getApiUrl()).toBe("https://www.supercolony.ai");
   });
 });
 
@@ -209,7 +209,7 @@ describe("connectWallet", () => {
     expect(result.address).toBe("0xTestAddress");
   });
 
-  it("calls Demos.connect with RPC_URL", async () => {
+  it("calls Demos.connect with getRpcUrl()", async () => {
     vi.mocked(existsSync).mockImplementation((p) =>
       String(p) === XDG_CREDENTIALS
     );
@@ -217,7 +217,7 @@ describe("connectWallet", () => {
 
     await connectWallet(".env");
 
-    expect(mockConnect).toHaveBeenCalledWith(RPC_URL);
+    expect(mockConnect).toHaveBeenCalledWith(getRpcUrl());
   });
 
   it("calls connectWallet with loaded mnemonic", async () => {

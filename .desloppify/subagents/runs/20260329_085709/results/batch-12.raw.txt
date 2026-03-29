@@ -1,0 +1,78 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 12,
+  "assessments": {
+    "authorization_consistency": 85.0
+  },
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "The toolkit layer has a consistent auth boundary: connect() establishes the session with wallet verification (symlink check, mode-600 enforcement, TOCTOU-safe fstat), and all subsequent tool calls require a valid DemosSession handle",
+        "SSRF validation is applied uniformly across attest(), pay(), and connect() via validateUrl() with DNS resolution + IP blocklist",
+        "URL allowlist enforcement is consistent in attest() and pay() — both check session.urlAllowlist before making requests",
+        "Auth token is stored via local Symbol (AUTH_TOKEN) in DemosSession with toJSON() redaction, preventing accidental leakage in logs",
+        "The 3-state apiAccess model (none/configured/authenticated) provides clear trust boundaries for API fallback behavior",
+        "Wallet file permissions check in connect() includes container/WSL2 awareness (drvfs mode-777 downgrade to warning)",
+        "Auth in the CLI/plugin layer uses ensureAuth() which returns null when API is unreachable — plugins check this consistently before making API calls"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The src/lib/auth/auth.ts module uses a file-based auth cache (JSON on disk) without enforcing file permissions on the cache file itself, unlike the wallet which gets mode-600 checks. The plugin layer's auth pattern (dynamic import of ensureAuth) is consistent but separate from the toolkit layer's session-based auth, creating two parallel auth paradigms."
+    }
+  },
+  "dimension_judgment": {
+    "authorization_consistency": {
+      "dimension_character": "Authorization is well-structured with clear boundaries: the toolkit layer enforces session-scoped auth through connect(), and the plugin layer uses ensureAuth() for API token management. Both layers apply their patterns consistently within their domains. The main gap is between the two layers — they use different auth mechanisms (session handle vs. cached token) without a unifying abstraction, though this reflects the intentional toolkit-vs-CLI boundary.",
+      "score_rationale": "A developer working within either the toolkit or plugin layer would find auth patterns reliable and consistent — matching the 85+ anchor. The dual-paradigm nature across layers and the missing permissions check on the auth cache file prevent a higher score. The SSRF validation, URL allowlists, and Symbol-based token storage demonstrate security-conscious design."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "auth_cache_no_permissions",
+      "summary": "Auth cache file ~/.supercolony-auth.json has no permission enforcement unlike the wallet file",
+      "related_files": ["src/lib/auth/auth.ts"],
+      "evidence": ["connect.ts enforces mode-600 on wallet files and checks for symlinks, but auth.ts reads/writes ~/.supercolony-auth.json via readFileSync/writeFileSync without any permission checks — the cached auth token is readable by any local user"],
+      "suggestion": "When writing the auth cache file, set mode 0o600 via writeFileSync options (mode: 0o600) or use open(path, 'w', 0o600) + fstat pattern matching the wallet file security model",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Auth token security model was built for the toolkit (session-scoped, Symbol-protected) and the legacy CLI layer (file-cached) independently, with different security assumptions"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "Session-scoped auth with Symbol isolation",
+          "description": "Toolkit stores auth tokens via local Symbol on DemosSession, with toJSON() and inspect redaction. This prevents accidental leakage through logging or serialization, providing defense-in-depth beyond access control.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Uniform SSRF validation at IO boundaries",
+          "description": "All toolkit tools that make outbound requests (attest, pay, connect) validate URLs through the same validateUrl() function with DNS resolution and IP blocklist. No tool bypasses this check.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Three-state apiAccess model",
+          "description": "The SdkBridge uses a 3-state apiAccess enum (none/configured/authenticated) rather than a boolean, giving precise trust boundary control for API fallback decisions throughout the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Dual auth paradigm across layers",
+          "description": "Toolkit uses session-handle auth (connect creates DemosSession), while CLI/plugins use ensureAuth() with file-cached tokens. This reflects the intentional boundary between reusable toolkit and personal CLI tooling, but means auth patterns differ across layers.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

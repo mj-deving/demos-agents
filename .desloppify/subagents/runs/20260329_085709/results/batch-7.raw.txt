@@ -1,0 +1,75 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {
+    "dependency_health": 88.0
+  },
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "Production dependencies are minimal and purposeful: @anthropic-ai/sdk (LLM), @kynesyslabs/demosdk (core SDK), proper-lockfile (file locking), yaml (config parsing), zod (schema validation) — 5 total production deps",
+        "No duplicate-purpose libraries: single YAML parser (yaml), single schema validator (zod), single LLM SDK (@anthropic-ai/sdk), no competing HTTP clients (uses native fetch)",
+        "No heavy utility libraries (no lodash, no moment) — the codebase uses native JS/TS equivalents throughout",
+        "One import cycle detected: src/lib/util/extensions.ts -> src/plugins/calibrate-plugin.ts, but inspection shows calibrate-plugin.ts imports type-only from extensions.ts (import type { BeforeSenseContext }), and extensions.ts uses dynamic import for calibrate-plugin — the cycle is type-level only and mitigated by dynamic imports at runtime",
+        "Dev dependencies are lean: vitest, tsx, typescript, playwright (for TLSN bridge testing), @types/proper-lockfile — all justified",
+        "No unused production dependencies visible — all 5 are actively imported across the codebase"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "One import cycle exists between extensions.ts and calibrate-plugin.ts — while mitigated by dynamic imports and type-only usage, the structural cycle remains in the import graph. The @auth/agent dev dependency purpose is unclear."
+    }
+  },
+  "dimension_judgment": {
+    "dependency_health": {
+      "dimension_character": "The codebase has an exceptionally lean dependency footprint — only 5 production dependencies, all serving distinct purposes with no overlap or bloat. There are no competing libraries, no heavy utility packages pulled in for light use, and no visible unused dependencies. The single import cycle is mitigated through dynamic imports and type-only references, making it a low-severity structural concern.",
+      "score_rationale": "Dependency health is strong — 5 purposeful production deps with zero duplication places this well above the 80 anchor. The one import cycle prevents reaching exemplary territory, but its runtime mitigation (dynamic imports) limits real-world impact. Score reflects a deliberately minimal dependency strategy that serves developers well."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "extensions_calibrate_cycle",
+      "summary": "Import cycle between extensions.ts and calibrate-plugin.ts persists in the static import graph despite runtime mitigation",
+      "related_files": ["src/lib/util/extensions.ts", "src/plugins/calibrate-plugin.ts"],
+      "evidence": [
+        "calibrate-plugin.ts has 'import type { BeforeSenseContext } from \"../lib/util/extensions.js\"' (type-only import)",
+        "extensions.ts dynamically imports calibrate-plugin.ts inside loadExtensions() switch case",
+        "The cycle is type-level only at compile time and dynamic at runtime, but static analysis tools still flag it"
+      ],
+      "suggestion": "Extract BeforeSenseContext and other hook context types into a dedicated types file (e.g., src/lib/util/extension-types.ts) that both modules can import without creating a cycle",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The extensions.ts file serves dual duty as both type definitions and runtime loader, creating a structural coupling between type consumers and implementation providers"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Minimal production dependency footprint",
+          "description": "Only 5 production dependencies, each serving a distinct purpose with no overlap. No heavy utility libraries, no competing HTTP clients, no duplicate-purpose packages.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Native JS/TS over utility libraries",
+          "description": "The codebase consistently uses native fetch, native crypto, native path/fs operations instead of pulling in wrapper libraries. This reduces supply chain risk and bundle size.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Import cycle mitigated by dynamic imports",
+          "description": "The extensions.ts <-> calibrate-plugin.ts cycle uses type-only imports in one direction and dynamic imports in the other, preventing runtime initialization issues while leaving a static graph artifact.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

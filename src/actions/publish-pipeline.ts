@@ -12,6 +12,7 @@ import { apiCall, info } from "../lib/network/sdk.js";
 import { observe } from "../lib/pipeline/observe.js";
 import { normalizeFeedPosts } from "../lib/pipeline/feed-filter.js";
 import { attestTlsnViaPlaywrightBridge } from "../lib/tlsn-playwright-bridge.js";
+import { extractTxHash } from "../toolkit/sdk-bridge.js";
 
 // ── Constants ──────────────────────────────────────
 
@@ -338,16 +339,7 @@ export async function publishPost(
 
   const result = await DemosTransactions.broadcast(validity, demos);
 
-  // Extract txHash across known SDK response shapes.
-  const confirmHash = (validity as any)?.response?.data?.transaction?.hash;
-  const results = (result as any).response?.results;
-  const txHash = confirmHash || (results
-    ? results[Object.keys(results)[0]]?.hash
-    : (result as any)?.response?.data?.transaction?.hash ||
-      (result as any)?.response?.data?.hash ||
-      (result as any)?.data?.transaction?.hash ||
-      (result as any)?.hash ||
-      (result as any)?.txHash);
+  const txHash = extractTxHash(validity, result);
 
   if (!txHash) {
     observe("error", "Broadcast succeeded but txHash not found in response", {

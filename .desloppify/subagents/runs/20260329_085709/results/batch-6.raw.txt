@@ -1,0 +1,101 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {
+    "abstraction_fitness": 82.5
+  },
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "Wrapper rate is extremely low (0.014, 3 wrappers out of 213 function signatures) indicating minimal pass-through indirection",
+        "The 3 pass-through wrappers (calibrate-plugin, incident-alert-handler, market-alert-handler) are config-driven delegations to createSeverityHandler — they add declarative mapping, not blind forwarding",
+        "4 one-implementation interfaces (ElizaService, FrameworkPlugin, LLMProvider, StateStore) all serve real extensibility boundaries: ElizaService isolates an external adapter, FrameworkPlugin is the plugin contract with 21+ consumers, LLMProvider is provider-agnostic by design, StateStore enables FileStateStore vs test doubles",
+        "SdkBridge interface (sdk-bridge.ts) has 15+ methods — a wide surface, but it is the primary SDK isolation seam used by all toolkit tools, justified by external volatility isolation",
+        "Wide param bags: declarative-engine.ts has 56 config_bag_mentions, but these are spec-driven YAML operations — the config objects represent the provider spec domain model, not arbitrary option bags",
+        "ActionExecutorContext in action-executor.ts has 15+ fields — a large dependency injection surface, but each field is independently injectable for testing, and the factory pattern was explicitly chosen over closures for testability",
+        "Zero delegation-heavy classes, zero facade modules, zero typed-dict violations — the codebase avoids common abstraction fitness anti-patterns",
+        "Tool wrapper (tool-wrapper.ts) adds real cross-cutting behavior (timing, touch, observer notification, error wrapping) — not a pass-through"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "sub_axes": {
+        "abstraction_leverage": 90.0,
+        "indirection_cost": 88.0,
+        "interface_honesty": 75.0,
+        "delegation_density": 95.0,
+        "definition_directness": 92.0,
+        "type_discipline": 85.0
+      }
+    }
+  },
+  "dimension_judgment": {
+    "abstraction_fitness": {
+      "dimension_character": "The codebase has remarkably low abstraction overhead — only 3 pass-through wrappers among 213 functions, zero delegation-heavy classes, and zero facade modules. The four one-implementation interfaces all serve genuine extensibility or isolation boundaries (SDK volatility, plugin contracts, test doubles). The main area of friction is interface_honesty: the SdkBridge interface is wide (15+ methods) and ActionExecutorContext carries many fields, though both are justified by their architectural roles.",
+      "score_rationale": "Abstraction fitness is strong — the near-zero wrapper rate and absence of ceremony-only patterns place this well above the 80 'solid but uneven' anchor. The wide SdkBridge and ActionExecutorContext surfaces prevent reaching exemplary territory, but they serve documented isolation and testability goals rather than being accidental bloat. Score reflects a codebase that earns its abstractions with minimal wasted indirection."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "wide_sdk_bridge_interface",
+      "summary": "SdkBridge interface surface has 15+ methods spanning attestation, publishing, analytics, and payment — mixing concerns in one seam",
+      "related_files": ["src/toolkit/sdk-bridge.ts"],
+      "evidence": [
+        "SdkBridge combines attestDahr, publishHivePost, transferDem, payD402, verifyTransaction, getHivePosts, resolvePostAuthor, getHiveReactions, getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo, apiCall, and apiAccess in a single interface"
+      ],
+      "suggestion": "Consider splitting SdkBridge into capability-specific sub-interfaces (e.g., ChainReader, Publisher, PaymentBridge) that compose into a full bridge — this would make tool dependencies more explicit and enable narrower test doubles",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "action_executor_wide_context",
+      "summary": "ActionExecutorContext has 15+ fields making it a wide dependency injection bag where most consumers use only a subset",
+      "related_files": ["src/actions/action-executor.ts"],
+      "evidence": [
+        "ActionExecutorContext includes identity fields (agentName, address, dryRun), auth (getToken), budget (dailyReactive, hourlyReactive), config slices (calibrationOffset, personaMdPath), and multiple function abstractions (ApiCallFn, GeneratePostFn, AttestAndPublishFn, TransferFn, ObserveFn)"
+      ],
+      "suggestion": "Group related fields into sub-objects (e.g., identity: {agentName, address, dryRun}, budget: {dailyReactive, hourlyReactive}) to make the consumed subset clearer at each call site",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The codebase has grown its SDK bridge organically as chain-first migration added methods, creating a wide interface that could benefit from decomposition"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "Near-zero pass-through wrapper rate",
+          "description": "Only 3 of 213 function signatures are pass-through wrappers (0.014 rate). The three wrappers (calibrate-plugin, incident-alert-handler, market-alert-handler) all add declarative config mapping rather than blind forwarding.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "One-impl interfaces serve real boundaries",
+          "description": "All 4 one-implementation interfaces (ElizaService, FrameworkPlugin, LLMProvider, StateStore) serve genuine extensibility or SDK isolation boundaries with documented design rationale, not ceremony.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Tool wrapper adds real cross-cutting behavior",
+          "description": "withToolWrapper adds timing, session touch, observer notification, and typed error wrapping — genuine cross-cutting concerns, not pass-through indirection.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "SdkBridge is intentionally wide for SDK isolation",
+          "description": "The wide SdkBridge interface (15+ methods) is the primary SDK volatility isolation layer. All toolkit tools interact with the chain through this seam, making it a deliberate architectural boundary rather than accidental bloat.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

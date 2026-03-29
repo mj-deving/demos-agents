@@ -10,8 +10,7 @@
  * not a general search that might return unrelated results.
  */
 
-import { readFileSync, writeFileSync, existsSync, renameSync } from "node:fs";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { writeFileSync, renameSync } from "node:fs";
 import { info } from "../network/sdk.js";
 import { fetchWithTimeout } from "../network/fetch-with-timeout.js";
 import type { SourceRecord, AttestationType } from "../attestation/attestation-policy.js";
@@ -312,41 +311,6 @@ export async function discoverSourceForTopic(
     relevanceScore: best.relevance.score,
     reason: best.relevance.reason,
   };
-}
-
-// ── Registry persistence (V1 — legacy YAML) ─────────────
-
-/**
- * Append a discovered source to the YAML registry file so it persists
- * for future sessions. Deduplicates by name.
- * @deprecated Use persistSourceToCatalog for V2 catalog persistence.
- */
-export function persistSourceToRegistry(registryPath: string, source: SourceRecord): boolean {
-  try {
-    let parsed: Record<string, unknown> = { version: 1, sources: [] };
-    if (existsSync(registryPath)) {
-      parsed = (parseYaml(readFileSync(registryPath, "utf-8")) as Record<string, unknown>) || { version: 1, sources: [] };
-    }
-
-    const sources: SourceRecord[] = Array.isArray(parsed.sources) ? parsed.sources : [];
-
-    // Deduplicate by name
-    if (sources.some((s) => s.name === source.name)) {
-      return false; // already exists
-    }
-
-    sources.push(source);
-    parsed.sources = sources;
-
-    const yaml = stringifyYaml(parsed, { lineWidth: 120 });
-    writeFileSync(registryPath, yaml, "utf-8");
-    info(`source-discovery: persisted "${source.name}" to registry`);
-    return true;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    info(`source-discovery: failed to persist source (${msg})`);
-    return false;
-  }
 }
 
 // ── V2 Catalog Persistence ───────────────────────────────

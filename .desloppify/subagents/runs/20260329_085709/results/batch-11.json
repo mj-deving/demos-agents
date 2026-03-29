@@ -1,0 +1,72 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {
+    "api_surface_coherence": 88.5
+  },
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "All 10 toolkit tools follow a uniform signature pattern: (session: DemosSession, opts: T) => Promise<ToolResult<R>>, with connect/disconnect as documented exceptions using throw/void semantics",
+        "Every tool uses withToolWrapper for consistent timing, error wrapping, and observer notification — no tool bypasses this pattern",
+        "All tools validate input with validateInput(Schema, opts) as their first operation, returning err() on failure",
+        "Consistent error contract: all tools return typed ToolResult<T> with DemosError codes, never throwing (except connect which documents its exception)",
+        "Guards use a consistent check-then-record pattern with boolean parameter (record: true/false) for atomic operations",
+        "The barrel export in toolkit/index.ts cleanly separates types, tools, guards, and schemas into labeled sections",
+        "No public functions exceed 5 parameters — tools take (session, opts), guards take (store, walletAddress, ...domain-specific)"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "connect() uses throw semantics while all other tools return ToolResult — documented but still a shape inconsistency that consumers must handle differently. scan() has an optional opts parameter while most other tools require it."
+    }
+  },
+  "dimension_judgment": {
+    "api_surface_coherence": {
+      "dimension_character": "The toolkit API surface is highly coherent. All tools share the same (session, opts) => ToolResult<T> signature, wrapped uniformly by withToolWrapper, with Zod schema validation as the entry gate. The connect/disconnect exception is well-documented and justified by its lifecycle-management role. Guards follow their own consistent internal pattern with check-and-record semantics.",
+      "score_rationale": "A developer seeing one tool can accurately predict the shape of all others — this meets the 90-level anchor. The connect/disconnect throw-vs-result divergence and minor opts optionality inconsistency prevent a higher score, but these are documented design decisions rather than accidental drift. Score reflects strong coherence with minor documented exceptions."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "scan_opts_optional",
+      "summary": "scan() takes optional opts while most sibling tools require their options parameter",
+      "related_files": ["src/toolkit/tools/scan.ts"],
+      "evidence": ["scan(session, opts?) vs tip(session, opts), react(session, opts), attest(session, opts) — all siblings require their options object"],
+      "suggestion": "Make scan's opts required with sensible defaults inside the ScanOptions type, or document the intentional divergence in the function docstring explaining why a no-args scan is valid",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": ["scan_opts_optional may be intentional since scanning with defaults is a valid use case"]
+  },
+  "context_updates": {
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Uniform tool signature with withToolWrapper",
+          "description": "All 10 toolkit tools share (session, opts) => ToolResult<T> with withToolWrapper providing consistent timing, error wrapping, and observer hooks. This makes the API surface predictable for consumers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Zod validation as universal entry gate",
+          "description": "Every tool calls validateInput(Schema, opts) as its first operation, giving consumers consistent early-fail behavior with structured error messages across all tools.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Connect uses throw semantics by design",
+          "description": "connect/disconnect throw DemosError rather than returning ToolResult because they manage session lifecycle, not tool operations. This is documented in the connect.ts header comment and the barrel export separation.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

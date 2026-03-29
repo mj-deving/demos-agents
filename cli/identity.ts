@@ -13,7 +13,7 @@
 import { webcrypto } from "node:crypto";
 if (!globalThis.crypto) (globalThis as any).crypto = webcrypto;
 
-import { connectWallet, RPC_URL, info, warn } from "../src/lib/network/sdk.js";
+import { connectWallet, getRpcUrl, info, warn } from "../src/lib/network/sdk.js";
 import {
   createWeb2ProofPayload,
   addTwitterIdentity,
@@ -101,7 +101,7 @@ Commands:
     }
 
     case "list": {
-      const result = await getIdentities(RPC_URL, address);
+      const result = await getIdentities(getRpcUrl(), address);
       if (result.ok) {
         console.log("\n🔗 Linked Identities:\n");
         console.log(JSON.stringify(result.identities, null, 2));

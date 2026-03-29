@@ -1,0 +1,83 @@
+{
+  "batch": "ai_generated_debt",
+  "batch_index": 13,
+  "assessments": {
+    "ai_generated_debt": 82.5
+  },
+  "dimension_notes": {
+    "ai_generated_debt": {
+      "evidence": [
+        "Module-level docstrings are consistently informative — they explain architectural decisions, constraints, and relationships rather than restating the obvious (e.g., sdk-bridge.ts explains why it reimplements DAHR instead of importing publish-pipeline.ts)",
+        "Comments on scoring.ts constants explain domain context ('DAHR attestation — TLSN proofs do NOT score') rather than restating what the constant is",
+        "The errors.ts utility is appropriately minimal (1 function, 10 lines) with a useful docstring explaining it was 'extracted from 8+ files that each defined this inline'",
+        "incident-alert-handler.ts and market-alert-handler.ts are thin pass-through wrappers that delegate entirely to createSeverityHandler — these are the only 3 pass-through wrappers in 213 function signatures (1.4% rate)",
+        "High comment ratios flagged by mechanical scan (auth/index.ts at 0.6, llm/index.ts at 0.6, scoring/index.ts at 0.6) are barrel files where comments are the majority of content — false positives since the files are 2-6 lines of actual code",
+        "scoring.ts has inline comments on every constant — borderline restating for simple ones like 'Every post gets base points' above SCORE_BASE = 20, but most add domain context",
+        "Several files in reactive/event-handlers/ have comment ratios of 0.31-0.35, which on inspection are module-level docstrings proportionally large for small handler files — appropriate given they explain delegation patterns",
+        "Codebase average comment ratio is 0.211 — within healthy range, not bloated"
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "ai_generated_debt": {
+      "dimension_character": "The codebase shows disciplined commenting practices — module-level docstrings consistently explain WHY and architectural constraints rather than restating code. The pass-through wrapper rate is very low (1.4%). The main AI-debt signals are concentrated in a few areas: constant-level comments in scoring.ts that border on restating, and proportionally large docstrings on small handler files. There is no evidence of defensive overengineering around typed values, nosy debug logging, or identical boilerplate error handling across files.",
+      "score_rationale": "A developer would mostly find comments purposeful and code direct, matching the 85-level anchor. The scoring.ts restating comments and the incident/market alert handler pass-throughs pull the score slightly below 85. The withToolWrapper pattern and typed error contracts show genuine abstraction rather than AI-style ceremony. The overall signal-to-noise ratio is good but not exemplary."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "scoring_restating_comments",
+      "summary": "Several scoring.ts constant comments restate the obvious rather than adding domain insight",
+      "related_files": ["src/lib/scoring/scoring.ts"],
+      "evidence": ["'/** Every post gets base points */' above 'export const SCORE_BASE = 20' — the name already communicates this. Similarly '/** Confidence field set on post */' above SCORE_CONFIDENCE. Compare with the useful '/** DAHR attestation (sourceAttestations) present — TLSN proofs do NOT score */' which adds non-obvious domain context"],
+      "suggestion": "Remove or enrich the restating comments: SCORE_BASE needs no comment (the name is clear), SCORE_CONFIDENCE could note why confidence matters ('Agent must declare confidence level — mechanical check, not judgment'). Keep the SCORE_ATTESTATION comment which adds genuine insight about TLSN vs DAHR",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "alert_handler_passthrough",
+      "summary": "incident-alert-handler and market-alert-handler are pure pass-through wrappers to createSeverityHandler",
+      "related_files": ["src/reactive/event-handlers/incident-alert-handler.ts", "src/reactive/event-handlers/market-alert-handler.ts"],
+      "evidence": ["createIncidentAlertHandler() does nothing but call createSeverityHandler({name: 'incident-alert', ...config}). createMarketAlertHandler() does the same. The docstrings on these wrappers add commentary but no behavior beyond configuration objects passed to the shared handler."],
+      "suggestion": "These are borderline — they serve as named entry points with domain-specific configuration. If they grow no additional logic, consider inlining the config objects into the handler registry that consumes them, eliminating two files. If they are expected to diverge, keep as-is.",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["AI-assisted development tends to add comments on every export and wrap shared logic in thin named functions — both visible here but at low frequency"],
+    "likely_symptoms": [],
+    "possible_false_positives": ["alert_handler_passthrough may be intentional factory pattern for extensibility"]
+  },
+  "context_updates": {
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "Module docstrings explain WHY consistently",
+          "description": "Module-level comments across toolkit, guards, and pipeline explain architectural constraints and relationships (e.g., 'Does NOT import publish-pipeline.ts to avoid TLSN/Playwright transitive deps') rather than restating what the module does. This is a deliberate documentation culture.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Very low pass-through wrapper rate",
+          "description": "Only 3 pass-through wrappers out of 213 function signatures (1.4%). The codebase strongly favors direct implementation over ceremony layers, with withToolWrapper being a legitimate cross-cutting concern rather than AI-style indirection.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No defensive overengineering on typed values",
+          "description": "Guards and tools trust their typed inputs after Zod validation — no redundant null checks on non-nullable fields, no try-catch around pure expressions. The defensive checks that exist are at genuine IO boundaries.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

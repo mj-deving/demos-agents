@@ -6,7 +6,7 @@
  */
 
 // SDK — wallet, API calls
-export { connectWallet, apiCall, loadMnemonic, info, setLogAgent, RPC_URL, SUPERCOLONY_API } from "../src/lib/network/sdk.js";
+export { connectWallet, apiCall, loadMnemonic, info, setLogAgent } from "../src/lib/network/sdk.js";
 
 // Auth — challenge-response, token cache
 export { ensureAuth, loadAuthCache } from "../src/lib/auth/auth.js";

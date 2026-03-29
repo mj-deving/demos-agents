@@ -17,7 +17,7 @@
 import { webcrypto } from "node:crypto";
 if (!globalThis.crypto) (globalThis as any).crypto = webcrypto;
 
-import { connectWallet, info, warn, RPC_URL } from "../src/lib/network/sdk.js";
+import { connectWallet, info, warn, getRpcUrl } from "../src/lib/network/sdk.js";
 import { resolveAgentName, loadAgentConfig } from "../src/lib/agent-config.js";
 
 const flags: Record<string, string> = {};
@@ -35,7 +35,7 @@ const envPath = flags["env"] || ".env";
 async function main() {
   console.log("═══ T4 GCR SPIKE ═══════════════════════════");
   console.log(`Agent: ${agent}`);
-  console.log(`RPC: ${RPC_URL}`);
+  console.log(`RPC: ${getRpcUrl()}`);
   console.log("");
 
   // Step 1: Connect

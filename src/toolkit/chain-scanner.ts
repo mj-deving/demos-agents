@@ -66,7 +66,7 @@ export async function scanAddressStorage(
             hive: decoded,
           });
         } catch {
-          // Skip malformed transactions.
+          console.warn("[demos-toolkit] Skipping malformed storage transaction from getTransactionHistory");
         }
       }
 
@@ -111,7 +111,7 @@ export async function scanAddressStorage(
             hive: decoded,
           });
         } catch {
-          // Skip malformed transactions.
+          console.warn("[demos-toolkit] Skipping malformed storage transaction from getTransactions");
         }
       }
 

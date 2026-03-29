@@ -1,0 +1,257 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 17,
+  "assessments": {
+    "design_coherence": 74.8
+  },
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "sdk-bridge.ts at 917 lines is the single largest active production file. It implements the full SdkBridge interface with 15+ methods covering DAHR attestation, API calls, HIVE publishing, DEM transfers, D402 payments, chain queries (getHivePosts, getHiveReactions, getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo), and transaction verification — mixing transport, serialization, and business logic.",
+        "publish-pipeline.ts has 7 'as any' casts (lines 342-350) for SDK response extraction, duplicating the exact logic that sdk-bridge.ts:extractTxHash() handles cleanly with typed narrowing. The same pattern solved two different ways in the same codebase.",
+        "action-executor.ts has a 21-field ActionExecutorContext interface (lines 65-104) — flagged by mechanical scan. However, each field is a distinct injectable dependency with clear purpose, and the interface explicitly documents 'All dependencies needed by the action executor. Every field is injectable for testing. SDK-free.' Per the skip guidance, this should not be grouped just to reduce count.",
+        "agent-config.ts validatePersonaConfig function (lines 191-300+) does repetitive type-checking on each YAML field. While long, this is a single-responsibility validation function whose length reflects the genuinely complex domain (many config fields with distinct validation rules).",
+        "declarative-engine.ts at 1534 lines is the largest file. It implements a YAML-driven provider adapter system — inherently complex domain. Contains 1 'monster function' per complexity scan but serves as the core scaling mechanism for adding providers without TypeScript code.",
+        "source-discovery.ts previously had 4 explicit any types — these are now cleaned up. engage-heuristics.ts previously had 2 explicit any types — also cleaned up.",
+        "Orphaned files (attestation-executor.ts 119 LOC, mentions.ts 148 LOC, transcript.ts 175 LOC, predictions.ts 391 LOC, tips.ts 443 LOC, sse-feed.ts 244 LOC) remain in the codebase. These are documented as part of the reactive subsystem and are intentionally retained for future reactivation, not forgotten dead code.",
+        "Toolkit guards (pay-spend-cap, tip-spend-cap, write-rate-limit, backoff) follow a consistent pattern: typed state interfaces, state-helpers.ts shared utilities, atomic check-and-record operations. This is a positive, data-driven structural pattern."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The codebase shows strong design coherence in its toolkit layer (guards, session, types) and plugin system, with consistent patterns applied across sibling modules. The main weakness is at the bridge/pipeline layer: sdk-bridge.ts accumulates too many responsibilities in a single 917-line file, and publish-pipeline.ts duplicates txHash extraction logic with unsafe 'as any' casts that the bridge already handles correctly. The orphaned reactive subsystem files are documented but still create navigation friction. The overall pattern is strong foundations with an uneven middle layer.",
+      "score_rationale": "A developer working in the toolkit or plugin layer would find consistent patterns and focused responsibilities. However, in the bridge/pipeline layer, they would encounter a 917-line file mixing transport, serialization, and business logic, plus duplicated patterns solved differently across files. The 7 'as any' casts in publish-pipeline.ts represent a concrete design coherence gap where a typed solution exists but isn't used consistently. Score at 74.8 reflects mixed quality — strong in some areas, friction-generating in others, aligning with the 70-80 range anchor."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "sdk_bridge_overloaded",
+      "summary": "sdk-bridge.ts at 917 lines mixes transport, serialization, chain queries, and payment logic",
+      "related_files": [
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Single file implements: DAHR attestation, API calls with retry, HIVE post encoding/publishing, DEM token transfers, D402 payment settlement, chain transaction queries (5 methods), reaction publishing, and transaction verification. These are at least 4 distinct responsibility clusters."
+      ],
+      "suggestion": "Extract chain-query methods (getHivePosts, getHiveReactions, getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo, verifyTransaction) into a dedicated chain-reader.ts module. The SdkBridge interface can compose the chain reader, keeping the factory pattern intact while reducing sdk-bridge.ts to ~500 lines of write-path logic.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "2973c470c1119c80"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "publish_pipeline_as_any_txhash",
+      "summary": "publish-pipeline.ts uses 7 'as any' casts for txHash extraction that sdk-bridge.ts handles with typed narrowing",
+      "related_files": [
+        "src/actions/publish-pipeline.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "Lines 342-350 use (validity as any)?.response?.data?.transaction?.hash and 6 more 'as any' casts. sdk-bridge.ts has extractTxHash() (line 222) that handles the same SDK response shapes with proper typed narrowing using Record<string, unknown> casts."
+      ],
+      "suggestion": "Extract extractTxHash() to a shared utility (e.g., toolkit/tx-utils.ts) and use it in publish-pipeline.ts, replacing all 7 'as any' casts with the typed version.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "f9cc9607cbc7cd87"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "systemic_large_files",
+      "summary": "6 files share smells+structural signals — large files with mixed complexity patterns",
+      "related_files": [
+        "src/lib/agent-config.ts",
+        "src/lib/pipeline/signal-detection.ts",
+        "src/lib/sources/catalog.ts",
+        "src/lib/sources/matcher.ts",
+        "src/lib/sources/providers/declarative-engine.ts",
+        "src/toolkit/sdk-bridge.ts"
+      ],
+      "evidence": [
+        "All 6 files are 500+ LOC and flagged by both smells and structural detectors. However, 5 of 6 (agent-config, signal-detection, catalog, matcher, declarative-engine) are long due to genuinely complex domains — validation logic, source matching, YAML spec processing. Only sdk-bridge.ts mixes distinct responsibilities."
+      ],
+      "suggestion": "For sdk-bridge.ts, extract chain-reader methods as described above. For the other 5, no extraction is recommended — they are long but single-responsibility. Add section headers (already present in most) to aid navigation.",
+      "confidence": "medium",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "ac32950677f7ed98"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_attestation_executor_orphaned",
+      "summary": "attestation-executor.ts flagged as orphaned dead code",
+      "related_files": [
+        "src/actions/attestation-executor.ts"
+      ],
+      "evidence": [
+        "File is part of the reactive/event-driven subsystem which is intentionally retained for future reactivation. Has active test suite. Previously adjudicated as false positive in prior review."
+      ],
+      "suggestion": "No action needed — retain for future use.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "56951e0173d7bbe2",
+      "reasoning": "File is part of intentionally retained reactive subsystem with active tests, previously adjudicated as false positive"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_mentions_orphaned",
+      "summary": "mentions.ts flagged as orphaned dead code",
+      "related_files": [
+        "src/lib/mentions.ts"
+      ],
+      "evidence": [
+        "Part of reactive subsystem, intentionally retained. Previously adjudicated as false positive."
+      ],
+      "suggestion": "No action needed.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "2c54138f0c5c11b9",
+      "reasoning": "Intentionally retained reactive subsystem code, previously adjudicated as false positive"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_predictions_orphaned",
+      "summary": "predictions.ts flagged as orphaned dead code",
+      "related_files": [
+        "src/lib/predictions.ts"
+      ],
+      "evidence": [
+        "Part of reactive subsystem, intentionally retained."
+      ],
+      "suggestion": "No action needed.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "113391782ba4882e",
+      "reasoning": "Intentionally retained reactive subsystem code"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_tips_orphaned",
+      "summary": "tips.ts flagged as orphaned dead code",
+      "related_files": [
+        "src/lib/tips.ts"
+      ],
+      "evidence": [
+        "Part of reactive subsystem, intentionally retained."
+      ],
+      "suggestion": "No action needed.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "c59f6576bc09e56b",
+      "reasoning": "Intentionally retained reactive subsystem code"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_transcript_orphaned",
+      "summary": "transcript.ts flagged as orphaned dead code",
+      "related_files": [
+        "src/lib/transcript.ts"
+      ],
+      "evidence": [
+        "Part of reactive subsystem, intentionally retained."
+      ],
+      "suggestion": "No action needed.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "3d0801ef220d2211",
+      "reasoning": "Intentionally retained reactive subsystem code"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_sse_feed_orphaned",
+      "summary": "sse-feed.ts flagged as orphaned dead code",
+      "related_files": [
+        "src/reactive/event-sources/sse-feed.ts"
+      ],
+      "evidence": [
+        "Part of reactive event-driven subsystem, intentionally retained."
+      ],
+      "suggestion": "No action needed.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "c7b250c38e95483b",
+      "reasoning": "Intentionally retained reactive subsystem code"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "dismiss_action_executor_mixed",
+      "summary": "action-executor.ts flagged for mixed responsibilities (21-field context)",
+      "related_files": [
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "ActionExecutorContext has 21 fields, but each is a distinct injectable dependency. The file uses factory pattern and dependency injection for testability. The interface is well-documented with grouped comments."
+      ],
+      "suggestion": "No action needed — context fields represent genuinely distinct dependencies, not a parameter grouping problem.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "8402699e80d43225",
+      "reasoning": "21-field interface is intentional DI for testability — each field is a distinct dependency, not related params that should be grouped"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "sdk-bridge.ts grew organically as chain-first methods were added incrementally (verifyTransaction, getHivePosts, getHiveReactions, etc.) without extracting a chain-reader sub-module",
+      "publish-pipeline.ts predates sdk-bridge.ts's typed extractTxHash() and was never updated to use it"
+    ],
+    "likely_symptoms": [
+      "publish_pipeline_as_any_txhash"
+    ],
+    "possible_false_positives": [
+      "All orphaned file concerns are confirmed false positives — intentionally retained reactive subsystem"
+    ]
+  },
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "Toolkit guards follow consistent pattern",
+          "description": "pay-spend-cap, tip-spend-cap, write-rate-limit, and backoff all use state-helpers.ts shared utilities with typed state interfaces and atomic check-and-record operations. This is a strong data-driven structural pattern that scales well.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugin system has consistent hook contract",
+          "description": "All 22 plugins follow the same FrameworkPlugin interface with typed hook contexts (BeforeSenseContext, AfterPublishDraftContext, etc.). Adding a new plugin requires no framework changes.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "sdk-bridge.ts accumulates responsibilities",
+          "description": "At 917 lines, sdk-bridge.ts mixes DAHR attestation, API calls, HIVE publishing, DEM transfers, D402 payments, and 5 chain-query methods. The chain-reader methods were added incrementally during the chain-first migration without extraction.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Reactive subsystem deliberately orphaned",
+          "description": "~1650 LOC across attestation-executor.ts, mentions.ts, predictions.ts, tips.ts, transcript.ts, and sse-feed.ts are documented orphaned files retained for future reactive loop reactivation. Not dead code — active test suites exist.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

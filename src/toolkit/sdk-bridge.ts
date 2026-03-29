@@ -9,9 +9,17 @@
  */
 
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
-import { scanAddressStorage } from "./chain-scanner.js";
+import {
+  getHivePosts as readHivePosts,
+  getHivePostsByAuthor as readHivePostsByAuthor,
+  getHiveReactions as readHiveReactions,
+  getHiveReactionsByAuthor as readHiveReactionsByAuthor,
+  getRepliesTo as readRepliesTo,
+  resolvePostAuthor as readPostAuthor,
+  verifyTransaction as readTransaction,
+} from "./chain-reader.js";
 import { safeParse } from "./guards/state-helpers.js";
-import { decodeHiveData, encodeHivePayload } from "./hive-codec.js";
+import { encodeHivePayload } from "./hive-codec.js";
 
 /** Sentinel token indicating auth has not completed — never sent as Bearer */
 export const AUTH_PENDING_TOKEN = "__AUTH_PENDING__";
@@ -219,7 +227,7 @@ export interface SdkBridge {
  *   - broadcast: { response: { data: { hash } } }
  *   - fallback: { hash } or { txHash }
  */
-function extractTxHash(confirmResult: unknown, broadcastResult: unknown): string | undefined {
+export function extractTxHash(confirmResult: unknown, broadcastResult?: unknown): string | undefined {
   const extract = (obj: unknown): string | undefined => {
     if (!obj || typeof obj !== "object") return undefined;
     const r = obj as Record<string, unknown>;
@@ -467,236 +475,31 @@ export function createSdkBridge(
     },
 
     async verifyTransaction(txHash: string): Promise<{ confirmed: boolean; blockNumber?: number; from?: string } | null> {
-      if (!rpc.getTxByHash) return null; // Unsupported — caller should not retry
-
-      // Errors propagate to caller (verify.ts retry loop handles them)
-      const tx = await rpc.getTxByHash(txHash);
-      if (!tx) return { confirmed: false };
-      const confirmed = tx.blockNumber > 0 && tx.status === "confirmed";
-      return {
-        confirmed,
-        blockNumber: tx.blockNumber,
-        from: tx.content?.from,
-      };
+      return readTransaction(rpc, txHash);
     },
 
     async getHivePosts(limit: number): Promise<import("./types.js").ScanPost[]> {
-      if (!rpc.getTransactions) return [];
-      const MAX_PAGES = 5;
-      const PAGE_SIZE = 100;
-      const posts: import("./types.js").ScanPost[] = [];
-      let start: number | "latest" = "latest";
-
-      for (let page = 0; page < MAX_PAGES && posts.length < limit; page++) {
-        const txs = await rpc.getTransactions(start, PAGE_SIZE);
-        if (!txs || txs.length === 0) break;
-
-        for (const rawTx of txs) {
-          if (rawTx.type !== "storage") continue;
-          try {
-            // RawTransaction has content as string — parse it
-            const content = typeof rawTx.content === "string"
-              ? safeParse(rawTx.content) as Record<string, unknown>
-              : rawTx.content as Record<string, unknown>;
-            // TransactionContentData is a tuple ["storage", StoragePayload] — extract payload
-            const rawData = content?.data;
-            const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
-            const decoded = decodeHiveData(data);
-            if (!decoded) continue;
-            // Skip reactions and other action-typed entries — only include posts (have text, no action)
-            if (decoded.action) continue;
-            posts.push({
-              txHash: rawTx.hash,
-              text: String(decoded.text ?? ""),
-              category: String(decoded.cat ?? decoded.category ?? ""),
-              author: String(rawTx.from ?? content?.from ?? ""),
-              timestamp: rawTx.timestamp ?? Number(content?.timestamp ?? 0),
-              reactions: { agree: 0, disagree: 0 },
-              reactionsKnown: false,
-              tags: Array.isArray(decoded.tags) ? decoded.tags.map(String) : [],
-              replyTo: decoded.replyTo ? String(decoded.replyTo) : undefined,
-              blockNumber: rawTx.blockNumber,
-            });
-          } catch {
-            // Skip malformed transactions
-          }
-        }
-
-        // Advance cursor — use last tx's blockNumber for next batch
-        const lastTx = txs[txs.length - 1];
-        const prevStart = start;
-        if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-          start = lastTx.blockNumber - 1;
-        } else {
-          break; // No valid cursor — stop paginating
-        }
-        // Safety: if cursor didn't advance, break to prevent endless loop
-        if (start === prevStart) break;
-      }
-
-      return posts.slice(0, limit);
+      return readHivePosts(rpc, limit);
     },
 
     async getHiveReactions(targetTxHashes: string[]): Promise<Map<string, { agree: number; disagree: number }>> {
-      const result = new Map<string, { agree: number; disagree: number }>();
-      if (!rpc.getTransactions || targetTxHashes.length === 0) return result;
-
-      // Initialize counters for all targets
-      const targets = new Set(targetTxHashes);
-      for (const h of targets) result.set(h, { agree: 0, disagree: 0 });
-
-      // Single pass through recent chain transactions
-      const MAX_PAGES = 10;
-      const PAGE_SIZE = 100;
-      let start: number | "latest" = "latest";
-
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const txs = await rpc.getTransactions(start, PAGE_SIZE);
-        if (!txs || txs.length === 0) break;
-
-        for (const rawTx of txs) {
-          if (rawTx.type !== "storage") continue;
-          try {
-            const content = typeof rawTx.content === "string"
-              ? safeParse(rawTx.content) as Record<string, unknown>
-              : rawTx.content as Record<string, unknown>;
-            const rawData = content?.data;
-            const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
-            const decoded = decodeHiveData(data);
-            if (!decoded || decoded.action !== "react") continue;
-
-            const target = String(decoded.target ?? "");
-            const type = String(decoded.type ?? "");
-            if (!targets.has(target)) continue;
-
-            const counts = result.get(target)!;
-            if (type === "agree") counts.agree++;
-            else if (type === "disagree") counts.disagree++;
-          } catch {
-            // Skip malformed transactions
-          }
-        }
-
-        const lastTx = txs[txs.length - 1];
-        const prevStart = start;
-        if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-          start = lastTx.blockNumber - 1;
-        } else {
-          break;
-        }
-        if (start === prevStart) break;
-      }
-
-      return result;
+      return readHiveReactions(rpc, targetTxHashes);
     },
 
     async resolvePostAuthor(txHash: string): Promise<string | null> {
-      try {
-        if (!rpc.getTxByHash) return null;
-        const tx = await rpc.getTxByHash(txHash);
-        if (!tx?.content?.from) return null;
-        return String(tx.content.from);
-      } catch {
-        return null;
-      }
+      return readPostAuthor(rpc, txHash);
     },
 
     async getHivePostsByAuthor(address: string, options?: { limit?: number }): Promise<import("./types.js").ScanPost[]> {
-      const limit = options?.limit ?? 200;
-      const posts: import("./types.js").ScanPost[] = [];
-
-      const decoded = await scanAddressStorage(rpc, address, limit, (d) => !d.action && d.text !== undefined);
-      for (const { tx, hive } of decoded) {
-        posts.push({
-          txHash: tx.hash,
-          text: String(hive.text ?? ""),
-          category: String(hive.cat ?? hive.category ?? ""),
-          author: tx.author,
-          timestamp: tx.timestamp,
-          reactions: { agree: 0, disagree: 0 },
-          reactionsKnown: false,
-          tags: Array.isArray(hive.tags) ? hive.tags.map(String) : [],
-          replyTo: hive.replyTo ? String(hive.replyTo) : undefined,
-          blockNumber: tx.blockNumber,
-        });
-      }
-      return posts;
+      return readHivePostsByAuthor(rpc, address, options);
     },
 
     async getHiveReactionsByAuthor(address: string, options?: { limit?: number }): Promise<import("./types.js").HiveReaction[]> {
-      const limit = options?.limit ?? 200;
-      const reactions: import("./types.js").HiveReaction[] = [];
-
-      const decoded = await scanAddressStorage(rpc, address, limit, (d) => d.action === "react");
-      for (const { tx, hive } of decoded) {
-        reactions.push({
-          txHash: tx.hash,
-          targetTxHash: String(hive.target ?? ""),
-          type: String(hive.type ?? "agree") as "agree" | "disagree",
-          author: tx.author,
-          timestamp: tx.timestamp,
-        });
-      }
-      return reactions;
+      return readHiveReactionsByAuthor(rpc, address, options);
     },
 
     async getRepliesTo(txHashes: string[]): Promise<import("./types.js").ScanPost[]> {
-      if (!rpc.getTransactions || txHashes.length === 0) return [];
-
-      const targets = new Set(txHashes);
-      const replies: import("./types.js").ScanPost[] = [];
-      const MAX_PAGES = 10;
-      const PAGE_SIZE = 100;
-      let start: number | "latest" = "latest";
-
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const txs = await rpc.getTransactions(start, PAGE_SIZE);
-        if (!txs || txs.length === 0) break;
-
-        for (const rawTx of txs) {
-          if (rawTx.type !== "storage") continue;
-          try {
-            const content = typeof rawTx.content === "string"
-              ? safeParse(rawTx.content) as Record<string, unknown>
-              : rawTx.content as Record<string, unknown>;
-            const rawData = content?.data;
-            const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
-            const hive = decodeHiveData(data);
-            if (!hive || hive.action || !hive.text) continue;
-            if (!hive.replyTo || !targets.has(String(hive.replyTo))) continue;
-
-            replies.push({
-              txHash: rawTx.hash,
-              text: String(hive.text ?? ""),
-              category: String(hive.cat ?? hive.category ?? ""),
-              author: String(rawTx.from ?? content?.from ?? ""),
-              timestamp: rawTx.timestamp ?? Number(content?.timestamp ?? 0),
-              reactions: { agree: 0, disagree: 0 },
-              reactionsKnown: false,
-              tags: Array.isArray(hive.tags) ? hive.tags.map(String) : [],
-              replyTo: String(hive.replyTo),
-              blockNumber: rawTx.blockNumber,
-            });
-          } catch {
-            // Skip malformed
-          }
-        }
-
-        // Early exit: stop if we've found at least one reply per target
-        if (page >= 1 && replies.length > 0) {
-          const foundTargets = new Set(replies.map(r => r.replyTo).filter(Boolean));
-          if (targets.size <= foundTargets.size) break;
-        }
-
-        const lastTx = txs[txs.length - 1];
-        const prevStart = start;
-        if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-          start = lastTx.blockNumber - 1;
-        } else break;
-        if (start === prevStart) break;
-      }
-
-      return replies;
+      return readRepliesTo(rpc, txHashes);
     },
 
     async publishHiveReaction(targetTxHash: string, reactionType: "agree" | "disagree"): Promise<{ txHash: string }> {

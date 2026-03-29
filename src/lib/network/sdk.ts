@@ -24,15 +24,10 @@ interface RuntimeConfig {
   dualSign?: boolean;
 }
 
-const DEFAULT_RPC = "https://demosnode.discus.sh/";
-const DEFAULT_API = "https://www.supercolony.ai";
-
-let runtimeConfig: RuntimeConfig = { rpcUrl: DEFAULT_RPC, apiUrl: DEFAULT_API };
-
-/** @deprecated Use getRpcUrl() — this constant doesn't reflect credential overrides */
-export const RPC_URL = DEFAULT_RPC;
-/** @deprecated Use getApiUrl() — this constant doesn't reflect credential overrides */
-export const SUPERCOLONY_API = DEFAULT_API;
+let runtimeConfig: RuntimeConfig = {
+  rpcUrl: "https://demosnode.discus.sh/",
+  apiUrl: "https://www.supercolony.ai",
+};
 let cryptoInitialized = false;
 let logAgentName: string | undefined;
 
@@ -128,8 +123,8 @@ function readConfigOverrides(content: string): Partial<RuntimeConfig> {
 
 function applyConfigOverrides(content: string): void {
   runtimeConfig = {
-    rpcUrl: DEFAULT_RPC,
-    apiUrl: DEFAULT_API,
+    rpcUrl: "https://demosnode.discus.sh/",
+    apiUrl: "https://www.supercolony.ai",
     ...readConfigOverrides(content),
   };
 }

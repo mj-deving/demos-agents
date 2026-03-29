@@ -1,0 +1,2524 @@
+{
+  "version": 3,
+  "created": "2026-03-29T09:08:58+00:00",
+  "last_scan": "2026-03-29T09:09:03+00:00",
+  "scan_count": 2,
+  "overall_score": 81.2,
+  "objective_score": 100.0,
+  "strict_score": 81.2,
+  "verified_strict_score": 100.0,
+  "stats": {
+    "total": 42,
+    "auto_resolved": 0,
+    "deferred": 0,
+    "false_positive": 3,
+    "fixed": 0,
+    "open": 39,
+    "triaged_out": 0,
+    "wontfix": 0,
+    "by_tier": {
+      "1": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 3,
+        "fixed": 0,
+        "open": 15,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "2": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 0,
+        "open": 18,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "3": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 0,
+        "open": 6,
+        "triaged_out": 0,
+        "wontfix": 0
+      }
+    }
+  },
+  "work_items": {
+    "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle": {
+      "id": "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/lib/util/extensions.ts",
+          "src/plugins/calibrate-plugin.ts"
+        ],
+        "evidence": [
+          "extensions.ts imports KNOWN_EXTENSIONS from state.ts and provides BeforeSenseContext type. calibrate-plugin.ts imports BeforeSenseContext from extensions.ts. loadExtensions() in extensions.ts dynamically loads calibrate-plugin, creating a circular dependency path."
+        ],
+        "suggestion": "Extract the BeforeSenseContext and related hook context types into a dedicated src/lib/util/hook-types.ts file that both extensions.ts and calibrate-plugin.ts can import without creating a cycle.",
+        "reasoning": "",
+        "summary_hash": "1bf77bb6"
+      },
+      "status": "false_positive",
+      "note": "",
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": "2026-03-29T09:15:18+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have reviewed each with grep \u2014 import cycle already fixed (commit 2f20e63, RunToolFn in types.ts), flat files have active importers via plugins/CLI/barrels, reactive subsystem is used by cli/event-runner.ts. I am not gaming the score.",
+        "attested_at": "2026-03-29T09:15:18+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::cross_module_architecture::types_god_module": {
+      "id": "review::.::holistic::cross_module_architecture::types_god_module",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/types.ts has 65 importers \u2014 god module creating massive blast radius",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/types.ts"
+        ],
+        "evidence": [
+          "src/types.ts is imported by 65 of 165 production files (39%). It defines FrameworkPlugin, DataProvider, Evaluator, Action, EventPlugin, and numerous supporting types. Any change to this file's exports could affect nearly half the codebase."
+        ],
+        "suggestion": "Split src/types.ts into domain-aligned type modules: plugin-types.ts (FrameworkPlugin, HookFn), provider-types.ts (DataProvider, ProviderResult), action-types.ts (Action, ActionInput, ActionResult), evaluator-types.ts (Evaluator, EvaluatorInput). Re-export from types.ts for backward compatibility while allowing targeted imports.",
+        "reasoning": "",
+        "summary_hash": "33189d64"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::cross_module_architecture::orphaned_flat_files_boundary_blur": {
+      "id": "review::.::holistic::cross_module_architecture::orphaned_flat_files_boundary_blur",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "4+ orphaned files in src/lib/ blur the restructured subdirectory boundaries",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/lib/tips.ts",
+          "src/lib/predictions.ts",
+          "src/lib/mentions.ts",
+          "src/lib/transcript.ts"
+        ],
+        "evidence": [
+          "src/lib/ has 13 flat files alongside 8 structured subdirectories (auth/, llm/, attestation/, scoring/, sources/, network/, pipeline/, util/). At least 4 flat files (tips.ts, predictions.ts, mentions.ts, transcript.ts) are documented as orphaned with zero importers, yet they persist and blur the boundary between restructured and legacy code."
+        ],
+        "suggestion": "Delete the orphaned flat files (they are recoverable from git). This clarifies the restructured src/lib/ boundary and reduces the flat file count from 13 to 9.",
+        "reasoning": "",
+        "summary_hash": "a43a0034"
+      },
+      "status": "false_positive",
+      "note": "",
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": "2026-03-29T09:15:18+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have reviewed each with grep \u2014 import cycle already fixed (commit 2f20e63, RunToolFn in types.ts), flat files have active importers via plugins/CLI/barrels, reactive subsystem is used by cli/event-runner.ts. I am not gaming the score.",
+        "attested_at": "2026-03-29T09:15:18+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::high_level_elegance::lib_flat_file_ownership": {
+      "id": "review::.::holistic::high_level_elegance::lib_flat_file_ownership",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/lib/ mixes 8 organized subdirectories with 13 flat files of unclear ownership",
+      "detail": {
+        "holistic": true,
+        "dimension": "high_level_elegance",
+        "related_files": [
+          "src/lib/tips.ts",
+          "src/lib/predictions.ts",
+          "src/lib/mentions.ts",
+          "src/lib/transcript.ts",
+          "src/lib/spending-policy.ts",
+          "src/lib/agent-config.ts",
+          "src/lib/budget-tracker.ts"
+        ],
+        "evidence": [
+          "src/lib/ has 8 subdirectories (auth/, llm/, attestation/, scoring/, sources/, network/, pipeline/, util/) with clear domain alignment, but also 13 flat files including orphaned ones (tips.ts, predictions.ts, mentions.ts, transcript.ts) and active ones (agent-config.ts, spending-policy.ts, budget-tracker.ts). The doc says '33 files remaining flat \u2014 ongoing restructuring'."
+        ],
+        "suggestion": "Delete the 4 documented orphaned files. For the remaining 9 flat files, either place them into existing subdirectories by domain affinity (e.g., spending-policy.ts -> scoring/) or create a new subdirectory if they share a theme.",
+        "reasoning": "",
+        "summary_hash": "03b48614"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::high_level_elegance::orphaned_reactive_subsystem": {
+      "id": "review::.::holistic::high_level_elegance::orphaned_reactive_subsystem",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "reactive/ subsystem (~1650 LOC) persists in production tree despite being largely orphaned",
+      "detail": {
+        "holistic": true,
+        "dimension": "high_level_elegance",
+        "related_files": [
+          "src/reactive/event-loop.ts",
+          "src/reactive/event-sources/sse-feed.ts",
+          "src/reactive/event-handlers/mention-handler.ts"
+        ],
+        "evidence": [
+          "Historical review issues document the entire reactive/ subsystem as orphaned with zero importers. event-loop.ts, most event-sources, and all event-handlers have no active consumers. The cli/event-runner.ts entry point exists but the internal event-loop.ts has no importers according to scan evidence."
+        ],
+        "suggestion": "If reactive/ is planned future work, move it to a _staging/ or _future/ directory to signal intent. If abandoned, delete it. Either way, keeping ~1650 LOC of dead code in the production tree undermines the otherwise clean decomposition.",
+        "reasoning": "",
+        "summary_hash": "3c34034f"
+      },
+      "status": "false_positive",
+      "note": "",
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": "2026-03-29T09:15:18+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have reviewed each with grep \u2014 import cycle already fixed (commit 2f20e63, RunToolFn in types.ts), flat files have active importers via plugins/CLI/barrels, reactive subsystem is used by cli/event-runner.ts. I am not gaming the score.",
+        "attested_at": "2026-03-29T09:15:18+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::convention_outlier::deprecated_constants_coexistence": {
+      "id": "review::.::holistic::convention_outlier::deprecated_constants_coexistence",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "sdk.ts exports deprecated module-level constants alongside their replacement getter functions",
+      "detail": {
+        "holistic": true,
+        "dimension": "convention_outlier",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Lines 32-35: 'export const RPC_URL = DEFAULT_RPC' and 'export const SUPERCOLONY_API = DEFAULT_API' are marked @deprecated with comments pointing to getRpcUrl() and getApiUrl(). Both deprecated and replacement exports coexist, creating confusion about which to use."
+        ],
+        "suggestion": "Remove the deprecated const exports (RPC_URL, SUPERCOLONY_API). Any remaining consumers should be migrated to getRpcUrl()/getApiUrl(). This eliminates the dual-path confusion.",
+        "reasoning": "",
+        "summary_hash": "ac913172"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::convention_outlier::event_handler_protocol_drift": {
+      "id": "review::.::holistic::convention_outlier::event_handler_protocol_drift",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "reactive/event-handlers/ siblings use different structural patterns \u2014 some use EventHandler/EventAction directly, others delegate to createSeverityHandler",
+      "detail": {
+        "holistic": true,
+        "dimension": "convention_outlier",
+        "related_files": [
+          "src/reactive/event-handlers/incident-alert-handler.ts",
+          "src/reactive/event-handlers/market-alert-handler.ts"
+        ],
+        "evidence": [
+          "5/7 event handlers use EventHandler and EventAction types directly. incident-alert-handler.ts and market-alert-handler.ts instead call createSeverityHandler() which wraps these types internally. While functionally equivalent, a developer reading sibling files would see inconsistent structural patterns."
+        ],
+        "suggestion": "This is a minor convention drift since the delegation is intentional DRY behavior. Document the two handler patterns (direct implementation vs. severity-handler delegation) with a brief comment in the directory or in one of the delegating handlers explaining why.",
+        "reasoning": "",
+        "summary_hash": "492b7b4a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::providers_mixed_error_strategies": {
+      "id": "review::.::holistic::error_consistency::providers_mixed_error_strategies",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "src/lib/sources/providers/ uses 4 different error strategies across sibling files",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/lib/sources/providers/declarative-engine.ts",
+          "src/lib/sources/fetch.ts"
+        ],
+        "evidence": [
+          "providers/ directory: try_catch (22), returns_null (18), throws (11), result_type (1). The declarative engine 'never throws from any adapter method \u2014 returns empty results on failure' per its docstring, while individual provider operations throw on specific conditions. fetchSource returns FetchSourceResult (ok/error). No consistent convention for which approach to use."
+        ],
+        "suggestion": "Establish a per-layer convention: provider adapter methods should return typed results (following the declarative engine's 'never throws' pattern), while internal helpers can throw. Document this convention in a comment at the top of providers/types.ts.",
+        "reasoning": "",
+        "summary_hash": "b94f9b9e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::auth_null_no_context": {
+      "id": "review::.::holistic::error_consistency::auth_null_no_context",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "auth.ts returns null for all failure modes \u2014 no error context preserved",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/lib/auth/auth.ts"
+        ],
+        "evidence": [
+          "loadAuthCache() returns null for: file not found, JSON parse failure, expired token, wrong address, missing fields. ensureAuth returns null when API is unreachable. Callers cannot distinguish between 'no cached token', 'expired token', and 'auth challenge failed' \u2014 all get the same null."
+        ],
+        "suggestion": "Return a discriminated union type: { status: 'ok', token: string } | { status: 'expired' } | { status: 'missing' } | { status: 'error', message: string }. This preserves context without changing the null-check pattern at call sites (callers check .status instead of nullness).",
+        "reasoning": "",
+        "summary_hash": "51f2a301"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::empty_catch_blocks": {
+      "id": "review::.::holistic::error_consistency::empty_catch_blocks",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Empty catch blocks in hive-codec.ts and chain-scanner.ts silently swallow decode errors",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/toolkit/hive-codec.ts",
+          "src/toolkit/chain-scanner.ts"
+        ],
+        "evidence": [
+          "hive-codec.ts has 3 empty catch blocks (lines ~62, 85, 101) with only '// Not valid base64' comments. chain-scanner.ts has 2 empty catch blocks (lines ~68, 113). In a chain-operations codebase handling real money, silently swallowing decode/parse errors is risky \u2014 corrupt data passes through as null without any observability."
+        ],
+        "suggestion": "Add minimal logging to the empty catch blocks using the existing observe() pattern: observe('warning', 'Failed to decode HIVE payload', { source: 'hive-codec.ts', data: { inputLength } }). This preserves the 'return null on failure' semantics while adding observability.",
+        "reasoning": "",
+        "summary_hash": "6bb24f74"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::plugin_error_swallowing": {
+      "id": "review::.::holistic::error_consistency::plugin_error_swallowing",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Plugins systematically swallow errors \u2014 catch-log-return without propagation",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/plugins/signals-plugin.ts",
+          "src/plugins/tips-plugin.ts",
+          "src/plugins/sc-prices-plugin.ts"
+        ],
+        "evidence": [
+          "18 try_catch blocks across plugins/ \u2014 all follow the pattern: catch error, log via observe() or ctx.logger, return early. No plugin propagates errors to the session loop. While individually reasonable (plugins shouldn't crash the loop), this means the loop has no visibility into whether plugins are silently failing. signals-plugin.ts catches and observes; tips-plugin.ts catches but only logs."
+        ],
+        "suggestion": "Add a hookErrors array to the hook context (already present in BeforeSenseContext as hookErrors?) and populate it consistently in all plugin catch blocks. The session runner can then report aggregated plugin health after each phase.",
+        "reasoning": "",
+        "summary_hash": "a575bb06"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::naming_quality::api_call_fn_any_return": {
+      "id": "review::.::holistic::naming_quality::api_call_fn_any_return",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "ApiCallFn type alias uses 'any' in return type \u2014 data field is untyped",
+      "detail": {
+        "holistic": true,
+        "dimension": "naming_quality",
+        "related_files": [
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "Line 29: 'export type ApiCallFn = (path: string, token: string, opts?: { method?: string; body?: string }) => Promise<{ ok: boolean; status?: number; data?: any }>;' \u2014 the 'data?: any' leaks type-unsafety through the API call abstraction name. While this file is documented as orphaned, the pattern could be copied."
+        ],
+        "suggestion": "Type data as 'unknown' instead of 'any'. This preserves the generic nature while requiring callers to narrow the type before use.",
+        "reasoning": "",
+        "summary_hash": "a5733dfc"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::naming_quality::info_function_generic": {
+      "id": "review::.::holistic::naming_quality::info_function_generic",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "sdk.ts exports 'info()' as a logging function \u2014 name is too generic for a module-level export",
+      "detail": {
+        "holistic": true,
+        "dimension": "naming_quality",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "sdk.ts exports 'info' and 'warn' functions (lines ~320-327) that are agent-prefixed console loggers. 'info' as a name collides conceptually with Node's util.inspect, Winston's info level, and general 'information' semantics. Callers import { apiCall, info } from sdk.ts \u2014 'info' doesn't communicate that it's an agent-scoped logger."
+        ],
+        "suggestion": "Rename to 'logInfo' or 'agentInfo' to communicate that it's a prefixed logging function, not a data-retrieval function.",
+        "reasoning": "",
+        "summary_hash": "77a7a7b7"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::abstraction_fitness::wide_sdk_bridge_interface": {
+      "id": "review::.::holistic::abstraction_fitness::wide_sdk_bridge_interface",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "SdkBridge interface surface has 15+ methods spanning attestation, publishing, analytics, and payment \u2014 mixing concerns in one seam",
+      "detail": {
+        "holistic": true,
+        "dimension": "abstraction_fitness",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "SdkBridge combines attestDahr, publishHivePost, transferDem, payD402, verifyTransaction, getHivePosts, resolvePostAuthor, getHiveReactions, getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo, apiCall, and apiAccess in a single interface"
+        ],
+        "suggestion": "Consider splitting SdkBridge into capability-specific sub-interfaces (e.g., ChainReader, Publisher, PaymentBridge) that compose into a full bridge \u2014 this would make tool dependencies more explicit and enable narrower test doubles",
+        "reasoning": "",
+        "summary_hash": "e2ebae63"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::abstraction_fitness::action_executor_wide_context": {
+      "id": "review::.::holistic::abstraction_fitness::action_executor_wide_context",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "ActionExecutorContext has 15+ fields making it a wide dependency injection bag where most consumers use only a subset",
+      "detail": {
+        "holistic": true,
+        "dimension": "abstraction_fitness",
+        "related_files": [
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "ActionExecutorContext includes identity fields (agentName, address, dryRun), auth (getToken), budget (dailyReactive, hourlyReactive), config slices (calibrationOffset, personaMdPath), and multiple function abstractions (ApiCallFn, GeneratePostFn, AttestAndPublishFn, TransferFn, ObserveFn)"
+        ],
+        "suggestion": "Group related fields into sub-objects (e.g., identity: {agentName, address, dryRun}, budget: {dailyReactive, hourlyReactive}) to make the consumed subset clearer at each call site",
+        "reasoning": "",
+        "summary_hash": "2f7b5961"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::dependency_health::extensions_calibrate_cycle": {
+      "id": "review::.::holistic::dependency_health::extensions_calibrate_cycle",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Import cycle between extensions.ts and calibrate-plugin.ts persists in the static import graph despite runtime mitigation",
+      "detail": {
+        "holistic": true,
+        "dimension": "dependency_health",
+        "related_files": [
+          "src/lib/util/extensions.ts",
+          "src/plugins/calibrate-plugin.ts"
+        ],
+        "evidence": [
+          "calibrate-plugin.ts has 'import type { BeforeSenseContext } from \"../lib/util/extensions.js\"' (type-only import)",
+          "extensions.ts dynamically imports calibrate-plugin.ts inside loadExtensions() switch case",
+          "The cycle is type-level only at compile time and dynamic at runtime, but static analysis tools still flag it"
+        ],
+        "suggestion": "Extract BeforeSenseContext and other hook context types into a dedicated types file (e.g., src/lib/util/extension-types.ts) that both modules can import without creating a cycle",
+        "reasoning": "",
+        "summary_hash": "baa6a13d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::declarative_engine_monster_fn": {
+      "id": "review::.::holistic::low_level_elegance::declarative_engine_monster_fn",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "declarative-engine.ts has a monster function with 1534 LOC, max chain depth of 4, and 75 property access chains \u2014 exceeds readable function boundaries",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/lib/sources/providers/declarative-engine.ts"
+        ],
+        "evidence": [
+          "Mechanical scan flags 1 monster function in declarative-engine.ts",
+          "Max chain depth of 4 with 75 chains indicates deeply nested property access patterns throughout the function",
+          "1534 LOC total for the file with a single dominant function"
+        ],
+        "suggestion": "Extract the main function into phases: spec loading, variable resolution, URL construction, response parsing, and field mapping \u2014 each as a focused helper function. The existing spec types (VariableSpec, FieldSpec, OperationSpec) already define natural extraction boundaries",
+        "reasoning": "",
+        "summary_hash": "3cdfc14c"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::scan_nested_try_catch": {
+      "id": "review::.::holistic::low_level_elegance::scan_nested_try_catch",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "scan() uses nested try/catch with different error handling strategies \u2014 outer returns typed error, inner silently warns",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/scan.ts"
+        ],
+        "evidence": [
+          "Outer try/catch returns err(demosError('NETWORK_ERROR', ...)) on chain scan failure",
+          "Inner try/catch around API enrichment logs console.warn and continues \u2014 mixing warn+continue with error+return in one function"
+        ],
+        "suggestion": "Extract API enrichment into a separate function (e.g., enrichWithApiReactions) that returns the original posts unchanged on failure \u2014 removes the nested try/catch and makes the optional enrichment pattern explicit",
+        "reasoning": "",
+        "summary_hash": "425ae2ac"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::repetitive_dispatcher_structure": {
+      "id": "review::.::holistic::low_level_elegance::repetitive_dispatcher_structure",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "Five extension dispatcher functions in extensions.ts share near-identical loop structure with minor semantic differences",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/lib/util/extensions.ts"
+        ],
+        "evidence": [
+          "runBeforeSense, runBeforePublishDraft, runAfterPublishDraft, runAfterAct, runAfterConfirm all iterate enabledExtensions, look up hooks, and call the hook \u2014 but beforeSense has timeout/error tracking, beforePublish/afterPublish have short-circuit semantics, and afterAct/afterConfirm are fire-and-forget",
+          "The three different execution modes (timeout-guarded, short-circuit-on-rejection, fire-and-forget) are implemented by copy-pasting the loop structure"
+        ],
+        "suggestion": "Extract a generic dispatchHooks helper parameterized by execution mode (timeout, short-circuit, sequential) \u2014 would reduce the 5 functions to a shared core with mode-specific behavior injected",
+        "reasoning": "",
+        "summary_hash": "b34cf4e1"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::dual_publish_pipeline": {
+      "id": "review::.::holistic::mid_level_elegance::dual_publish_pipeline",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Two publishing implementations with different integration patterns: toolkit/tools/publish.ts (bridge-based) and actions/publish-pipeline.ts (direct SDK)",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/toolkit/tools/publish.ts",
+          "src/actions/publish-pipeline.ts"
+        ],
+        "evidence": [
+          "toolkit/tools/publish.ts uses session.getBridge().publishHivePost() and session.getBridge().attestDahr() \u2014 goes through the SdkBridge interface",
+          "actions/publish-pipeline.ts imports Demos and DemosTransactions directly from SDK, defines its own DahrProxy and PublishInput types, and has its own attestDahr/publishPost functions",
+          "Both paths perform DAHR attestation -> HIVE post -> txHash capture with overlapping but non-identical type shapes (e.g., both define AttestResult but with different fields)"
+        ],
+        "suggestion": "Migrate actions/publish-pipeline.ts to use the toolkit's SdkBridge for chain operations, or clearly document the two paths as intentionally separate (session-runner legacy vs toolkit canonical) with a consolidation plan",
+        "reasoning": "",
+        "summary_hash": "432cb6f1"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::actions_layer_sdk_direct": {
+      "id": "review::.::holistic::mid_level_elegance::actions_layer_sdk_direct",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "The actions/ layer bypasses toolkit's SdkBridge abstraction, using direct SDK imports and its own type definitions",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/actions/publish-pipeline.ts",
+          "src/actions/action-executor.ts",
+          "src/actions/llm.ts"
+        ],
+        "evidence": [
+          "publish-pipeline.ts imports { Demos, DemosTransactions } from '@kynesyslabs/demosdk/websdk' directly",
+          "action-executor.ts defines its own function type aliases (AttestAndPublishFn, TransferFn, ApiCallFn) that partially duplicate toolkit's SdkBridge methods",
+          "This layer was written before the toolkit extraction and has not been migrated to use the toolkit's boundary contracts"
+        ],
+        "suggestion": "Wire action-executor.ts to accept a SdkBridge instance rather than individual function types \u2014 this would align the actions layer with the toolkit's integration pattern and eliminate the parallel type definitions",
+        "reasoning": "",
+        "summary_hash": "46fe4975"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::attestation_policy_no_test": {
+      "id": "review::.::holistic::test_strategy::attestation_policy_no_test",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "attestation-policy.ts (8 importers) has no dedicated test file \u2014 critical path for attestation type selection and high-sensitivity keyword matching",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "src/lib/attestation/attestation-policy.ts"
+        ],
+        "evidence": [
+          "No test file matching *attestation-policy* found in tests/ directory",
+          "The module exports inferAssetAlias, inferMacroEntity, and attestation type selection logic used by 8 other files including declarative-engine.ts and claim-extraction.ts",
+          "High-sensitivity keyword matching (highSensitivityRequireTlsn) is a security-relevant decision path with no direct test coverage"
+        ],
+        "suggestion": "Create tests/attestation-policy.test.ts covering: inferAssetAlias/inferMacroEntity resolution, attestation type selection based on config, and high-sensitivity keyword matching edge cases",
+        "reasoning": "",
+        "summary_hash": "6508a4c2"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::missing_cross_subsystem_integration": {
+      "id": "review::.::holistic::test_strategy::missing_cross_subsystem_integration",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "No cross-subsystem integration tests between toolkit and actions/ layer, or between plugins and extensions dispatcher",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "tests/toolkit/tools/integration.test.ts"
+        ],
+        "evidence": [
+          "The single integration test (tests/toolkit/tools/integration.test.ts) covers toolkit tools only",
+          "The actions/ layer (publish-pipeline, action-executor) and toolkit/ layer have overlapping publishing paths with no integration test verifying they produce compatible outputs",
+          "Extension hook dispatchers (extensions.ts) have unit tests but no integration test verifying the full plugin -> hook -> pipeline flow"
+        ],
+        "suggestion": "Add a cross-subsystem integration test that wires action-executor through extensions dispatcher with mocked SDK \u2014 verifies the full event -> hook -> publish flow produces consistent results with the toolkit path",
+        "reasoning": "",
+        "summary_hash": "a9a0d315"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::scan_opts_optional": {
+      "id": "review::.::holistic::api_surface_coherence::scan_opts_optional",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "scan() takes optional opts while most sibling tools require their options parameter",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/toolkit/tools/scan.ts"
+        ],
+        "evidence": [
+          "scan(session, opts?) vs tip(session, opts), react(session, opts), attest(session, opts) \u2014 all siblings require their options object"
+        ],
+        "suggestion": "Make scan's opts required with sensible defaults inside the ScanOptions type, or document the intentional divergence in the function docstring explaining why a no-args scan is valid",
+        "reasoning": "",
+        "summary_hash": "12741efa"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::authorization_consistency::auth_cache_no_permissions": {
+      "id": "review::.::holistic::authorization_consistency::auth_cache_no_permissions",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Auth cache file ~/.supercolony-auth.json has no permission enforcement unlike the wallet file",
+      "detail": {
+        "holistic": true,
+        "dimension": "authorization_consistency",
+        "related_files": [
+          "src/lib/auth/auth.ts"
+        ],
+        "evidence": [
+          "connect.ts enforces mode-600 on wallet files and checks for symlinks, but auth.ts reads/writes ~/.supercolony-auth.json via readFileSync/writeFileSync without any permission checks \u2014 the cached auth token is readable by any local user"
+        ],
+        "suggestion": "When writing the auth cache file, set mode 0o600 via writeFileSync options (mode: 0o600) or use open(path, 'w', 0o600) + fstat pattern matching the wallet file security model",
+        "reasoning": "",
+        "summary_hash": "f90eac64"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::scoring_restating_comments": {
+      "id": "review::.::holistic::ai_generated_debt::scoring_restating_comments",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Several scoring.ts constant comments restate the obvious rather than adding domain insight",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/lib/scoring/scoring.ts"
+        ],
+        "evidence": [
+          "'/** Every post gets base points */' above 'export const SCORE_BASE = 20' \u2014 the name already communicates this. Similarly '/** Confidence field set on post */' above SCORE_CONFIDENCE. Compare with the useful '/** DAHR attestation (sourceAttestations) present \u2014 TLSN proofs do NOT score */' which adds non-obvious domain context"
+        ],
+        "suggestion": "Remove or enrich the restating comments: SCORE_BASE needs no comment (the name is clear), SCORE_CONFIDENCE could note why confidence matters ('Agent must declare confidence level \u2014 mechanical check, not judgment'). Keep the SCORE_ATTESTATION comment which adds genuine insight about TLSN vs DAHR",
+        "reasoning": "",
+        "summary_hash": "a1fcfce5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::alert_handler_passthrough": {
+      "id": "review::.::holistic::ai_generated_debt::alert_handler_passthrough",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "incident-alert-handler and market-alert-handler are pure pass-through wrappers to createSeverityHandler",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/reactive/event-handlers/incident-alert-handler.ts",
+          "src/reactive/event-handlers/market-alert-handler.ts"
+        ],
+        "evidence": [
+          "createIncidentAlertHandler() does nothing but call createSeverityHandler({name: 'incident-alert', ...config}). createMarketAlertHandler() does the same. The docstrings on these wrappers add commentary but no behavior beyond configuration objects passed to the shared handler."
+        ],
+        "suggestion": "These are borderline \u2014 they serve as named entry points with domain-specific configuration. If they grow no additional logic, consider inlining the config objects into the handler registry that consumes them, eliminating two files. If they are expected to diverge, keep as-is.",
+        "reasoning": "",
+        "summary_hash": "2e39e266"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::incomplete_migration::deprecated_persist_source_to_registry": {
+      "id": "review::.::holistic::incomplete_migration::deprecated_persist_source_to_registry",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Deprecated persistSourceToRegistry function has zero callers and should be removed",
+      "detail": {
+        "holistic": true,
+        "dimension": "incomplete_migration",
+        "related_files": [
+          "src/lib/pipeline/source-discovery.ts"
+        ],
+        "evidence": [
+          "persistSourceToRegistry is marked @deprecated with 'Use persistSourceToCatalog for V2 catalog persistence' but grep shows zero callers in the entire codebase \u2014 it is dead code from the V1-to-V2 catalog migration"
+        ],
+        "suggestion": "Delete the persistSourceToRegistry function (lines 324-350 approximately) and its associated V1 YAML imports if they become unused. The V2 persistSourceToCatalog function immediately below is the canonical replacement.",
+        "reasoning": "",
+        "summary_hash": "b8d71a62"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::incomplete_migration::deprecated_sdk_constants": {
+      "id": "review::.::holistic::incomplete_migration::deprecated_sdk_constants",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Deprecated RPC_URL and SUPERCOLONY_API constants in sdk.ts have zero importers",
+      "detail": {
+        "holistic": true,
+        "dimension": "incomplete_migration",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Both constants are marked @deprecated with 'Use getRpcUrl()/getApiUrl()' but no file in src/ imports them. They are exported dead code from before the credential-override migration."
+        ],
+        "suggestion": "Remove the two exported constants (lines 33-35). If external consumers might reference them, add a breaking-change note. The getter functions getRpcUrl()/getApiUrl() are the canonical replacements.",
+        "reasoning": "",
+        "summary_hash": "78a58189"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::package_organization::lib_root_flat_mixed_concerns": {
+      "id": "review::.::holistic::package_organization::lib_root_flat_mixed_concerns",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "src/lib/ root has 13 flat files (3904 LOC) mixing domain logic with infrastructure at low fan-in",
+      "detail": {
+        "holistic": true,
+        "dimension": "package_organization",
+        "related_files": [
+          "src/lib/tips.ts",
+          "src/lib/predictions.ts",
+          "src/lib/mentions.ts",
+          "src/lib/transcript.ts",
+          "src/lib/review-findings.ts",
+          "src/lib/spending-policy.ts",
+          "src/lib/budget-tracker.ts",
+          "src/lib/state.ts",
+          "src/lib/improvement-utils.ts",
+          "src/lib/response-validator.ts",
+          "src/lib/test-quality-validator.ts",
+          "src/lib/tlsn-playwright-bridge.ts",
+          "src/lib/agent-config.ts"
+        ],
+        "evidence": [
+          "avg_fan_in is 1.1 across these 13 files \u2014 most are imported by only 1-2 files",
+          "tips.ts, mentions.ts, predictions.ts are domain features that could group under a 'social/' or 'engagement/' subdirectory",
+          "spending-policy.ts, budget-tracker.ts are financial concerns that could group under 'budget/'",
+          "agent-config.ts alone is 571 LOC and is a complexity hotspot \u2014 it serves as the primary config loader",
+          "The existing subdirectories (attestation/, pipeline/, scoring/) show the project's preferred organization pattern"
+        ],
+        "suggestion": "Staged reorganization: (1) Group tips.ts + mentions.ts + predictions.ts into src/lib/engagement/ (social/community features), (2) Group spending-policy.ts + budget-tracker.ts into src/lib/budget/ (financial concerns), (3) Leave agent-config.ts, state.ts, and tlsn-playwright-bridge.ts at root as they are genuinely cross-cutting. Update imports with: find src -name '*.ts' -exec sed to fix import paths, then run npm test to validate.",
+        "reasoning": "",
+        "summary_hash": "8edf5a45"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::sdk_stale_constant_exports": {
+      "id": "review::.::holistic::initialization_coupling::sdk_stale_constant_exports",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Deprecated RPC_URL/SUPERCOLONY_API constants still exported alongside getter functions in sdk.ts",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Lines 33-35: RPC_URL and SUPERCOLONY_API are exported as const values computed at module load time. getRpcUrl()/getApiUrl() return the dynamic runtimeConfig values. The constants don't reflect credential file overrides applied by loadMnemonic()."
+        ],
+        "suggestion": "Remove the deprecated constant exports entirely. Any remaining consumers should be migrated to getRpcUrl()/getApiUrl(). The @deprecated annotation has been in place \u2014 complete the migration by deleting the exports.",
+        "reasoning": "",
+        "summary_hash": "def79611"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::initialization_coupling::sdk_module_mutable_singletons": {
+      "id": "review::.::holistic::initialization_coupling::sdk_module_mutable_singletons",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "sdk.ts has 3 module-level mutable variables creating implicit boot-order coupling",
+      "detail": {
+        "holistic": true,
+        "dimension": "initialization_coupling",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "runtimeConfig (line 30), cryptoInitialized (line 36), logAgentName (line 37) are module-level let variables. loadMnemonic() mutates runtimeConfig as a side effect, meaning the order of loadMnemonic() vs getRpcUrl() calls matters. Multiple callers of loadMnemonic() in the same process would overwrite each other's config."
+        ],
+        "suggestion": "Consider encapsulating runtimeConfig, cryptoInitialized, and logAgentName into a SdkContext object created by a factory function, similar to how sdk-bridge.ts uses closure-scoped state. This would make the initialization dependency explicit and support multiple concurrent agent configs in the same process.",
+        "reasoning": "",
+        "summary_hash": "ef8c6f11"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::sdk_bridge_overloaded": {
+      "id": "review::.::holistic::design_coherence::sdk_bridge_overloaded",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "sdk-bridge.ts at 917 lines mixes transport, serialization, chain queries, and payment logic",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "Single file implements: DAHR attestation, API calls with retry, HIVE post encoding/publishing, DEM token transfers, D402 payment settlement, chain transaction queries (5 methods), reaction publishing, and transaction verification. These are at least 4 distinct responsibility clusters."
+        ],
+        "suggestion": "Extract chain-query methods (getHivePosts, getHiveReactions, getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo, verifyTransaction) into a dedicated chain-reader.ts module. The SdkBridge interface can compose the chain reader, keeping the factory pattern intact while reducing sdk-bridge.ts to ~500 lines of write-path logic.",
+        "reasoning": "",
+        "summary_hash": "9c9688e5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::publish_pipeline_as_any_txhash": {
+      "id": "review::.::holistic::design_coherence::publish_pipeline_as_any_txhash",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "publish-pipeline.ts uses 7 'as any' casts for txHash extraction that sdk-bridge.ts handles with typed narrowing",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/actions/publish-pipeline.ts",
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "Lines 342-350 use (validity as any)?.response?.data?.transaction?.hash and 6 more 'as any' casts. sdk-bridge.ts has extractTxHash() (line 222) that handles the same SDK response shapes with proper typed narrowing using Record<string, unknown> casts."
+        ],
+        "suggestion": "Extract extractTxHash() to a shared utility (e.g., toolkit/tx-utils.ts) and use it in publish-pipeline.ts, replacing all 7 'as any' casts with the typed version.",
+        "reasoning": "",
+        "summary_hash": "d18de685"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::systemic_large_files": {
+      "id": "review::.::holistic::design_coherence::systemic_large_files",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "6 files share smells+structural signals \u2014 large files with mixed complexity patterns",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/lib/agent-config.ts",
+          "src/lib/pipeline/signal-detection.ts",
+          "src/lib/sources/catalog.ts",
+          "src/lib/sources/matcher.ts",
+          "src/lib/sources/providers/declarative-engine.ts",
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "All 6 files are 500+ LOC and flagged by both smells and structural detectors. However, 5 of 6 (agent-config, signal-detection, catalog, matcher, declarative-engine) are long due to genuinely complex domains \u2014 validation logic, source matching, YAML spec processing. Only sdk-bridge.ts mixes distinct responsibilities."
+        ],
+        "suggestion": "For sdk-bridge.ts, extract chain-reader methods as described above. For the other 5, no extraction is recommended \u2014 they are long but single-responsibility. Add section headers (already present in most) to aid navigation.",
+        "reasoning": "",
+        "summary_hash": "55d5ec94"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::sdk_apicall_data_type_lie": {
+      "id": "review::.::holistic::contract_coherence::sdk_apicall_data_type_lie",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "apiCall<TData> in sdk.ts returns error message string as TData on network failure",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/lib/network/sdk.ts"
+        ],
+        "evidence": [
+          "Line 298: on catch, returns { ok: false, status: 0, data: message as TData }. The data field is typed as TData (generic) but receives a plain string error message. Callers checking ok=false before accessing data are safe, but the type annotation lies about what data contains on error paths."
+        ],
+        "suggestion": "Change ApiCallResult to use a discriminated union: { ok: true; status: number; data: TData } | { ok: false; status: number; data: string; errorType?: string }. This makes the type system enforce error checking before accessing TData-shaped data.",
+        "reasoning": "",
+        "summary_hash": "6d4db76e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::llm_silent_field_correction": {
+      "id": "review::.::holistic::contract_coherence::llm_silent_field_correction",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "generatePost silently overrides invalid category/confidence/predicted_reactions without notifying caller",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/actions/llm.ts"
+        ],
+        "evidence": [
+          "Lines 260-268: if category is invalid, it's silently replaced with input.category. If confidence is out of range, silently set to 70. If predicted_reactions is negative, silently set to 8. Caller receives a PostDraft with no indication that fields were corrected."
+        ],
+        "suggestion": "Add an optional warnings array to PostDraft (e.g., correctedFields: string[]) so callers can log or factor in that the LLM output was repaired. Alternatively, log these corrections via info() alongside the existing generation log message.",
+        "reasoning": "",
+        "summary_hash": "bbe8980a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::llm_strategy_heuristic_exit": {
+      "id": "review::.::holistic::logic_clarity::llm_strategy_heuristic_exit",
+      "detector": "review",
+      "file": ".",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "loadStrategyContext uses heuristic regex exit condition for YAML section extraction",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/actions/llm.ts"
+        ],
+        "evidence": [
+          "Line 116-117: breaks section extraction when relevant.length > 30 AND (line is empty OR line matches /^[a-z]/). The /^[a-z]/ test is a proxy for 'new YAML top-level key' but would also match continuation lines that happen to start with lowercase. This works in practice because strategy.yaml follows a specific format, but the intent is not self-documenting."
+        ],
+        "suggestion": "Replace the regex heuristic with explicit YAML key detection: /^[a-z_]+:/ to match only top-level YAML keys. Add a comment explaining the intent: 'Stop when we reach the next top-level YAML section'.",
+        "reasoning": "",
+        "summary_hash": "c79641d5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::publish_txhash_cascade_clarity": {
+      "id": "review::.::holistic::logic_clarity::publish_txhash_cascade_clarity",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "9-line txHash extraction in publish-pipeline.ts uses chained as-any casts obscuring logic",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/actions/publish-pipeline.ts"
+        ],
+        "evidence": [
+          "Lines 342-350: 7 'as any' casts in a chained OR expression covering 5 different SDK response shapes. The logic is correct but hard to verify because the type system is bypassed. sdk-bridge.ts extractTxHash() (line 222) implements the same logic with typed narrowing."
+        ],
+        "suggestion": "Import and use extractTxHash from sdk-bridge.ts (or a shared utility). This eliminates the as-any casts and makes the response shape handling self-documenting via the typed Record<string, unknown> narrowing.",
+        "reasoning": "",
+        "summary_hash": "a13f768b"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::publish_pipeline_as_any_cluster": {
+      "id": "review::.::holistic::type_safety::publish_pipeline_as_any_cluster",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "publish-pipeline.ts has 7 'as any' casts in txHash extraction \u2014 typed alternative exists",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/actions/publish-pipeline.ts",
+          "src/toolkit/sdk-bridge.ts"
+        ],
+        "evidence": [
+          "Lines 342-350: (validity as any)?.response?.data?.transaction?.hash and 6 more 'as any' casts. sdk-bridge.ts extractTxHash() (line 222) implements identical logic with typed Record<string, unknown> narrowing."
+        ],
+        "suggestion": "Extract extractTxHash() to a shared utility and import in publish-pipeline.ts. Replace lines 342-350 with: const txHash = extractTxHash(validity, result);",
+        "reasoning": "",
+        "summary_hash": "7ead8c75"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::action_executor_apicall_any": {
+      "id": "review::.::holistic::type_safety::action_executor_apicall_any",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "ApiCallFn type alias has data?: any \u2014 should use unknown",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/actions/action-executor.ts"
+        ],
+        "evidence": [
+          "Line 29: Promise<{ ok: boolean; status?: number; data?: any }>. This is the only remaining explicit 'any' type annotation in a public function signature across all production code."
+        ],
+        "suggestion": "Change data?: any to data?: unknown. Callers already use conditional checks before accessing data properties, so narrowing from unknown is compatible.",
+        "reasoning": "",
+        "summary_hash": "1421f9e0"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::session_state_unknown_fields": {
+      "id": "review::.::holistic::type_safety::session_state_unknown_fields",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "V2SessionState has 5 unknown-typed fields that consumers must unsafely narrow",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/lib/state.ts"
+        ],
+        "evidence": [
+          "result?: unknown (line 52, 95), engagements: Record<string, unknown>[] (line 65, 132), signalSnapshot?: unknown (line 138), priceSnapshot?: unknown (line 140), oracleSnapshot?: unknown (line 142). These are correct over 'any' but force consumers to use unsafe casts when reading values."
+        ],
+        "suggestion": "Define specific types for signalSnapshot (SignalSnapshot from signals.ts), priceSnapshot, and oracleSnapshot based on their actual runtime shapes. For engagements, define an EngagementRecord type capturing the known fields. For result, use a union of phase-specific result types.",
+        "reasoning": "",
+        "summary_hash": "932f6ed6"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-29T09:08:58+00:00",
+      "last_seen": "2026-03-29T09:08:58+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "typescript",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    }
+  },
+  "scan_coverage": {
+    "typescript": {
+      "status": "full",
+      "confidence": 1.0,
+      "detectors": {
+        "security": {
+          "detector": "security",
+          "status": "full",
+          "confidence": 1.0,
+          "summary": "Security coverage complete for enabled detectors.",
+          "impact": "",
+          "remediation": "",
+          "tool": "",
+          "reason": ""
+        }
+      },
+      "warnings": [],
+      "updated_at": "2026-03-29T09:09:03+00:00"
+    }
+  },
+  "score_confidence": {
+    "status": "full",
+    "confidence": 1.0,
+    "detectors": [],
+    "dimensions": []
+  },
+  "scan_metadata": {
+    "source": "scan"
+  },
+  "subjective_integrity": {
+    "status": "disabled",
+    "target_score": 85.0,
+    "matched_count": 0,
+    "matched_dimensions": [],
+    "reset_dimensions": []
+  },
+  "subjective_assessments": {
+    "abstraction_fitness": {
+      "score": 82.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00",
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty",
+        "Delegation Density",
+        "Definition Directness",
+        "Type Discipline"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 90.0,
+        "Indirection Cost": 88.0,
+        "Interface Honesty": 75.0,
+        "Delegation Density": 95.0,
+        "Definition Directness": 92.0,
+        "Type Discipline": 85.0
+      }
+    },
+    "ai_generated_debt": {
+      "score": 82.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "api_surface_coherence": {
+      "score": 88.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "authorization_consistency": {
+      "score": 85.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "contract_coherence": {
+      "score": 83.2,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "convention_outlier": {
+      "score": 84.3,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "cross_module_architecture": {
+      "score": 81.2,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "review_issue_false_positive",
+      "stale_since": "2026-03-29T09:15:18+00:00"
+    },
+    "dependency_health": {
+      "score": 88.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "design_coherence": {
+      "score": 74.8,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "error_consistency": {
+      "score": 74.8,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "high_level_elegance": {
+      "score": 82.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00",
+      "needs_review_refresh": true,
+      "refresh_reason": "review_issue_false_positive",
+      "stale_since": "2026-03-29T09:15:18+00:00"
+    },
+    "incomplete_migration": {
+      "score": 86.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "initialization_coupling": {
+      "score": 82.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "logic_clarity": {
+      "score": 84.3,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "low_level_elegance": {
+      "score": 79.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "mid_level_elegance": {
+      "score": 81.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "naming_quality": {
+      "score": 86.4,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "package_organization": {
+      "score": 83.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "test_strategy": {
+      "score": 78.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    },
+    "type_safety": {
+      "score": 79.5,
+      "source": "holistic",
+      "assessed_at": "2026-03-29T09:08:58+00:00"
+    }
+  },
+  "concern_dismissals": {
+    "orphaned_test_files": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "The production files tested by these test files (tips.ts, predictions.ts, mentions.ts, transcript.ts, action-executor.ts) are all actively imported by other production code \u2014 the tests are not orphaned",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "56951e0173d7bbe2": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "File is part of intentionally retained reactive subsystem with active tests, previously adjudicated as false positive",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "2c54138f0c5c11b9": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "Intentionally retained reactive subsystem code, previously adjudicated as false positive",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "113391782ba4882e": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "Intentionally retained reactive subsystem code",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "c59f6576bc09e56b": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "Intentionally retained reactive subsystem code",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "3d0801ef220d2211": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "Intentionally retained reactive subsystem code",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "c7b250c38e95483b": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "Intentionally retained reactive subsystem code",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    },
+    "8402699e80d43225": {
+      "dismissed_at": "2026-03-29T09:08:58+00:00",
+      "reasoning": "21-field interface is intentional DI for testability \u2014 each field is a distinct dependency, not related params that should be grouped",
+      "concern_type": "",
+      "concern_file": "",
+      "source_issue_ids": []
+    }
+  },
+  "potentials": {
+    "typescript": {
+      "logs": 0,
+      "unused": 0,
+      "exports": 0,
+      "deprecated": 0,
+      "structural": 0,
+      "flat_dirs": 0,
+      "props": 0,
+      "single_use": 0,
+      "coupling": 0,
+      "cycles": 0,
+      "orphaned": 0,
+      "patterns": 0,
+      "naming": 0,
+      "facade": 0,
+      "test_coverage": 0,
+      "smells": 0,
+      "react": 0,
+      "security": 0,
+      "subjective_review": 20,
+      "dupes": 0,
+      "stale_wontfix": 0
+    }
+  },
+  "scan_history": [
+    {
+      "timestamp": "2026-03-29T09:08:58+00:00",
+      "lang": "typescript",
+      "strict_score": 81.2,
+      "verified_strict_score": 100.0,
+      "objective_score": 100.0,
+      "overall_score": 81.2,
+      "open": 42,
+      "diff_new": 42,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 42,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": null
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Abstraction fit": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "AI generated debt": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "API coherence": {
+          "score": 88.5,
+          "strict": 88.5
+        },
+        "Auth consistency": {
+          "score": 85.0,
+          "strict": 85.0
+        },
+        "Contracts": {
+          "score": 83.2,
+          "strict": 83.2
+        },
+        "Convention drift": {
+          "score": 84.3,
+          "strict": 84.3
+        },
+        "Cross-module arch": {
+          "score": 81.2,
+          "strict": 81.2
+        },
+        "Dep health": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Design coherence": {
+          "score": 74.8,
+          "strict": 74.8
+        },
+        "Error consistency": {
+          "score": 74.8,
+          "strict": 74.8
+        },
+        "High elegance": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "Stale migration": {
+          "score": 86.0,
+          "strict": 86.0
+        },
+        "Init coupling": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "Logic clarity": {
+          "score": 84.3,
+          "strict": 84.3
+        },
+        "Low elegance": {
+          "score": 79.5,
+          "strict": 79.5
+        },
+        "Mid elegance": {
+          "score": 81.0,
+          "strict": 81.0
+        },
+        "Naming quality": {
+          "score": 86.4,
+          "strict": 86.4
+        },
+        "Structure nav": {
+          "score": 83.0,
+          "strict": 83.0
+        },
+        "Test strategy": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Type safety": {
+          "score": 79.5,
+          "strict": 79.5
+        }
+      }
+    },
+    {
+      "timestamp": "2026-03-29T09:09:03+00:00",
+      "lang": "typescript",
+      "strict_score": 81.2,
+      "verified_strict_score": 100.0,
+      "objective_score": 100.0,
+      "overall_score": 81.2,
+      "open": 42,
+      "diff_new": 0,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 0,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": 85.0
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Abstraction fit": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "AI generated debt": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "API coherence": {
+          "score": 88.5,
+          "strict": 88.5
+        },
+        "Auth consistency": {
+          "score": 85.0,
+          "strict": 85.0
+        },
+        "Contracts": {
+          "score": 83.2,
+          "strict": 83.2
+        },
+        "Convention drift": {
+          "score": 84.3,
+          "strict": 84.3
+        },
+        "Cross-module arch": {
+          "score": 81.2,
+          "strict": 81.2
+        },
+        "Dep health": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Design coherence": {
+          "score": 74.8,
+          "strict": 74.8
+        },
+        "Error consistency": {
+          "score": 74.8,
+          "strict": 74.8
+        },
+        "High elegance": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "Stale migration": {
+          "score": 86.0,
+          "strict": 86.0
+        },
+        "Init coupling": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "Logic clarity": {
+          "score": 84.3,
+          "strict": 84.3
+        },
+        "Low elegance": {
+          "score": 79.5,
+          "strict": 79.5
+        },
+        "Mid elegance": {
+          "score": 81.0,
+          "strict": 81.0
+        },
+        "Naming quality": {
+          "score": 86.4,
+          "strict": 86.4
+        },
+        "Structure nav": {
+          "score": 83.0,
+          "strict": 83.0
+        },
+        "Test strategy": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Type safety": {
+          "score": 79.5,
+          "strict": 79.5
+        }
+      }
+    }
+  ],
+  "tool_hash": "ab097af7227e",
+  "scan_path": "src",
+  "scan_completeness": {
+    "typescript": "full"
+  },
+  "dimension_scores": {
+    "Abstraction fit": {
+      "score": 82.5,
+      "strict": 82.5,
+      "verified_strict_score": 82.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.825,
+          "failing": 2,
+          "weighted_failures": 1.75,
+          "assessment_score": 82.5,
+          "placeholder": false,
+          "dimension_key": "abstraction_fitness",
+          "configured_weight": 8.0,
+          "components": [
+            "Abstraction Leverage",
+            "Indirection Cost",
+            "Interface Honesty",
+            "Delegation Density",
+            "Definition Directness",
+            "Type Discipline"
+          ],
+          "component_scores": {
+            "Abstraction Leverage": 90.0,
+            "Indirection Cost": 88.0,
+            "Interface Honesty": 75.0,
+            "Delegation Density": 95.0,
+            "Definition Directness": 92.0,
+            "Type Discipline": 85.0
+          }
+        }
+      }
+    },
+    "AI generated debt": {
+      "score": 82.5,
+      "strict": 82.5,
+      "verified_strict_score": 82.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.825,
+          "failing": 2,
+          "weighted_failures": 1.75,
+          "assessment_score": 82.5,
+          "placeholder": false,
+          "dimension_key": "ai_generated_debt",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "API coherence": {
+      "score": 88.5,
+      "strict": 88.5,
+      "verified_strict_score": 88.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.885,
+          "failing": 1,
+          "weighted_failures": 1.15,
+          "assessment_score": 88.5,
+          "placeholder": false,
+          "dimension_key": "api_surface_coherence",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Auth consistency": {
+      "score": 85.0,
+      "strict": 85.0,
+      "verified_strict_score": 85.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.85,
+          "failing": 1,
+          "weighted_failures": 1.5,
+          "assessment_score": 85.0,
+          "placeholder": false,
+          "dimension_key": "authorization_consistency",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Contracts": {
+      "score": 83.2,
+      "strict": 83.2,
+      "verified_strict_score": 83.2,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.832,
+          "failing": 2,
+          "weighted_failures": 1.68,
+          "assessment_score": 83.2,
+          "placeholder": false,
+          "dimension_key": "contract_coherence",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    },
+    "Convention drift": {
+      "score": 84.3,
+      "strict": 84.3,
+      "verified_strict_score": 84.3,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.843,
+          "failing": 2,
+          "weighted_failures": 1.57,
+          "assessment_score": 84.3,
+          "placeholder": false,
+          "dimension_key": "convention_outlier",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Cross-module arch": {
+      "score": 81.2,
+      "strict": 81.2,
+      "verified_strict_score": 81.2,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.812,
+          "failing": 1,
+          "weighted_failures": 1.88,
+          "assessment_score": 81.2,
+          "placeholder": false,
+          "dimension_key": "cross_module_architecture",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Dep health": {
+      "score": 88.0,
+      "strict": 88.0,
+      "verified_strict_score": 88.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.88,
+          "failing": 1,
+          "weighted_failures": 1.2,
+          "assessment_score": 88.0,
+          "placeholder": false,
+          "dimension_key": "dependency_health",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Design coherence": {
+      "score": 74.8,
+      "strict": 74.8,
+      "verified_strict_score": 74.8,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.748,
+          "failing": 3,
+          "weighted_failures": 2.52,
+          "assessment_score": 74.8,
+          "placeholder": false,
+          "dimension_key": "design_coherence",
+          "configured_weight": 10.0,
+          "components": []
+        }
+      }
+    },
+    "Error consistency": {
+      "score": 74.8,
+      "strict": 74.8,
+      "verified_strict_score": 74.8,
+      "checks": 10,
+      "failing": 4,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.748,
+          "failing": 4,
+          "weighted_failures": 2.52,
+          "assessment_score": 74.8,
+          "placeholder": false,
+          "dimension_key": "error_consistency",
+          "configured_weight": 3.0,
+          "components": []
+        }
+      }
+    },
+    "High elegance": {
+      "score": 82.5,
+      "strict": 82.5,
+      "verified_strict_score": 82.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.825,
+          "failing": 1,
+          "weighted_failures": 1.75,
+          "assessment_score": 82.5,
+          "placeholder": false,
+          "dimension_key": "high_level_elegance",
+          "configured_weight": 22.0,
+          "components": []
+        }
+      }
+    },
+    "Stale migration": {
+      "score": 86.0,
+      "strict": 86.0,
+      "verified_strict_score": 86.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.86,
+          "failing": 2,
+          "weighted_failures": 1.4,
+          "assessment_score": 86.0,
+          "placeholder": false,
+          "dimension_key": "incomplete_migration",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Init coupling": {
+      "score": 82.5,
+      "strict": 82.5,
+      "verified_strict_score": 82.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.825,
+          "failing": 2,
+          "weighted_failures": 1.75,
+          "assessment_score": 82.5,
+          "placeholder": false,
+          "dimension_key": "initialization_coupling",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Logic clarity": {
+      "score": 84.3,
+      "strict": 84.3,
+      "verified_strict_score": 84.3,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.843,
+          "failing": 2,
+          "weighted_failures": 1.57,
+          "assessment_score": 84.3,
+          "placeholder": false,
+          "dimension_key": "logic_clarity",
+          "configured_weight": 6.0,
+          "components": []
+        }
+      }
+    },
+    "Low elegance": {
+      "score": 79.5,
+      "strict": 79.5,
+      "verified_strict_score": 79.5,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.795,
+          "failing": 3,
+          "weighted_failures": 2.05,
+          "assessment_score": 79.5,
+          "placeholder": false,
+          "dimension_key": "low_level_elegance",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    },
+    "Mid elegance": {
+      "score": 81.0,
+      "strict": 81.0,
+      "verified_strict_score": 81.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.81,
+          "failing": 2,
+          "weighted_failures": 1.9,
+          "assessment_score": 81.0,
+          "placeholder": false,
+          "dimension_key": "mid_level_elegance",
+          "configured_weight": 22.0,
+          "components": []
+        }
+      }
+    },
+    "Naming quality": {
+      "score": 86.4,
+      "strict": 86.4,
+      "verified_strict_score": 86.4,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.864,
+          "failing": 2,
+          "weighted_failures": 1.36,
+          "assessment_score": 86.4,
+          "placeholder": false,
+          "dimension_key": "naming_quality",
+          "configured_weight": 2.0,
+          "components": []
+        }
+      }
+    },
+    "Structure nav": {
+      "score": 83.0,
+      "strict": 83.0,
+      "verified_strict_score": 83.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.83,
+          "failing": 1,
+          "weighted_failures": 1.7,
+          "assessment_score": 83.0,
+          "placeholder": false,
+          "dimension_key": "package_organization",
+          "configured_weight": 5.0,
+          "components": []
+        }
+      }
+    },
+    "Test strategy": {
+      "score": 78.0,
+      "strict": 78.0,
+      "verified_strict_score": 78.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.78,
+          "failing": 2,
+          "weighted_failures": 2.2,
+          "assessment_score": 78.0,
+          "placeholder": false,
+          "dimension_key": "test_strategy",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Type safety": {
+      "score": 79.5,
+      "strict": 79.5,
+      "verified_strict_score": 79.5,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.795,
+          "failing": 3,
+          "weighted_failures": 2.05,
+          "assessment_score": 79.5,
+          "placeholder": false,
+          "dimension_key": "type_safety",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    }
+  },
+  "review_cache": {
+    "files": {},
+    "holistic": {
+      "reviewed_at": "2026-03-29T09:08:58+00:00",
+      "file_count_at_review": 165,
+      "issue_count": 42,
+      "reviewed_files_count": 0,
+      "full_sweep_included": false
+    },
+    "detectors": {
+      "boilerplate": {},
+      "security": {
+        "version": 1,
+        "fingerprint": "42e03ea4e08aa25ad11608c250827cd2d106403c",
+        "entries": [],
+        "files_scanned": 0,
+        "coverage": null
+      },
+      "dupes": {}
+    }
+  },
+  "assessment_import_audit": [
+    {
+      "timestamp": "2026-03-29T09:08:58+00:00",
+      "mode": "trusted_internal",
+      "trusted": true,
+      "reason": "trusted import-run replay from 20260329_085709",
+      "override_used": false,
+      "attested_external": false,
+      "provisional": false,
+      "provisional_count": 0,
+      "attest": "",
+      "import_file": "/home/mj/projects/demos-agents/.desloppify/subagents/runs/20260329_085709/holistic_issues_merged.json",
+      "packet_sha256": "c7fa233bab968f7ad02f0651b444ef738ededaefa8b5d693d2936f4e0e02b41c"
+    }
+  ],
+  "lang_capabilities": {
+    "typescript": {
+      "fixers": [
+        "dead-useeffect",
+        "debug-logs",
+        "empty-if-chain",
+        "unused-imports",
+        "unused-params",
+        "unused-vars"
+      ],
+      "typecheck_cmd": "npx tsc --noEmit"
+    }
+  },
+  "zone_distribution": {},
+  "codebase_metrics": {
+    "typescript": {
+      "total_files": 0,
+      "total_loc": 0,
+      "total_directories": 0
+    }
+  },
+  "reminder_history": {
+    "review_issues_pending": 1,
+    "feedback_nudge": 1,
+    "report_scores": 1,
+    "review_not_run": 1
+  }
+}

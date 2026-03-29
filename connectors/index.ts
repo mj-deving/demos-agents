@@ -11,4 +11,4 @@ export type { Demos } from "@kynesyslabs/demosdk/websdk";
 export { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
 
 // SDK connection factory
-export { connectWallet, loadMnemonic, RPC_URL, SUPERCOLONY_API } from "../src/lib/network/sdk.js";
+export { connectWallet, loadMnemonic, getRpcUrl, getApiUrl } from "../src/lib/network/sdk.js";

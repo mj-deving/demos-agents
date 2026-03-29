@@ -1,0 +1,98 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {
+    "naming_quality": 86.4
+  },
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "Naming vocabulary is domain-rich: 'create' (74 uses), 'load' (28), 'get' (27), 'is' (20), 'check' (13), 'build' (9), 'parse' (8), 'fetch' (8), 'calculate' (8), 'validate' (7), 'ensure' (5), 'execute' (4). These verbs are specific and descriptive — no 'process', 'handle', 'do', or 'manage' in the export namespace.",
+        "Type names are precise and domain-aligned: SourceRecordV2, DemosErrorCode, ToolResult<T>, ProviderAdapter, SurgicalCandidate, AttestationMethod, ExtensionHookRegistry, PublishGateDecision, SourceMatchDecision. These communicate intent without ambiguity.",
+        "Function names match behavior: loadAuthCache returns cached auth or null, checkAndRecordWrite checks then records, guardAndPublish guards then publishes, evaluateTransition evaluates a state transition, withToolWrapper wraps a tool operation. Name-behavior alignment is consistently strong.",
+        "Helper names are appropriately terse: todayUTC(), statePath(), freshTipState() in tips.ts — these are private helpers where brevity is appropriate.",
+        "Constants use descriptive names: PROMOTION_PASSES, DEGRADED_RATING_THRESHOLD, RECOVERY_RATING_THRESHOLD, QUARANTINE_ARCHIVE_FAILURES in lifecycle.ts. MIN_REACTIONS_FOR_ENGAGEMENT, DEFAULT_OPPORTUNITY_SCORE in scan.ts.",
+        "File names are descriptive and consistent: tool-wrapper.ts, state-helpers.ts, publish-pipeline.ts, feed-filter.ts, source-scanner.ts, engage-heuristics.ts, attestation-planner.ts.",
+        "Minor generic names: 'ctx' used for hook context parameters across plugins — but this is a consistent abbreviation (used 50+ times) making it a convention per the skip rules.",
+        "The 'run' prefix appears 8 times (runBeforeSense, runTool, etc.) — these are orchestration verbs that accurately describe their behavior."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "A few function parameters use generic names like 'data' or 'input' where domain terms would be clearer. ApiCallFn type alias in action-executor.ts uses 'any' in its return type signature."
+    }
+  },
+  "dimension_judgment": {
+    "naming_quality": {
+      "dimension_character": "The codebase demonstrates consistently strong naming quality. Function names use domain-specific verbs (loadAuthCache, guardAndPublish, evaluateTransition, checkAndRecordWrite), type names are precise and descriptive (SurgicalCandidate, PublishGateDecision, DemosErrorCode), and constants document their threshold purpose. A developer reading this codebase can predict function behavior from names with high reliability. The naming vocabulary avoids generic verbs entirely in the export namespace, which is unusually disciplined.",
+      "score_rationale": "A developer can read function names and correctly predict behavior in the vast majority of cases — this aligns with the 86-90 range ('names are mostly precise'). The few minor issues (generic parameter names, ApiCallFn return type) are isolated and don't undermine the overall naming discipline. The consistent use of domain vocabulary ('attestation', 'hive', 'surgical', 'calibrate', 'provenance') is a clear positive. Score at 86.4 reflects strong naming with small local imperfections."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "api_call_fn_any_return",
+      "summary": "ApiCallFn type alias uses 'any' in return type — data field is untyped",
+      "related_files": [
+        "src/actions/action-executor.ts"
+      ],
+      "evidence": [
+        "Line 29: 'export type ApiCallFn = (path: string, token: string, opts?: { method?: string; body?: string }) => Promise<{ ok: boolean; status?: number; data?: any }>;' — the 'data?: any' leaks type-unsafety through the API call abstraction name. While this file is documented as orphaned, the pattern could be copied."
+      ],
+      "suggestion": "Type data as 'unknown' instead of 'any'. This preserves the generic nature while requiring callers to narrow the type before use.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "info_function_generic",
+      "summary": "sdk.ts exports 'info()' as a logging function — name is too generic for a module-level export",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "sdk.ts exports 'info' and 'warn' functions (lines ~320-327) that are agent-prefixed console loggers. 'info' as a name collides conceptually with Node's util.inspect, Winston's info level, and general 'information' semantics. Callers import { apiCall, info } from sdk.ts — 'info' doesn't communicate that it's an agent-scoped logger."
+      ],
+      "suggestion": "Rename to 'logInfo' or 'agentInfo' to communicate that it's a prefixed logging function, not a data-retrieval function.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "naming_quality": {
+      "add": [
+        {
+          "header": "Domain-rich verb vocabulary in exports",
+          "description": "The export namespace avoids generic verbs (process, handle, do, manage) entirely. Function names use specific verbs: loadAuthCache, guardAndPublish, evaluateTransition, checkAndRecordWrite, acquireRateLimitToken. This discipline makes the codebase navigable by name alone.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Precise domain type names throughout",
+          "description": "Types like SurgicalCandidate, PublishGateDecision, SourceMatchDecision, DemosErrorCode, ToolResult<T>, and ProvenancePath communicate their domain role without ambiguity. A developer can understand the type system from names alone.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Constants document their threshold purpose",
+          "description": "Numeric constants are named for their domain meaning: PROMOTION_PASSES, DEGRADED_RATING_THRESHOLD, MIN_REACTIONS_FOR_ENGAGEMENT, QUARANTINE_ARCHIVE_FAILURES. No magic numbers without names in the production code.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "ctx abbreviation is established convention",
+          "description": "The 'ctx' abbreviation for hook context parameters is used 50+ times across all plugins and extensions. This is a project convention, not a naming outlier.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

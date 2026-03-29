@@ -1,0 +1,107 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 16,
+  "assessments": {
+    "initialization_coupling": 82.5
+  },
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "src/lib/network/sdk.ts has module-level mutable state: runtimeConfig (line 30), cryptoInitialized (line 36), logAgentName (line 37). These are mutated by loadMnemonic() and setLogAgent() at runtime, creating implicit boot-order dependencies.",
+        "RPC_URL and SUPERCOLONY_API are exported as module-level constants (lines 33-35) alongside getRpcUrl()/getApiUrl() getter functions. Consumers referencing the constants get a stale snapshot that doesn't reflect credential file overrides — the exact 'snapshot vs getter' anti-pattern.",
+        "These constants are marked @deprecated with guidance to use the getters, demonstrating awareness of the problem, but they remain exported and importable.",
+        "src/lib/pipeline/observe.ts uses module-level mutable state (_agentName, _sessionNumber, _logPath, _currentPhase at lines 85-88) with an initObserver() function. This is a deliberate design — observe() is synchronous and best-effort, and the module documents 'call once at session start'.",
+        "src/actions/publish-pipeline.ts has module-level mutable state: sessionIndexerLagDetected (line 21). This boolean persists across function calls within a process, which is the intent (detect lag once, skip subsequent checks).",
+        "src/toolkit/sdk-bridge.ts factory pattern (createSdkBridge) uses closure-scoped lazy loaders (cachedTxModule, cachedD402Client at lines 268-269) rather than module-level state — a positive pattern that avoids global singletons.",
+        "src/toolkit/tools/connect.ts explicitly documents 'Uses lazy SDK imports to avoid module-level side effects' — showing intentional avoidance of import-time coupling.",
+        "src/lib/agent-config.ts computes REPO_ROOT at import time via import.meta.url (line 19-20), and reads KNOWN_EXTENSIONS from state.ts at import time (line 94-95). The REPO_ROOT computation is a standard pattern for __dirname replacement in ESM.",
+        "process.env reads are limited to function bodies (agent-config.ts:103, sdk.ts:102, log.ts:122), not at module scope — a positive pattern for testability."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Deprecated module-level constants RPC_URL/SUPERCOLONY_API still exported from sdk.ts, creating stale-snapshot risk. Module-level mutable singletons in observe.ts and sdk.ts create implicit init-order requirements."
+    }
+  },
+  "dimension_judgment": {
+    "initialization_coupling": {
+      "dimension_character": "The codebase shows a deliberate effort to minimize import-time side effects — the toolkit layer uses factory patterns and lazy imports consistently, and environment variable reads happen inside functions, not at module scope. The main fragility comes from src/lib/network/sdk.ts, which has module-level mutable state (runtimeConfig, logAgentName) that creates implicit boot-order dependencies, and deprecated-but-still-exported constants that can serve stale values. The observe.ts singleton is well-documented but still requires correct init ordering.",
+      "score_rationale": "A developer would mostly be able to import modules without worrying about side effects — the toolkit layer and plugins use lazy imports effectively. However, the sdk.ts module-level mutable state and the observer singleton require understanding implicit initialization order, which pulls the score below 85. The deprecated constant exports are a known issue with mitigation in place (getters + @deprecated tags), limiting their real impact. Score at 82.5 reflects solid foundations with isolated mutable-global friction."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_stale_constant_exports",
+      "summary": "Deprecated RPC_URL/SUPERCOLONY_API constants still exported alongside getter functions in sdk.ts",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Lines 33-35: RPC_URL and SUPERCOLONY_API are exported as const values computed at module load time. getRpcUrl()/getApiUrl() return the dynamic runtimeConfig values. The constants don't reflect credential file overrides applied by loadMnemonic()."
+      ],
+      "suggestion": "Remove the deprecated constant exports entirely. Any remaining consumers should be migrated to getRpcUrl()/getApiUrl(). The @deprecated annotation has been in place — complete the migration by deleting the exports.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "sdk_module_mutable_singletons",
+      "summary": "sdk.ts has 3 module-level mutable variables creating implicit boot-order coupling",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "runtimeConfig (line 30), cryptoInitialized (line 36), logAgentName (line 37) are module-level let variables. loadMnemonic() mutates runtimeConfig as a side effect, meaning the order of loadMnemonic() vs getRpcUrl() calls matters. Multiple callers of loadMnemonic() in the same process would overwrite each other's config."
+      ],
+      "suggestion": "Consider encapsulating runtimeConfig, cryptoInitialized, and logAgentName into a SdkContext object created by a factory function, similar to how sdk-bridge.ts uses closure-scoped state. This would make the initialization dependency explicit and support multiple concurrent agent configs in the same process.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "sdk.ts predates the toolkit layer's factory pattern and retains legacy module-level state that the toolkit has since avoided"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "Toolkit uses factory pattern for SDK state",
+          "description": "createSdkBridge() encapsulates all mutable state (cached modules, auth tokens) in closure scope rather than module-level globals. This is the gold standard pattern in the codebase for avoiding init-order coupling.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Lazy imports in plugins and tools",
+          "description": "connect.ts, lifecycle-plugin.ts, and other plugins use dynamic import() to defer SDK loading. This prevents import-time side effects and keeps the module graph lightweight.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Environment reads inside functions not at module scope",
+          "description": "process.env.AGENT_NAME, AGENT_LOG_PATH etc. are read inside function bodies (getLogAgentName, resolveAgentName), not at import time. This preserves testability and avoids fragile environment assumptions.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Observer requires explicit init before use",
+          "description": "observe.ts has module-level mutable state (_agentName, _sessionNumber, _logPath) that must be set via initObserver() before observe() calls produce output. This is documented and intentional — the observer is best-effort and silently no-ops when uninitialized.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "sdk.ts has legacy module-level mutable config",
+          "description": "runtimeConfig, cryptoInitialized, and logAgentName are module-level let variables mutated by loadMnemonic() and setLogAgent(). This creates implicit boot-order dependencies that predate the toolkit's factory pattern.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,393 @@
+{
+  "command": "show",
+  "query": "review",
+  "status_filter": "open",
+  "total": 10,
+  "summary": {
+    "by_tier": {
+      "T1": 10
+    },
+    "by_detector": {
+      "review": 10
+    },
+    "files": 1
+  },
+  "by_file": {
+    ".": [
+      {
+        "id": "review::.::holistic::convention_outlier::deprecated_constants_coexistence",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "sdk.ts exports deprecated module-level constants alongside their replacement getter functions",
+        "detail": {
+          "holistic": true,
+          "dimension": "convention_outlier",
+          "related_files": [
+            "src/lib/network/sdk.ts"
+          ],
+          "evidence": [
+            "Lines 32-35: 'export const RPC_URL = DEFAULT_RPC' and 'export const SUPERCOLONY_API = DEFAULT_API' are marked @deprecated with comments pointing to getRpcUrl() and getApiUrl(). Both deprecated and replacement exports coexist, creating confusion about which to use."
+          ],
+          "suggestion": "Remove the deprecated const exports (RPC_URL, SUPERCOLONY_API). Any remaining consumers should be migrated to getRpcUrl()/getApiUrl(). This eliminates the dual-path confusion.",
+          "reasoning": "",
+          "summary_hash": "ac913172"
+        }
+      },
+      {
+        "id": "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
+        "detail": {
+          "holistic": true,
+          "dimension": "cross_module_architecture",
+          "related_files": [
+            "src/lib/util/extensions.ts",
+            "src/plugins/calibrate-plugin.ts"
+          ],
+          "evidence": [
+            "extensions.ts imports KNOWN_EXTENSIONS from state.ts and provides BeforeSenseContext type. calibrate-plugin.ts imports BeforeSenseContext from extensions.ts. loadExtensions() in extensions.ts dynamically loads calibrate-plugin, creating a circular dependency path."
+          ],
+          "suggestion": "Extract the BeforeSenseContext and related hook context types into a dedicated src/lib/util/hook-types.ts file that both extensions.ts and calibrate-plugin.ts can import without creating a cycle.",
+          "reasoning": "",
+          "summary_hash": "1bf77bb6"
+        }
+      },
+      {
+        "id": "review::.::holistic::cross_module_architecture::orphaned_flat_files_boundary_blur",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "4+ orphaned files in src/lib/ blur the restructured subdirectory boundaries",
+        "detail": {
+          "holistic": true,
+          "dimension": "cross_module_architecture",
+          "related_files": [
+            "src/lib/tips.ts",
+            "src/lib/predictions.ts",
+            "src/lib/mentions.ts",
+            "src/lib/transcript.ts"
+          ],
+          "evidence": [
+            "src/lib/ has 13 flat files alongside 8 structured subdirectories (auth/, llm/, attestation/, scoring/, sources/, network/, pipeline/, util/). At least 4 flat files (tips.ts, predictions.ts, mentions.ts, transcript.ts) are documented as orphaned with zero importers, yet they persist and blur the boundary between restructured and legacy code."
+          ],
+          "suggestion": "Delete the orphaned flat files (they are recoverable from git). This clarifies the restructured src/lib/ boundary and reduces the flat file count from 13 to 9.",
+          "reasoning": "",
+          "summary_hash": "a43a0034"
+        }
+      },
+      {
+        "id": "review::.::holistic::design_coherence::publish_pipeline_as_any_txhash",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "publish-pipeline.ts uses 7 'as any' casts for txHash extraction that sdk-bridge.ts handles with typed narrowing",
+        "detail": {
+          "holistic": true,
+          "dimension": "design_coherence",
+          "related_files": [
+            "src/actions/publish-pipeline.ts",
+            "src/toolkit/sdk-bridge.ts"
+          ],
+          "evidence": [
+            "Lines 342-350 use (validity as any)?.response?.data?.transaction?.hash and 6 more 'as any' casts. sdk-bridge.ts has extractTxHash() (line 222) that handles the same SDK response shapes with proper typed narrowing using Record<string, unknown> casts."
+          ],
+          "suggestion": "Extract extractTxHash() to a shared utility (e.g., toolkit/tx-utils.ts) and use it in publish-pipeline.ts, replacing all 7 'as any' casts with the typed version.",
+          "reasoning": "",
+          "summary_hash": "d18de685"
+        }
+      },
+      {
+        "id": "review::.::holistic::design_coherence::sdk_bridge_overloaded",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "sdk-bridge.ts at 917 lines mixes transport, serialization, chain queries, and payment logic",
+        "detail": {
+          "holistic": true,
+          "dimension": "design_coherence",
+          "related_files": [
+            "src/toolkit/sdk-bridge.ts"
+          ],
+          "evidence": [
+            "Single file implements: DAHR attestation, API calls with retry, HIVE post encoding/publishing, DEM token transfers, D402 payment settlement, chain transaction queries (5 methods), reaction publishing, and transaction verification. These are at least 4 distinct responsibility clusters."
+          ],
+          "suggestion": "Extract chain-query methods (getHivePosts, getHiveReactions, getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo, verifyTransaction) into a dedicated chain-reader.ts module. The SdkBridge interface can compose the chain reader, keeping the factory pattern intact while reducing sdk-bridge.ts to ~500 lines of write-path logic.",
+          "reasoning": "",
+          "summary_hash": "9c9688e5"
+        }
+      },
+      {
+        "id": "review::.::holistic::error_consistency::empty_catch_blocks",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "Empty catch blocks in hive-codec.ts and chain-scanner.ts silently swallow decode errors",
+        "detail": {
+          "holistic": true,
+          "dimension": "error_consistency",
+          "related_files": [
+            "src/toolkit/hive-codec.ts",
+            "src/toolkit/chain-scanner.ts"
+          ],
+          "evidence": [
+            "hive-codec.ts has 3 empty catch blocks (lines ~62, 85, 101) with only '// Not valid base64' comments. chain-scanner.ts has 2 empty catch blocks (lines ~68, 113). In a chain-operations codebase handling real money, silently swallowing decode/parse errors is risky \u2014 corrupt data passes through as null without any observability."
+          ],
+          "suggestion": "Add minimal logging to the empty catch blocks using the existing observe() pattern: observe('warning', 'Failed to decode HIVE payload', { source: 'hive-codec.ts', data: { inputLength } }). This preserves the 'return null on failure' semantics while adding observability.",
+          "reasoning": "",
+          "summary_hash": "6bb24f74"
+        }
+      },
+      {
+        "id": "review::.::holistic::error_consistency::providers_mixed_error_strategies",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "src/lib/sources/providers/ uses 4 different error strategies across sibling files",
+        "detail": {
+          "holistic": true,
+          "dimension": "error_consistency",
+          "related_files": [
+            "src/lib/sources/providers/declarative-engine.ts",
+            "src/lib/sources/fetch.ts"
+          ],
+          "evidence": [
+            "providers/ directory: try_catch (22), returns_null (18), throws (11), result_type (1). The declarative engine 'never throws from any adapter method \u2014 returns empty results on failure' per its docstring, while individual provider operations throw on specific conditions. fetchSource returns FetchSourceResult (ok/error). No consistent convention for which approach to use."
+          ],
+          "suggestion": "Establish a per-layer convention: provider adapter methods should return typed results (following the declarative engine's 'never throws' pattern), while internal helpers can throw. Document this convention in a comment at the top of providers/types.ts.",
+          "reasoning": "",
+          "summary_hash": "b94f9b9e"
+        }
+      },
+      {
+        "id": "review::.::holistic::high_level_elegance::orphaned_reactive_subsystem",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "reactive/ subsystem (~1650 LOC) persists in production tree despite being largely orphaned",
+        "detail": {
+          "holistic": true,
+          "dimension": "high_level_elegance",
+          "related_files": [
+            "src/reactive/event-loop.ts",
+            "src/reactive/event-sources/sse-feed.ts",
+            "src/reactive/event-handlers/mention-handler.ts"
+          ],
+          "evidence": [
+            "Historical review issues document the entire reactive/ subsystem as orphaned with zero importers. event-loop.ts, most event-sources, and all event-handlers have no active consumers. The cli/event-runner.ts entry point exists but the internal event-loop.ts has no importers according to scan evidence."
+          ],
+          "suggestion": "If reactive/ is planned future work, move it to a _staging/ or _future/ directory to signal intent. If abandoned, delete it. Either way, keeping ~1650 LOC of dead code in the production tree undermines the otherwise clean decomposition.",
+          "reasoning": "",
+          "summary_hash": "3c34034f"
+        }
+      },
+      {
+        "id": "review::.::holistic::incomplete_migration::deprecated_persist_source_to_registry",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "Deprecated persistSourceToRegistry function has zero callers and should be removed",
+        "detail": {
+          "holistic": true,
+          "dimension": "incomplete_migration",
+          "related_files": [
+            "src/lib/pipeline/source-discovery.ts"
+          ],
+          "evidence": [
+            "persistSourceToRegistry is marked @deprecated with 'Use persistSourceToCatalog for V2 catalog persistence' but grep shows zero callers in the entire codebase \u2014 it is dead code from the V1-to-V2 catalog migration"
+          ],
+          "suggestion": "Delete the persistSourceToRegistry function (lines 324-350 approximately) and its associated V1 YAML imports if they become unused. The V2 persistSourceToCatalog function immediately below is the canonical replacement.",
+          "reasoning": "",
+          "summary_hash": "b8d71a62"
+        }
+      },
+      {
+        "id": "review::.::holistic::incomplete_migration::deprecated_sdk_constants",
+        "tier": 1,
+        "confidence": "high",
+        "summary": "Deprecated RPC_URL and SUPERCOLONY_API constants in sdk.ts have zero importers",
+        "detail": {
+          "holistic": true,
+          "dimension": "incomplete_migration",
+          "related_files": [
+            "src/lib/network/sdk.ts"
+          ],
+          "evidence": [
+            "Both constants are marked @deprecated with 'Use getRpcUrl()/getApiUrl()' but no file in src/ imports them. They are exported dead code from before the credential-override migration."
+          ],
+          "suggestion": "Remove the two exported constants (lines 33-35). If external consumers might reference them, add a breaking-change note. The getter functions getRpcUrl()/getApiUrl() are the canonical replacements.",
+          "reasoning": "",
+          "summary_hash": "78a58189"
+        }
+      }
+    ]
+  },
+  "total_matching": 42,
+  "hidden": {
+    "by_detector": {
+      "review": 32
+    },
+    "total": 32
+  },
+  "noise_budget": 10,
+  "noise_global_budget": 0,
+  "narrative": {
+    "phase": "refinement",
+    "headline": " (42 review work items \u2014 run `desloppify show review --status open`)",
+    "dimensions": {
+      "lowest_dimensions": [
+        {
+          "name": "Design coherence",
+          "strict": 74.8,
+          "failing": 3,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        },
+        {
+          "name": "Error consistency",
+          "strict": 74.8,
+          "failing": 4,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        },
+        {
+          "name": "Test strategy",
+          "strict": 78.0,
+          "failing": 2,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        }
+      ],
+      "biggest_gap_dimensions": [],
+      "stagnant_dimensions": []
+    },
+    "actions": [
+      {
+        "type": "refactor",
+        "detector": "review",
+        "count": 42,
+        "description": "42 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
+        "command": "desloppify show review --status open",
+        "impact": 0.0,
+        "dimension": "Unknown",
+        "priority": 1,
+        "lane": "refactor"
+      }
+    ],
+    "strategy": {
+      "fixer_leverage": {
+        "auto_fixable_count": 0,
+        "total_count": 126,
+        "coverage": 0.0,
+        "impact_ratio": 0.0,
+        "recommendation": "none"
+      },
+      "lanes": {
+        "refactor": {
+          "actions": [
+            1
+          ],
+          "file_count": 1,
+          "total_impact": 0.0,
+          "automation": "manual",
+          "run_first": false
+        }
+      },
+      "can_parallelize": false,
+      "hint": "Work through actions in priority order. Rescan after each fix to track progress. Review: 42 issue(s) \u2014 `desloppify show review --status open`."
+    },
+    "tools": {
+      "fixers": [],
+      "move": {
+        "available": true,
+        "relevant": false,
+        "reason": null,
+        "usage": "desloppify move <source> <dest> [--dry-run]"
+      },
+      "plan": {
+        "command": "desloppify plan",
+        "description": "Generate prioritized markdown cleanup plan"
+      },
+      "badge": {
+        "generated": true,
+        "in_readme": false,
+        "path": "scorecard.png",
+        "recommendation": "Add to README: <img src=\"scorecard.png\" width=\"100%\">"
+      }
+    },
+    "debt": {
+      "overall_gap": 0.0,
+      "wontfix_count": 0,
+      "worst_dimension": null,
+      "worst_gap": 0.0,
+      "trend": "stable"
+    },
+    "milestone": null,
+    "primary_action": {
+      "command": "desloppify show review --status open",
+      "description": "42 review work items need investigation \u2014 run `desloppify show review --status open` to see them"
+    },
+    "why_now": "Work through actions in priority order. Rescan after each fix to track progress. Review: 42 issue(s) \u2014 `desloppify show review --status open`.",
+    "verification_step": {
+      "command": "desloppify scan",
+      "reason": "revalidate after changes"
+    },
+    "risk_flags": [],
+    "strict_target": {
+      "target": 85.0,
+      "current": 81.2,
+      "gap": 3.8,
+      "state": "below",
+      "warning": null
+    },
+    "reminders": [
+      {
+        "type": "review_issues_pending",
+        "message": "42 review work item(s) need investigation. Run `desloppify show review --status open` to see the work queue.",
+        "command": "desloppify show review --status open",
+        "priority": 1,
+        "severity": "high"
+      },
+      {
+        "type": "review_not_run",
+        "message": "Mechanical checks look good! Run a subjective design review to catch issues linters miss: desloppify review --prepare",
+        "command": "desloppify review --prepare",
+        "priority": 3,
+        "severity": "low"
+      }
+    ],
+    "reminder_history": {
+      "review_issues_pending": 2,
+      "feedback_nudge": 1,
+      "report_scores": 1,
+      "review_not_run": 2
+    }
+  },
+  "config": {
+    "target_strict_score": 85,
+    "review_max_age_days": 30,
+    "review_batch_max_files": 80,
+    "holistic_max_age_days": 30,
+    "generate_scorecard": true,
+    "badge_path": "scorecard.png",
+    "exclude": [],
+    "ignore": [],
+    "ignore_metadata": {},
+    "zone_overrides": {},
+    "review_dimensions": [],
+    "large_files_threshold": 0,
+    "props_threshold": 0,
+    "issue_noise_budget": 10,
+    "issue_noise_global_budget": 0,
+    "execution_log_max_entries": 10000,
+    "needs_rescan": false,
+    "languages": {},
+    "commit_tracking_enabled": true,
+    "commit_pr": 0,
+    "commit_default_branch": "",
+    "commit_message_template": "desloppify: {status} {count} issue(s) \u2014 {summary}",
+    "trust_plugins": false,
+    "transition_messages": {},
+    "hermes_enabled": false,
+    "hermes_models": {
+      "execute": "openrouter:x-ai/grok-4.20-beta",
+      "review": "openrouter:google/gemini-3.1-pro-preview"
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 18,
+  "assessments": {
+    "contract_coherence": 83.2
+  },
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "SdkBridge interface (sdk-bridge.ts:158-210) provides a clear, well-documented contract for all 15+ methods. Each method has JSDoc describing behavior, parameters, and return semantics. Return types accurately reflect all code paths (e.g., verifyTransaction returns Promise<{...} | null>, resolvePostAuthor returns Promise<string | null>).",
+        "Error contracts are consistent across the bridge: attestDahr and publishHivePost throw on failure, apiCall returns {ok: false}, chain query methods return empty arrays or null. These different strategies match the caller expectations — throws for must-succeed operations, result types for optional/fallback operations.",
+        "connect() throws DemosError on failure rather than returning a result type — documented in JSDoc as intentional: 'Unlike other toolkit tools which return ToolResult, connect/disconnect use throw/void semantics because they manage session lifecycle, not tool operations.'",
+        "observe() silently no-ops when uninitialized (_logPath is null). This matches its documented contract: 'observations are best-effort, not critical path'. The function signature is void, and callers correctly treat it as fire-and-forget.",
+        "apiCall in sdk.ts returns {ok: false, status: 0, data: errorMessage} on network errors — the data field is typed as TData but receives a string error message. This is a mild contract violation: callers expecting TData get a string instead. However, ApiCallResult in sdk-bridge.ts addresses this with an explicit errorType field.",
+        "fetchSignals and fetchLatestBriefing in signals.ts never throw — they return null on any failure, matching their JSDoc 'Never throws' contract.",
+        "generatePost in llm.ts throws on invalid JSON or text too short, which is appropriate for a must-succeed operation. It also silently corrects invalid category, tags, confidence, and predicted_reactions to defaults — documented behavior but potentially surprising that the LLM's category choice can be silently overwritten.",
+        "loadMnemonic in sdk.ts throws on missing credentials — consistent error contract for a required-at-startup operation."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "apiCall in sdk.ts has a mild return type lie where data field typed as TData can receive a string error message. generatePost silently corrects some LLM output fields without signaling to the caller."
+    }
+  },
+  "dimension_judgment": {
+    "contract_coherence": {
+      "dimension_character": "The codebase generally honors its stated contracts well. The SdkBridge interface is a strong example of explicit, documented contracts where return types cover all code paths. Error handling follows a consistent two-strategy pattern: throws for must-succeed operations, result types for optional/fallback operations. The main contract gaps are at API boundaries where generic type parameters can receive unexpected types (apiCall data field), and in the LLM module where silent field correction could surprise callers expecting the LLM's exact output.",
+      "score_rationale": "A developer can largely trust function signatures and JSDoc. The error contract split (throw vs result type) is consistent and documented. The apiCall type parameter issue is real but mitigated by the bridge's errorType field addition. Silent field correction in generatePost is a minor surprise that most callers wouldn't notice since they use the draft as-is. Score at 83.2 reflects strong contracts with isolated friction points, above the 80 'solid but uneven' anchor."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "sdk_apicall_data_type_lie",
+      "summary": "apiCall<TData> in sdk.ts returns error message string as TData on network failure",
+      "related_files": [
+        "src/lib/network/sdk.ts"
+      ],
+      "evidence": [
+        "Line 298: on catch, returns { ok: false, status: 0, data: message as TData }. The data field is typed as TData (generic) but receives a plain string error message. Callers checking ok=false before accessing data are safe, but the type annotation lies about what data contains on error paths."
+      ],
+      "suggestion": "Change ApiCallResult to use a discriminated union: { ok: true; status: number; data: TData } | { ok: false; status: number; data: string; errorType?: string }. This makes the type system enforce error checking before accessing TData-shaped data.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "llm_silent_field_correction",
+      "summary": "generatePost silently overrides invalid category/confidence/predicted_reactions without notifying caller",
+      "related_files": [
+        "src/actions/llm.ts"
+      ],
+      "evidence": [
+        "Lines 260-268: if category is invalid, it's silently replaced with input.category. If confidence is out of range, silently set to 70. If predicted_reactions is negative, silently set to 8. Caller receives a PostDraft with no indication that fields were corrected."
+      ],
+      "suggestion": "Add an optional warnings array to PostDraft (e.g., correctedFields: string[]) so callers can log or factor in that the LLM output was repaired. Alternatively, log these corrections via info() alongside the existing generation log message.",
+      "confidence": "low",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Generic type parameters (TData) in apiCall make it easy to create type-level lies when error paths return different shapes"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "SdkBridge has explicit documented contracts",
+          "description": "All 15+ methods on the SdkBridge interface have JSDoc describing behavior, error semantics, and return types. Return types accurately cover all code paths including null/empty cases. This is the strongest contract surface in the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent throw vs result-type error strategy",
+          "description": "Must-succeed operations (attestDahr, publishHivePost, transferDem) throw. Optional/fallback operations (apiCall, resolvePostAuthor, fetchSignals) return ok:false or null. This split is consistent and matches caller expectations at each boundary.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "observe() silently no-ops by contract",
+          "description": "Observation logging is explicitly documented as best-effort and fire-and-forget. The void return type and silent failure on uninitialized state are intentional contract properties, not accidental error swallowing.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 14,
+  "assessments": {
+    "incomplete_migration": 86.0
+  },
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "var->let/const migration is essentially complete (1 var vs 137 let/const) — no old JS patterns coexisting with modern TS",
+        "The deprecated persistSourceToRegistry in source-discovery.ts is defined but has ZERO callers — dead code that can be removed",
+        "Deprecated RPC_URL and SUPERCOLONY_API constants in sdk.ts are exported but have zero importers in src/ — they exist only for backward compatibility with unknown external consumers",
+        "The 3 lifecycle.ts deprecated markers are domain-level status values ('deprecated' as a SourceStatus), not code deprecation markers — these are false positives in the migration_signals scan",
+        "All 165 source files are TypeScript — no mixed JS/TS modules",
+        "The write-rate-limit CLI migration is confirmed complete (resolved issue: CLI runners use toolkit guards, deprecated file deleted, commit 2f20e63)",
+        "Chain-first migration is complete: all 4 tools (verify, tip, scan, react) use SDK bridge chain methods, API is optional enrichment only",
+        "No stale TODO/FIXME markers referencing migrations found in src/ (only one regex pattern in response-validator.ts)"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Two deprecated-but-exported symbols in sdk.ts (RPC_URL, SUPERCOLONY_API) and one deprecated function in source-discovery.ts (persistSourceToRegistry) remain as dead code. While they have no callers, they add confusion about which API to use."
+    }
+  },
+  "dimension_judgment": {
+    "incomplete_migration": {
+      "dimension_character": "The codebase has completed its major migrations cleanly: chain-first (API to on-chain), CLI guard migration, and JS-to-TS. The only migration residue is three deprecated symbols that are defined but never called — genuinely dead code rather than active dual-path confusion. A developer would encounter no ambiguity about which pattern to follow.",
+      "score_rationale": "Migrations are substantively complete with only minor dead-code residue — matching the 86-90 range. The three unused deprecated symbols prevent a higher score because they exist in the codebase without purpose, but they cause no real confusion since they have zero importers. The chain-first migration being fully complete with consistent API-fallback patterns is a strong positive."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "deprecated_persist_source_to_registry",
+      "summary": "Deprecated persistSourceToRegistry function has zero callers and should be removed",
+      "related_files": ["src/lib/pipeline/source-discovery.ts"],
+      "evidence": ["persistSourceToRegistry is marked @deprecated with 'Use persistSourceToCatalog for V2 catalog persistence' but grep shows zero callers in the entire codebase — it is dead code from the V1-to-V2 catalog migration"],
+      "suggestion": "Delete the persistSourceToRegistry function (lines 324-350 approximately) and its associated V1 YAML imports if they become unused. The V2 persistSourceToCatalog function immediately below is the canonical replacement.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "deprecated_sdk_constants",
+      "summary": "Deprecated RPC_URL and SUPERCOLONY_API constants in sdk.ts have zero importers",
+      "related_files": ["src/lib/network/sdk.ts"],
+      "evidence": ["Both constants are marked @deprecated with 'Use getRpcUrl()/getApiUrl()' but no file in src/ imports them. They are exported dead code from before the credential-override migration."],
+      "suggestion": "Remove the two exported constants (lines 33-35). If external consumers might reference them, add a breaking-change note. The getter functions getRpcUrl()/getApiUrl() are the canonical replacements.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Deprecated symbols were left in place during migrations as a safety net but never cleaned up after confirming zero callers"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "Chain-first migration fully complete",
+          "description": "All toolkit tools use SDK bridge chain methods as primary path, with API as optional enrichment gated by apiAccess state. No dual-path ambiguity remains — the migration is architecturally complete, not just code-complete.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Pure TypeScript codebase with no JS residue",
+          "description": "All 165 source files are TypeScript. var usage is down to 1 instance vs 137 let/const. No mixed JS/TS module pairs exist.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Three deprecated symbols remain as dead code",
+          "description": "persistSourceToRegistry, RPC_URL, and SUPERCOLONY_API are deprecated and have zero callers but remain exported. These are migration cleanup items, not active confusion sources.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

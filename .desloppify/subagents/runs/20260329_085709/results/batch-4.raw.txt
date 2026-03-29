@@ -1,0 +1,137 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {
+    "error_consistency": 74.8
+  },
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "Mixed error strategies by directory: toolkit/ uses ToolResult<T> (typed result envelope) consistently — 10 tools all return ToolResult. But plugins/ use try-catch-log-return pattern (18 try_catch, 1 throw). lib/ mixes all three: throws (20), try_catch (24), returns_null (18). pipeline/ favors returns_null (24) over throws (1).",
+        "toolkit/types.ts defines a well-designed DemosError with typed error codes (10 codes), retryable flag, and optional detail. toolkit/tools/tool-wrapper.ts wraps all tool operations with consistent error handling. This is a strong pattern — but it only covers the toolkit layer.",
+        "Plugins consistently swallow errors: plugins/signals-plugin.ts catches errors and observes them but doesn't propagate. plugins/tips-plugin.ts catches auth failures and returns early. This is intentional (plugins should not crash the loop) but means errors silently disappear.",
+        "connect.ts uses throw semantics (not ToolResult) for session lifecycle — documented as intentional: 'Unlike other toolkit tools which return ToolResult, connect/disconnect use throw/void semantics.'",
+        "sdk-bridge.ts apiCall catches errors and returns { ok: false, status: 0, data: errorMessage } — recent review added errorType field for structured discrimination. Console.warn is emitted at the catch site.",
+        "auth.ts returns null for all failure modes — cache miss, expired token, parse failure, auth challenge failure. No error context is preserved beyond the null return.",
+        "src/lib/sources/providers/ has the most mixed pattern: try_catch (22), returns_null (18), throws (11), result_type (1) — four different strategies in sibling provider code.",
+        "Empty catch blocks exist in hive-codec.ts (lines 62, 85, 101) and chain-scanner.ts (lines 68, 113) — these silently swallow parse/decode errors without any logging."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "error_consistency": {
+      "dimension_character": "The codebase has a well-designed error system in the toolkit layer (DemosError + ToolResult<T>) but the pattern does not extend beyond toolkit/. The rest of the codebase uses three different error strategies (throw, return null, try-catch-log) without clear per-layer conventions. Plugins intentionally swallow errors to prevent loop crashes, but this means error context is systematically lost at the plugin boundary. The providers/ directory is the worst offender with four different strategies in sibling code.",
+      "score_rationale": "The toolkit layer's DemosError/ToolResult pattern is genuinely strong — a developer can predict error behavior for all 10 tools. But outside toolkit/, a developer encounters unpredictable error behavior: auth.ts returns null without context, plugins swallow errors, providers mix all four strategies. Empty catch blocks in hive-codec.ts and chain-scanner.ts are particularly concerning for a chain-operations codebase. This places the score at 74.8 — the strong toolkit pattern prevents a lower score, but the inconsistency elsewhere creates real friction."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "providers_mixed_error_strategies",
+      "summary": "src/lib/sources/providers/ uses 4 different error strategies across sibling files",
+      "related_files": [
+        "src/lib/sources/providers/declarative-engine.ts",
+        "src/lib/sources/fetch.ts"
+      ],
+      "evidence": [
+        "providers/ directory: try_catch (22), returns_null (18), throws (11), result_type (1). The declarative engine 'never throws from any adapter method — returns empty results on failure' per its docstring, while individual provider operations throw on specific conditions. fetchSource returns FetchSourceResult (ok/error). No consistent convention for which approach to use."
+      ],
+      "suggestion": "Establish a per-layer convention: provider adapter methods should return typed results (following the declarative engine's 'never throws' pattern), while internal helpers can throw. Document this convention in a comment at the top of providers/types.ts.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "auth_null_no_context",
+      "summary": "auth.ts returns null for all failure modes — no error context preserved",
+      "related_files": [
+        "src/lib/auth/auth.ts"
+      ],
+      "evidence": [
+        "loadAuthCache() returns null for: file not found, JSON parse failure, expired token, wrong address, missing fields. ensureAuth returns null when API is unreachable. Callers cannot distinguish between 'no cached token', 'expired token', and 'auth challenge failed' — all get the same null."
+      ],
+      "suggestion": "Return a discriminated union type: { status: 'ok', token: string } | { status: 'expired' } | { status: 'missing' } | { status: 'error', message: string }. This preserves context without changing the null-check pattern at call sites (callers check .status instead of nullness).",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "empty_catch_blocks",
+      "summary": "Empty catch blocks in hive-codec.ts and chain-scanner.ts silently swallow decode errors",
+      "related_files": [
+        "src/toolkit/hive-codec.ts",
+        "src/toolkit/chain-scanner.ts"
+      ],
+      "evidence": [
+        "hive-codec.ts has 3 empty catch blocks (lines ~62, 85, 101) with only '// Not valid base64' comments. chain-scanner.ts has 2 empty catch blocks (lines ~68, 113). In a chain-operations codebase handling real money, silently swallowing decode/parse errors is risky — corrupt data passes through as null without any observability."
+      ],
+      "suggestion": "Add minimal logging to the empty catch blocks using the existing observe() pattern: observe('warning', 'Failed to decode HIVE payload', { source: 'hive-codec.ts', data: { inputLength } }). This preserves the 'return null on failure' semantics while adding observability.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "plugin_error_swallowing",
+      "summary": "Plugins systematically swallow errors — catch-log-return without propagation",
+      "related_files": [
+        "src/plugins/signals-plugin.ts",
+        "src/plugins/tips-plugin.ts",
+        "src/plugins/sc-prices-plugin.ts"
+      ],
+      "evidence": [
+        "18 try_catch blocks across plugins/ — all follow the pattern: catch error, log via observe() or ctx.logger, return early. No plugin propagates errors to the session loop. While individually reasonable (plugins shouldn't crash the loop), this means the loop has no visibility into whether plugins are silently failing. signals-plugin.ts catches and observes; tips-plugin.ts catches but only logs."
+      ],
+      "suggestion": "Add a hookErrors array to the hook context (already present in BeforeSenseContext as hookErrors?) and populate it consistently in all plugin catch blocks. The session runner can then report aggregated plugin health after each phase.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Toolkit error system was designed late and applied only to the toolkit layer, not retrofitted to older lib/ code",
+      "Plugin error swallowing evolved organically as a crash-prevention measure without a systematic observability strategy"
+    ],
+    "likely_symptoms": [
+      "auth_null_no_context",
+      "empty_catch_blocks"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "error_consistency": {
+      "add": [
+        {
+          "header": "Strong typed error system in toolkit layer",
+          "description": "DemosError with 10 typed error codes, retryable flag, and ToolResult<T> envelope. withToolWrapper provides consistent error wrapping for all 10 tools. A developer can predict error behavior for any toolkit call.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Intentional throw semantics for connect/disconnect",
+          "description": "connect.ts and disconnect.ts use throw semantics instead of ToolResult — documented as intentional because they manage session lifecycle, not tool operations. This is a deliberate layer-appropriate strategy.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Plugin error-swallowing is intentional but lacks observability",
+          "description": "Plugins catch and log errors to prevent crashing the session loop. This is a deliberate design choice, but the lack of aggregated error reporting means plugin health is invisible to the session runner.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "Four error strategies without per-layer convention",
+          "description": "toolkit/ uses ToolResult, plugins/ use try-catch-swallow, lib/ mixes throw/null/try-catch, providers/ uses all four. No documented convention exists for which strategy to use in which layer.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "batch": "test_strategy",
+  "batch_index": 10,
+  "assessments": {
+    "test_strategy": 78.0
+  },
+  "dimension_notes": {
+    "test_strategy": {
+      "evidence": [
+        "130 test files with 1943 tests across 129 suites — substantial test coverage for a codebase of this size",
+        "Toolkit has comprehensive test coverage: 36 test files covering guards (7 files), tools (16 files), session, schemas, sdk-bridge, url-validator, types, security hardening, and an integration test",
+        "TDD is enforced: vitest globalSetup + PostToolUse hook reject assertion-free tests (mentioned in CLAUDE.md, test-quality-validator.ts exists)",
+        "Snapshot test usage is minimal — only 7 out of 130 test files reference snapshots, well below the 50% overuse threshold",
+        "Critical untested files from scan: src/types.ts (65 importers) and src/toolkit/types.ts (23 importers) are type-only files — skippable per rubric (types, constants, index files)",
+        "src/lib/sources/catalog.ts (17 importers) HAS a dedicated test at tests/sources/catalog-direct.test.ts — the mechanical scan may not have detected it",
+        "src/lib/pipeline/observe.ts (12 importers) HAS a test at tests/observe.test.ts",
+        "src/toolkit/guards/state-helpers.ts (12 importers) HAS two tests: state-helpers.test.ts and state-helpers-direct.test.ts",
+        "src/lib/attestation/attestation-policy.ts (8 importers) has NO dedicated test file — this is a real coverage gap for a critical module that defines attestation type selection and high-sensitivity keyword matching",
+        "publish-pipeline.ts HAS a test at tests/publish-pipeline.test.ts (219 LOC) — the previously reported 'no dedicated test file' issue appears resolved",
+        "Previously reported 'orphaned test files' (tips.test.ts, predictions.test.ts, mentions.test.ts, transcript.test.ts, action-executor.test.ts) — these test production code in src/lib/ and src/actions/ that is still active, so they are not orphaned",
+        "One integration test exists (tests/toolkit/tools/integration.test.ts) — but no cross-subsystem integration tests between toolkit and actions/ or between plugins and extensions",
+        "SDK mocking pattern is consistent: vi.mock('@kynesyslabs/demosdk/websdk') with class mock in every file that touches SDK — prevents NAPI crashes but creates coupling to mock structure"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "test_strategy": {
+      "dimension_character": "The test suite is substantial (1943 tests, 130 files) with strong coverage of the toolkit layer and minimal snapshot overuse. TDD is enforced at the tooling level. The main gaps are in cross-module integration testing and a few critical modules lacking dedicated tests (attestation-policy.ts). The consistent SDK mocking pattern prevents NAPI crashes but creates moderate coupling between tests and SDK mock structure. Previously reported issues (orphaned tests, missing publish-pipeline tests) appear to have been resolved.",
+      "score_rationale": "Test strategy sits slightly below the 80 anchor. The volume and coverage are strong — 130 test files, TDD enforcement, minimal snapshots, and comprehensive toolkit coverage. However, the absence of cross-subsystem integration tests (toolkit <-> actions, plugins <-> extensions), the attestation-policy coverage gap, and SDK mock coupling create enough unevenness to prevent a higher score. The previously reported issues being resolved is a positive signal of active test maintenance."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "test_strategy",
+      "identifier": "attestation_policy_no_test",
+      "summary": "attestation-policy.ts (8 importers) has no dedicated test file — critical path for attestation type selection and high-sensitivity keyword matching",
+      "related_files": ["src/lib/attestation/attestation-policy.ts"],
+      "evidence": [
+        "No test file matching *attestation-policy* found in tests/ directory",
+        "The module exports inferAssetAlias, inferMacroEntity, and attestation type selection logic used by 8 other files including declarative-engine.ts and claim-extraction.ts",
+        "High-sensitivity keyword matching (highSensitivityRequireTlsn) is a security-relevant decision path with no direct test coverage"
+      ],
+      "suggestion": "Create tests/attestation-policy.test.ts covering: inferAssetAlias/inferMacroEntity resolution, attestation type selection based on config, and high-sensitivity keyword matching edge cases",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "missing_cross_subsystem_integration",
+      "summary": "No cross-subsystem integration tests between toolkit and actions/ layer, or between plugins and extensions dispatcher",
+      "related_files": ["tests/toolkit/tools/integration.test.ts"],
+      "evidence": [
+        "The single integration test (tests/toolkit/tools/integration.test.ts) covers toolkit tools only",
+        "The actions/ layer (publish-pipeline, action-executor) and toolkit/ layer have overlapping publishing paths with no integration test verifying they produce compatible outputs",
+        "Extension hook dispatchers (extensions.ts) have unit tests but no integration test verifying the full plugin -> hook -> pipeline flow"
+      ],
+      "suggestion": "Add a cross-subsystem integration test that wires action-executor through extensions dispatcher with mocked SDK — verifies the full event -> hook -> publish flow produces consistent results with the toolkit path",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "orphaned_test_files_reassessed",
+      "summary": "Previously flagged orphaned test files (tips, predictions, mentions, transcript, action-executor) are NOT orphaned — production code is still active",
+      "related_files": ["tests/tips.test.ts", "tests/predictions.test.ts", "tests/mentions.test.ts", "tests/transcript.test.ts", "tests/action-executor.test.ts"],
+      "evidence": [
+        "tips.test.ts tests src/lib/tips.ts which is actively imported by plugins/tips-plugin.ts",
+        "predictions.test.ts tests src/lib/predictions.ts imported by plugins/predictions-plugin.ts",
+        "mentions.test.ts tests src/lib/mentions.ts",
+        "action-executor.test.ts (416 LOC) tests src/actions/action-executor.ts which is the core event-runner action dispatch"
+      ],
+      "suggestion": "Close the previously reported 'orphaned test files' issue — these files test active production code. Consider renaming tests to match source file paths for navigability (e.g., tests/lib/tips.test.ts)",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "dismissed",
+      "concern_fingerprint": "orphaned_test_files",
+      "reasoning": "The production files tested by these test files (tips.ts, predictions.ts, mentions.ts, transcript.ts, action-executor.ts) are all actively imported by other production code — the tests are not orphaned"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Test growth followed production code growth closely for the toolkit layer but less closely for the actions/pipeline layer, creating uneven coverage"],
+    "likely_symptoms": ["The dual publish pipeline (batch-9 finding) makes it harder to know which path needs testing, potentially contributing to the attestation-policy gap"],
+    "possible_false_positives": ["orphaned_test_files — reassessed and dismissed as false positive"]
+  },
+  "context_updates": {
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Comprehensive toolkit test coverage",
+          "description": "36 test files cover the toolkit layer including all guards, all tools, session, schemas, sdk-bridge, url-validator, types, security hardening, and integration. This is the best-tested subsystem in the codebase.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "TDD enforced at tooling level",
+          "description": "vitest globalSetup and PostToolUse hooks reject assertion-free tests, ensuring every test file contains meaningful assertions. This prevents test inflation without coverage.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Minimal snapshot test usage",
+          "description": "Only 7 of 130 test files use snapshots (5.4%), well below the 50% overuse threshold. Tests rely on behavioral assertions rather than structural snapshots.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Consistent SDK mock pattern prevents NAPI crashes",
+          "description": "All test files that touch SDK use vi.mock('@kynesyslabs/demosdk/websdk') with a class mock. This is necessary to prevent NAPI crashes in vitest but creates coupling to the mock structure shape.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

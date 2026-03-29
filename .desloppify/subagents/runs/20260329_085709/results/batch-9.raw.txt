@@ -1,0 +1,97 @@
+{
+  "batch": "mid_level_elegance",
+  "batch_index": 9,
+  "assessments": {
+    "mid_level_elegance": 81.0
+  },
+  "dimension_notes": {
+    "mid_level_elegance": {
+      "evidence": [
+        "Toolkit -> tool boundary is clean: all tools accept DemosSession + typed options, return ToolResult<T>. The session handle is the single handoff point carrying auth, bridge, policies, and state store — no loose parameters crossing the boundary",
+        "Session -> Bridge handoff is explicit: session.getBridge() returns the SdkBridge interface, and tools call bridge methods directly. No intermediate translation layers or mapper objects",
+        "Extension hook system (extensions.ts) provides a clean orchestration seam: loadExtensions builds an immutable registry, dispatchers compose hooks sequentially with well-defined short-circuit semantics for gate decisions",
+        "Data translation at the chain boundary happens in one obvious place: hive-codec.ts handles encodeHivePayload/decodeHiveData, and sdk-bridge.ts normalizes SDK transaction shapes into ChainTransaction — two dedicated translation points",
+        "Error propagation is predictable at toolkit boundaries: tools return ToolResult (ok/err), connect/disconnect throw DemosError — documented deviation with explicit rationale in connect.ts comments",
+        "The actions/ layer (publish-pipeline.ts, action-executor.ts) has a different integration style than toolkit/ — it uses direct SDK imports and its own type definitions (PublishInput, AttestResult) rather than going through the toolkit's typed contracts",
+        "Plugin lifecycle seams are clean: each plugin exports hook functions matching LoopExtensionHooks interface, registered via loadExtensions switch/case — no back-channel communication between plugins",
+        "The publish pipeline has two implementations: toolkit/tools/publish.ts (goes through bridge) and actions/publish-pipeline.ts (uses SDK directly) — the boundary between these two publishing paths could confuse newcomers"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "mid_level_elegance": {
+      "dimension_character": "Module handoffs are generally clean and predictable — the DemosSession handle provides a single explicit handoff point for toolkit tools, the SdkBridge interface isolates SDK volatility at one seam, and the extension hook system composes plugins without tangled back-and-forth calls. The main seam friction comes from two parallel publishing paths (toolkit/publish.ts vs actions/publish-pipeline.ts) that use different integration patterns and type definitions, creating boundary confusion for developers navigating the codebase.",
+      "score_rationale": "Mid-level elegance sits at the 80 'solid but uneven' anchor. The toolkit layer demonstrates strong handoff design with DemosSession, ToolResult, and SdkBridge as explicit, minimal boundary contracts. The extension hook orchestration reads as clean composition. However, the dual publish pipeline and the actions/ layer's divergent integration style (direct SDK vs bridge) create genuine seam friction that prevents a higher score."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "dual_publish_pipeline",
+      "summary": "Two publishing implementations with different integration patterns: toolkit/tools/publish.ts (bridge-based) and actions/publish-pipeline.ts (direct SDK)",
+      "related_files": ["src/toolkit/tools/publish.ts", "src/actions/publish-pipeline.ts"],
+      "evidence": [
+        "toolkit/tools/publish.ts uses session.getBridge().publishHivePost() and session.getBridge().attestDahr() — goes through the SdkBridge interface",
+        "actions/publish-pipeline.ts imports Demos and DemosTransactions directly from SDK, defines its own DahrProxy and PublishInput types, and has its own attestDahr/publishPost functions",
+        "Both paths perform DAHR attestation -> HIVE post -> txHash capture with overlapping but non-identical type shapes (e.g., both define AttestResult but with different fields)"
+      ],
+      "suggestion": "Migrate actions/publish-pipeline.ts to use the toolkit's SdkBridge for chain operations, or clearly document the two paths as intentionally separate (session-runner legacy vs toolkit canonical) with a consolidation plan",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "actions_layer_sdk_direct",
+      "summary": "The actions/ layer bypasses toolkit's SdkBridge abstraction, using direct SDK imports and its own type definitions",
+      "related_files": ["src/actions/publish-pipeline.ts", "src/actions/action-executor.ts", "src/actions/llm.ts"],
+      "evidence": [
+        "publish-pipeline.ts imports { Demos, DemosTransactions } from '@kynesyslabs/demosdk/websdk' directly",
+        "action-executor.ts defines its own function type aliases (AttestAndPublishFn, TransferFn, ApiCallFn) that partially duplicate toolkit's SdkBridge methods",
+        "This layer was written before the toolkit extraction and has not been migrated to use the toolkit's boundary contracts"
+      ],
+      "suggestion": "Wire action-executor.ts to accept a SdkBridge instance rather than individual function types — this would align the actions layer with the toolkit's integration pattern and eliminate the parallel type definitions",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["The actions/ layer predates the toolkit extraction and was never fully migrated to use toolkit contracts, creating a legacy integration seam alongside the canonical one"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "mid_level_elegance": {
+      "add": [
+        {
+          "header": "DemosSession as single handoff point",
+          "description": "All toolkit tools accept DemosSession + typed options and return ToolResult<T>. The session carries auth, bridge, policies, and state store as a single explicit boundary contract — no loose parameters crossing module boundaries.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Clean chain data translation points",
+          "description": "Chain data translation happens in exactly two places: hive-codec.ts for HIVE encoding/decoding and sdk-bridge.ts for SDK transaction normalization. No scattered ad-hoc mappers.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Extension hook composition without back-channels",
+          "description": "Plugins export hook functions matching the LoopExtensionHooks interface. The immutable ExtensionHookRegistry composes them sequentially with defined short-circuit semantics. No inter-plugin communication or shared mutable state.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Legacy actions/ layer predates toolkit boundary",
+          "description": "The actions/ layer (publish-pipeline.ts, action-executor.ts) was written before the toolkit extraction and uses direct SDK imports with its own type definitions, creating a parallel integration seam.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

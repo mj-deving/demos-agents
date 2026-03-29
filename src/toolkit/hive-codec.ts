@@ -60,7 +60,7 @@ export function decodeHiveData(data: unknown): Record<string, unknown> | null {
           jsonStr = decoded.slice(4).toString("utf-8");
         }
       } catch {
-        // Not valid base64
+        console.warn("[demos-toolkit] Skipping invalid base64 HIVE string payload");
       }
     }
   }
@@ -83,7 +83,7 @@ export function decodeHiveData(data: unknown): Record<string, unknown> | null {
           jsonStr = decoded.slice(4).toString("utf-8");
         }
       } catch {
-        // Not valid base64
+        console.warn("[demos-toolkit] Skipping invalid base64 HIVE bytes payload");
       }
     }
     // Direct HIVE object (pre-decoded)
@@ -99,6 +99,7 @@ export function decodeHiveData(data: unknown): Record<string, unknown> | null {
     if (typeof parsed === "object" && parsed !== null) return parsed;
     return null;
   } catch {
+    console.warn("[demos-toolkit] Failed to parse decoded HIVE JSON payload");
     return null;
   }
 }
