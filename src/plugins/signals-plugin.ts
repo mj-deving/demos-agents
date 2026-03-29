@@ -33,16 +33,17 @@ export async function signalsBeforeSense(ctx: BeforeSenseContext): Promise<void>
       fetchLatestBriefing(cached.token),
     ]);
     if (signalResult.status === "fulfilled" && signalResult.value && ctx.state.loopVersion === 2) {
-      (ctx.state as any).signalSnapshot = signalResult.value;
+      ctx.state.signalSnapshot = signalResult.value;
       ctx.logger?.result(`Signals: ${signalResult.value.topics.length} topic(s), ${signalResult.value.alerts.length} alert(s)`);
     }
     if (briefingResult.status === "fulfilled" && briefingResult.value && ctx.state.loopVersion === 2) {
-      (ctx.state as any).briefingContext = briefingResult.value;
+      ctx.state.briefingContext = briefingResult.value;
       ctx.logger?.info(`Briefing: ${briefingResult.value.length} chars`);
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
     const { observe } = await import("../lib/pipeline/observe.js");
-    observe("error", `Signals/briefing fetch failed: ${e.message}`, {
+    observe("error", `Signals/briefing fetch failed: ${message}`, {
       phase: "sense", source: "signals-plugin.ts:beforeSense",
     });
   }

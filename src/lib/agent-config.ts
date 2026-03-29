@@ -184,10 +184,15 @@ interface ValidatedPersonaConfig {
   [key: string]: unknown; // Allow extra fields from YAML
 }
 
-function validatePersonaConfig(yaml: any, filePath: string): ValidatedPersonaConfig {
-  if (yaml === null || yaml === undefined || typeof yaml !== "object" || Array.isArray(yaml)) {
-    throw new Error(`Invalid persona.yaml at ${filePath}: expected a plain object, got ${Array.isArray(yaml) ? "array" : typeof yaml}`);
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validatePersonaConfig(rawYaml: unknown, filePath: string): ValidatedPersonaConfig {
+  if (!isPlainObject(rawYaml)) {
+    throw new Error(`Invalid persona.yaml at ${filePath}: expected a plain object, got ${Array.isArray(rawYaml) ? "array" : typeof rawYaml}`);
   }
+  const yaml = rawYaml as ValidatedPersonaConfig;
 
   const errors: string[] = [];
 
@@ -391,8 +396,10 @@ function validatePersonaConfig(yaml: any, filePath: string): ValidatedPersonaCon
 
 // ── Loop Extension Validation ─────────────────────
 
-function parseLoopExtensions(yaml: any, filePath: string): string[] {
-  const raw = yaml?.loop?.extensions;
+function parseLoopExtensions(yaml: unknown, filePath: string): string[] {
+  const root = isPlainObject(yaml) ? yaml : null;
+  const loop = isPlainObject(root?.loop) ? root.loop : null;
+  const raw = loop?.extensions;
   if (!raw) return [];
   if (!Array.isArray(raw)) {
     console.warn(`Warning: loop.extensions in ${filePath} is not an array — ignored`);
@@ -417,14 +424,14 @@ function parseLoopExtensions(yaml: any, filePath: string): string[] {
  * Deep merge two plain objects. Agent values override base values.
  * Arrays are replaced (not concatenated) — agent's array wins entirely.
  */
-function deepMerge(base: Record<string, any>, override: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = { ...base };
+function deepMerge(base: Record<string, unknown>, override: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...base };
   for (const key of Object.keys(override)) {
     const baseVal = base[key];
     const overVal = override[key];
     if (
-      overVal !== null && typeof overVal === "object" && !Array.isArray(overVal) &&
-      baseVal !== null && typeof baseVal === "object" && !Array.isArray(baseVal)
+      isPlainObject(overVal) &&
+      isPlainObject(baseVal)
     ) {
       result[key] = deepMerge(baseVal, overVal);
     } else {
@@ -437,11 +444,12 @@ function deepMerge(base: Record<string, any>, override: Record<string, any>): Re
 /**
  * Load persona-base.yaml shared defaults. Returns empty object if not found.
  */
-function loadBasePersona(): Record<string, any> {
+function loadBasePersona(): Record<string, unknown> {
   const basePath = resolve(REPO_ROOT, "agents", "persona-base.yaml");
   if (!existsSync(basePath)) return {};
   try {
-    return parseYaml(readFileSync(basePath, "utf-8")) ?? {};
+    const parsed = parseYaml(readFileSync(basePath, "utf-8"));
+    return isPlainObject(parsed) ? parsed : {};
   } catch {
     return {};
   }

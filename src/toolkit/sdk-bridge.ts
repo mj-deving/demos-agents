@@ -9,7 +9,9 @@
  */
 
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
+import { scanAddressStorage } from "./chain-scanner.js";
 import { safeParse } from "./guards/state-helpers.js";
+import { decodeHiveData, encodeHivePayload } from "./hive-codec.js";
 
 /** Sentinel token indicating auth has not completed — never sent as Bearer */
 export const AUTH_PENDING_TOKEN = "__AUTH_PENDING__";
@@ -241,110 +243,6 @@ function extractTxHash(confirmResult: unknown, broadcastResult: unknown): string
 
 // ── Factory ─────────────────────────────────────────
 
-// HIVE post prefix (4 bytes: ASCII "HIVE")
-const HIVE_PREFIX = new Uint8Array([0x48, 0x49, 0x56, 0x45]);
-const HIVE_PREFIX_HEX = "48495645";
-const HIVE_PREFIX_STR = "HIVE";
-
-/** Check if bytes start with the 4-byte HIVE prefix */
-function hasHivePrefix(bytes: Uint8Array): boolean {
-  return bytes.length >= 4 &&
-    bytes[0] === HIVE_PREFIX[0] && bytes[1] === HIVE_PREFIX[1] &&
-    bytes[2] === HIVE_PREFIX[2] && bytes[3] === HIVE_PREFIX[3];
-}
-
-/** Encode a JSON payload with HIVE 4-byte prefix for on-chain storage */
-function encodeHivePayload(payload: Record<string, unknown>): Uint8Array {
-  const json = JSON.stringify(payload);
-  const jsonBytes = new TextEncoder().encode(json);
-  const encoded = new Uint8Array(HIVE_PREFIX.length + jsonBytes.length);
-  encoded.set(HIVE_PREFIX, 0);
-  encoded.set(jsonBytes, HIVE_PREFIX.length);
-  return encoded;
-}
-
-/** Regex for base64 character set — skip Buffer.from on obvious non-base64 */
-const BASE64_RE = /^[A-Za-z0-9+/=]+$/;
-
-/**
- * Decode HIVE data from a chain transaction's content.data field.
- * Handles multiple encodings: Uint8Array, hex string, base64, raw string with HIVE prefix.
- * Returns parsed JSON payload or null if not a HIVE transaction.
- */
-function decodeHiveData(data: unknown): Record<string, unknown> | null {
-  if (!data) return null;
-
-  let jsonStr: string | null = null;
-
-  if (data instanceof Uint8Array || ArrayBuffer.isView(data)) {
-    const bytes = data instanceof Uint8Array ? data : new Uint8Array((data as ArrayBufferView).buffer);
-    if (bytes.length < 4) return null;
-    if (hasHivePrefix(bytes)) {
-      jsonStr = new TextDecoder().decode(bytes.slice(4));
-    }
-  } else if (typeof data === "string") {
-    // Hex-encoded: "48495645..." — cap at 64KB to prevent OOM from malicious chain data
-    if (data.toLowerCase().startsWith(HIVE_PREFIX_HEX)) {
-      const hexPayload = data.slice(8);
-      if (hexPayload.length > 128 * 1024) return null; // 64KB decoded limit
-      const bytes = new Uint8Array(hexPayload.match(/.{1,2}/g)?.map(b => parseInt(b, 16)) ?? []);
-      jsonStr = new TextDecoder().decode(bytes);
-    }
-    // Raw string with "HIVE" prefix
-    else if (data.startsWith(HIVE_PREFIX_STR)) {
-      jsonStr = data.slice(4);
-    }
-    // Base64-encoded HIVE data — only attempt if string matches base64 charset
-    else if (BASE64_RE.test(data) && data.length >= 8) {
-      try {
-        const decoded = Buffer.from(data, "base64");
-        if (hasHivePrefix(decoded)) {
-          jsonStr = decoded.slice(4).toString("utf-8");
-        }
-      } catch {
-        // Not valid base64
-      }
-    }
-  }
-  // TransactionContentData tuple: ["storage", payload] — extract payload
-  else if (Array.isArray(data)) {
-    if (data.length >= 2 && data[0] === "storage") {
-      return decodeHiveData(data[1]); // recurse on the actual payload
-    }
-    return null;
-  }
-  // Already-parsed object (from Transaction.content.data that was pre-decoded)
-  else if (typeof data === "object" && data !== null) {
-    const obj = data as Record<string, unknown>;
-    // SDK storage envelope: {"bytes":"SElWRXsi..."} — base64-encoded HIVE payload
-    if (typeof obj.bytes === "string" && obj.bytes.length >= 8 && obj.bytes.length <= 172 * 1024) {
-      // Size guard: base64 at 172KB → ~128KB decoded. Matches hex branch 64KB limit.
-      try {
-        const decoded = Buffer.from(obj.bytes, "base64");
-        if (hasHivePrefix(decoded)) {
-          jsonStr = decoded.slice(4).toString("utf-8");
-        }
-      } catch {
-        // Not valid base64
-      }
-    }
-    // Direct HIVE object (pre-decoded)
-    else if (obj.v !== undefined && (obj.text !== undefined || obj.action !== undefined)) {
-      return obj;
-    }
-    if (!jsonStr) return null;
-  }
-
-  if (!jsonStr) return null;
-  try {
-    const parsed = JSON.parse(jsonStr);
-    if (typeof parsed === "object" && parsed !== null) return parsed;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Create a session-scoped SDK bridge.
  *
@@ -354,92 +252,6 @@ function decodeHiveData(data: unknown): Record<string, unknown> | null {
  * @param fetchImpl - Optional fetch implementation (for testing)
  * @param txModule - Optional DemosTransactions override (for testing)
  */
-// ── Shared Pagination Helper ─────────────────────────
-
-interface DecodedTx { tx: { hash: string; blockNumber: number; author: string; timestamp: number }; hive: Record<string, unknown> }
-
-/**
- * Scan an address's storage transactions and decode HIVE payloads.
- * Uses getTransactionHistory (server-side filter) when available, falls back to getTransactions + client-side filter.
- * The `filter` predicate controls which decoded HIVE entries are included (posts vs reactions).
- */
-async function scanAddressStorage(
-  rpc: DemosRpcMethods,
-  address: string,
-  limit: number,
-  filter: (decoded: Record<string, unknown>) => boolean,
-): Promise<DecodedTx[]> {
-  const results: DecodedTx[] = [];
-
-  if (rpc.getTransactionHistory) {
-    const PAGE_SIZE = 100;
-    const MAX_PAGES = Math.ceil(limit / PAGE_SIZE);
-    let start: number | undefined;
-
-    for (let page = 0; page < MAX_PAGES && results.length < limit; page++) {
-      const txs = await rpc.getTransactionHistory(address, "storage", { start, limit: PAGE_SIZE });
-      if (!txs || txs.length === 0) break;
-
-      for (const tx of txs) {
-        try {
-          const contentData = tx.content?.data;
-          const data = Array.isArray(contentData) && contentData[0] === "storage" ? contentData[1] : contentData;
-          const decoded = decodeHiveData(data);
-          if (!decoded || !filter(decoded)) continue;
-          results.push({
-            tx: { hash: tx.hash, blockNumber: tx.blockNumber, author: tx.content?.from ? String(tx.content.from) : address, timestamp: tx.content?.timestamp ?? 0 },
-            hive: decoded,
-          });
-        } catch { /* skip malformed */ }
-      }
-
-      const lastTx = txs[txs.length - 1];
-      if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-        const nextStart = lastTx.blockNumber - 1;
-        if (nextStart === start) break;
-        start = nextStart;
-      } else break;
-    }
-  } else if (rpc.getTransactions) {
-    const PAGE_SIZE = 100;
-    const MAX_PAGES = 10; // Global scan — need more pages than ceil(limit/100) since most txs won't match
-    let start: number | "latest" = "latest";
-    const addrLower = address.toLowerCase();
-
-    for (let page = 0; page < MAX_PAGES && results.length < limit; page++) {
-      const txs = await rpc.getTransactions(start, PAGE_SIZE);
-      if (!txs || txs.length === 0) break;
-
-      for (const rawTx of txs) {
-        if (rawTx.type !== "storage") continue;
-        if (String(rawTx.from ?? "").toLowerCase() !== addrLower) continue;
-
-        try {
-          const content = typeof rawTx.content === "string"
-            ? safeParse(rawTx.content) as Record<string, unknown>
-            : rawTx.content as Record<string, unknown>;
-          const rawData = content?.data;
-          const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
-          const decoded = decodeHiveData(data);
-          if (!decoded || !filter(decoded)) continue;
-          results.push({
-            tx: { hash: rawTx.hash, blockNumber: rawTx.blockNumber, author: String(rawTx.from ?? content?.from ?? address), timestamp: rawTx.timestamp ?? Number(content?.timestamp ?? 0) },
-            hive: decoded,
-          });
-        } catch { /* skip malformed */ }
-      }
-
-      const lastTx = txs[txs.length - 1];
-      const prevStart = start;
-      if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-        start = lastTx.blockNumber - 1;
-      } else break;
-      if (start === prevStart) break;
-    }
-  }
-
-  return results;
-}
 
 export function createSdkBridge(
   demos: Demos,
@@ -914,4 +726,3 @@ export function createSdkBridge(
     },
   };
 }
-

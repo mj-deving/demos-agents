@@ -20,6 +20,16 @@ import type {
 } from "../lib/util/extensions.js";
 import { preflight } from "../lib/sources/policy.js";
 import { match } from "../lib/sources/matcher.js";
+import type { PreflightResult } from "../lib/sources/policy.js";
+import type { MatchResult } from "../lib/sources/matcher.js";
+
+interface SourcesBeforePublishDraftHookContext extends BeforePublishDraftContext {
+  preflightResult?: PreflightResult;
+}
+
+interface SourcesAfterPublishDraftHookContext extends AfterPublishDraftContext {
+  matchResult?: MatchResult;
+}
 
 // ── Typed hook functions for the extension dispatcher ──
 
@@ -87,25 +97,27 @@ export function createSourcesPlugin(): FrameworkPlugin {
 
     hooks: {
       /** Run preflight checks against the source catalog before publishing. */
-      beforePublishDraft: async (ctx: any): Promise<void> => {
-        if (!ctx.sourceView) return;
-        const result = await preflight(ctx.topic, ctx.sourceView, ctx.config);
-        ctx.preflightResult = result;
+      beforePublishDraft: async (ctx: unknown): Promise<void> => {
+        const hookCtx = ctx as SourcesBeforePublishDraftHookContext;
+        if (!hookCtx.sourceView) return;
+        const result = await preflight(hookCtx.topic, hookCtx.sourceView, hookCtx.config);
+        hookCtx.preflightResult = result;
       },
 
       /** Score how well the generated post matches its claimed sources. */
-      afterPublishDraft: async (ctx: any): Promise<void> => {
-        if (!ctx.sourceView || !ctx.preflightCandidates) return;
+      afterPublishDraft: async (ctx: unknown): Promise<void> => {
+        const hookCtx = ctx as SourcesAfterPublishDraftHookContext;
+        if (!hookCtx.sourceView || !hookCtx.preflightCandidates) return;
         const result = await match({
-          topic: ctx.topic,
-          postText: ctx.postText,
-          postTags: ctx.postTags,
-          candidates: ctx.preflightCandidates,
-          sourceView: ctx.sourceView,
-          llm: ctx.llm,
-          prefetchedResponses: ctx.prefetchedResponses,
+          topic: hookCtx.topic,
+          postText: hookCtx.postText,
+          postTags: hookCtx.postTags,
+          candidates: hookCtx.preflightCandidates,
+          sourceView: hookCtx.sourceView,
+          llm: hookCtx.llm,
+          prefetchedResponses: hookCtx.prefetchedResponses,
         });
-        ctx.matchResult = result;
+        hookCtx.matchResult = result;
       },
     },
 

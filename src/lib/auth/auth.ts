@@ -25,6 +25,24 @@ interface AuthCacheEntry {
 /** On-disk format: { [address]: { token, expiresAt } } */
 type AuthCacheFile = Record<string, AuthCacheEntry>;
 
+interface AuthChallengeResponse {
+  challenge?: string;
+  message?: string;
+}
+
+interface AuthVerifyResponse {
+  token?: string;
+  expiresAt?: string;
+}
+
+function getErrorDetail(err: unknown): string {
+  if (err instanceof Error && typeof err.cause === "object" && err.cause !== null) {
+    const cause = err.cause as Record<string, unknown>;
+    if (typeof cause.code === "string" && cause.code) return cause.code;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
 // ── Cache I/O ──────────────────────────────────────
 
 /**
@@ -80,7 +98,7 @@ function saveAuthCache(address: string, token: string, expiresAt: string): void 
   }
   data[address] = { token, expiresAt };
   // Write both legacy flat format (for skills/supercolony compat) and namespaced map
-  const output: Record<string, any> = {
+  const output: Record<string, unknown> = {
     // Legacy fields — consumed by skills/supercolony/scripts/supercolony.ts
     token,
     address,
@@ -118,10 +136,10 @@ export async function ensureAuth(
   // Get challenge
   let challengeRes;
   try {
-    challengeRes = await apiCall(`/api/auth/challenge?address=${address}`, null);
-  } catch (err: any) {
+    challengeRes = await apiCall<AuthChallengeResponse>(`/api/auth/challenge?address=${address}`, null);
+  } catch (err: unknown) {
     // Network-level failure (DNS, timeout, connection refused)
-    info(`API unreachable (${err.cause?.code || err.message}) — continuing in chain-only mode`);
+    info(`API unreachable (${getErrorDetail(err)}) — continuing in chain-only mode`);
     return null;
   }
   if (!challengeRes.ok) {
@@ -130,6 +148,10 @@ export async function ensureAuth(
   }
 
   const { challenge, message } = challengeRes.data;
+  if (typeof challenge !== "string" || typeof message !== "string") {
+    info("Auth challenge response missing challenge/message — continuing in chain-only mode");
+    return null;
+  }
 
   // Sign
   const signature = await demos.signMessage(message);
@@ -137,7 +159,7 @@ export async function ensureAuth(
   // Verify
   let verifyRes;
   try {
-    verifyRes = await apiCall("/api/auth/verify", null, {
+    verifyRes = await apiCall<AuthVerifyResponse>("/api/auth/verify", null, {
       method: "POST",
       body: JSON.stringify({
         address,
@@ -146,8 +168,8 @@ export async function ensureAuth(
         algorithm: signature.type,
       }),
     });
-  } catch (err: any) {
-    info(`Auth verify unreachable (${err.cause?.code || err.message}) — continuing in chain-only mode`);
+  } catch (err: unknown) {
+    info(`Auth verify unreachable (${getErrorDetail(err)}) — continuing in chain-only mode`);
     return null;
   }
 

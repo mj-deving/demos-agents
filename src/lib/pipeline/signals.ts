@@ -37,6 +37,12 @@ export interface SignalSnapshot {
   alerts: SignalAlert[];
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
 // ── Fetch ──────────────────────────────────────────
 
 /**
@@ -47,7 +53,7 @@ export interface SignalSnapshot {
  */
 export async function fetchSignals(token: string): Promise<SignalSnapshot | null> {
   try {
-    const res = await apiCall("/api/signals", token);
+    const res = await apiCall<Record<string, unknown>>("/api/signals", token);
 
     if (!res.ok) {
       observe("error", `Signals fetch failed: HTTP ${res.status}`, {
@@ -58,10 +64,11 @@ export async function fetchSignals(token: string): Promise<SignalSnapshot | null
       return null;
     }
 
-    const data = res.data;
+    const data = asRecord(res.data);
+    const nestedData = asRecord(data?.data);
 
     // Normalize response shape — API may return { topics, alerts } or wrap in { data: { ... } }
-    const raw = data?.topics ? data : data?.data;
+    const raw = Array.isArray(data?.topics) ? data : nestedData;
     if (!raw || !Array.isArray(raw.topics)) {
       observe("error", "Signals response has unexpected shape", {
         phase: "scan",
@@ -84,8 +91,9 @@ export async function fetchSignals(token: string): Promise<SignalSnapshot | null
     });
 
     return snapshot;
-  } catch (err: any) {
-    observe("error", `Signals fetch exception: ${err.message}`, {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    observe("error", `Signals fetch exception: ${message}`, {
       phase: "scan",
       source: "signals.ts",
     });
@@ -102,7 +110,7 @@ export async function fetchSignals(token: string): Promise<SignalSnapshot | null
  */
 export async function fetchLatestBriefing(token: string): Promise<string | null> {
   try {
-    const res = await apiCall("/api/report", token);
+    const res = await apiCall<Record<string, unknown>>("/api/report", token);
     if (!res.ok) {
       observe("error", `Briefing fetch failed: HTTP ${res.status}`, {
         phase: "scan", source: "signals.ts", data: { status: res.status },
@@ -110,8 +118,13 @@ export async function fetchLatestBriefing(token: string): Promise<string | null>
       return null;
     }
 
-    const data = res.data;
-    const summary = data?.summary || data?.data?.summary || data?.text || data?.data?.text;
+    const data = asRecord(res.data);
+    const nestedData = asRecord(data?.data);
+    const summary =
+      (typeof data?.summary === "string" ? data.summary : undefined) ||
+      (typeof nestedData?.summary === "string" ? nestedData.summary : undefined) ||
+      (typeof data?.text === "string" ? data.text : undefined) ||
+      (typeof nestedData?.text === "string" ? nestedData.text : undefined);
     if (!summary || typeof summary !== "string") {
       return null; // no summary field — briefing not available
     }
@@ -120,8 +133,9 @@ export async function fetchLatestBriefing(token: string): Promise<string | null>
       phase: "scan", source: "signals.ts",
     });
     return summary;
-  } catch (err: any) {
-    observe("error", `Briefing fetch exception: ${err?.message || String(err)}`, {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    observe("error", `Briefing fetch exception: ${message}`, {
       phase: "scan",
       source: "signals.ts",
     });

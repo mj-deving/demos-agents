@@ -12,23 +12,27 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 
-// Node 18 polyfill
-if (!globalThis.crypto) {
-  (globalThis as any).crypto = webcrypto;
-}
-
 import { Demos } from "@kynesyslabs/demosdk/websdk";
 import type { SigningAlgorithm } from "@kynesyslabs/demosdk/types/cryptography";
 
-// ── Constants (defaults — overridable via credentials file) ──
+type RuntimeConfig = Readonly<{
+  rpcUrl: string;
+  apiUrl: string;
+  algorithm?: SigningAlgorithm;
+  dualSign?: boolean;
+}>;
 
-export let RPC_URL = "https://demosnode.discus.sh/";
-export let SUPERCOLONY_API = "https://www.supercolony.ai";
-let logAgentName = process.env.AGENT_NAME || "agent";
+const DEFAULT_CONFIG: RuntimeConfig = Object.freeze({
+  rpcUrl: "https://demosnode.discus.sh/",
+  apiUrl: "https://www.supercolony.ai",
+});
 
-// PQC config resolved from credentials file (set by applyConfigOverrides)
-let resolvedAlgorithm: SigningAlgorithm | undefined;
-let resolvedDualSign: boolean | undefined;
+export const RPC_URL = DEFAULT_CONFIG.rpcUrl;
+export const SUPERCOLONY_API = DEFAULT_CONFIG.apiUrl;
+
+let runtimeConfig: RuntimeConfig = DEFAULT_CONFIG;
+let cryptoInitialized = false;
+let logAgentName: string | undefined;
 
 // ── Wallet ─────────────────────────────────────────
 
@@ -83,25 +87,56 @@ function parseMnemonic(content: string, filePath: string): string {
   return mnemonic;
 }
 
+function ensureCrypto(): void {
+  if (cryptoInitialized) return;
+  if (!globalThis.crypto) {
+    (globalThis as typeof globalThis & { crypto: Crypto }).crypto = webcrypto as Crypto;
+  }
+  cryptoInitialized = true;
+}
+
+function getLogAgentName(): string {
+  if (!logAgentName) {
+    logAgentName = process.env.AGENT_NAME?.trim() || "agent";
+  }
+  return logAgentName;
+}
+
 /**
- * Apply config overrides from credentials file content.
- * Sets RPC_URL and SUPERCOLONY_API if present in the file.
+ * Read config overrides from credentials file content.
  */
-function applyConfigOverrides(content: string): void {
+function readConfigOverrides(content: string): Partial<RuntimeConfig> {
+  const overrides: Partial<RuntimeConfig> = {};
   const rpc = parseConfigVar(content, "RPC_URL");
-  if (rpc) RPC_URL = rpc;
+  if (rpc) overrides.rpcUrl = rpc;
   const api = parseConfigVar(content, "SUPERCOLONY_API");
-  if (api) SUPERCOLONY_API = api;
+  if (api) overrides.apiUrl = api;
 
   // PQC algorithm config
   const algo = parseConfigVar(content, "DEMOS_ALGORITHM");
   if (algo && (algo === "falcon" || algo === "ml-dsa" || algo === "ed25519")) {
-    resolvedAlgorithm = algo as SigningAlgorithm;
+    overrides.algorithm = algo as SigningAlgorithm;
   }
   const dualSign = parseConfigVar(content, "DEMOS_DUAL_SIGN");
   if (dualSign !== undefined) {
-    resolvedDualSign = dualSign === "true" || dualSign === "1";
+    overrides.dualSign = dualSign === "true" || dualSign === "1";
   }
+  return overrides;
+}
+
+function applyConfigOverrides(content: string): void {
+  runtimeConfig = Object.freeze({
+    ...DEFAULT_CONFIG,
+    ...readConfigOverrides(content),
+  });
+}
+
+export function getRpcUrl(): string {
+  return runtimeConfig.rpcUrl;
+}
+
+export function getApiUrl(): string {
+  return runtimeConfig.apiUrl;
 }
 
 /**
@@ -160,20 +195,22 @@ export async function connectWallet(
   agentName?: string,
   walletOpts?: WalletOptions,
 ): Promise<{ demos: Demos; address: string }> {
+  ensureCrypto();
   const mnemonic = loadMnemonic(envPath, agentName);
+  const { algorithm: resolvedAlgorithm, dualSign: resolvedDualSign } = runtimeConfig;
 
   // Resolve algorithm: explicit opts > credentials file > default (ed25519)
   const algorithm = walletOpts?.algorithm ?? resolvedAlgorithm ?? "ed25519";
   const dualSign = walletOpts?.dualSign ?? resolvedDualSign ?? false;
 
   const demos = new Demos();
-  await demos.connect(RPC_URL);
+  await demos.connect(getRpcUrl());
 
   const connectOpts: { algorithm?: SigningAlgorithm; dual_sign?: boolean } = {};
   if (algorithm !== "ed25519") {
     connectOpts.algorithm = algorithm;
     connectOpts.dual_sign = dualSign;
-    info(`Wallet using ${algorithm} signing${dualSign ? " (dual-sign with ed25519)" : ""}`, agentName ?? logAgentName);
+    info(`Wallet using ${algorithm} signing${dualSign ? " (dual-sign with ed25519)" : ""}`, agentName ?? getLogAgentName());
   }
 
   const address = Object.keys(connectOpts).length > 0
@@ -185,6 +222,12 @@ export async function connectWallet(
 
 // ── API Helpers ────────────────────────────────────
 
+export interface ApiCallResult<TData = Record<string, unknown>> {
+  ok: boolean;
+  status: number;
+  data: TData;
+}
+
 /**
  * Make an API call to SuperColony.
  * Handles JSON parsing, error wrapping, and auth header injection.
@@ -193,12 +236,12 @@ export async function connectWallet(
  * curl/WebFetch CANNOT reach supercolony.ai (TLS handshake fails from VPN IP).
  * Node.js fetch() works fine — always use this function or the SDK.
  */
-export async function apiCall(
+export async function apiCall<TData = Record<string, unknown>>(
   path: string,
   token: string | null,
   options: RequestInit = {}
-): Promise<{ ok: boolean; status: number; data: any }> {
-  const url = path.startsWith("http") ? path : `${SUPERCOLONY_API}${path}`;
+): Promise<ApiCallResult<TData>> {
+  const url = path.startsWith("http") ? path : `${getApiUrl()}${path}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -239,22 +282,22 @@ export async function apiCall(
       }
 
       const text = await res.text();
-      let data: any;
+      let data: unknown;
       try {
         data = JSON.parse(text);
       } catch {
         data = text;
       }
-      return { ok: res.ok, status: res.status, data };
+      return { ok: res.ok, status: res.status, data: data as TData };
     } catch (err: unknown) {
       // Network-level errors are NOT retried — only 502 responses
       const message = err instanceof Error ? err.message : String(err);
-      return { ok: false, status: 0, data: message };
+      return { ok: false, status: 0, data: message as TData };
     }
   }
 
   // Should never reach here, but satisfy TypeScript
-  return { ok: false, status: 502, data: "Max retries exceeded on 502" };
+  return { ok: false, status: 502, data: "Max retries exceeded on 502" as TData };
 }
 
 /**
@@ -269,13 +312,14 @@ export function setLogAgent(agentName: string): void {
 /**
  * Log info to stderr (keeps stdout clean for JSON output).
  */
-export function info(msg: string, agentName: string = logAgentName): void {
-  console.error(`[${agentName}] ${msg}`);
+export function info(msg: string, agentName?: string): void {
+  const resolvedAgentName = agentName || getLogAgentName();
+  console.error(`[${resolvedAgentName}] ${msg}`);
 }
 
 /**
  * Log warning to stderr.
  */
-export function warn(msg: string, agentName: string = logAgentName): void {
-  console.error(`[${agentName}] WARN: ${msg}`);
+export function warn(msg: string, agentName?: string): void {
+  console.error(`[${agentName || getLogAgentName()}] WARN: ${msg}`);
 }

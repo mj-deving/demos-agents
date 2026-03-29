@@ -84,21 +84,42 @@ function freshTipState(): TipState {
   };
 }
 
-function normalizeTipState(raw: any): TipState {
-  if (!raw || typeof raw !== "object") return freshTipState();
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function normalizeTipState(raw: unknown): TipState {
+  const record = asRecord(raw);
+  if (!record) return freshTipState();
+
+  const perRecipientCountsRaw = asRecord(record.perRecipientCounts);
+  const perRecipientCounts: TipState["perRecipientCounts"] = {};
+  if (perRecipientCountsRaw) {
+    for (const [recipient, value] of Object.entries(perRecipientCountsRaw)) {
+      const entry = asRecord(value);
+      if (!entry || typeof entry.date !== "string") continue;
+      const count = Number(entry.count);
+      if (!Number.isFinite(count)) continue;
+      perRecipientCounts[recipient] = {
+        date: entry.date,
+        count: Math.max(0, Math.floor(count)),
+      };
+    }
+  }
+
   return {
-    tippedPosts: Array.isArray(raw.tippedPosts)
-      ? raw.tippedPosts.map((value: unknown) => String(value || "")).filter(Boolean)
+    tippedPosts: Array.isArray(record.tippedPosts)
+      ? record.tippedPosts.map((value: unknown) => String(value || "")).filter(Boolean)
       : [],
-    perRecipientCounts: raw.perRecipientCounts && typeof raw.perRecipientCounts === "object"
-      ? raw.perRecipientCounts
-      : {},
-    lastTipTimestamp: typeof raw.lastTipTimestamp === "string" ? raw.lastTipTimestamp : null,
-    warmupCounter: Number.isFinite(Number(raw.warmupCounter))
-      ? Math.max(0, Math.floor(Number(raw.warmupCounter)))
+    perRecipientCounts,
+    lastTipTimestamp: typeof record.lastTipTimestamp === "string" ? record.lastTipTimestamp : null,
+    warmupCounter: Number.isFinite(Number(record.warmupCounter))
+      ? Math.max(0, Math.floor(Number(record.warmupCounter)))
       : 0,
-    lastWarmupSession: Number.isFinite(Number(raw.lastWarmupSession))
-      ? Math.max(0, Math.floor(Number(raw.lastWarmupSession)))
+    lastWarmupSession: Number.isFinite(Number(record.lastWarmupSession))
+      ? Math.max(0, Math.floor(Number(record.lastWarmupSession)))
       : undefined,
   };
 }
@@ -232,7 +253,7 @@ export function saveTipState(state: TipState, agent: string): void {
 }
 
 export function selectTipCandidates(
-  rawPosts: any[],
+  rawPosts: unknown[],
   options: SelectTipCandidatesOptions
 ): TipCandidate[] {
   const now = options.now || new Date();

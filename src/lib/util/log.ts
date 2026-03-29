@@ -34,7 +34,7 @@ export interface SessionLogEntry {
   is_reply?: boolean;
   parent_tx_hash?: string;
   confidence_gate?: string[];
-  [key: string]: any; // Allow extra fields
+  [key: string]: unknown; // Allow extra fields
 }
 
 // ── Read ───────────────────────────────────────────

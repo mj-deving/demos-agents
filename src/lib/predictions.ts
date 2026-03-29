@@ -381,8 +381,9 @@ async function reportResolution(
       method: "POST",
       body: JSON.stringify({ status }),
     });
-  } catch (err: any) {
-    observe("error", `Failed to report prediction resolution: ${err.message}`, {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    observe("error", `Failed to report prediction resolution: ${message}`, {
       phase: "review",
       source: "predictions.ts",
       data: { txHash, status },

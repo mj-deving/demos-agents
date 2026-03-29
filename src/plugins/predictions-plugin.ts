@@ -33,9 +33,10 @@ export async function predictionsBeforeSense(ctx: BeforeSenseContext): Promise<v
     const resolved = Object.values(store.predictions).filter(p => p.status === "correct" || p.status === "incorrect").length;
     const adj = getCalibrationAdjustment(store);
     ctx.logger?.result(`Predictions: ${pending} pending, ${resolved} resolved, calibration adj: ${adj > 0 ? "+" : ""}${adj}`);
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
     const { observe } = await import("../lib/pipeline/observe.js");
-    observe("error", `Predictions resolution failed: ${e.message}`, {
+    observe("error", `Predictions resolution failed: ${message}`, {
       phase: "sense", source: "predictions-plugin.ts:beforeSense",
     });
   }

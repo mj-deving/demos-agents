@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-03-28T22:33:11+00:00",
-  "updated": "2026-03-28T22:33:43+00:00",
+  "updated": "2026-03-28T22:33:52+00:00",
   "queue_order": [
     "subjective::abstraction_fitness",
     "subjective::convention_outlier",
@@ -52,6 +52,16 @@
       "note": null,
       "attestation": "I have reviewed each file with grep and confirmed all have active production importers via cli/event-runner.ts, plugins, and barrel re-exports. I am not gaming the score.",
       "created_at": "2026-03-28T22:33:43+00:00",
+      "review_after": null,
+      "skipped_at_scan": 2
+    },
+    "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle": {
+      "issue_id": "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle",
+      "kind": "false_positive",
+      "reason": null,
+      "note": null,
+      "attestation": "I have reviewed the code and confirmed the import cycle was already fixed \u2014 RunToolFn moved from calibrate-plugin.ts to types.ts in commit 2f20e63. I am not gaming the score.",
+      "created_at": "2026-03-28T22:33:52+00:00",
       "review_after": null,
       "skipped_at_scan": 2
     }
@@ -699,6 +709,20 @@
         "review::.::holistic::cross_module_architecture::orphaned_reactive_subsystem",
         "review::.::holistic::high_level_elegance::lib_flat_mixed_roles",
         "review::.::holistic::high_level_elegance::reactive_subsystem_unclear_status"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": null,
+      "detail": {
+        "kind": "false_positive",
+        "reason": null
+      }
+    },
+    {
+      "timestamp": "2026-03-28T22:33:52+00:00",
+      "action": "skip",
+      "issue_ids": [
+        "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle"
       ],
       "cluster_name": null,
       "actor": "user",

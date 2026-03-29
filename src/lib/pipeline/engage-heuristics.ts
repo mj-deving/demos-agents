@@ -32,6 +32,57 @@ export interface EnforceDisagreeInput {
   qualityFloor: number;
 }
 
+interface EngageHeuristicPayload {
+  sourceAttestations?: unknown[];
+  tlsnAttestations?: unknown[];
+  cat?: unknown;
+  text?: unknown;
+}
+
+interface EngageHeuristicPostView {
+  author: string;
+  txHash: string;
+  hasReaction: boolean;
+  hasAttestation: boolean;
+  category: string;
+  score: number;
+  text: string;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function getPayload(post: Record<string, unknown>): EngageHeuristicPayload {
+  const payload = asRecord(post.payload);
+  return payload ?? {};
+}
+
+function toPostView(post: Record<string, unknown>): EngageHeuristicPostView | null {
+  const payload = getPayload(post);
+  const txHash = typeof post.txHash === "string" ? post.txHash : "";
+  if (!txHash) return null;
+
+  const scoreValue =
+    typeof post.score === "number"
+      ? post.score
+      : typeof post.qualityScore === "number"
+        ? post.qualityScore
+        : Number(post.score ?? post.qualityScore ?? 0);
+
+  return {
+    author: String(post.author ?? post.address ?? "").toLowerCase(),
+    txHash,
+    hasReaction: Boolean(post.myReaction),
+    hasAttestation:
+      Array.isArray(payload.sourceAttestations) && payload.sourceAttestations.length > 0 ||
+      Array.isArray(payload.tlsnAttestations) && payload.tlsnAttestations.length > 0,
+    category: String(payload.cat ?? post.cat ?? "?").toUpperCase(),
+    score: Number.isFinite(scoreValue) ? scoreValue : 0,
+    text: String(payload.text ?? post.text ?? ""),
+  };
+}
+
 // ── Reaction Selection ─────────────────────────────
 
 /**
@@ -48,32 +99,21 @@ export function selectReaction(
   ourAddress: string,
   qualityFloor: number
 ): ReactionDecision | null {
-  const author = (post.author || post.address || "").toLowerCase();
-  if (author === ourAddress.toLowerCase()) return null;
+  const view = toPostView(post);
+  if (!view) return null;
+  if (view.author === ourAddress.toLowerCase()) return null;
+  if (view.hasReaction) return null;
 
-  const tx = post.txHash;
-  if (!tx) return null;
+  if (view.score < qualityFloor) return null;
 
-  // Skip already reacted
-  if (post.myReaction) return null;
-
-  const hasAttestation =
-    post.payload?.sourceAttestations?.length > 0 ||
-    post.payload?.tlsnAttestations?.length > 0;
-  const cat = String(post.payload?.cat || post.cat || "?").toUpperCase();
-  const score = post.score ?? post.qualityScore ?? 0;
-  const text = String(post.payload?.text || post.text || "");
-
-  if (score < qualityFloor) return null;
-
-  if (hasAttestation && score >= 80) {
-    return { reaction: "agree", reason: `attested + high score ${score}` };
+  if (view.hasAttestation && view.score >= 80) {
+    return { reaction: "agree", reason: `attested + high score ${view.score}` };
   }
-  if (hasAttestation && score >= qualityFloor && (cat === "ANALYSIS" || cat === "PREDICTION")) {
-    return { reaction: "agree", reason: `attested ${cat}, score ${score}` };
+  if (view.hasAttestation && view.score >= qualityFloor && (view.category === "ANALYSIS" || view.category === "PREDICTION")) {
+    return { reaction: "agree", reason: `attested ${view.category}, score ${view.score}` };
   }
-  if (!hasAttestation && score >= qualityFloor && NUMERIC_CLAIM_PATTERN.test(text)) {
-    return { reaction: "disagree", reason: `unattested numeric claim, score ${score}` };
+  if (!view.hasAttestation && view.score >= qualityFloor && NUMERIC_CLAIM_PATTERN.test(view.text)) {
+    return { reaction: "disagree", reason: `unattested numeric claim, score ${view.score}` };
   }
 
   return null;
@@ -102,8 +142,10 @@ export function enforceDisagreeMinimum(input: EnforceDisagreeInput): DisagreeTar
 
     const decision = selectReaction(post, ourAddress, qualityFloor);
     if (decision && decision.reaction === "disagree") {
+      const view = toPostView(post);
+      if (!view) continue;
       targets.push({
-        txHash: post.txHash,
+        txHash: view.txHash,
         reaction: "disagree",
         reason: `${decision.reason} (disagree-minimum enforcement)`,
       });

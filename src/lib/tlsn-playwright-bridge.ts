@@ -14,10 +14,109 @@ interface DemosExtended {
   web2: { createDahr(): Promise<{ startProxy(opts: { url: string; method: string }): Promise<Record<string, unknown>> }> };
 }
 
+type SignedTransaction = Awaited<ReturnType<Demos["sign"]>>;
+
+interface BroadcastResult {
+  result?: number;
+  response?: {
+    message?: string;
+  };
+}
+
+interface PlaywrightConsoleMessage {
+  text(): string;
+}
+
+interface PlaywrightPage {
+  setDefaultTimeout(timeout: number): void;
+  on(event: "console", handler: (msg: PlaywrightConsoleMessage) => void): void;
+  goto(url: string, options: { waitUntil: "domcontentloaded" }): Promise<void>;
+  evaluate<TArgs, TResult>(
+    pageFunction: (args: TArgs) => Promise<TResult>,
+    args: TArgs
+  ): Promise<TResult>;
+}
+
+interface PlaywrightBrowser {
+  newPage(): Promise<PlaywrightPage>;
+  close(): Promise<void>;
+}
+
+interface PlaywrightModule {
+  chromium: {
+    launch(options: { headless: boolean; args: string[] }): Promise<PlaywrightBrowser>;
+  };
+}
+
+interface BrowserTlsnNotary {
+  sessionUrl(maxSentData: number, maxRecvData: number): Promise<string>;
+}
+
+interface BrowserTlsnNotaryFactory {
+  from(url: string): BrowserTlsnNotary;
+}
+
+interface BrowserTlsnTranscript {
+  sent: string;
+  recv: unknown[];
+}
+
+interface BrowserTlsnProver {
+  setup(sessionUrl: string): Promise<void>;
+  sendRequest(proxyUrl: string, request: {
+    url: string;
+    method: "GET" | "POST" | "PUT" | "DELETE";
+    headers: Record<string, string>;
+  }): Promise<void>;
+  transcript(): Promise<BrowserTlsnTranscript>;
+  notarize(commitRanges: {
+    sent: Array<{ start: number; end: number }>;
+    recv: Array<{ start: number; end: number }>;
+  }): Promise<{
+    attestation: string;
+    secrets: string;
+    notaryUrl?: string;
+    websocketProxyUrl?: string;
+  }>;
+  free(): Promise<void>;
+}
+
+interface BrowserTlsnPresentationInstance {
+  json(): Promise<unknown>;
+  free(): Promise<void>;
+}
+
+interface BrowserTlsnPresentationConstructor {
+  new (options: {
+    attestationHex: string;
+    secretsHex: string;
+    notaryUrl: string;
+    websocketProxyUrl: string;
+    reveal: {
+      sent: Array<{ start: number; end: number }>;
+      recv: Array<{ start: number; end: number }>;
+      server_identity: boolean;
+    };
+  }): BrowserTlsnPresentationInstance;
+}
+
+interface BrowserTlsnWindow extends Window {
+  default?: (options: { loggingLevel: string; hardwareConcurrency: number }) => Promise<void>;
+  Prover?: new (options: { serverDns: string; maxSentData: number; maxRecvData: number }) => BrowserTlsnProver;
+  NotaryServer?: BrowserTlsnNotaryFactory;
+  Presentation?: BrowserTlsnPresentationConstructor;
+}
+
 const require = createRequire(import.meta.url);
 const TLSN_MAX_BYTES = 16_384;
 const TLSN_TOKEN_POLL_ATTEMPTS = 30;
 const TLSN_TOKEN_POLL_INTERVAL_MS = 1000;
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
 
 async function withTimeout<T>(label: string, ms: number, work: Promise<T>): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -76,7 +175,7 @@ function coerceTlsnMethod(method: string): "GET" | "POST" | "PUT" | "DELETE" {
   }
 }
 
-async function createTlsnRequestTransaction(demos: Demos, targetUrl: string): Promise<any> {
+async function createTlsnRequestTransaction(demos: Demos, targetUrl: string): Promise<SignedTransaction> {
   const tx = DemosTransactions.empty();
   const { publicKey } = await (demos as unknown as DemosExtended).crypto.getIdentity("ed25519");
   const publicKeyHex = uint8ArrayToHex(publicKey);
@@ -95,7 +194,7 @@ async function createTlsnRequestTransaction(demos: Demos, targetUrl: string): Pr
     },
   ];
 
-  return await demos.sign(tx);
+  return await demos.sign(tx) as SignedTransaction;
 }
 
 async function createTlsnStoreTransaction(
@@ -104,7 +203,7 @@ async function createTlsnStoreTransaction(
   proof: string,
   storageType: "onchain" | "ipfs",
   fee: number
-): Promise<any> {
+): Promise<SignedTransaction> {
   const tx = DemosTransactions.empty();
   const { publicKey } = await (demos as unknown as DemosExtended).crypto.getIdentity("ed25519");
   const publicKeyHex = uint8ArrayToHex(publicKey);
@@ -123,7 +222,7 @@ async function createTlsnStoreTransaction(
     },
   ];
 
-  return await demos.sign(tx);
+  return await demos.sign(tx) as SignedTransaction;
 }
 
 async function requestTlsnToken(
@@ -132,19 +231,20 @@ async function requestTlsnToken(
 ): Promise<{ proxyUrl: string; tokenId: string; requestTxHash: string }> {
   const tx = await createTlsnRequestTransaction(demos, targetUrl);
   const confirmResult = await DemosTransactions.confirm(tx, demos);
-  const broadcastResult = await DemosTransactions.broadcast(confirmResult, demos);
-  if ((broadcastResult as any)?.result !== 200) {
-    throw new Error(`TLSN request failed: ${String((broadcastResult as any)?.response?.message || "unknown broadcast error")}`);
+  const broadcastResult = await DemosTransactions.broadcast(confirmResult, demos) as BroadcastResult;
+  if (broadcastResult.result !== 200) {
+    throw new Error(`TLSN request failed: ${String(broadcastResult.response?.message || "unknown broadcast error")}`);
   }
 
-  const requestTxHash = String((tx as any).hash || "");
+  const requestTxHash = String(tx.hash || "");
   if (!requestTxHash) throw new Error("TLSN request transaction hash missing");
 
   let tokenId: string | null = null;
   for (let attempt = 0; attempt < TLSN_TOKEN_POLL_ATTEMPTS; attempt++) {
     const tokenResponse = await (demos as unknown as DemosExtended).nodeCall("tlsnotary.getToken", { txHash: requestTxHash });
-    if (tokenResponse?.token?.id) {
-      tokenId = String(tokenResponse.token.id);
+    const token = asRecord(tokenResponse.token);
+    if (token?.id !== undefined) {
+      tokenId = String(token.id);
       break;
     }
     if (attempt < TLSN_TOKEN_POLL_ATTEMPTS - 1) {
@@ -199,12 +299,12 @@ async function storeTlsnProof(
 
   const tx = await createTlsnStoreTransaction(demos, tokenId, proof, "onchain", storageFee);
   const confirmResult = await DemosTransactions.confirm(tx, demos);
-  const broadcastResult = await DemosTransactions.broadcast(confirmResult, demos);
-  if ((broadcastResult as any)?.result !== 200) {
-    throw new Error(`TLSN proof storage failed: ${String((broadcastResult as any)?.response?.message || "unknown broadcast error")}`);
+  const broadcastResult = await DemosTransactions.broadcast(confirmResult, demos) as BroadcastResult;
+  if (broadcastResult.result !== 200) {
+    throw new Error(`TLSN proof storage failed: ${String(broadcastResult.response?.message || "unknown broadcast error")}`);
   }
 
-  const txHash = String((tx as any).hash || "");
+  const txHash = String(tx.hash || "");
   if (!txHash) throw new Error("TLSN proof storage tx hash missing");
   return { txHash, storageFee };
 }
@@ -268,17 +368,18 @@ async function runBrowserTlsnAttestation(
   method: "GET" | "POST" | "PUT" | "DELETE",
   proxyUrl: string,
   notaryUrl: string
-): Promise<any> {
-  let playwright: any;
+): Promise<unknown> {
+  let playwright: PlaywrightModule;
   try {
-    playwright = await import("playwright");
-  } catch (err: any) {
-    throw new Error(`Playwright not installed: ${String(err?.message || err)}`);
+    playwright = await import("playwright") as unknown as PlaywrightModule;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Playwright not installed: ${message}`);
   }
 
   const { dir } = await resolveTlsnBuildDir();
   const server = await startTlsnStaticServer(dir);
-  let browser: any = null;
+  let browser: PlaywrightBrowser | null = null;
   try {
     browser = await playwright.chromium.launch({
       headless: true,
@@ -288,8 +389,8 @@ async function runBrowserTlsnAttestation(
     page.setDefaultTimeout(300_000); // 5 min — MPC-TLS steps can take 190-290s total
 
     // Capture browser console for per-step timing visibility
-    page.on("console", (msg: any) => {
-      const text = msg.text?.() ?? String(msg);
+    page.on("console", (msg: PlaywrightConsoleMessage) => {
+      const text = msg.text();
       if (text.startsWith("[tlsn]")) console.log(text);
     });
 
@@ -306,7 +407,7 @@ async function runBrowserTlsnAttestation(
           notaryUrl: string;
           maxBytes: number;
         }) => {
-          const w: any = window as any;
+          const w = window as unknown as BrowserTlsnWindow;
           if (typeof w.default !== "function" || !w.Prover || !w.NotaryServer || !w.Presentation) {
             throw new Error("tlsn-js globals not available in browser context");
           }
@@ -322,7 +423,7 @@ async function runBrowserTlsnAttestation(
             maxRecvData: args.maxBytes,
           });
 
-          let presentationJson: any;
+          let presentationJson: unknown;
           try {
             const notary = w.NotaryServer.from(args.notaryUrl);
             const sessionUrl = await notary.sessionUrl(args.maxBytes, args.maxBytes);

@@ -322,12 +322,14 @@ Return ONLY the JSON array. Example:
     if (!Array.isArray(parsed)) return [];
 
     return parsed
-      .filter((item: any): item is Record<string, unknown> =>
-        typeof item === "object" && item !== null && typeof item.text === "string" && typeof item.type === "string"
-      )
-      .map((item: any): ExtractedClaim => ({
+      .filter((item: unknown): item is Record<string, unknown> => {
+        if (typeof item !== "object" || item === null) return false;
+        const record = item as Record<string, unknown>;
+        return typeof record.text === "string" && typeof record.type === "string";
+      })
+      .map((item): ExtractedClaim => ({
         text: String(item.text),
-        type: validateClaimType(item.type),
+        type: validateClaimType(String(item.type)),
         entities: Array.isArray(item.entities)
           ? item.entities.filter((e: unknown): e is string => typeof e === "string")
           : [],

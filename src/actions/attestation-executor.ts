@@ -93,19 +93,21 @@ export async function executeAttestationPlan(
         result = await attestDahr(demos, candidate.url);
       }
       results.push(result);
-    } catch (firstErr: any) {
+    } catch (firstErr: unknown) {
       // Retry once after 2s backoff (transient network/RPC failures)
       try {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        observe("insight", `Retrying attestation for ${candidate.provider} after failure: ${String(firstErr?.message || firstErr)}`, {
+        const firstMessage = firstErr instanceof Error ? firstErr.message : String(firstErr);
+        observe("insight", `Retrying attestation for ${candidate.provider} after failure: ${firstMessage}`, {
           substage: "publish",
           source: "attestation-executor.ts",
           data: { provider: candidate.provider, url: candidate.url },
         });
         const retryResult = await attestDahr(demos, candidate.url);
         results.push(retryResult);
-      } catch (retryErr: any) {
-        observe("error", `Attestation failed after retry for ${candidate.url}: ${String(retryErr?.message || retryErr)}`, {
+      } catch (retryErr: unknown) {
+        const retryMessage = retryErr instanceof Error ? retryErr.message : String(retryErr);
+        observe("error", `Attestation failed after retry for ${candidate.url}: ${retryMessage}`, {
           substage: "publish",
           source: "attestation-executor.ts",
           data: { provider: candidate.provider, url: candidate.url },

@@ -1,245 +1,41 @@
 {
-  "command": "show",
-  "query": "review",
-  "status_filter": "open",
-  "total": 10,
-  "summary": {
-    "by_tier": {
-      "T1": 10
-    },
-    "by_detector": {
-      "review": 10
-    },
-    "files": 1
+  "command": "next",
+  "items": [
+    {
+      "id": "triage::strategize",
+      "confidence": "high",
+      "detector": "triage",
+      "file": ".",
+      "summary": "Triage: Analyse cross-cycle trends & set strategic focus",
+      "detail": {
+        "total_review_issues": 42,
+        "stage": "strategize",
+        "stage_label": "Analyse cross-cycle trends & set strategic focus",
+        "runner_commands": [
+          {
+            "label": "Codex",
+            "command": "desloppify plan triage --run-stages --runner codex --only-stages strategize"
+          },
+          {
+            "label": "Claude",
+            "command": "desloppify plan triage --run-stages --runner claude --only-stages strategize"
+          }
+        ],
+        "manual_fallback": "desloppify plan triage --stage strategize --report '\"{\"score_trend\":\"stable\",\"debt_trend\":\"stable\"}\"'"
+      },
+      "status": null,
+      "kind": "workflow_stage",
+      "primary_command": "desloppify plan triage --run-stages --runner codex --only-stages strategize",
+      "queue_position": 1
+    }
+  ],
+  "queue": {
+    "total": 1,
+    "mode": "execution"
   },
-  "by_file": {
-    ".": [
-      {
-        "id": "review::.::holistic::api_surface_coherence::phantom_session_logger",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "scan.ts references session.logger which is never declared on DemosSession",
-        "detail": {
-          "holistic": true,
-          "dimension": "api_surface_coherence",
-          "related_files": [
-            "src/toolkit/tools/scan.ts",
-            "src/toolkit/session.ts"
-          ],
-          "evidence": [
-            "scan.ts lines 68 and 75 call session.logger?.warn?.(...) but DemosSession has no logger property",
-            "Optional chaining prevents runtime errors but the calls are dead code \u2014 no warnings are ever emitted"
-          ],
-          "suggestion": "Either add an optional logger property to DemosSession (e.g., logger?: { warn?: (...args: unknown[]) => void }) and wire it through ConnectOptions, or replace the calls with console.warn to match the pattern used in react.ts line 44.",
-          "reasoning": "",
-          "summary_hash": "b703c285"
-        }
-      },
-      {
-        "id": "review::.::holistic::contract_coherence::stale_error_code_count",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "types.ts docstring says '9 error codes' but DemosErrorCode has 10 members",
-        "detail": {
-          "holistic": true,
-          "dimension": "contract_coherence",
-          "related_files": [
-            "src/toolkit/types.ts"
-          ],
-          "evidence": [
-            "Line 4: docstring says 'DemosError: typed error union with 9 error codes'",
-            "Lines 14-24: DemosErrorCode has 10 members including PARTIAL_SUCCESS (likely added after the docstring was written)"
-          ],
-          "suggestion": "Update the docstring to say '10 error codes' or remove the count entirely to avoid future staleness.",
-          "reasoning": "",
-          "summary_hash": "e466cebd"
-        }
-      },
-      {
-        "id": "review::.::holistic::cross_module_architecture::extensions_calibrate_cycle",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "Import cycle between src/lib/util/extensions.ts and src/plugins/calibrate-plugin.ts",
-        "detail": {
-          "holistic": true,
-          "dimension": "cross_module_architecture",
-          "related_files": [
-            "src/lib/util/extensions.ts",
-            "src/plugins/calibrate-plugin.ts"
-          ],
-          "evidence": [
-            "extensions.ts imports from calibrate-plugin.ts (or vice versa), creating a 2-file cycle confirmed by dependency scanner"
-          ],
-          "suggestion": "Extract the shared type or function that creates the cycle into a separate types file in src/lib/util/ that both can import without circular dependency. The BeforeSenseContext type likely needs to live in a file that calibrate-plugin.ts does not import back into.",
-          "reasoning": "",
-          "summary_hash": "1bf77bb6"
-        }
-      },
-      {
-        "id": "review::.::holistic::cross_module_architecture::orphaned_reactive_subsystem",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "Entire reactive subsystem (event-loop, 7 handlers, 4 sources) is orphaned with zero importers",
-        "detail": {
-          "holistic": true,
-          "dimension": "cross_module_architecture",
-          "related_files": [
-            "src/reactive/event-loop.ts",
-            "src/reactive/event-handlers/disagree-handler.ts",
-            "src/reactive/event-sources/sse-feed.ts",
-            "src/reactive/watermark-store.ts",
-            "src/actions/action-executor.ts"
-          ],
-          "evidence": [
-            "Scan evidence shows 21 orphaned files totaling ~2886 LOC including event-loop.ts (257), sse-feed.ts (244), all 7 event handlers, watermark-store.ts (90), action-executor.ts (312), storage-watcher.ts (139), balance-source.ts (104)"
-          ],
-          "suggestion": "Either delete the orphaned reactive subsystem (it is recoverable from git history) or wire it into the active module graph via event-runner.ts imports. The orphaned code blurs what constitutes active architecture.",
-          "reasoning": "",
-          "summary_hash": "237ff995"
-        }
-      },
-      {
-        "id": "review::.::holistic::design_coherence::engage_heuristics_any",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "engage-heuristics.ts uses `any` for post types where ScanPost exists",
-        "detail": {
-          "holistic": true,
-          "dimension": "design_coherence",
-          "related_files": [
-            "src/lib/pipeline/engage-heuristics.ts"
-          ],
-          "evidence": [
-            "Line 28: `remainingPosts: any[]` in EnforceDisagreeInput interface",
-            "Line 47: `post: any` parameter \u2014 ScanPost type from toolkit/types.ts describes this shape"
-          ],
-          "suggestion": "Import ScanPost from toolkit/types.ts and replace `any[]` with `ScanPost[]` and `any` with `ScanPost`. The comment on line 10 says it avoids SDK import chain \u2014 ScanPost is in toolkit/types.ts which has no SDK deps.",
-          "reasoning": "",
-          "summary_hash": "23dddcca"
-        }
-      },
-      {
-        "id": "review::.::holistic::design_coherence::lifecycle_plugin_any_types",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "lifecycle-plugin.ts uses 7 `any` types in 95 lines despite typed catalog types existing",
-        "detail": {
-          "holistic": true,
-          "dimension": "design_coherence",
-          "related_files": [
-            "src/plugins/lifecycle-plugin.ts"
-          ],
-          "evidence": [
-            "Line 39: `const allSources = catalog.sources as any[]` \u2014 SourceRecordV2[] exists",
-            "Line 49-50: `const transitions: any[]` and `const updatedMap = new Map<string, any>()`",
-            "Line 68: `(s: any)` in map callback",
-            "Line 78: `catch (e: any)` instead of `catch (e: unknown)`"
-          ],
-          "suggestion": "Import SourceRecordV2 from catalog.ts and type allSources, updatedMap, and transitions properly. Use `catch (e: unknown)` with toErrorMessage() pattern used elsewhere in the codebase.",
-          "reasoning": "",
-          "summary_hash": "54043934"
-        }
-      },
-      {
-        "id": "review::.::holistic::design_coherence::sdk_bridge_size",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "sdk-bridge.ts (917 LOC) combines type definitions, helpers, and a 15-method factory in one file",
-        "detail": {
-          "holistic": true,
-          "dimension": "design_coherence",
-          "related_files": [
-            "src/toolkit/sdk-bridge.ts"
-          ],
-          "evidence": [
-            "File contains: 7 interface/type definitions, 5 standalone helper functions (sanitizeUrl, encodeHivePayload, decodeHiveData, scanFilteredTransactions, extractTxHash), and a createSdkBridge factory returning 15+ methods",
-            "The HIVE encoding/decoding helpers and transaction scanning are reusable primitives that don't need the bridge context"
-          ],
-          "suggestion": "Extract HIVE encoding/decoding helpers (encodeHivePayload, decodeHiveData, scanFilteredTransactions) into a dedicated src/toolkit/hive-codec.ts. This keeps sdk-bridge.ts focused on the bridge factory and its methods. The type definitions can stay since they define the bridge's contract.",
-          "reasoning": "",
-          "summary_hash": "978f94ae"
-        }
-      },
-      {
-        "id": "review::.::holistic::design_coherence::source_discovery_any",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "source-discovery.ts has 4 explicit `any` types in typed domain code",
-        "detail": {
-          "holistic": true,
-          "dimension": "design_coherence",
-          "related_files": [
-            "src/lib/pipeline/source-discovery.ts"
-          ],
-          "evidence": [
-            "Line 125: `const extractTitles = (obj: any)` \u2014 extracting titles from API response",
-            "Lines 281, 343: `catch (err: any)` \u2014 should use unknown + type narrowing",
-            "Line 324: `let parsed: any` \u2014 YAML parse result has known shape"
-          ],
-          "suggestion": "Type extractTitles parameter as `Record<string, unknown>` with nested access guards. Use `catch (e: unknown)` with toErrorMessage(). Type the YAML parse result with the known source registry shape.",
-          "reasoning": "",
-          "summary_hash": "87dc1486"
-        }
-      },
-      {
-        "id": "review::.::holistic::high_level_elegance::lib_flat_mixed_roles",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "src/lib/ flat directory (13 files, 3759 LOC) mixes active infrastructure with orphaned domain files",
-        "detail": {
-          "holistic": true,
-          "dimension": "high_level_elegance",
-          "related_files": [
-            "src/lib/tips.ts",
-            "src/lib/predictions.ts",
-            "src/lib/mentions.ts",
-            "src/lib/transcript.ts",
-            "src/lib/state.ts",
-            "src/lib/agent-config.ts"
-          ],
-          "evidence": [
-            "tips.ts (442 LOC), predictions.ts (391 LOC), mentions.ts (148 LOC), transcript.ts (175 LOC) are orphaned domain files sitting alongside active infrastructure like state.ts, agent-config.ts, spending-policy.ts \u2014 a developer cannot tell which files are active without checking importers"
-          ],
-          "suggestion": "Delete confirmed orphaned files (they are in git history) or move them to a clearly labeled src/lib/deprecated/ directory. The active files should remain \u2014 the flat structure is fine for the ~8 remaining infrastructure files.",
-          "reasoning": "",
-          "summary_hash": "f7a61d87"
-        }
-      },
-      {
-        "id": "review::.::holistic::high_level_elegance::reactive_subsystem_unclear_status",
-        "tier": 1,
-        "confidence": "high",
-        "summary": "Reactive subsystem is complete (event-loop, handlers, sources) but entirely orphaned \u2014 unclear if this is active architecture",
-        "detail": {
-          "holistic": true,
-          "dimension": "high_level_elegance",
-          "related_files": [
-            "src/reactive/event-loop.ts",
-            "src/reactive/event-handlers/severity-handler.ts",
-            "src/reactive/event-sources/social-mentions.ts"
-          ],
-          "evidence": [
-            "All 7 event handlers, event-loop.ts, watermark-store.ts, and several event sources have zero importers. cli/event-runner.ts exists as an entry point but the internal reactive module graph is disconnected."
-          ],
-          "suggestion": "If reactive mode is planned for future use, add a comment at src/reactive/README.md or at the top of event-loop.ts documenting its status. If it is abandoned, delete the subsystem. The current state makes it impossible for a new developer to know if this is production infrastructure.",
-          "reasoning": "",
-          "summary_hash": "77c66ed0"
-        }
-      }
-    ]
-  },
-  "total_matching": 46,
-  "hidden": {
-    "by_detector": {
-      "review": 36
-    },
-    "total": 36
-  },
-  "noise_budget": 10,
-  "noise_global_budget": 0,
   "narrative": {
     "phase": "refinement",
-    "headline": " (46 review work items \u2014 run `desloppify show review --status open`)",
+    "headline": " (42 review work items \u2014 run `desloppify show review --status open`)",
     "dimensions": {
       "lowest_dimensions": [
         {
@@ -261,7 +57,7 @@
         {
           "name": "Cross-module arch",
           "strict": 78.5,
-          "failing": 4,
+          "failing": 2,
           "impact": 0.0,
           "subjective": true,
           "impact_description": "re-review to improve"
@@ -274,8 +70,8 @@
       {
         "type": "refactor",
         "detector": "review",
-        "count": 46,
-        "description": "46 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
+        "count": 42,
+        "description": "42 review work items need investigation \u2014 run `desloppify show review --status open` to see them",
         "command": "desloppify show review --status open",
         "impact": 0.0,
         "dimension": "Unknown",
@@ -286,7 +82,7 @@
     "strategy": {
       "fixer_leverage": {
         "auto_fixable_count": 0,
-        "total_count": 138,
+        "total_count": 126,
         "coverage": 0.0,
         "impact_ratio": 0.0,
         "recommendation": "none"
@@ -303,7 +99,7 @@
         }
       },
       "can_parallelize": false,
-      "hint": "Work through actions in priority order. Rescan after each fix to track progress. Review: 46 issue(s) \u2014 `desloppify show review --status open`."
+      "hint": "Work through actions in priority order. Rescan after each fix to track progress. Review: 42 issue(s) \u2014 `desloppify show review --status open`."
     },
     "tools": {
       "fixers": [],
@@ -334,9 +130,9 @@
     "milestone": null,
     "primary_action": {
       "command": "desloppify show review --status open",
-      "description": "46 review work items need investigation \u2014 run `desloppify show review --status open` to see them"
+      "description": "42 review work items need investigation \u2014 run `desloppify show review --status open` to see them"
     },
-    "why_now": "Work through actions in priority order. Rescan after each fix to track progress. Review: 46 issue(s) \u2014 `desloppify show review --status open`.",
+    "why_now": "Work through actions in priority order. Rescan after each fix to track progress. Review: 42 issue(s) \u2014 `desloppify show review --status open`.",
     "verification_step": {
       "command": "desloppify scan",
       "reason": "revalidate after changes"
@@ -352,7 +148,7 @@
     "reminders": [
       {
         "type": "review_issues_pending",
-        "message": "46 review work item(s) need investigation. Run `desloppify show review --status open` to see the work queue.",
+        "message": "42 review work item(s) need investigation. Run `desloppify show review --status open` to see the work queue.",
         "command": "desloppify show review --status open",
         "priority": 1,
         "severity": "high"
@@ -372,6 +168,564 @@
       "review_not_run": 2
     }
   },
+  "agent_notes": [
+    "Do NOT use `desloppify plan skip` unless the user explicitly asks you to skip an item.",
+    "If you cannot fix an item, report it and move to the next one.",
+    "For cluster items: if the autofix_hint finds 0 results, drill into individual issues with the primary_command."
+  ],
+  "plan": {
+    "active": true,
+    "focus": null,
+    "clusters": [
+      {
+        "name": "auto/review-cross_module_architecture",
+        "description": "Address 4 cross_module_architecture review issues",
+        "item_count": 4
+      },
+      {
+        "name": "auto/review-high_level_elegance",
+        "description": "Address 2 high_level_elegance review issues",
+        "item_count": 2
+      },
+      {
+        "name": "auto/review-error_consistency",
+        "description": "Address 3 error_consistency review issues",
+        "item_count": 3
+      },
+      {
+        "name": "auto/review-abstraction_fitness",
+        "description": "Address 2 abstraction_fitness review issues",
+        "item_count": 2
+      },
+      {
+        "name": "auto/review-low_level_elegance",
+        "description": "Address 2 low_level_elegance review issues",
+        "item_count": 2
+      },
+      {
+        "name": "auto/review-mid_level_elegance",
+        "description": "Address 2 mid_level_elegance review issues",
+        "item_count": 2
+      },
+      {
+        "name": "auto/review-test_strategy",
+        "description": "Address 3 test_strategy review issues",
+        "item_count": 3
+      },
+      {
+        "name": "auto/review-initialization_coupling",
+        "description": "Address 4 initialization_coupling review issues",
+        "item_count": 4
+      },
+      {
+        "name": "auto/review-design_coherence",
+        "description": "Address 6 design_coherence review issues",
+        "item_count": 6
+      },
+      {
+        "name": "auto/review-contract_coherence",
+        "description": "Address 3 contract_coherence review issues",
+        "item_count": 3
+      },
+      {
+        "name": "auto/review-logic_clarity",
+        "description": "Address 2 logic_clarity review issues",
+        "item_count": 2
+      },
+      {
+        "name": "auto/review-type_safety",
+        "description": "Address 6 type_safety review issues",
+        "item_count": 6
+      },
+      {
+        "name": "auto/under-target-review",
+        "description": "Consider re-reviewing 12 dimensions under target score",
+        "item_count": 12
+      }
+    ],
+    "total_ordered": 19,
+    "total_skipped": 4,
+    "plan_overrides_narrative": true
+  },
+  "overall_score": 82.2,
+  "objective_score": 100.0,
+  "strict_score": 82.2,
+  "scorecard_dimensions": [
+    {
+      "name": "AI generated debt",
+      "score": 89.0,
+      "strict": 89.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "ai_generated_debt"
+      ]
+    },
+    {
+      "name": "API coherence",
+      "score": 88.5,
+      "strict": 88.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "api_surface_coherence"
+      ]
+    },
+    {
+      "name": "Abstraction fit",
+      "score": 82.5,
+      "strict": 82.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "abstraction_fitness"
+      ]
+    },
+    {
+      "name": "Auth consistency",
+      "score": 90.2,
+      "strict": 90.2,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "authorization_consistency"
+      ]
+    },
+    {
+      "name": "Contracts",
+      "score": 86.2,
+      "strict": 86.2,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "contract_coherence"
+      ]
+    },
+    {
+      "name": "Convention drift",
+      "score": 83.4,
+      "strict": 83.4,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "convention_outlier"
+      ]
+    },
+    {
+      "name": "Cross-module arch",
+      "score": 78.5,
+      "strict": 78.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "cross_module_architecture"
+      ]
+    },
+    {
+      "name": "Dep health",
+      "score": 91.0,
+      "strict": 91.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "dependency_health"
+      ]
+    },
+    {
+      "name": "Design coherence",
+      "score": 76.3,
+      "strict": 76.3,
+      "checks": 10,
+      "failing": 6,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "design_coherence"
+      ]
+    },
+    {
+      "name": "Elegance",
+      "score": 82.9,
+      "strict": 82.9,
+      "checks": 30,
+      "failing": 4,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "high_level_elegance",
+        "low_level_elegance",
+        "mid_level_elegance"
+      ]
+    },
+    {
+      "name": "Error consistency",
+      "score": 79.8,
+      "strict": 79.8,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "error_consistency"
+      ]
+    },
+    {
+      "name": "Init coupling",
+      "score": 78.5,
+      "strict": 78.5,
+      "checks": 10,
+      "failing": 4,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "initialization_coupling"
+      ]
+    },
+    {
+      "name": "Logic clarity",
+      "score": 87.4,
+      "strict": 87.4,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "logic_clarity"
+      ]
+    },
+    {
+      "name": "Naming quality",
+      "score": 85.3,
+      "strict": 85.3,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "naming_quality"
+      ]
+    },
+    {
+      "name": "Stale migration",
+      "score": 87.5,
+      "strict": 87.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "incomplete_migration"
+      ]
+    },
+    {
+      "name": "Structure nav",
+      "score": 82.0,
+      "strict": 82.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "package_organization"
+      ]
+    },
+    {
+      "name": "Test strategy",
+      "score": 81.5,
+      "strict": 81.5,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "test_strategy"
+      ]
+    },
+    {
+      "name": "Type safety",
+      "score": 74.8,
+      "strict": 74.8,
+      "checks": 10,
+      "failing": 6,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "type_safety"
+      ]
+    }
+  ],
+  "subjective_measures": [
+    {
+      "name": "AI generated debt",
+      "score": 89.0,
+      "strict": 89.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "ai_generated_debt"
+      ]
+    },
+    {
+      "name": "API coherence",
+      "score": 88.5,
+      "strict": 88.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "api_surface_coherence"
+      ]
+    },
+    {
+      "name": "Abstraction fit",
+      "score": 82.5,
+      "strict": 82.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "abstraction_fitness"
+      ]
+    },
+    {
+      "name": "Auth consistency",
+      "score": 90.2,
+      "strict": 90.2,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "authorization_consistency"
+      ]
+    },
+    {
+      "name": "Contracts",
+      "score": 86.2,
+      "strict": 86.2,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "contract_coherence"
+      ]
+    },
+    {
+      "name": "Convention drift",
+      "score": 83.4,
+      "strict": 83.4,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "convention_outlier"
+      ]
+    },
+    {
+      "name": "Cross-module arch",
+      "score": 78.5,
+      "strict": 78.5,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "cross_module_architecture"
+      ]
+    },
+    {
+      "name": "Dep health",
+      "score": 91.0,
+      "strict": 91.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "dependency_health"
+      ]
+    },
+    {
+      "name": "Design coherence",
+      "score": 76.3,
+      "strict": 76.3,
+      "checks": 10,
+      "failing": 6,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "design_coherence"
+      ]
+    },
+    {
+      "name": "Elegance",
+      "score": 82.9,
+      "strict": 82.9,
+      "checks": 30,
+      "failing": 4,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "high_level_elegance",
+        "low_level_elegance",
+        "mid_level_elegance"
+      ]
+    },
+    {
+      "name": "Error consistency",
+      "score": 79.8,
+      "strict": 79.8,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "error_consistency"
+      ]
+    },
+    {
+      "name": "Init coupling",
+      "score": 78.5,
+      "strict": 78.5,
+      "checks": 10,
+      "failing": 4,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "initialization_coupling"
+      ]
+    },
+    {
+      "name": "Logic clarity",
+      "score": 87.4,
+      "strict": 87.4,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "logic_clarity"
+      ]
+    },
+    {
+      "name": "Naming quality",
+      "score": 85.3,
+      "strict": 85.3,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "naming_quality"
+      ]
+    },
+    {
+      "name": "Stale migration",
+      "score": 87.5,
+      "strict": 87.5,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "incomplete_migration"
+      ]
+    },
+    {
+      "name": "Structure nav",
+      "score": 82.0,
+      "strict": 82.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "package_organization"
+      ]
+    },
+    {
+      "name": "Test strategy",
+      "score": 81.5,
+      "strict": 81.5,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "test_strategy"
+      ]
+    },
+    {
+      "name": "Type safety",
+      "score": 74.8,
+      "strict": 74.8,
+      "checks": 10,
+      "failing": 6,
+      "tier": 4,
+      "subjective": true,
+      "placeholder": false,
+      "cli_keys": [
+        "type_safety"
+      ]
+    }
+  ],
   "config": {
     "target_strict_score": 85,
     "review_max_age_days": 30,

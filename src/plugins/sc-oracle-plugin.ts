@@ -17,26 +17,27 @@ export async function scOracleBeforeSense(ctx: BeforeSenseContext): Promise<void
   ctx.logger?.info("Extension: sc-oracle (fetching oracle data)...");
   try {
     const { loadAuthCache } = await import("../lib/auth/auth.js");
-    const { SUPERCOLONY_API } = await import("../lib/network/sdk.js");
+    const { getApiUrl } = await import("../lib/network/sdk.js");
     const cached = loadAuthCache();
     if (!cached) {
       ctx.logger?.info("SC Oracle: no auth token cached — skipping");
       return;
     }
     const plugin = createSCOraclePlugin({
-      apiBaseUrl: SUPERCOLONY_API,
+      apiBaseUrl: getApiUrl(),
       getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
     });
     const result = await plugin.providers![0].fetch("oracle");
     if (result.ok && ctx.state.loopVersion === 2) {
-      (ctx.state as any).oracleSnapshot = result.data;
+      ctx.state.oracleSnapshot = result.data;
       ctx.logger?.result("SC Oracle: data injected into session state");
     } else if (!result.ok) {
       ctx.logger?.info(`SC Oracle: fetch failed — ${result.error}`);
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
     const { observe } = await import("../lib/pipeline/observe.js");
-    observe("error", `SC Oracle hook failed: ${e.message}`, {
+    observe("error", `SC Oracle hook failed: ${message}`, {
       phase: "sense", source: "sc-oracle-plugin.ts:beforeSense",
     });
   }

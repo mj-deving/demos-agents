@@ -26,21 +26,30 @@ export interface FetchMentionsOptions {
   cursor?: MentionCursor | null;
 }
 
-function normalizeMentions(raw: any): string[] {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function normalizeMentions(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((value) => String(value || "").trim().toLowerCase()).filter(Boolean);
 }
 
-function normalizePosts(payload: any): any[] {
+function normalizePosts(payload: unknown): Record<string, unknown>[] {
+  const root = asRecord(payload);
+  const nestedData = asRecord(root?.data);
   const posts =
-    payload?.posts ??
-    payload?.results ??
-    payload?.items ??
-    payload?.data?.posts ??
-    payload?.data ??
+    root?.posts ??
+    root?.results ??
+    root?.items ??
+    nestedData?.posts ??
+    root?.data ??
     payload ??
     [];
-  return Array.isArray(posts) ? posts : [];
+  if (!Array.isArray(posts)) return [];
+  return posts.filter((post): post is Record<string, unknown> => typeof post === "object" && post !== null);
 }
 
 function normalizeTimestamp(raw: unknown): number {
@@ -105,11 +114,12 @@ export async function fetchMentions(
 
   const cursor = options.cursor || null;
   const mentions = normalizePosts(res.data)
-    .map((post: any): PendingMentionRecord | null => {
-      const txHash = String(post?.txHash || "").trim();
-      const author = String(post?.author || post?.address || "").trim().toLowerCase();
-      const timestamp = normalizeTimestamp(post?.timestamp);
-      const mentionList = normalizeMentions(post?.payload?.mentions);
+    .map((post): PendingMentionRecord | null => {
+      const payload = asRecord(post.payload);
+      const txHash = String(post.txHash || "").trim();
+      const author = String(post.author || post.address || "").trim().toLowerCase();
+      const timestamp = normalizeTimestamp(post.timestamp);
+      const mentionList = normalizeMentions(payload?.mentions);
       if (!txHash || !author || mentionList.length === 0) return null;
       if (!mentionList.includes(normalizedAddress)) return null;
 
@@ -117,7 +127,7 @@ export async function fetchMentions(
         txHash,
         author,
         timestamp,
-        textPreview: String(post?.payload?.text || post?.text || "").slice(0, 200),
+        textPreview: String(payload?.text || post.text || "").slice(0, 200),
         mentions: mentionList,
       };
     })

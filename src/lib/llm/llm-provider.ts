@@ -20,6 +20,30 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 
+interface OpenAICompletionResponse {
+  choices: Array<{
+    message?: {
+      content?: string | null;
+    };
+  }>;
+}
+
+interface OpenAIClient {
+  chat: {
+    completions: {
+      create(input: {
+        model: string;
+        max_tokens: number;
+        messages: Array<{ role: string; content: string }>;
+      }): Promise<OpenAICompletionResponse>;
+    };
+  };
+}
+
+interface OpenAIConstructor {
+  new (config: { apiKey: string; baseURL?: string }): OpenAIClient;
+}
+
 // ── Interface ─────────────────────────────────────
 
 export interface LLMProvider {
@@ -84,13 +108,14 @@ export class CLIProvider implements LLMProvider {
       try {
         const result = await this._spawn(fullPrompt, options?.modelTier);
         return result;
-      } catch (err: any) {
-        if (attempt === 0 && err.message?.includes("returned empty output")) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (attempt === 0 && message.includes("returned empty output")) {
           // Retry after brief delay — likely transient API issue
           await new Promise(r => setTimeout(r, 3000));
           continue;
         }
-        throw err;
+        throw err instanceof Error ? err : new Error(message);
       }
     }
     throw new Error(`CLI provider "${this.name}" returned empty output after retry`);
@@ -207,7 +232,7 @@ export class OpenAIProvider implements LLMProvider {
     // Dynamic import — openai is an optional dependency
     // Use string variable to prevent tsc from resolving the module at compile time
     const pkg = "openai";
-    let OpenAI: any;
+    let OpenAI: OpenAIConstructor;
     try {
       OpenAI = (await import(/* webpackIgnore: true */ pkg)).default;
     } catch {

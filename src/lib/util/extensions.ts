@@ -272,12 +272,13 @@ export async function runBeforeSense(
           timeoutId = setTimeout(() => reject(new Error(`Hook "${ext}" timed out after ${timeoutMs}ms`)), timeoutMs);
         }),
       ]);
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Log hook failure/timeout but continue to next hook
       const elapsed = Date.now() - startMs;
-      const isTimeout = e.message?.includes("timed out");
+      const message = e instanceof Error ? e.message : String(e);
+      const isTimeout = message.includes("timed out");
       ctx.hookErrors = ctx.hookErrors || [];
-      ctx.hookErrors.push({ hook: ext, error: e.message, elapsed, isTimeout });
+      ctx.hookErrors.push({ hook: ext, error: message, elapsed, isTimeout });
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
     }

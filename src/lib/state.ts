@@ -129,13 +129,17 @@ export interface V2SessionState {
   phases: Record<CorePhase, PhaseState>;
   substages: ActSubstageState[];
   posts: string[];
-  engagements: any[];
+  engagements: Record<string, unknown>[];
   /** Set when --shadow suppresses publish */
   publishSuppressed?: boolean;
   /** Full context for published posts — consumed by afterConfirm hooks (PR1) */
   publishedPosts?: PublishedPostRecord[];
   /** Consensus signal snapshot from /api/signals — consumed by gate/LLM (PR1) */
   signalSnapshot?: unknown;
+  /** SuperColony price snapshot injected by sc-prices beforeSense hook. */
+  priceSnapshot?: unknown;
+  /** SuperColony oracle snapshot injected by sc-oracle beforeSense hook. */
+  oracleSnapshot?: unknown;
   /** Colony briefing summary from /api/report — consumed by LLM prompt assembly (PR2) */
   briefingContext?: string;
   /** Mention candidates discovered during beforeSense polling (PR3). */
