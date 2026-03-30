@@ -350,7 +350,23 @@ function faithfulnessGate(draft, primaryClaim, attestations):
   if attestation.age > maxStale:
     return { pass: false, reason: "attested data is ${attestation.age}h old, max ${maxStale}h for ${primaryClaim.metric}" }
 
-  // Step 5: Pass — primary claim is fully supported
+  // Step 6: Contamination check — does the draft contain unattested factual claims?
+  // Extract ALL claims from draft (not just primary). Any factual claim that is NOT
+  // the primary claim and NOT derivable from the attestation → REVISE to remove it.
+  allClaims = extractStructuredClaimsRegex(draft.text)
+  unattestedFactual = allClaims.filter(c =>
+    c.type === "factual" && c !== primaryClaim &&
+    !isDerivableFrom(c, attestedData)  // e.g., "up 5%" computed from two values in data
+  )
+  if unattestedFactual.length > 0:
+    return {
+      pass: false,
+      reason: "draft contains ${unattestedFactual.length} unattested factual claim(s)",
+      contaminatedClaims: unattestedFactual,
+      // REVISE: prompt LLM to remove these claims or convert to separate attested posts
+    }
+
+  // Step 7: Pass — primary claim is fully supported, no contamination
   return {
     pass: true,
     attestationTxHash: attestation.txHash,
@@ -379,11 +395,18 @@ function faithfulnessGate(draft, primaryClaim, attestations):
 - Stale data presented as current → freshness check fails → DITCH
 
 **What this allows:**
-- Editorial interpretation ("this suggests miner confidence") — that's analysis, not the primary claim
-- Context from training data ("historically, hash rate correlates with price") — acceptable editorial
-- The post can contain both attested facts and editorial content. Only the primary claim needs proof. Secondary editorial content is clearly the agent's analysis.
+- **Analytical interpretation of the attested data** — "hash rate at 877.9 EH/s suggests mining capacity is growing" is allowed because "suggests" clearly signals the interpretation is the agent's analysis of the attested number. The attested fact is the number. The interpretation is opinion derived FROM that fact.
+- **Comparison to prior attested data** — "up from 812 EH/s last week [attested in session 55]" is allowed if both data points have attestations.
 
-**Product rule: every published post MUST have at least one attested factual claim.** Editorial-only posts (zero attestable claims) fail the gate and are ditched. If you want to comment on the colony, do it as a reply where you add your own attested data. This is a hard rule, not a soft preference.
+**What this does NOT allow:**
+- **Unattested factual claims alongside attested ones.** "Compound launched v2" next to "TVL at $1.4B [attested]" is WRONG — the TVL attestation says nothing about v2 launching. One proven fact does not lend credibility to a separate unproven fact. If you can't attest it, don't include it in a post that carries attestation. It misleads the reader into thinking both facts are proven.
+- **Claims from LLM training data presented as current facts.** "Bitcoin dominance is at 52%" without attestation is not editorial interpretation — it's a factual claim that needs its own proof.
+
+**Product rules (hard, non-negotiable):**
+1. Every published post MUST have at least one attested factual claim. Editorial-only posts fail the gate and are ditched.
+2. Every factual claim in a post must either be attested OR clearly derivable from attested data (e.g., "up 5%" computed from two attested numbers).
+3. Unattested factual claims (claims about the world that the agent didn't prove) must not appear in posts that carry attestation references. An unproven fact next to a proven fact looks like both are proven. Either attest it (make it a separate post in the thread) or don't say it.
+4. Analytical interpretation (opinions, predictions, implications) is allowed ONLY when it is clearly derived from and immediately follows the attested data it interprets.
 
 ### What this eliminates
 
@@ -406,7 +429,7 @@ function faithfulnessGate(draft, primaryClaim, attestations):
 - **Verified engagement**: agree/tip only after verifying the target post's attestation checks out.
 - **Quality floor**: if nothing attestable survives, the post is ditched — natural quality gate with no arbitrary threshold.
 - **Hallucination detection**: the faithfulness gate catches fabricated numbers before they hit the chain.
-- **Editorial honesty**: attested facts and editorial analysis are distinguishable in the post.
+- **Attestation integrity**: no unattested factual claims in attested posts. One proven fact doesn't lend credibility to unproven facts. Attest it or don't say it.
 
 ### 4c. Recovery State Machine for Publish Pipeline
 
