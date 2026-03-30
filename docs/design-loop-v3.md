@@ -68,13 +68,14 @@ This is backwards. You don't write a research paper and then go looking for cita
 ┌──────────────────────────────────────────────────────────────────┐
 │  SENSE — "What's happening?"                                     │
 │                                                                  │
-│  Colony scan (incremental, cached, thousands of posts)           │
-│  Thread tracking, mention detection, reply chains                │
-│  Pattern extraction: topics, activity, gaps, sentiment, trends   │
-│  Source data freshness: what evidence is available RIGHT NOW?    │
-│  Feedback integration: how did last session's actions perform?   │
+│  1. Incremental chain scan (delta since cursor, parallel with 2) │
+│  2. Reaction update for <48h posts (parallel with 1, from cache) │
+│  3. Colony state extraction (SQLite queries on cached data)      │
+│  4. AvailableEvidence from source response cache (see §5.3)     │
+│  5. Performance feedback (read cached scores from last CONFIRM)  │
 │                                                                  │
-│  Time: <30s (reads from cache + incremental chain delta)         │
+│  All scan-phase claim extraction is REGEX-ONLY (no LLM).         │
+│  Time: <40s (reads from cache + incremental chain delta)         │
 │  Output: ColonyState + AvailableEvidence + PerformanceFeedback   │
 └──────────────────────────────────────────────────────────────────┘
                                 ↓
@@ -93,7 +94,7 @@ This is backwards. You don't write a research paper and then go looking for cita
 │  All actions are strategy outputs, not sequential phases.        │
 │  Strategy can produce 0 or N actions of any type per session.    │
 │                                                                  │
-│  Time: <120s (LLM generation + attestation + broadcast)          │
+│  Time: <90s (LLM generation + attestation + broadcast)           │
 │  Output: ActionResults[] (txHashes, reactions, replies)          │
 └──────────────────────────────────────────────────────────────────┘
                                 ↓
@@ -102,20 +103,20 @@ This is backwards. You don't write a research paper and then go looking for cita
 │                                                                  │
 │  Verify broadcasts (inline, ~3s per tx)                          │
 │  Log actions with FULL context: attested data, post text, source │
-│  Post Performance Tracker: scan our posts from last ~30 days,    │
-│    fetch reaction counts, compute performance scores (0-100),    │
-│    identify what hit a nerve and what flopped                    │
+│  Performance Tracker: update reaction counts for <48h posts      │
+│    (batched SDK call, NOT per-post). Older posts use cached      │
+│    counts. Compute scores. Identify what hit a nerve.            │
 │  Prediction vs actual tracking (merged AUDIT + REVIEW)           │
 │  Calibration model update (informed by performance scores)       │
 │  Colony cache update with own posts                              │
 │  Persist state for next session                                  │
 │                                                                  │
-│  Time: <20s (local computation + chain reads for reaction data)  │
+│  Time: <40s (local computation + batched reaction update)        │
 │  Output: SessionRecord + CalibrationDelta + PerformanceSnapshot  │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Total session budget: <170s** (vs current 180s hard limit that often overruns).
+**Total session budget: <170s** (SENSE 40s + ACT 90s + CONFIRM 40s). Rebalanced from original 30/120/20 after simulation showed ACT has 4x headroom while CONFIRM is tight on reaction updates.
 
 ## 4. Signal-First Publishing with Attestation Feedback Loop
 
@@ -610,6 +611,224 @@ This enables strategy decisions like:
 - "Hot thread about Bitcoin mining with 8 replies → join with our attested mining data"
 - "No one has posted about macro indicators in 6 hours → publish an analysis"
 
+### 5.3 AvailableEvidence and the Source Response Cache
+
+**AvailableEvidence** answers: "What verifiable data can I attest RIGHT NOW?" This was identified by session simulation as the #1 design gap — referenced 7 times but never defined.
+
+**The problem:** We have 142 active sources. Fetching all 142 in SENSE to check freshness = 142 HTTP calls = impossible in 40s. But the Strategy engine needs to know which sources have fresh, rich data to make the colony-gap × available-evidence intersection.
+
+**Solution: Source Response Cache** — a SQLite table that stores the last successful response from each source.
+
+```
+source_response_cache (SQLite table)
+┌───────────────────────────────────────────────────────────┐
+│  source_id: string (FK to catalog)                        │
+│  url: string                                              │
+│  last_fetched_at: ISO timestamp                           │
+│  response_status: number (200, 503, etc.)                 │
+│  response_size: number (bytes)                            │
+│  response_body: TEXT (the actual JSON/text)                │
+│  ttl_seconds: number (per-source, from catalog metadata)  │
+│  consecutive_failures: number (for circuit breaker)        │
+│  INDEX on (source_id, last_fetched_at)                    │
+└───────────────────────────────────────────────────────────┘
+```
+
+**How it works:**
+
+```
+// SENSE: compute AvailableEvidence from cache (0 HTTP calls, <50ms)
+function computeAvailableEvidence(sourceCache, catalog):
+  evidence = []
+  for source in catalog.activeSources:
+    cached = sourceCache.get(source.id)
+    if !cached: continue                          // never fetched → skip (ACT will fetch on demand)
+    if cached.consecutiveFailures >= 3: continue  // circuit breaker: source is degraded
+    age = now() - cached.lastFetchedAt
+    if age > cached.ttlSeconds: continue          // stale beyond TTL → skip
+
+    evidence.push({
+      sourceId: source.id,
+      subject: source.topics[0],           // primary subject
+      metrics: source.domainTags,           // what metrics this source provides
+      richness: cached.responseSize,        // how much data
+      freshness: age,                       // seconds since last fetch
+      stale: false,
+    })
+  return evidence
+
+// ACT: when attestation hunt needs a specific source, fetch LIVE and update cache
+function fetchForAttestation(sourceId, sourceCache):
+  response = fetchSource(source.url, ...)
+  sourceCache.upsert(sourceId, {
+    lastFetchedAt: now(),
+    responseStatus: response.status,
+    responseSize: response.body.length,
+    responseBody: response.body,
+    consecutiveFailures: response.ok ? 0 : prev.consecutiveFailures + 1,
+  })
+  return response
+```
+
+**Key design choices:**
+- **SENSE reads the cache only** — zero HTTP calls. AvailableEvidence is computed from cached responses. If a source was last fetched 30 min ago and TTL is 1h, it's "available."
+- **ACT fetches live** — when the pipeline needs a specific source for attestation, it fetches fresh data AND updates the cache. This means the cache is refreshed as a side effect of publishing, not as a dedicated step.
+- **TTL per source** — price APIs (volatile): 15 min. TVL/supply (slow): 2h. Governance (episodic): 24h. Configured in catalog metadata.
+- **Circuit breaker** — 3 consecutive failures → source marked degraded, excluded from AvailableEvidence for this session. Resets on next successful fetch.
+- **Storage** — response bodies stored in SQLite. At 142 sources × ~2KB avg response = ~284KB. Negligible.
+
+**Subject-to-source mapping** (the bridge from claims to sources):
+
+The claim schema uses `{subject: "bitcoin", metric: "hash_rate"}`. The catalog uses provider/URL/topics. The bridge is a precomputed index:
+
+```
+subject_metric_index (SQLite table, rebuilt on catalog change)
+┌──────────────────────────────────────────────────────────────┐
+│  subject: string      (normalized: "bitcoin", "compound")    │
+│  metric: string       (normalized: "hash_rate", "tvl")       │
+│  source_id: string    (FK to catalog)                        │
+│  priority: number     (preference order: official > generic) │
+│  INDEX on (subject, metric)                                  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Built from catalog metadata: source topics → subjects, source domainTags → metrics. When the pipeline needs a source for `{subject: "bitcoin", metric: "hash_rate"}`:
+
+```sql
+SELECT source_id FROM subject_metric_index
+WHERE subject = 'bitcoin' AND metric = 'hash_rate'
+ORDER BY priority DESC;
+-- Returns: ["blockchain-info-stats", "mempool-mining", "bitinfocharts"]
+```
+
+Then fetch them in parallel (`Promise.race`) — first healthy source wins.
+
+### 5.4 Reaction Count Caching
+
+Reaction counts are the hidden scalability wall. The chain scanner's linear pagination (1000 tx cap) misses reactions on older posts. Re-scanning the full chain every session is O(total_transactions), not O(our_posts).
+
+**Solution: Cache reaction counts in SQLite, update incrementally.**
+
+```
+reaction_cache (SQLite table)
+┌──────────────────────────────────────────────────┐
+│  post_tx_hash: string (PK)                       │
+│  agrees: number                                  │
+│  disagrees: number                               │
+│  tips_count: number                              │
+│  tips_total_dem: number                          │
+│  reply_count: number                             │
+│  last_updated_at: ISO timestamp                  │
+│  INDEX on (last_updated_at)                      │
+└──────────────────────────────────────────────────┘
+```
+
+**Update strategy (runs in CONFIRM, batched):**
+
+```
+function updateReactionCounts(cache, sdk):
+  // Tier 1: posts < 48h old → fetch from chain (reactions still arriving)
+  recentPosts = cache.getOurPosts(since: 48h_ago)
+  if recentPosts.length > 0:
+    freshReactions = sdk.getHiveReactions(recentPosts.map(p => p.txHash))
+    for (hash, counts) in freshReactions:
+      cache.reactionCache.upsert(hash, counts, updatedAt: now())
+
+  // Tier 2: posts 48h-30d old → trust cached counts (reactions stabilized)
+  // No chain fetch. Use whatever was last cached.
+
+  // Tier 3: posts > 30d old → not tracked for performance scoring
+```
+
+**Why 48h threshold:** Simulation data shows most reactions arrive within 24-48h. After that, counts stabilize. Fetching reactions for 200 posts from the last 30 days would be 200 RPC calls. Fetching only <48h posts = ~10-20 posts = 1 batched call.
+
+**Performance tracker in CONFIRM now:**
+```
+function trackPostPerformance(cache):
+  // Read cached reaction counts — NO chain calls for >48h posts
+  ourPosts = cache.getOurPostsWithReactions(since: 30_DAYS_AGO)
+  for post in ourPosts:
+    post.performance = computePerformanceScore(
+      post.cachedReactions, weights, colonyAvg
+    )
+  return { posts: ourPosts, topPerformers, avgScore, insights }
+```
+
+Time: <100ms (pure SQLite reads + computation). The chain fetch for <48h posts is the only I/O: 1 batched call, ~1-3s.
+
+### 5.5 Scan Resilience
+
+**Per-post error handling (prevents cursor stuck state):**
+
+```
+function incrementalScan(cache, sdk):
+  newPosts = sdk.getHivePosts(since: cache.cursor, limit: 500)
+
+  for post in newPosts:
+    try {
+      decoded = decodeHiveData(post.data)
+      // ... index, extract claims, etc.
+      cache.cursor = max(cache.cursor, post.blockNumber)
+    } catch (err) {
+      // Log the failure, skip this post, advance cursor PAST it
+      cache.decodeFailures.insert(post.txHash, err.message, post.blockNumber)
+      cache.cursor = max(cache.cursor, post.blockNumber)
+      // Don't let one bad post block all future scans
+    }
+```
+
+**Parallel operations in SENSE:**
+
+```
+// Scan + reaction update are independent — run in parallel
+const [scanResult, _] = await Promise.all([
+  incrementalScan(cache, sdk),           // new posts since cursor
+  updateReactionCounts(cache, sdk),      // reaction counts for <48h posts
+])
+// Colony state extraction runs AFTER scan completes (needs fresh data)
+const colonyState = extractColonyState(cache)
+const evidence = computeAvailableEvidence(sourceCache, catalog)
+```
+
+**Parallel source probing in attestation hunt:**
+
+```
+// Don't try sources sequentially — race them
+function findAttestationSource(claim, candidateSources):
+  const probes = candidateSources.map(source =>
+    fetchForAttestation(source.id, sourceCache)
+      .then(response => ({ source, response, ok: response.status === 200 }))
+      .catch(() => ({ source, response: null, ok: false }))
+  )
+  // First healthy response wins
+  const results = await Promise.all(probes)
+  return results.find(r => r.ok && r.response.body.length > MIN_RICHNESS)
+```
+
+**Cross-session source health circuit breaker:**
+
+```
+// In source response cache: consecutiveFailures >= 3 → skip
+// Reset on successful fetch. Recheck degraded sources every 10 sessions.
+function shouldSkipSource(source, sourceCache):
+  cached = sourceCache.get(source.id)
+  if cached.consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD:
+    if cached.lastAttemptSession < currentSession - RECHECK_INTERVAL:
+      return false  // give it another try after 10 sessions
+    return true     // still degraded, skip
+  return false
+```
+
+### 5.6 Claim Extraction Efficiency
+
+**SENSE/bootstrap: regex-only.** No LLM calls during scanning. This is critical for performance:
+- 8,000 posts × regex = ~160ms
+- 8,000 posts × LLM fallback on 20% = 320 seconds (showstopper)
+
+**ACT: LLM on demand.** When the strategy considers engaging with or replying to a post, AND the regex tier found no claims for that post, THEN trigger LLM claim extraction for that specific post. This is 0-3 LLM calls per session (only for posts we're actively interacting with), not 1,600.
+
+**Consequence:** The claim ledger for other agents' posts has ~80% coverage (regex captures numeric claims). Non-numeric claims ("governance proposal passed") are missing from the ledger until we interact with those posts. This is acceptable — dedup for editorial claims is less critical than for data claims.
+
 ## 6. Strategy Engine
 
 The strategy engine replaces the fixed ENGAGE → GATE → PUBLISH sequence with a decision function.
@@ -863,6 +1082,9 @@ Any agent on any chain can use these. They are mechanisms, not opinions.
 | `toolkit/colony/mentions.ts` | Mention/thread/reply detection and linking | Text analysis primitive — detects structure, doesn't decide action |
 | `toolkit/colony/attestations.ts` | Attestation extraction, indexing, and verification from HIVE posts | Reads chain proofs, verifies data matches claims — pure verification |
 | `toolkit/colony/claim-ledger.ts` | Claim deduplication index — tracks every attested fact in the colony | Lookup primitive — "has this fact been attested already?" |
+| `toolkit/sources/response-cache.ts` | Source response TTL cache in SQLite — stores last response per source | Storage primitive — no opinions on freshness thresholds (those come from catalog/strategy) |
+| `toolkit/sources/subject-metric-index.ts` | Maps `{subject, metric}` → source candidates, rebuilt from catalog | Lookup index — bridges claim schema to source catalog |
+| `toolkit/colony/reaction-cache.ts` | Cached reaction counts per post, updated incrementally (<48h live, older cached) | Storage + update primitive — no opinion on what counts as "good" engagement |
 | `toolkit/publish/signal-first-pipeline.ts` | Accepts a prompt string → LLM draft → attestation hunt → faithfulness gate → finalize/revise/ditch loop | Publishing orchestration — prompt is an INPUT, not hardcoded. Strategy owns the prompt. |
 | `toolkit/publish/faithfulness-gate.ts` | Typed claim verification: subject binding + value match + unit + freshness | Verification primitive — checks structured claims against attested data |
 | `toolkit/publish/claim-extractor.ts` | Two-tier claim extraction: regex (numbers + ASSET_MAP) then LLM fallback | Returns `StructuredClaim[]` — reusable by any agent |
@@ -898,13 +1120,21 @@ Build the attestation feedback loop as a toolkit primitive. This is the proven w
 - Test: pipeline with mock LLM + mock attestation. Faithfulness gate pass/fail/revise paths. Loop-breaking at max attempts. Ditch path produces no post.
 - **Measurement gate:** Run 5 sessions. Compare attestation relevance and post quality against H0 baseline before proceeding to Phase 2.
 
-### Phase 2: Colony Cache (intelligence foundation)
-Build the incremental scanner and colony cache as toolkit primitives. SQLite from day one — this is a full HIVE mirror that will grow to millions of posts.
+### Phase 2: Colony Cache + Evidence Layer (intelligence foundation)
+Build the colony mirror, source response cache, reaction cache, and subject-metric index. SQLite from day one.
 - New toolkit: `src/toolkit/colony/cache.ts` (SQLite schema, migrations, indexed queries), `scanner.ts`, `state.ts`, `mentions.ts`
+- New toolkit: `src/toolkit/colony/reaction-cache.ts` (tiered update: <48h live, older cached)
+- New toolkit: `src/toolkit/sources/response-cache.ts` (TTL cache, circuit breaker)
+- New toolkit: `src/toolkit/sources/subject-metric-index.ts` (claim → source bridge)
 - Uses existing toolkit: `getHivePosts()`, `getRepliesTo()`, `getHiveReactionsByAuthor()`, `decodeHiveData()`
-- Add `--bootstrap` flag (scan-only, no ACT/CONFIRM) and `--dry-run` flag (SENSE + strategy decision, no broadcast)
+- Per-post error handling in scan loop (try/catch, skip bad posts, advance cursor)
+- Scan-phase claim extraction is regex-only (no LLM). LLM deferred to ACT.
+- Parallel: `Promise.all([incrementalScan(), updateReactionCounts()])`
+- Parallel: attestation hunt uses `Promise.all()` on candidate sources, first healthy wins
+- Add `--bootstrap` flag (scan-only, no ACT/CONFIRM) and `--dry-run` flag (SENSE + strategy, no broadcast)
 - Mention trust filtering: don't auto-reply to unknown/low-reputation addresses
-- Test: scan chain, build cache, verify thread linking, mention detection, author trust filtering
+- Cross-session source health circuit breaker (3 consecutive failures → deprioritize)
+- Test: scan chain, build cache, verify thread linking, mention detection, author trust filtering, reaction cache tiering, source response TTL, circuit breaker behavior
 
 ### Phase 3: Strategy Engine + Performance Tracker
 Build the engine as toolkit, rules as strategy YAML. Only after Phase 1 proves quality improvement.
