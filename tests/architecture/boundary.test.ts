@@ -239,13 +239,15 @@ describe("Deprecated Shim Validation — ADR-0002", () => {
   it("deprecated shims must not contain logic beyond re-exports", () => {
     const violations: string[] = [];
     for (const { rel, source } of shims) {
-      // Count non-comment, non-blank lines — a shim should have ≤3
-      const meaningful = source.split("\n").filter((l) => {
-        const t = l.trim();
-        return t && !t.startsWith("//") && !t.startsWith("/*") && !t.startsWith("*") && !t.startsWith("*/");
-      });
-      if (meaningful.length > 3) {
-        violations.push(`  ${rel} has ${meaningful.length} meaningful lines (expected ≤3 for a shim)`);
+      // A shim should only have export/import statements, no other code.
+      // Count statements that aren't export/import — robust against any comment style.
+      const statements = source.split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith("//") && !l.startsWith("/*") && !l.startsWith("*") && !l.startsWith("*/") && !l.startsWith("/**"))
+        .filter((l) => !l.startsWith("export ") && !l.startsWith("import "));
+
+      if (statements.length > 0) {
+        violations.push(`  ${rel} has non-export statements: ${statements[0]}`);
       }
     }
     expect(violations, formatViolations("shim contains logic", violations)).toHaveLength(0);
