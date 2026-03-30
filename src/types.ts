@@ -11,6 +11,24 @@
 
 import type { LLMProvider } from "./lib/llm/llm-provider.js";
 import type { AgentConfig } from "./lib/agent-config.js";
+import type {
+  AgentEvent,
+  EventAction,
+  EventHandler,
+  EventSource,
+} from "./toolkit/reactive/types.js";
+export type {
+  AgentEvent,
+  EventAction,
+  EventActionLike,
+  EventHandler,
+  EventSource,
+  OmniwebAction,
+  OmniwebActionType,
+  SCAction,
+  SCActionType,
+  WatermarkStore,
+} from "./toolkit/reactive/types.js";
 
 // ── Core Plugin Types ───────────────────────────────
 
@@ -167,63 +185,6 @@ export interface FrameworkPlugin {
   destroy?(): Promise<void>;
 }
 
-// ── Event-Driven Types ──────────────────────────────
-
-/**
- * An event emitted by a source after diff/filter.
- * T is the source-specific payload type.
- */
-export interface AgentEvent<T = unknown> {
-  /** Unique event ID (source:type:timestamp:hash) */
-  id: string;
-  /** Which source produced this event */
-  sourceId: string;
-  /** Event type (e.g., "reply", "ask_mention", "balance_changed") */
-  type: string;
-  /** When the event was detected (Unix ms) */
-  detectedAt: number;
-  /** Source-specific payload */
-  payload: T;
-  /** The watermark AFTER this event (for persistence) */
-  watermark: unknown;
-}
-
-/** SC-tier action types (SuperColony feed operations) */
-export type SCActionType = "publish" | "reply" | "react" | "tip" | "log_only";
-
-/** Omniweb-tier action types (full Demos ecosystem operations) */
-export type OmniwebActionType =
-  | SCActionType
-  // Economic
-  | "transfer"          // DEM transfer to address
-  | "bridge"            // Cross-chain asset movement via XM SDK
-  // Storage
-  | "store"             // Write to Storage Program (on-chain state)
-  // Attestation (standalone, decoupled from publish)
-  | "attest"            // Attest URL via DAHR/TLSN, store proof
-  // Workflow
-  | "workflow"          // Execute DemosWork multi-step operation
-  | "assign_task"       // Write task to Storage Program for another agent
-  // Privacy
-  | "private_transfer"  // L2PS encrypted DEM transfer
-  | "zk_prove";         // Generate ZK proof of identity/state
-
-/**
- * An action to execute in response to an event.
- * Actions are the side-effect boundary — handlers return these,
- * the executor applies rate limits and executes.
- *
- * SC agents use SCActionType (5 types).
- * Omniweb agents use OmniwebActionType (13 types).
- * The union is kept broad for forward compatibility.
- */
-export interface EventAction {
-  /** Action type determines the executor */
-  type: OmniwebActionType;
-  /** Action-specific parameters */
-  params: Record<string, unknown>;
-}
-
 // ── Omniweb Action Param Interfaces ─────────────────
 
 /** Params for "transfer" action — DEM transfer to address */
@@ -250,69 +211,6 @@ export interface AttestParams {
   method?: "dahr" | "tlsn";
   storeProof?: boolean;
   storageAddress?: string;
-}
-
-/**
- * A pollable event source. T is the snapshot type.
- *
- * EventSource declares WHAT to poll and HOW to diff.
- * The EventLoop runtime executes the poll-diff-dispatch cycle.
- */
-export interface EventSource<T = unknown> {
-  /** Unique source identifier */
-  id: string;
-  /** Human-readable description */
-  description: string;
-  /** Event types this source can emit */
-  eventTypes: string[];
-
-  /**
-   * Fetch current state. Returns a snapshot.
-   * Must be idempotent and side-effect-free.
-   */
-  poll(): Promise<T>;
-
-  /**
-   * Compare two snapshots and emit events.
-   * Returns empty array if nothing changed.
-   * prev is null on first poll (no prior state).
-   */
-  diff(prev: T | null, curr: T): AgentEvent[];
-
-  /**
-   * Extract the watermark from a snapshot for persistence.
-   */
-  extractWatermark(snapshot: T): unknown;
-}
-
-/**
- * Handles events from one or more sources.
- * Handlers are pure: they receive an event and produce an action (or nothing).
- * Side effects go in the action executor, not the handler.
- */
-export interface EventHandler {
-  /** Handler name (for logging) */
-  name: string;
-  /** Which event types this handler processes */
-  eventTypes: string[];
-  /**
-   * Process an event. Returns an action to execute, or null to skip.
-   * MUST NOT have side effects.
-   */
-  handle(event: AgentEvent): Promise<EventAction | null>;
-}
-
-/**
- * Persistent watermark storage.
- * Decoupled from the event loop so it can be file-based, SQLite, or in-memory for tests.
- */
-export interface WatermarkStore {
-  /** Load watermark for a source. Returns null if first run. */
-  load(sourceId: string): Promise<unknown | null>;
-  /** Save watermark after successful processing. */
-  save(sourceId: string, watermark: unknown): Promise<void>;
-  /** Load all watermarks (for diagnostics). */
-  loadAll(): Promise<Record<string, unknown>>;
 }
 
 /**

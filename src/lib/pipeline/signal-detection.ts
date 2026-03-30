@@ -21,23 +21,38 @@ import type { EvidenceEntry } from "../sources/providers/types.js";
 import type { SourceRecordV2 } from "../sources/catalog.js";
 import type { FetchSourceResult } from "../sources/fetch.js";
 import type { ExtractedClaim } from "../attestation/claim-extraction.js";
+import {
+  calculateMAD,
+  calculateZScore,
+  getBaselineMedian,
+  getBaselineObservations,
+  MAD_FLOOR,
+  MAD_MULTIPLIER,
+  MIN_BASELINE_SAMPLES,
+  recordBaselineValue,
+  winsorize,
+  ZSCORE_THRESHOLD,
+  type BaselineEntry,
+  type BaselineObservation,
+  type BaselineStore,
+  type MetricWindows,
+} from "../../toolkit/math/baseline.js";
+export {
+  calculateMAD,
+  calculateZScore,
+  winsorize,
+} from "../../toolkit/math/baseline.js";
+export type {
+  BaselineEntry,
+  BaselineObservation,
+  BaselineStore,
+  MetricWindows,
+} from "../../toolkit/math/baseline.js";
 
 // ── Constants ─────────────────────────────────────────
 
-/** Ring buffer capacity per window */
-const RING_BUFFER_CAPACITY = 20;
-
-/** Minimum baseline samples before change detection activates */
-const MIN_BASELINE_SAMPLES = 3;
-
 /** Maximum age (ms) for baseline entries before pruning on load */
 const MAX_BASELINE_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-/** Floor for MAD to prevent division-by-zero when all values are identical */
-const MAD_FLOOR = 0.001;
-
-/** MAD multiplier for outlier detection */
-const MAD_MULTIPLIER = 3;
 
 /** Anti-signal divergence threshold (%) — must be strictly greater */
 const ANTI_SIGNAL_DIVERGENCE_THRESHOLD = 10;
@@ -116,39 +131,6 @@ export interface DetectedSignal {
 }
 
 /**
- * A single observation in a ring buffer.
- */
-export interface BaselineObservation {
-  value: number;
-  fetchedAt: string; // ISO timestamp
-}
-
-/**
- * Ring buffers per time window for a single metric.
- */
-export interface MetricWindows {
-  windows: {
-    "1h": BaselineObservation[];
-    "4h": BaselineObservation[];
-    "24h": BaselineObservation[];
-  };
-}
-
-/**
- * Baseline data for a single source — metrics keyed by name.
- */
-export interface BaselineEntry {
-  metrics: Record<string, MetricWindows>;
-  samples: number;
-  lastUpdated: string; // ISO timestamp
-}
-
-/**
- * The full baseline store — one entry per source ID.
- */
-export type BaselineStore = Record<string, BaselineEntry>;
-
-/**
  * Domain-specific signal detection configuration.
  */
 export interface SignalDetectionConfig {
@@ -216,11 +198,6 @@ function isStale(
   return age > limit;
 }
 
-// ── MAD (Median Absolute Deviation) ───────────────────
-
-/**
- * Calculate median of a sorted array of numbers.
- */
 function median(sorted: number[]): number {
   if (sorted.length === 0) return 0;
   const mid = Math.floor(sorted.length / 2);
@@ -230,71 +207,14 @@ function median(sorted: number[]): number {
   return sorted[mid];
 }
 
-/**
- * Calculate Median Absolute Deviation.
- * Returns 0 for arrays with fewer than 2 elements.
- */
-export function calculateMAD(values: number[]): number {
-  if (values.length < 2) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const med = median(sorted);
-  const deviations = values.map(v => Math.abs(v - med)).sort((a, b) => a - b);
-  return median(deviations);
-}
-
-/**
- * Winsorize values: clamp outliers beyond 3 MADs from median.
- * Returns a new array with outliers replaced by boundary values.
- */
-export function winsorize(values: number[]): number[] {
-  if (values.length < 3) return [...values];
-  const sorted = [...values].sort((a, b) => a - b);
-  const med = median(sorted);
-  const mad = calculateMAD(values);
-  const effectiveMAD = Math.max(mad, MAD_FLOOR);
-  const lower = med - MAD_MULTIPLIER * effectiveMAD;
-  const upper = med + MAD_MULTIPLIER * effectiveMAD;
-  return values.map(v => Math.max(lower, Math.min(upper, v)));
-}
-
 // ── Z-Score (Phase 5) ────────────────────────────────
 
 /** Minimum observations before z-score activates (cold-start guard) */
-const MIN_ZSCORE_SAMPLES = 15;
-
-/** Default z-score threshold for significance */
-const ZSCORE_THRESHOLD = 2.5;
-
 /** Minimum |changePercent| for convergence inclusion */
 const CONVERGENCE_MAGNITUDE_THRESHOLD = 1;
 
 /** Minimum distinct sources for convergence */
 const CONVERGENCE_MIN_SOURCES = 3;
-
-/**
- * Calculate z-score for a value against a set of observations.
- * Uses MAD (median absolute deviation) as robust scale estimator.
- * Returns null if fewer than MIN_ZSCORE_SAMPLES observations.
- *
- * Note: This is an unscaled MAD z-score (no 1.4826 consistency constant).
- * The ZSCORE_THRESHOLD of 2.5 is calibrated to this formula. To compare
- * with conventional modified z-scores, multiply by 1.4826.
- */
-export function calculateZScore(
-  value: number,
-  observations: BaselineObservation[],
-): number | null {
-  if (observations.length < MIN_ZSCORE_SAMPLES) return null;
-
-  const values = observations.map(o => o.value);
-  const cleaned = winsorize(values);
-  const sorted = [...cleaned].sort((a, b) => a - b);
-  const med = median(sorted);
-  const mad = calculateMAD(cleaned);
-  const effectiveMAD = Math.max(mad, MAD_FLOOR);
-
-  return (value - med) / effectiveMAD;
-}
 
 // ── Baseline Persistence ──────────────────────────────
 
@@ -335,35 +255,7 @@ export function updateBaseline(
   value: number,
   fetchedAt: string,
 ): void {
-  if (!store[sourceId]) {
-    store[sourceId] = {
-      metrics: {},
-      samples: 0,
-      lastUpdated: fetchedAt,
-    };
-  }
-
-  const entry = store[sourceId];
-
-  if (!entry.metrics[metricKey]) {
-    entry.metrics[metricKey] = {
-      windows: { "1h": [], "4h": [], "24h": [] },
-    };
-  }
-
-  const obs: BaselineObservation = { value, fetchedAt };
-  const metricWindows = entry.metrics[metricKey].windows;
-
-  for (const windowKey of WINDOW_KEYS) {
-    metricWindows[windowKey].push(obs);
-    // Evict oldest if over capacity
-    while (metricWindows[windowKey].length > RING_BUFFER_CAPACITY) {
-      metricWindows[windowKey].shift();
-    }
-  }
-
-  entry.samples++;
-  entry.lastUpdated = fetchedAt;
+  recordBaselineValue(store, sourceId, metricKey, value, fetchedAt);
 }
 
 /**
@@ -387,57 +279,6 @@ function pruneOldEntries(store: BaselineStore): void {
     }
     entry.samples = totalSamples;
   }
-}
-
-// ── Baseline Querying ─────────────────────────────────
-
-/**
- * Get observations for a source metric from a specific window.
- * Returns empty array if not found.
- */
-function getBaselineObservations(
-  store: BaselineStore | null,
-  sourceId: string,
-  metricKey: string,
-  window: typeof WINDOW_KEYS[number] = "24h",
-): BaselineObservation[] {
-  if (!store) return [];
-  const entry = store[sourceId];
-  if (!entry) return [];
-  const metricData = entry.metrics[metricKey];
-  if (!metricData) return [];
-  return metricData.windows[window];
-}
-
-/**
- * Get the median value from a window for a source metric.
- * Returns null if fewer than MIN_BASELINE_SAMPLES observations.
- * Winsorizes outliers (MAD-based) before computing median.
- */
-function getBaselineMedian(
-  store: BaselineStore | null,
-  sourceId: string,
-  metricKey: string,
-  window: typeof WINDOW_KEYS[number] = "24h",
-): number | null {
-  const observations = getBaselineObservations(store, sourceId, metricKey, window);
-  if (observations.length < MIN_BASELINE_SAMPLES) return null;
-
-  const values = observations.map(o => o.value);
-  const cleaned = values.length >= 3 ? winsorize(values) : values;
-  const sorted = [...cleaned].sort((a, b) => a - b);
-  return median(sorted);
-}
-
-/**
- * Count observations in the 24h window for a metric.
- */
-function getBaselineSampleCount(
-  store: BaselineStore | null,
-  sourceId: string,
-  metricKey: string,
-): number {
-  return getBaselineObservations(store, sourceId, metricKey, "24h").length;
 }
 
 // ── Signal Detection Engine ───────────────────────────

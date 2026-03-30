@@ -34,8 +34,12 @@ import { attestAndPublish, type PublishInput } from "../src/actions/publish-pipe
 import { generatePost, type GeneratePostInput } from "../src/actions/llm.js";
 import { createActionExecutor, type ActionExecutorContext } from "../src/actions/action-executor.js";
 import { resolveProvider } from "../src/lib/llm/llm-provider.js";
-import { createFileWatermarkStore } from "../src/reactive/watermark-store.js";
-import { startEventLoop, type SourceRegistration } from "../src/reactive/event-loop.js";
+import { createFileWatermarkStore } from "../src/toolkit/reactive/watermark-store.js";
+import {
+  startEventLoop,
+  type EventLoop,
+  type SourceRegistration,
+} from "../src/toolkit/reactive/event-loop.js";
 
 import { createSocialReplySource, type ReplyPost } from "../src/reactive/event-sources/social-replies.js";
 import { createSocialMentionSource, type MentionPost } from "../src/reactive/event-sources/social-mentions.js";
@@ -52,7 +56,7 @@ import { createTipThanksHandler } from "../src/reactive/event-handlers/tip-thank
 import { createDisagreeHandler } from "../src/reactive/event-handlers/disagree-handler.js";
 
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
-import type { AgentEvent, EventAction, EventHandler } from "../src/types.js";
+import type { AgentEvent, EventHandler, OmniwebAction } from "../src/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -288,7 +292,7 @@ async function main(): Promise<void> {
 
   // ── Create Handlers ────────────────────────────
 
-  const handlers: EventHandler[] = [
+  const handlers: EventHandler<OmniwebAction>[] = [
     createReplyHandler(),
     createMentionHandler(),
     createTipThanksHandler(),
@@ -364,7 +368,7 @@ async function main(): Promise<void> {
 
   // ── Start Loop ─────────────────────────────────
 
-  const loop = startEventLoop(
+  const loop: EventLoop<OmniwebAction> = startEventLoop<OmniwebAction>(
     { agent: flags.agent },
     sources,
     handlers,

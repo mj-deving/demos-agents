@@ -46,6 +46,14 @@ const SHIM_CASES = [
     oldPath: "../../src/lib/sources/providers/declarative-engine.js",
     newPath: "../../src/toolkit/providers/declarative-engine.js",
   },
+  {
+    oldPath: "../../src/reactive/event-loop.js",
+    newPath: "../../src/toolkit/reactive/event-loop.js",
+  },
+  {
+    oldPath: "../../src/reactive/watermark-store.js",
+    newPath: "../../src/toolkit/reactive/watermark-store.js",
+  },
 ] as const;
 
 const TOOLKIT_FILES = [
@@ -59,6 +67,10 @@ const TOOLKIT_FILES = [
   "src/toolkit/network/storage-client.ts",
   "src/toolkit/providers/declarative-engine.ts",
   "src/toolkit/providers/types.ts",
+  "src/toolkit/reactive/event-loop.ts",
+  "src/toolkit/reactive/watermark-store.ts",
+  "src/toolkit/math/baseline.ts",
+  "src/toolkit/chain/tx-pipeline.ts",
 ] as const;
 
 const FORBIDDEN_IMPORT_PATTERNS = [
@@ -148,6 +160,23 @@ describe("Phase 2 re-export shims", () => {
 
     expectTypeOf<CoreProviderAdapter>().toEqualTypeOf<ToolkitProviderAdapter>();
     expectTypeOf<CoreDeclarativeProviderSpec>().toEqualTypeOf<ToolkitDeclarativeProviderSpec>();
+  });
+
+  it("exposes Phase 3 reactive and chain primitives from the toolkit barrel and core package", async () => {
+    const toolkit = await import("../../src/toolkit/index.js");
+    const core = await import("@demos-agents/core");
+    const reactive = await import("../../src/toolkit/reactive/event-loop.js");
+    const watermarks = await import("../../src/toolkit/reactive/watermark-store.js");
+    const chain = await import("../../src/toolkit/chain/tx-pipeline.js");
+
+    expect(toolkit.startEventLoop).toBe(reactive.startEventLoop);
+    expect(toolkit.nextInterval).toBe(reactive.nextInterval);
+    expect(toolkit.createFileWatermarkStore).toBe(watermarks.createFileWatermarkStore);
+    expect(toolkit.createMemoryWatermarkStore).toBe(watermarks.createMemoryWatermarkStore);
+    expect(toolkit.executeChainTx).toBe(chain.executeChainTx);
+
+    expect(core.startEventLoop).toBe(toolkit.startEventLoop);
+    expect(core.executeChainTx).toBe(toolkit.executeChainTx);
   });
 });
 

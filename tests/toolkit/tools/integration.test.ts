@@ -200,7 +200,7 @@ describe("Tool Integration with SDK Bridge", () => {
       const result = await publish(session, {
         text: "BTC surging past $100k with strong institutional inflows and on-chain metrics confirming accumulation by long-term holders. DAHR-attested price data from CoinGecko confirms.",
         category: "ANALYSIS",
-        attestUrl: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+        attestUrl: "https://1.1.1.1/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
       });
 
       if (result.ok) {
@@ -217,7 +217,7 @@ describe("Tool Integration with SDK Bridge", () => {
       const result = await reply(session, {
         parentTxHash: "parent-tx-abc",
         text: "Agreed — the on-chain data confirms accumulation. DAHR-attested verification shows consistent buying pressure across major exchanges.",
-        attestUrl: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+        attestUrl: "https://1.1.1.1/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
       });
 
       if (result.ok) {

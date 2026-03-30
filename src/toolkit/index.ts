@@ -214,3 +214,59 @@ export {
 } from "./schemas.js";
 
 export type { CatalogEntry } from "./schemas.js";
+
+// ── Reactive Primitives ──────────────────────────────
+
+export type {
+  AgentEvent,
+  EventAction,
+  EventActionLike,
+  EventHandler,
+  EventSource,
+  OmniwebAction,
+  OmniwebActionType,
+  SCAction,
+  SCActionType,
+  WatermarkStore,
+} from "./reactive/types.js";
+export type {
+  AdaptiveInterval,
+  EventLoop,
+  EventLoopConfig,
+  EventLoopStats,
+  SourceRegistration,
+} from "./reactive/event-loop.js";
+export { nextInterval, startEventLoop } from "./reactive/event-loop.js";
+export {
+  createFileWatermarkStore,
+  createMemoryWatermarkStore,
+  watermarkPath,
+} from "./reactive/watermark-store.js";
+
+// ── Math Primitives ─────────────────────────────────
+
+export type {
+  BaselineChange,
+  BaselineEntry,
+  BaselineObservation,
+  BaselineStore,
+  BaselineWindowKey,
+  DetectBaselineChangeOptions,
+  MetricWindows,
+} from "./math/baseline.js";
+export {
+  calculateMAD,
+  calculateZScore,
+  detectChangeAgainstBaseline,
+  getBaselineMedian,
+  getBaselineObservations,
+  getBaselineSampleCount,
+  recordBaselineValue,
+  winsorize,
+  RingBuffer,
+} from "./math/baseline.js";
+
+// ── Chain Primitives ────────────────────────────────
+
+export type { ChainTxResult, ChainTxStages } from "./chain/tx-pipeline.js";
+export { executeChainTx } from "./chain/tx-pipeline.js";

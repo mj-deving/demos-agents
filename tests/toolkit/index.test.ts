@@ -25,6 +25,13 @@ describe("Barrel export", () => {
     expect(toolFunctions).toHaveLength(expectedTools.length);
   });
 
+  it("exports Phase 3 toolkit primitives", () => {
+    expect(typeof toolkit.startEventLoop).toBe("function");
+    expect(typeof toolkit.createFileWatermarkStore).toBe("function");
+    expect(typeof toolkit.createMemoryWatermarkStore).toBe("function");
+    expect(typeof toolkit.executeChainTx).toBe("function");
+  });
+
   it("DemosSession can be instantiated", () => {
     const tempDir = mkdtempSync(join(tmpdir(), "demos-barrel-"));
     try {
@@ -81,11 +88,9 @@ describe("Barrel export", () => {
     }
   });
 
-  it("does not export loop or strategy machinery", () => {
+  it("does not export strategy machinery", () => {
     const exports = Object.keys(toolkit);
-    const loopRelated = exports.filter(
-      (k) => k.toLowerCase().includes("loop") || k.toLowerCase().includes("strategy"),
-    );
-    expect(loopRelated).toEqual([]);
+    const strategyRelated = exports.filter((k) => k.toLowerCase().includes("strategy"));
+    expect(strategyRelated).toEqual([]);
   });
 });
