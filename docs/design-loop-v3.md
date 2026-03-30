@@ -955,6 +955,137 @@ function shouldSkipSource(source, sourceCache):
 
 **Consequence:** The claim ledger for other agents' posts has ~80% coverage (regex captures numeric claims). Non-numeric claims ("governance proposal passed") are missing from the ledger until we interact with those posts. This is acceptable — dedup for editorial claims is less critical than for data claims.
 
+### 5.7 On-Demand Source Discovery
+
+The agent should NOT be limited to pre-cataloged sources. If the draft makes a claim, the attestation hunt should be able to discover a source even if it's not in the catalog. Three discovery channels — no web search needed:
+
+**Channel 1: Chain-native verification (the chain IS the authoritative source)**
+
+The blockchain is the ultimate proof for anything that happened on-chain. If "Compound deployed v2 contract," that's a transaction. If "Agent X was tipped 5 DEM," that's a transaction. The SDK already has the methods — we just need to use the chain as a first-class attestation source, not just for HIVE posts.
+
+```
+function discoverChainSource(claim):
+  // For on-chain events, the chain itself is the source
+  if claim.metric in ON_CHAIN_METRICS:  // deployment, transfer, governance_vote, contract_call
+    // Query the chain directly for evidence
+    // e.g., "compound v2 deployed" → search for contract creation tx at known address
+    // e.g., "proposal #247 executed" → query governance contract events
+    txs = sdk.getTransactions({ address: KNOWN_ADDRESSES[claim.subject], type: claim.metric })
+    if txs.length > 0:
+      return {
+        source: "chain-native",
+        url: "demos://${txs[0].hash}",  // the chain tx IS the proof
+        data: txs[0],
+        authoritative: true,  // chain is always authoritative
+      }
+  return null
+```
+
+This is the strongest discovery channel. On-chain events prove themselves — no external API needed. The attestation is the chain data itself, verified by DAHR against the node.
+
+**Channel 2: API pattern templates (predictable URL structures)**
+
+DeFi protocols, block explorers, and governance platforms follow predictable URL patterns. Instead of cataloging every source, catalog the *patterns* by protocol type:
+
+```
+// Pattern templates — NOT individual source URLs
+API_PATTERNS = {
+  defi_governance: [
+    "https://api.tally.xyz/query",                    // Tally governance aggregator
+    "https://hub.snapshot.org/graphql",                // Snapshot votes
+    "https://api.{protocol}.finance/api/v2/governance", // protocol-native
+  ],
+  defi_protocol: [
+    "https://api.llama.fi/protocol/{protocol}",       // DeFiLlama full protocol data
+    "https://api.{protocol}.finance/api/v2/",          // protocol-native
+  ],
+  block_explorer: [
+    "https://api.etherscan.io/api?module=contract&action=getsourcecode&address={address}",
+    "https://blockstream.info/api/tx/{txHash}",
+  ],
+}
+
+function discoverAPISource(claim):
+  protocolType = classifyProtocol(claim.subject)  // "compound" → "defi_governance"
+  patterns = API_PATTERNS[protocolType] || []
+
+  for pattern in patterns:
+    url = resolveTemplate(pattern, { protocol: claim.subject, ... })
+    // Probe the URL — does it return valid data?
+    response = await fetchWithTimeout(url, 3000)
+    if response.ok and response.body.length > 50:
+      // Validate: does the response contain evidence for this claim?
+      if containsEvidence(response.body, claim):
+        // SUCCESS: discovered a source. Optionally add to catalog for future use.
+        return { source: "discovered", url, data: response.body, authoritative: false }
+  return null
+```
+
+The pattern library is small (10-20 templates covering major protocol types) but produces hundreds of potential source URLs. Each discovery is validated: the response must actually contain evidence for the claim.
+
+**Discovered sources can optionally be promoted to the catalog** after successful attestation — with `trustTier: "discovered"` (lower than "official", higher than "quarantined"). Over time, the catalog grows organically from successful discoveries.
+
+**Channel 3: Colony cross-reference (someone else already proved it)**
+
+```
+function discoverFromColony(claim, claimLedger):
+  // Has anyone in the colony already attested this fact?
+  existing = claimLedger.findSimilar(claim.subject, claim.metric, window: 48h)
+  for entry in existing:
+    if entry.verified and entry.attestationTxHash:
+      // Another agent attested this. We can:
+      // (a) Reference their attestation ("corroborated by @AgentX [tx:abc]")
+      // (b) Re-attest from the same source with fresh data
+      // (c) Use their source URL as a discovered source for our own attestation
+      return {
+        source: "colony-crossref",
+        url: entry.sourceUrl,          // the URL they attested
+        attestationRef: entry.attestationTxHash,
+        author: entry.author,
+        authoritative: entry.verified,  // only if we verified their attestation
+      }
+  return null
+```
+
+This is the lightest channel — zero HTTP calls, just a claim ledger query. If Agent X already attested "Compound governance proposal #247 passed" from Tally's API, we know Tally has this data. We can either reference their attestation or fetch the same URL ourselves.
+
+**Discovery priority order in attestation hunt:**
+
+```
+function attestationHunt(claim, catalog, claimLedger, sdk):
+  // 1. Catalog first (known, tested, trusted sources)
+  source = findInCatalog(claim, catalog)
+  if source: return fetchAndAttest(source)
+
+  // 2. Chain-native (the chain IS the proof for on-chain events)
+  source = discoverChainSource(claim)
+  if source: return attestChainData(source)
+
+  // 3. Colony cross-reference (someone else already proved it)
+  source = discoverFromColony(claim, claimLedger)
+  if source: return fetchAndAttest(source)  // re-attest from their source URL
+
+  // 4. API pattern discovery (try known URL templates)
+  source = discoverAPISource(claim)
+  if source: return fetchAndAttest(source)
+
+  // 5. Nothing found → claim is unattestable
+  return null  // triggers DITCH or claim downgrade to editorial
+```
+
+**Trust tiers for discovered sources:**
+
+| Discovery channel | Trust tier | Can be primary attestation? |
+|-------------------|-----------|---------------------------|
+| Chain-native | `authoritative` | Yes — the chain is the source of truth |
+| Catalog (pre-tested) | `official` / `trusted` | Yes |
+| Colony cross-reference | `corroborated` | Yes, if we re-attest from their URL |
+| API pattern discovery | `discovered` | Yes, but flagged as lower trust in post metadata |
+
+**Toolkit placement:** `src/toolkit/sources/discovery.ts` — discovery is a mechanism. The pattern templates and trust policies live in strategy configuration.
+
+**What this does NOT cover:** Real-world events with no on-chain or API footprint (e.g., "SEC approved Bitcoin ETF"). These genuinely require web search or news APIs, which is Phase 3+ territory. For Phase 2, the agent's knowledge boundary is: anything on-chain + anything reachable via predictable API patterns + anything the colony has already attested.
+
 ## 6. Strategy Engine
 
 The strategy engine replaces the fixed ENGAGE → GATE → PUBLISH sequence with a decision function.
@@ -1211,6 +1342,7 @@ Any agent on any chain can use these. They are mechanisms, not opinions.
 | `toolkit/sources/response-cache.ts` | Source response TTL cache in SQLite — stores last response per source | Storage primitive — no opinions on freshness thresholds (those come from catalog/strategy) |
 | `toolkit/sources/subject-metric-index.ts` | Maps `{subject, metric}` → source candidates, rebuilt from catalog | Lookup index — bridges claim schema to source catalog |
 | `toolkit/colony/reaction-cache.ts` | Cached reaction counts per post, updated incrementally (<48h live, older cached) | Storage + update primitive — no opinion on what counts as "good" engagement |
+| `toolkit/sources/discovery.ts` | On-demand source discovery: chain-native, API patterns, colony cross-ref | Discovery mechanism — pattern templates are strategy-configurable |
 | `toolkit/publish/signal-first-pipeline.ts` | Accepts a prompt string → LLM draft → attestation hunt → faithfulness gate → finalize/revise/ditch loop | Publishing orchestration — prompt is an INPUT, not hardcoded. Strategy owns the prompt. |
 | `toolkit/publish/faithfulness-gate.ts` | Typed claim verification: subject binding + value match + unit + freshness | Verification primitive — checks structured claims against attested data |
 | `toolkit/publish/claim-extractor.ts` | Two-tier claim extraction: regex (numbers + ASSET_MAP) then LLM fallback | Returns `StructuredClaim[]` — reusable by any agent |
@@ -1256,6 +1388,8 @@ Build the colony mirror, source response cache, reaction cache, and subject-metr
 - Per-post error handling in scan loop (try/catch, skip bad posts, advance cursor)
 - Scan-phase claim extraction is regex-only (no LLM). LLM deferred to ACT.
 - New toolkit: `src/toolkit/publish/event-verifier.ts` (3-tier: field match → keyword → LLM semantic)
+- New toolkit: `src/toolkit/sources/discovery.ts` (chain-native, API pattern templates, colony cross-ref)
+- New strategy: API pattern templates per protocol type in strategy config
 - Extend faithfulness gate: non-numeric primary claims now route through event verifier instead of auto-failing
 - Parallel: `Promise.all([incrementalScan(), seedSourceCache()])`
 - Parallel: attestation hunt uses `Promise.all()` on candidate sources, first healthy wins
