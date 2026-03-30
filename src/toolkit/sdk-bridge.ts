@@ -18,6 +18,7 @@ import {
   resolvePostAuthor as readPostAuthor,
   verifyTransaction as readTransaction,
 } from "./chain-reader.js";
+import { executeChainTx } from "./chain/tx-pipeline.js";
 import { safeParse } from "./guards/state-helpers.js";
 import { encodeHivePayload } from "./hive-codec.js";
 
@@ -249,6 +250,10 @@ export function extractTxHash(confirmResult: unknown, broadcastResult?: unknown)
   return extract(confirmResult) ?? extract(broadcastResult);
 }
 
+function isMissingConfirmedTxHashError(error: unknown): boolean {
+  return error instanceof Error && error.message === "Confirmed transaction missing txHash";
+}
+
 // ── Factory ─────────────────────────────────────────
 
 /**
@@ -415,15 +420,22 @@ export function createSdkBridge(
       }
 
       const encoded = encodeHivePayload(hivePost);
+      const stages = {
+        store: (payload: Uint8Array) => tx.store(payload, demos),
+        confirm: (storeTx: unknown) => tx.confirm(storeTx, demos),
+        broadcast: (validity: unknown) => tx.broadcast(validity, demos),
+      };
 
-      // Store data on-chain, confirm membership proof, broadcast to network
-      const storeTx = await tx.store(encoded, demos);
-      const validity = await tx.confirm(storeTx, demos);
-      const result = await tx.broadcast(validity, demos);
+      const chainTx = await executeChainTx(stages, encoded).catch((error: unknown) => {
+        if (isMissingConfirmedTxHashError(error)) {
+          throw new Error("HIVE post broadcast succeeded but txHash not found in response");
+        }
+        throw error;
+      });
 
       // Extract txHash — confirm response is the primary source (SDK convention),
       // broadcast response is the fallback for alternate SDK versions.
-      const txHash = extractTxHash(validity, result);
+      const txHash = extractTxHash({ txHash: chainTx.txHash });
 
       if (!txHash) {
         throw new Error("HIVE post broadcast succeeded but txHash not found in response");
@@ -441,10 +453,20 @@ export function createSdkBridge(
       }
       // SDK transfer() creates signed tx only (2 params — memo not supported at SDK level).
       // Must confirm + broadcast to actually submit to the network.
-      const signedTx = await rpc.transfer(to, amount);
-      const validity = await rpc.confirm(signedTx);
-      const broadcastResult = await rpc.broadcast(validity);
-      const txHash = extractTxHash(validity, broadcastResult);
+      const stages = {
+        store: ({ to: recipient, amount: transferAmount }: { to: string; amount: number }) =>
+          rpc.transfer(recipient, transferAmount),
+        confirm: (signedTx: unknown) => rpc.confirm(signedTx),
+        broadcast: (validity: unknown) => rpc.broadcast(validity),
+      };
+
+      const chainTx = await executeChainTx(stages, { to, amount }).catch((error: unknown) => {
+        if (isMissingConfirmedTxHashError(error)) {
+          throw new Error("DEM transfer broadcast succeeded but txHash not found in response");
+        }
+        throw error;
+      });
+      const txHash = extractTxHash({ txHash: chainTx.txHash });
       if (!txHash) {
         throw new Error("DEM transfer broadcast succeeded but txHash not found in response");
       }
@@ -508,11 +530,19 @@ export function createSdkBridge(
       }
       const tx = txModule ?? await loadTxModule();
       const encoded = encodeHivePayload({ v: 1, action: "react", target: targetTxHash, type: reactionType });
+      const stages = {
+        store: (payload: Uint8Array) => tx.store(payload, demos),
+        confirm: (storeTx: unknown) => tx.confirm(storeTx, demos),
+        broadcast: (validity: unknown) => tx.broadcast(validity, demos),
+      };
 
-      const storeTx = await tx.store(encoded, demos);
-      const validity = await tx.confirm(storeTx, demos);
-      const result = await tx.broadcast(validity, demos);
-      const txHash = extractTxHash(validity, result);
+      const chainTx = await executeChainTx(stages, encoded).catch((error: unknown) => {
+        if (isMissingConfirmedTxHashError(error)) {
+          throw new Error("HIVE reaction broadcast succeeded but txHash not found in response");
+        }
+        throw error;
+      });
+      const txHash = extractTxHash({ txHash: chainTx.txHash });
       if (!txHash) {
         throw new Error("HIVE reaction broadcast succeeded but txHash not found in response");
       }

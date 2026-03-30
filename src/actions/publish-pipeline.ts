@@ -12,6 +12,7 @@ import { apiCall, info } from "../lib/network/sdk.js";
 import { observe } from "../lib/pipeline/observe.js";
 import { normalizeFeedPosts } from "../lib/pipeline/feed-filter.js";
 import { attestTlsnViaPlaywrightBridge } from "../lib/tlsn-playwright-bridge.js";
+import { executeChainTx } from "../toolkit/chain/tx-pipeline.js";
 import { extractTxHash } from "../toolkit/sdk-bridge.js";
 
 // ── Constants ──────────────────────────────────────
@@ -330,16 +331,39 @@ export async function publishPost(
 
   const encoded = encodeHivePost(post);
   info(`HIVE encoded: ${encoded.length} bytes`);
+  const stages = {
+    store: async (payload: Uint8Array) => {
+      const tx = await DemosTransactions.store(payload, demos);
+      info("Transaction created, confirming...");
+      return tx;
+    },
+    confirm: async (tx: unknown) => {
+      const validity = await DemosTransactions.confirm(
+        tx as Parameters<typeof DemosTransactions.confirm>[0],
+        demos,
+      );
+      info("Confirmed, broadcasting...");
+      return validity;
+    },
+    broadcast: (validity: unknown) =>
+      DemosTransactions.broadcast(
+        validity as Parameters<typeof DemosTransactions.broadcast>[0],
+        demos,
+      ),
+  };
 
-  const tx = await DemosTransactions.store(encoded, demos);
-  info("Transaction created, confirming...");
+  const chainTx = await executeChainTx(stages, encoded).catch((error: unknown) => {
+    if (error instanceof Error && error.message === "Confirmed transaction missing txHash") {
+      observe("error", "Broadcast succeeded but txHash not found in response", {
+        substage: "publish",
+        source: "publish-pipeline.ts:publishPost",
+      });
+      throw new Error("Broadcast succeeded but txHash not found in response");
+    }
+    throw error;
+  });
 
-  const validity = await DemosTransactions.confirm(tx, demos);
-  info("Confirmed, broadcasting...");
-
-  const result = await DemosTransactions.broadcast(validity, demos);
-
-  const txHash = extractTxHash(validity, result);
+  const txHash = extractTxHash({ txHash: chainTx.txHash });
 
   if (!txHash) {
     observe("error", "Broadcast succeeded but txHash not found in response", {

@@ -19,7 +19,7 @@ import {
   type DetectedSignal,
   type SignalRule,
   type BaselineStore,
-} from "./signal-rules.js";
+} from "./signal-detection.js";
 import { observe } from "./observe.js";
 
 // ── Types ─────────────────────────────────────────────

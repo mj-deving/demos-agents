@@ -11,6 +11,7 @@ import { resolve } from "node:path";
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
 
 import type { AgentConfig } from "./agent-config.js";
+import { executeChainTx } from "../toolkit/chain/tx-pipeline.js";
 import { filterPosts, type FilteredPost } from "./pipeline/feed-filter.js";
 import { observe } from "./pipeline/observe.js";
 import {
@@ -405,9 +406,20 @@ export async function executeTip(
 
   const recipient = String(tipRes.data.recipient).toLowerCase();
   // SDK transfer() creates signed tx only (2 params) — must confirm+broadcast to submit
-  const signedTx = await demos.transfer(recipient, candidate.amount);
-  const validity = await demos.confirm(signedTx);
-  const transferResult = await demos.broadcast(validity);
+  let transferResult: unknown;
+  const stages = {
+    store: ({ amount, recipient }: { recipient: string; amount: number }) =>
+      demos.transfer(recipient, amount),
+    confirm: (signedTx: unknown) =>
+      demos.confirm(signedTx as Parameters<Demos["confirm"]>[0]),
+    broadcast: async (validity: unknown) => {
+      transferResult = await demos.broadcast(
+        validity as Parameters<Demos["broadcast"]>[0],
+      );
+      return transferResult;
+    },
+  };
+  await executeChainTx(stages, { recipient, amount: candidate.amount });
 
   const tx: SpendingTransaction = {
     timestamp: new Date().toISOString(),

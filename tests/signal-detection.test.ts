@@ -31,10 +31,12 @@ import {
   calculateMAD,
   winsorize,
   resolveDomain,
-  CRYPTO_DEFAULTS,
-  MACRO_DEFAULTS,
-  DEFAULT_STALENESS,
 } from "../src/lib/pipeline/signal-detection.js";
+import {
+  CRYPTO_DEFAULTS,
+  DEFAULT_STALENESS,
+  MACRO_DEFAULTS,
+} from "../src/lib/pipeline/signal-rules.js";
 
 import type { EvidenceEntry } from "../src/lib/sources/providers/types.js";
 import type { SourceRecordV2 } from "../src/lib/sources/catalog.js";

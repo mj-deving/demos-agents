@@ -22,6 +22,17 @@ import type { SourceRecordV2 } from "../sources/catalog.js";
 import type { FetchSourceResult } from "../sources/fetch.js";
 import type { ExtractedClaim } from "../attestation/claim-extraction.js";
 import {
+  ANTI_SIGNAL_DIVERGENCE_THRESHOLD,
+  CONVERGENCE_MAGNITUDE_THRESHOLD,
+  CONVERGENCE_MIN_SOURCES,
+  CRYPTO_DEFAULTS,
+  CRYPTO_TAGS,
+  DEFAULT_STALENESS,
+  MACRO_DEFAULTS,
+  MACRO_TAGS,
+  UNKNOWN_DEFAULTS,
+} from "./signal-rules.js";
+import {
   calculateMAD,
   calculateZScore,
   getBaselineMedian,
@@ -54,34 +65,8 @@ export type {
 /** Maximum age (ms) for baseline entries before pruning on load */
 const MAX_BASELINE_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-/** Anti-signal divergence threshold (%) — must be strictly greater */
-const ANTI_SIGNAL_DIVERGENCE_THRESHOLD = 10;
-
 /** Window time horizons for baseline ring buffers */
 const WINDOW_KEYS = ["1h", "4h", "24h"] as const;
-
-// ── Domain Defaults ───────────────────────────────────
-
-export const CRYPTO_DEFAULTS: SignalDetectionConfig = {
-  changeThreshold: 5,  // 5%
-  domain: "crypto",
-};
-
-export const MACRO_DEFAULTS: SignalDetectionConfig = {
-  changeThreshold: 2,  // 2%
-  domain: "macro",
-};
-
-const UNKNOWN_DEFAULTS: SignalDetectionConfig = {
-  changeThreshold: 5,
-  domain: "unknown",
-};
-
-export const DEFAULT_STALENESS: StalenessConfig = {
-  crypto: 15 * 60 * 1000,    // 15 minutes
-  macro: 60 * 60 * 1000,     // 1 hour
-  unknown: 60 * 60 * 1000,   // 1 hour default
-};
 
 // ── Types ─────────────────────────────────────────────
 
@@ -162,9 +147,6 @@ export interface DetectionContext {
 
 // ── Domain Resolution ─────────────────────────────────
 
-const CRYPTO_TAGS = new Set(["crypto", "defi", "prices", "token", "blockchain"]);
-const MACRO_TAGS = new Set(["macro", "economics", "gdp", "inflation", "unemployment", "treasury", "debt"]);
-
 /**
  * Resolve domain from source domainTags.
  * Crypto takes priority over macro when both are present.
@@ -206,15 +188,6 @@ function median(sorted: number[]): number {
   }
   return sorted[mid];
 }
-
-// ── Z-Score (Phase 5) ────────────────────────────────
-
-/** Minimum observations before z-score activates (cold-start guard) */
-/** Minimum |changePercent| for convergence inclusion */
-const CONVERGENCE_MAGNITUDE_THRESHOLD = 1;
-
-/** Minimum distinct sources for convergence */
-const CONVERGENCE_MIN_SOURCES = 3;
 
 // ── Baseline Persistence ──────────────────────────────
 

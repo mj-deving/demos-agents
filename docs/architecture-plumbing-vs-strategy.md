@@ -151,7 +151,7 @@ Every Demos agent, regardless of strategy, performs combinations of these 10 irr
 | Primitive | Source | What it does | Why | Status |
 |-----------|--------|-------------|-----|--------|
 | **LLMProvider interface** | `src/lib/llm/llm-provider.ts` | `complete(prompt, opts?) → string` (interface only, ~10 lines) | Zero deps. Resolution logic stays in lib/. Unblocks adapter workstream. | Ready |
-| **ChainTxPipeline** | Pattern across 5 files | sign → confirm → broadcast enforced sequence | Prevents the bug class that already shipped (DEM tips silently not broadcasting). Security primitive. | Build new (6-8 hrs with security tests) |
+| **ChainTxPipeline** | Pattern across 5 files | sign → confirm → broadcast enforced sequence | Prevents the bug class that already shipped (DEM tips silently not broadcasting). Security primitive. | Complete - wired across all 5 call sites |
 | **AtomicStateTransaction** | `guards/state-helpers.ts` | Lock → read → validate → conditionally write → unlock | Already exported from barrel (`checkAndAppend`). Needs documentation promotion only. | **ALREADY DONE** |
 
 ### REDESIGN then SHIP
@@ -211,7 +211,7 @@ Every Demos agent, regardless of strategy, performs combinations of these 10 irr
 ### Phase 3: Redesign + Build (new interfaces)
 9. Make EventLoop generic over `TAction` type, move to `src/toolkit/reactive/` (4 hrs)
 10. Split `signal-detection.ts` → `baseline-math.ts` (toolkit) + `signal-rules.ts` (strategy) (2 hrs)
-11. Build `ChainTxPipeline` enforcing sign→confirm→broadcast across all 5 call sites (6-8 hrs with security tests)
+11. `ChainTxPipeline` enforcing sign→confirm→broadcast across all 5 call sites - complete
 
 ### Phase 4: Document + Cleanup
 12. Write next ADR: planned splits for matcher.ts, policy.ts, action-executor.ts

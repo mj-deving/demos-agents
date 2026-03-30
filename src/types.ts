@@ -16,6 +16,7 @@ import type {
   EventAction,
   EventHandler,
   EventSource,
+  OmniwebAction,
 } from "./toolkit/reactive/types.js";
 export type {
   AgentEvent,
@@ -245,7 +246,7 @@ export interface EventPlugin {
   sources?: EventSource<unknown>[];
 
   /** Event handlers this plugin provides */
-  handlers?: EventHandler[];
+  handlers?: EventHandler<OmniwebAction>[];
 
   /** Initialize on plugin registration */
   init?(config: AgentConfig): Promise<void>;
@@ -282,7 +283,7 @@ export interface PluginRegistry {
   /** Get all event sources across all event plugins */
   getEventSources(): EventSource<unknown>[];
   /** Get all event handlers across all event plugins */
-  getEventHandlers(): EventHandler[];
+  getEventHandlers(): EventHandler<OmniwebAction>[];
 }
 
 /**
@@ -325,7 +326,7 @@ export function createPluginRegistry(): PluginRegistry {
     getEventSources(): EventSource<any>[] {
       return eventPlugins.flatMap((p) => p.sources || []);
     },
-    getEventHandlers(): EventHandler[] {
+    getEventHandlers(): EventHandler<OmniwebAction>[] {
       return eventPlugins.flatMap((p) => p.handlers || []);
     },
   };
