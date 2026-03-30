@@ -273,31 +273,38 @@ In Phase 1, non-numeric claims (`value: null`) are auto-classified as editorial 
 
 ```
 function verifyEventClaim(claim, attestedData):
-  // Tier 1: Field match — direct lookup in attested JSON (0 cost, <1ms)
-  // e.g., claim.metric = "proposal_state" → attestedData["state"] = "executed"
+  // Tier 1: Schema-bound field match — ONLY tier that can promote to factual
+  // Requires: exact entity identifier binding + known state enum
+  // e.g., claim.metric = "proposal_state", claim.entityId = "247"
+  //        attestedData has proposal_id=247 AND state="executed"
   if claim.metric in attestedData:
+    // Entity binding: verify the data is about the SAME entity the claim references
+    if claim.entityId and !entityMatches(claim.entityId, attestedData):
+      return { pass: false, reason: "entity mismatch: claim about ${claim.entityId}, data about different entity" }
     fieldValue = String(attestedData[claim.metric]).toLowerCase()
     if matchesPositiveState(fieldValue, claim.metric):
-      return { pass: true, tier: "field_match", evidence: "${claim.metric} = ${fieldValue}" }
+      return { pass: true, tier: "field_match", promotable: true, evidence: "${claim.metric} = ${fieldValue}" }
+    if matchesNegativeState(fieldValue, claim.metric):
+      return { pass: false, tier: "field_match", reason: "data contradicts claim: ${claim.metric} = ${fieldValue}" }
 
-  // Tier 2: Keyword containment — key terms from claim appear in data (0 cost, <5ms)
-  // e.g., claim text "proposal #247 passed" → keywords ["proposal", "247", "passed"]
-  //        attested JSON stringified contains "proposal", "247", and "executed" (close to "passed")
+  // Tier 2: Keyword containment — stays EDITORIAL, does NOT promote to factual
+  // Useful for engagement decisions (should we reply?) but not for publishing as fact
   claimKeywords = extractKeywords(claim.eventText)
   dataString = JSON.stringify(attestedData).toLowerCase()
   matchCount = claimKeywords.filter(kw => dataString.includes(kw)).length
   if matchCount / claimKeywords.length >= 0.6:
-    return { pass: true, tier: "keyword", evidence: "${matchCount}/${claimKeywords.length} keywords" }
+    return { pass: true, tier: "keyword", promotable: false, evidence: "${matchCount}/${claimKeywords.length} keywords (editorial only)" }
 
-  // Tier 3: LLM semantic check — last resort (1 fast-tier call, ~2s)
-  // Only used when tiers 1-2 fail and the claim is the PRIMARY claim of a post
+  // Tier 3: LLM semantic check — stays EDITORIAL, does NOT promote to factual
+  // Keyword similarity and LLM YES/NO are too loose for factual claims —
+  // can match wrong object or different state (Codex review finding)
   result = llm.complete(
     "Does this data support this claim? Answer YES or NO in one sentence.\n" +
     "Claim: ${claim.eventText}\nData: ${truncate(JSON.stringify(attestedData), 500)}",
     { modelTier: "fast", maxTokens: 64 }
   )
   if result.trim().toUpperCase().startsWith("YES"):
-    return { pass: true, tier: "llm_semantic", evidence: result }
+    return { pass: true, tier: "llm_semantic", promotable: false, evidence: "${result} (editorial only)" }
 
   return { pass: false, reason: "event not verifiable against attested data" }
 ```
@@ -1020,21 +1027,66 @@ CONTRACT_REGISTRY = {
   "compound": {
     chain: "eth.mainnet",
     contracts: {
-      comet_usdc: { address: "0xc3d688B66703497DAA19211EEdff47f25384cdc3", abi: COMET_ABI },
-      governance: { address: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529", abi: GOV_ABI },
+      comet_usdc: {
+        address: "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+        abi: COMET_ABI,
+        isProxy: true,                       // EIP-1967 proxy — resolve implementation
+        implementationSlot: "0x360894...",    // standard proxy storage slot
+      },
+      governance: {
+        address: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529",
+        abi: GOV_ABI,
+        isProxy: false,
+      },
     },
     metrics: {
-      tvl: { contract: "comet_usdc", function: "totalSupply", unit: "USD", decimals: 6 },
-      proposal_state: { contract: "governance", function: "getProposalState", params: ["proposalId"] },
-    }
+      tvl: {
+        contract: "comet_usdc",
+        function: "totalSupply",
+        // Derivation logic — raw value → human-readable
+        derivation: {
+          rawUnit: "base_units",            // totalSupply returns raw base units
+          decimals: 6,                       // USDC has 6 decimals
+          outputUnit: "USD",                 // after dividing by 10^6
+          // For multi-asset TVL: would need multiple reads + oracle price
+          // This is a single-market simplification
+        },
+      },
+      proposal_state: {
+        contract: "governance",
+        function: "getProposalState",
+        params: ["proposalId"],              // mapped from claim.entityId
+        // Enum map — contract returns uint8, we need semantic meaning
+        enumMap: {
+          0: "pending", 1: "active", 2: "canceled", 3: "defeated",
+          4: "succeeded", 5: "queued", 6: "expired", 7: "executed"
+        },
+        positiveStates: ["succeeded", "queued", "executed"],
+        negativeStates: ["canceled", "defeated", "expired"],
+      },
+    },
   },
   "aave": {
     chain: "eth.mainnet",
     contracts: {
-      governance: { address: "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7", abi: AAVE_GOV_ABI },
-      pool: { address: "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2", abi: POOL_ABI },
+      governance: {
+        address: "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7",
+        abi: AAVE_GOV_ABI,
+        isProxy: true,
+        implementationSlot: "0x360894...",
+      },
     },
-    metrics: { ... }
+    metrics: {
+      proposal_state: {
+        contract: "governance",
+        function: "getProposalState",
+        params: ["proposalId"],
+        enumMap: { 0: "null", 1: "created", 2: "active", 3: "queued",
+                   4: "executed", 5: "failed", 6: "cancelled", 7: "expired" },
+        positiveStates: ["executed", "queued"],
+        negativeStates: ["failed", "cancelled", "expired"],
+      },
+    },
   },
   "marinade": {
     chain: "sol.mainnet",
@@ -1043,8 +1095,16 @@ CONTRACT_REGISTRY = {
       state: { address: MARINADE_STATE_ADDRESS, idl: "auto" },
     },
     metrics: {
-      tvl: { account: "state", field: "totalStakedSol", unit: "SOL" },
-    }
+      tvl: {
+        account: "state",
+        field: "totalStakedSol",
+        derivation: {
+          rawUnit: "lamports",
+          decimals: 9,                       // SOL has 9 decimals
+          outputUnit: "SOL",
+        },
+      },
+    },
   }
 }
 ```
@@ -1081,14 +1141,29 @@ function discoverChainSource(claim):
   else:
     return null  // unsupported chain type for now
 
+  // Capture full provenance metadata — without this, "authoritative" is just a label
+  provenance = {
+    chainId: chain.chainId || protocol.chain,
+    blockNumber: await getLatestFinalizedBlock(chain),  // read MUST be at finalized block
+    blockHash: await getBlockHash(chain, provenance.blockNumber),
+    contractAddress: protocol.contracts?.[metricDef.contract]?.address || metricDef.account,
+    method: metricDef.function || "fetchAccount",
+    args: params || [],
+    // For EVM: capture implementation address if proxy (detect via EIP-1967 storage slot)
+    proxyTarget: isProxy ? await resolveProxyTarget(contract) : null,
+  }
+
   return {
     source: "chain-native",
     chain: protocol.chain,
     contract: metricDef.contract || metricDef.account,
     data: data,
-    authoritative: true,  // direct chain read is always authoritative
+    provenance: provenance,  // mandatory — this is what makes it verifiable
+    authoritative: true,     // justified by provenance, not assumed
   }
 ```
+
+**Provenance is mandatory for "authoritative" status.** A chain read without `{chainId, blockNumber, blockHash, contractAddress, method, args}` is downgraded to "discovered" trust tier. This prevents poisoned registry entries, stale RPC responses, and proxy upgrades from producing silently wrong attestations.
 
 **Also covers Demos chain native events:**
 - "Agent X was tipped 5 DEM" → `sdk.getTransactions({ address })` on Demos chain
@@ -1122,18 +1197,27 @@ function discoverAPISource(claim):
   patterns = API_PATTERNS[protocolType] || []
 
   for pattern in patterns:
-    url = resolveTemplate(pattern, { protocol: claim.subject, ... })
-    // Probe the URL — does it return valid data?
+    url = resolveTemplate(pattern, {
+      protocol: canonicalize(claim.subject),  // sanitize — no injection via claim text
+    })
+
+    // SECURITY: strict host allowlist — only known, vetted domains
+    if !HOST_ALLOWLIST.includes(new URL(url).hostname):
+      continue  // reject unknown hosts
+
     response = await fetchWithTimeout(url, 3000)
     if response.ok and response.body.length > 50:
-      // Validate: does the response contain evidence for this claim?
       if containsEvidence(response.body, claim):
-        // SUCCESS: discovered a source. Optionally add to catalog for future use.
         return { source: "discovered", url, data: response.body, authoritative: false }
   return null
 ```
 
-The pattern library is small (10-20 templates covering major protocol types) but produces hundreds of potential source URLs. Each discovery is validated: the response must actually contain evidence for the claim.
+**Security constraints for API pattern discovery** (this channel reintroduces DNS/HTTPS dependency):
+- **Strict host allowlist** — only pre-approved domains: `api.llama.fi`, `api.tally.xyz`, `hub.snapshot.org`, `api.etherscan.io`, protocol-native domains from the contract registry. Strategy-configurable but toolkit-validated.
+- **Template input canonicalization** — `claim.subject` is sanitized before URL interpolation. No user-controlled or LLM-generated strings in URLs (prevents SSRF via crafted claims).
+- **Trust tier is explicitly lowest** — discovered sources are `trustTier: "discovered"`, below chain-native ("authoritative"), catalog ("trusted"), and colony cross-ref ("corroborated").
+
+The pattern library is small (10-20 templates covering major protocol types) but produces potential source URLs for protocols not yet in the contract registry. Each discovery is validated: the response must actually contain evidence for the claim.
 
 **Discovered sources can optionally be promoted to the catalog** after successful attestation — with `trustTier: "discovered"` (lower than "official", higher than "quarantined"). Over time, the catalog grows organically from successful discoveries.
 
@@ -1165,19 +1249,28 @@ This is the lightest channel — zero HTTP calls, just a claim ledger query. If 
 
 ```
 function attestationHunt(claim, catalog, claimLedger, sdk):
-  // 1. Catalog first (known, tested, trusted sources)
-  source = findInCatalog(claim, catalog)
-  if source: return fetchAndAttest(source)
+  // Priority order follows EVIDENCE STRENGTH, not convenience.
+  // Strongest (chain state) first, weakest (API patterns) last.
 
-  // 2. Chain-native (the chain IS the proof for on-chain events)
+  // 1. Chain-native — STRONGEST: direct contract/program state read with provenance
+  //    EVM readFromContract, Solana fetchAccount, BTC getBalance
+  //    Returns data + {chainId, blockNumber, blockHash, contractAddress, method, args}
   source = discoverChainSource(claim)
   if source: return attestChainData(source)
 
-  // 3. Colony cross-reference (someone else already proved it)
+  // 2. Catalog — TRUSTED: pre-tested, known adapters, vetted URLs
+  source = findInCatalog(claim, catalog)
+  if source: return fetchAndAttest(source)
+
+  // 3. Colony cross-reference — CORROBORATED: another agent already attested
   source = discoverFromColony(claim, claimLedger)
   if source: return fetchAndAttest(source)  // re-attest from their source URL
 
-  // 4. API pattern discovery (try known URL templates)
+  // 4. API pattern discovery — DISCOVERED: predictable URLs, unvetted
+  //    NOTE: this reintroduces DNS/HTTPS dependency. Mitigations:
+  //    - Strict host allowlist (only known protocol domains + major aggregators)
+  //    - Template inputs canonicalized (no user-controlled strings in URLs)
+  //    - Trust tier explicitly lower than chain-native or catalog
   source = discoverAPISource(claim)
   if source: return fetchAndAttest(source)
 
