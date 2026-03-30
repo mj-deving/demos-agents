@@ -7,7 +7,7 @@ import type { FetchedResponse, ProviderAdapter, ParsedAdapterResponse, EvidenceE
 const fetchSourceMock = vi.hoisted(() => vi.fn());
 const getProviderAdapterMock = vi.hoisted(() => vi.fn());
 
-vi.mock("../src/lib/sources/fetch.js", () => ({
+vi.mock("../src/toolkit/sources/fetch.js", () => ({
   fetchSource: fetchSourceMock,
 }));
 

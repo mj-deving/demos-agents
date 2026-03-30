@@ -65,6 +65,69 @@ export { DemosSession } from "./session.js";
 
 export { FileStateStore } from "./state-store.js";
 
+// ── Sources and Providers ──────────────────────────
+
+export type {
+  SourceRecordV2,
+  SourceRecordV1,
+  SourceCatalogFileV2,
+  SourceIndex,
+  AgentName,
+  AgentSourceConfig,
+  AgentSourceView,
+  SourceRegistryMode,
+} from "./sources/catalog.js";
+
+export type { FetchSourceOptions, FetchSourceResult } from "./sources/fetch.js";
+export type {
+  SourceTestStatus,
+  SourceTestResult,
+  FilterOptions,
+} from "./sources/health.js";
+
+export { ALL_AGENT_NAMES } from "./sources/catalog.js";
+export {
+  loadCatalog,
+  loadYamlRegistry,
+  loadAgentSourceView,
+  buildSourceIndex,
+  normalizeSourceRecord,
+  tokenizeTopic,
+  sourceTopicTokens,
+  normalizeUrlPattern,
+  inferProvider,
+  generateSourceId,
+  isValidSourceRecord,
+} from "./sources/catalog.js";
+export { fetchSource } from "./sources/fetch.js";
+export {
+  DEFAULT_TEST_VARS,
+  resolveTestUrl,
+  filterSources,
+  testSource,
+} from "./sources/health.js";
+export {
+  acquireRateLimitToken,
+  recordRateLimitResponse,
+  isRateLimited,
+  resetRateLimits,
+} from "./sources/rate-limit.js";
+export { adapter as genericProviderAdapter } from "./providers/generic.js";
+
+// ── Utilities ──────────────────────────────────────
+
+export { toErrorMessage } from "./util/errors.js";
+
+// ── Network ────────────────────────────────────────
+
+export type {
+  StorageClientConfig,
+  AgentStateProgram,
+  StorageClient,
+} from "./network/storage-client.js";
+export { fetchWithTimeout } from "./network/fetch-with-timeout.js";
+export { createStorageClient } from "./network/storage-client.js";
+
 // ── Tools ───────────────────────────────────────────
 
 export { connect, disconnect } from "./tools/connect.js";
