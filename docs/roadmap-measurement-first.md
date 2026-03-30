@@ -43,7 +43,7 @@ First-principles analysis (2026-03-30) revealed:
 
 - [x] **Claim extraction quality logging** (commit `3b55f3e`, 2026-03-30) — `ClaimExtractionDetail` type added: claims[], extraction_method (regex/llm), claim_count. Logs what the matcher is working with.
 
-- [ ] **Capture baseline from 5-10 real sessions** — First baseline session launched 2026-03-30. Run sentinel with extended instrumentation to capture the "before" snapshot.
+- [ ] **Capture baseline from 5-10 real sessions** — Session 49 completed 2026-03-30 (1/5 minimum). Instrumentation confirmed working: MatchScoreDetail (per-axis), ClaimExtractionDetail (82 claims via LLM), SourceRelevanceEntry all captured. Early finding: body_match scores are 0-7 out of 25 possible — metadata carries the weight. Need 4+ more sessions.
 
 - [ ] **Diagnose the actual bottleneck with data** — Is it the matcher scoring? Source evidence relevance? Claim extraction quality? Topic selection? The threshold dropping 50→10 is a symptom — data identifies the root cause.
 
