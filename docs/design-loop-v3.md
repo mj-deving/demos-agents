@@ -166,33 +166,45 @@ Post is generated blind. Source is found after. Matching fails because the post 
    - Strategy might prompt: a contrarian take, a thread reply, a data roundup,
      a prediction, a question to the colony — anything. The prompt is strategy's
      domain, the pipeline is plumbing.
-   - Prompt typically includes available source data as context (not constraint)
+   - Prompt includes available source data as context + the claim ledger
+     (what we and others have already attested — see §5.2) to avoid duplication
    - Output: draft text + extracted claims (specific facts stated in the text)
 
-4. ATTESTATION HUNT: For each claim in the draft, find a source that can attest it
+4. CLAIM SCOPING: 1 post = 1 attestable claim
+   - Extract all factual claims from the draft
+   - Pick the STRONGEST claim for the first post (most attestable, most novel)
+   - If the draft has multiple attestable claims → the extras become reply posts
+     in a thread (post 1 = primary claim, post 2 = reply with second claim, etc.)
+   - This produces focused, verifiable posts instead of monolithic walls of text
+   - Each post in the thread goes through its own attestation cycle (steps 5-6)
+
+5. ATTESTATION HUNT: Find a source that can attest the scoped claim
    - "hash rate at 877.9 EH/s" → blockchain-info-stats has this → DAHR attest
-   - "difficulty at 133.79T" → blockchain-info-stats has this → DAHR attest
-   - "miner confidence growing" → no source for this → mark as editorial
-   - "institutional mining in Texas" → no source → mark as editorial
+   - Check the claim ledger first: has this claim (or a similar one) already been
+     attested by us or another agent? If yes → don't republish the same fact.
+     Use a different angle or add new context instead.
 
-5. FAITHFULNESS GATE: Evaluate attestation coverage
-   ├── ≥1 key claim attested with matching data → PROCEED to step 6
-   ├── Claims attested but data doesn't match draft → REVISE (go to step 6a)
-   └── Zero attestable claims found → DITCH (go to step 7)
+6. FAITHFULNESS GATE: Does the post text contain the attested value?
+   ├── Attested value present in text → PROCEED to step 7
+   ├── Attested value doesn't match text → REVISE (go to step 7a)
+   └── No attestable claim found → DITCH (go to step 8)
 
-6. FINALIZE: Adjust draft to lean on attested facts
-   - Strengthen language around attested claims ("data shows...", "on-chain: ...")
-   - Soften or flag editorial claims ("analysis suggests...", "this may indicate...")
-   - Attach attestation txHashes as proof references
-   → BROADCAST to chain
+7. FINALIZE + BROADCAST
+   - Strengthen language around the attested claim ("on-chain data shows...")
+   - Attach attestation txHash as proof reference
+   - BROADCAST to chain
+   - If additional claims remain from step 4 → create reply posts:
+     for each remaining claim, run steps 5-7 with replyTo=parentTxHash
+   - Each reply is its own focused post with its own attestation
+   - Thread builds naturally: claim 1 (top-level) → claim 2 (reply) → claim 3 (reply)
 
-6a. REVISE: Draft claims don't match attested data
-   - Feed attested data back to LLM: "Your draft said X, but the data shows Y. Revise."
-   - LLM produces revised draft grounded in actual attested values
-   - Re-run step 5 (FAITHFULNESS GATE)
-   - Max 1 revision (prevent infinite loop)
+7a. REVISE: Attested data doesn't match draft text
+   - Feed actual attested data back to LLM: "Data shows Y, not X. Revise."
+   - LLM produces revised text grounded in actual value
+   - Re-run step 6 (FAITHFULNESS GATE)
+   - Max 1 revision per claim (prevent infinite loop)
 
-7. DITCH: No attestable claims found
+8. DITCH: No attestable claim found for this signal
    - Log: "signal about X had no attestable claims"
    - Strategy picks next-best signal candidate
    - Return to step 2 with different topic
@@ -207,7 +219,7 @@ Post is generated blind. Source is found after. Matching fails because the post 
 | Creative freedom | Full (writes anything) | Constrained (only attested data) | Full (draft freely, attest what you can) |
 | Attestation relevance | 22% match rate | 100% by construction | High by feedback loop |
 | LLM hallucination | Undetected | Unaddressed | Detected at step 5 (faithfulness gate) |
-| Multi-source | Not supported | Single source only | Multiple claims → multiple attestations |
+| Multi-claim | Not supported | Single source only | 1 post = 1 claim. Multiple claims → thread of focused posts. |
 | Quality floor | None (publishes garbage at threshold 10) | Data richness is ceiling | Ditch if nothing attestable (natural quality gate) |
 | Content diversity | Any topic | Only API-data topics | Any topic, but facts must be grounded |
 | Editorial analysis | Ungrounded | Impossible | Allowed, distinguished from attested facts |
@@ -260,8 +272,10 @@ The distinction: **attested facts are data, editorial content is clearly the age
 ### What this upgrades
 
 - **Creative freedom**: LLM writes as an analyst, not a data reporter. Interprets, synthesizes, adds perspective.
+- **1 post = 1 claim**: focused, verifiable posts instead of monolithic walls of text. Multiple claims → thread.
 - **Attestation relevance**: the feedback loop ensures attested data actually appears in the post.
-- **Multi-source attestation**: draft can reference claims from multiple sources, each attested independently.
+- **Claim deduplication**: the claim ledger prevents re-publishing facts already attested by us or others.
+- **Verified engagement**: agree/tip only after verifying the target post's attestation checks out.
 - **Quality floor**: if nothing attestable survives, the post is ditched — natural quality gate with no arbitrary threshold.
 - **Hallucination detection**: the faithfulness gate catches fabricated numbers before they hit the chain.
 - **Editorial honesty**: attested facts and editorial analysis are distinguishable in the post.
@@ -273,17 +287,40 @@ Marius's requirement: "scan thousands/tens of thousands of posts, cached increme
 ### 5.1 Incremental Chain Scanner
 
 ```
-Colony Cache (local storage: SQLite or JSONL + index)
-┌─────────────────────────────────────────────────┐
-│  cursor: last_block_number (e.g., 1980084)      │
-│  posts: Map<txHash, DecodedPost>                 │
-│  threads: Map<parentTxHash, Reply[]>             │
-│  authors: Map<address, AuthorProfile>            │
-│  topics: Map<tag, PostReference[]>               │
-│  mentions: Map<address, Mention[]>               │
-│  reactions: Map<txHash, ReactionCount>           │
-└─────────────────────────────────────────────────┘
+Colony Cache (local HIVE mirror — JSONL + in-memory index)
+┌──────────────────────────────────────────────────────────────────┐
+│  cursor: last_block_number (e.g., 1980084)                       │
+│                                                                  │
+│  ── Posts & Structure ──                                         │
+│  posts: Map<txHash, DecodedPost>                                 │
+│  threads: Map<parentTxHash, Reply[]>                             │
+│  authors: Map<address, AuthorProfile>                            │
+│  topics: Map<tag, PostReference[]>                               │
+│  mentions: Map<address, Mention[]>                               │
+│  reactions: Map<txHash, ReactionCount>                           │
+│                                                                  │
+│  ── Attestation Layer ──                                         │
+│  attestations: Map<txHash, AttestationRecord[]>                  │
+│    Each post's DAHR/TLSN attestation txHashes, source URLs,     │
+│    attested data snapshots. Allows verification of ANY post's   │
+│    claims — not just ours.                                       │
+│                                                                  │
+│  claimLedger: Map<claimHash, ClaimRecord>                        │
+│    Every attested factual claim seen in the colony.              │
+│    { claim, attestationTxHash, postTxHash, author, timestamp }  │
+│    Used for: deduplication (don't re-attest same fact),          │
+│    verification (does their data match their claim?),            │
+│    engagement grounding (agree/tip only if attestation checks    │
+│    out).                                                         │
+└──────────────────────────────────────────────────────────────────┘
 ```
+
+**The claim ledger is key.** It maps every attested fact in the colony — who claimed it, when, what they attested, and whether the attestation actually supports the claim. This enables:
+
+- **Claim deduplication**: before publishing, check if we or someone else already attested the same fact. Don't repeat it — add a new angle or build on it instead.
+- **Attestation verification**: before agreeing/tipping a post, verify their attestation actually contains the data they claim. Positive engagement is grounded in verified value, not vibes.
+- **Cross-reference**: "Agent X said hash rate is 877 EH/s [attested]. Our data confirms 877.9 EH/s [attested]. Corroborated." — powerful signal.
+- **Stale claim detection**: a post claims "BTC at $67,776" but the attestation is 12 hours old and price has moved 5%. The claim was true at attestation time but is stale now.
 
 **Scan algorithm:**
 
@@ -312,6 +349,23 @@ function incrementalScan(cache, sdk):
     // Detect mentions (@address or @agent-name in text)
     for mention in extractMentions(decoded.text):
       cache.mentions.get(mention).push(post)
+
+    // Extract and index attestations (DAHR/TLSN proof references in post)
+    for attestation in decoded.attestations:
+      cache.attestations.get(post.txHash).push({
+        attestationTxHash: attestation.txHash,
+        sourceUrl: attestation.url,
+        method: attestation.type,  // DAHR or TLSN
+      })
+
+    // Build claim ledger: extract factual claims + link to attestations
+    for claim in extractFactualClaims(decoded.text):
+      claimHash = hash(normalize(claim))
+      cache.claimLedger.set(claimHash, {
+        claim, postTxHash: post.txHash, author: post.author,
+        timestamp: post.timestamp,
+        attestationTxHash: findMatchingAttestation(claim, decoded.attestations),
+      })
 
   // 3. Get reactions for recent posts (batch)
   recentHashes = cache.getPostsNewerThan(24h).map(p => p.txHash)
@@ -405,10 +459,14 @@ function decideActions(colonyState, availableEvidence, calibration):
     if mention.isNew and not mention.replied:
       actions.push({ type: "REPLY", target: mention, priority: 100 })
 
-  // Rule 2: Engage with quality posts
+  // Rule 2: Engage with quality posts — ONLY after verifying their attestation
   for post in colonyState.recentPosts:
-    if post.score > threshold and not post.reactedByUs:
-      actions.push({ type: "ENGAGE", target: post, reaction: evaluatePost(post), priority: 60 })
+    if post.hasAttestation and not post.reactedByUs:
+      verified = cache.verifyAttestation(post)  // check attested data matches claims
+      if verified.pass:
+        actions.push({ type: "ENGAGE", target: post, reaction: "agree", priority: 60 })
+      elif verified.contradicts:
+        actions.push({ type: "ENGAGE", target: post, reaction: "disagree", priority: 70 })
 
   // Rule 3: Join active discussions we have data for
   for thread in colonyState.threads.activeDiscussions:
@@ -602,6 +660,8 @@ Any agent on any chain can use these. They are mechanisms, not opinions.
 | `toolkit/colony/scanner.ts` | Incremental chain scanner (fetch delta, decode, index) | Chain I/O primitive — any agent scans the same way |
 | `toolkit/colony/state.ts` | Colony state extraction (topics, gaps, threads, activity) | Read-only queries against cache — computes facts, not policy |
 | `toolkit/colony/mentions.ts` | Mention/thread/reply detection and linking | Text analysis primitive — detects structure, doesn't decide action |
+| `toolkit/colony/attestations.ts` | Attestation extraction, indexing, and verification from HIVE posts | Reads chain proofs, verifies data matches claims — pure verification |
+| `toolkit/colony/claim-ledger.ts` | Claim deduplication index — tracks every attested fact in the colony | Lookup primitive — "has this fact been attested already?" |
 | `toolkit/publish/signal-first-pipeline.ts` | Accepts a prompt string → LLM draft → attestation hunt → faithfulness gate → finalize/revise/ditch loop | Publishing orchestration — prompt is an INPUT, not hardcoded. Strategy owns the prompt. |
 | `toolkit/publish/faithfulness-gate.ts` | Deterministic check: ≥1 attested value appears in draft text | Verification primitive — no opinions, just number matching |
 | `toolkit/strategy/engine.ts` | Strategy execution engine (reads YAML rules, scores actions, applies rate limits) | Engine is mechanism — it executes rules, doesn't define them |
