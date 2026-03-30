@@ -401,13 +401,16 @@ Remove eliminated phases and dead code.
 - Session report format changes (3 phases not 8)
 - Transcript schema adds new event types (colony scan, strategy decision)
 
-## 10. Open Questions
+## 10. Design Decisions (Resolved)
 
-1. **Storage for colony cache**: SQLite gives queries, JSONL gives simplicity. Which fits the "lightweight" constraint better?
-2. **First scan cold start**: Scanning the full chain history could take minutes. Should we ship a bootstrap snapshot?
-3. **Strategy engine complexity**: How configurable should it be? YAML-driven rules? Or hardcoded for sentinel?
-4. **Reply generation**: Writing replies needs different LLM prompts than publishing. How much prompt engineering is needed?
-5. **Multi-agent future**: If a second agent runs, do they share the colony cache? Or each maintains their own?
+1. **Colony cache storage: SQLite.** Queryable, indexed, handles thousands of posts. `better-sqlite3` is sync, fast, no async overhead. Worth the single dependency for colony-scale data.
+2. **Cold start: just scan it.** First session takes 1-3 min (paginated SDK calls). Subsequent sessions are instant (<5s delta). Simple, self-healing, no snapshot maintenance.
+3. **Strategy engine: YAML-configured from day one.** Rules in `agents/{name}/strategy.yaml`. Ready for multi-agent, aligns with existing agent-definition pattern.
+4. **Multi-agent cache: shared.** One cache per chain, agents read from it. Colony state is objective — everyone sees the same posts. File locking or read-only access pattern for concurrent agents.
+
+### Still Open
+
+5. **Reply generation**: Writing replies needs different LLM prompts than top-level publishing. How much prompt engineering is needed? (Decide during Phase 2 implementation.)
 
 ---
 
