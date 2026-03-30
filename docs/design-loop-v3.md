@@ -368,32 +368,69 @@ Not everything in the current loop is wrong. These must carry forward:
 | **Gate tool scripts** (`cli/gate.ts`) | Strategy engine subsumes gating logic. |
 | **Separate subprocess per phase** | 8 tmux sessions per loop run. V3 inlines most work. |
 
-## 9. Migration Path
+## 9. Code Placement (ADR-0002 enforced)
+
+**Every new V3 component obeys the toolkit/strategy boundary.** The classification rule: a module is **toolkit** if it's a mechanism (how something works), **strategy** if it's a policy (what to do, with what weights). When mixed, split mechanism into toolkit and parameterize the policy.
+
+### Toolkit (`src/toolkit/`) — reusable building blocks
+
+Any agent on any chain can use these. They are mechanisms, not opinions.
+
+| New module | What it is | Why toolkit |
+|-----------|------------|-------------|
+| `toolkit/colony/cache.ts` | SQLite-backed colony cache (CRUD, indexes, cursor) | Pure storage mechanism — no opinion on what to do with the data |
+| `toolkit/colony/scanner.ts` | Incremental chain scanner (fetch delta, decode, index) | Chain I/O primitive — any agent scans the same way |
+| `toolkit/colony/state.ts` | Colony state extraction (topics, gaps, threads, activity) | Read-only queries against cache — computes facts, not policy |
+| `toolkit/colony/mentions.ts` | Mention/thread/reply detection and linking | Text analysis primitive — detects structure, doesn't decide action |
+| `toolkit/publish/data-first-pipeline.ts` | Fetch → attest → generate → broadcast pipeline | Transaction orchestration — the mechanism of publishing |
+| `toolkit/strategy/engine.ts` | Strategy execution engine (reads YAML rules, scores actions, applies rate limits) | Engine is mechanism — it executes rules, doesn't define them |
+| `toolkit/strategy/actions.ts` | Action types (ENGAGE, REPLY, PUBLISH, TIP) with execution logic | Each action type is a primitive operation |
+
+### Strategy (`agents/{name}/`, `src/lib/`) — sentinel-specific policy
+
+These are opinions. Different agents would have different values here.
+
+| File | What it is | Why strategy |
+|------|------------|-------------|
+| `agents/sentinel/strategy.yaml` | Priority weights, action rules, thresholds, topic preferences | Policy: "reply to mentions with priority 100, publish to fill gaps with priority 50" |
+| `agents/sentinel/AGENT.yaml` | Agent identity, persona, engagement config | Already exists — agent-specific |
+| `src/lib/scoring/` | Post quality heuristics, confidence calibration | Scoring weights are sentinel's opinion about quality |
+| `cli/session-runner.ts` | V3 loop orchestration (calls toolkit primitives in sequence) | Orchestration is strategy — it decides the session shape |
+
+### The boundary test
+
+Existing `tests/architecture/boundary.test.ts` (ADR-0014) already enforces that `src/toolkit/` never imports from `src/lib/`, `src/plugins/`, `src/actions/`, or `cli/`. All new toolkit modules will pass this test.
+
+**Rule:** If you can parameterize it, it's toolkit. If you have to hardcode an opinion, it's strategy.
+
+## 10. Migration Path
 
 ### Phase 1: Colony Cache (foundation)
-Build the incremental scanner and colony cache. This is the foundation — everything else depends on colony awareness.
-- New: `src/toolkit/colony/scanner.ts`, `src/toolkit/colony/cache.ts`, `src/toolkit/colony/state.ts`
-- Uses existing: `getHivePosts()`, `getRepliesTo()`, `getHiveReactionsByAuthor()`, `decodeHiveData()`
-- Test: scan full chain history, build cache, verify thread linking
+Build the incremental scanner and colony cache as toolkit primitives.
+- New toolkit: `src/toolkit/colony/cache.ts`, `scanner.ts`, `state.ts`, `mentions.ts`
+- Uses existing toolkit: `getHivePosts()`, `getRepliesTo()`, `getHiveReactionsByAuthor()`, `decodeHiveData()`
+- Test: scan full chain history, build cache, verify thread linking, mention detection
 
 ### Phase 2: Data-First Publish
-Invert the publish flow. Fetch + attest source → generate FROM data → broadcast.
-- Modify: `cli/session-runner.ts` (V3 loop path)
-- New: `src/toolkit/publish/data-first-pipeline.ts`
-- Delete: `scoreEvidence()`, `scoreMetadataOnly()`, `extractClaims()`, match threshold logic
+Invert the publish flow as a toolkit pipeline primitive.
+- New toolkit: `src/toolkit/publish/data-first-pipeline.ts`
+- Modify cli (strategy): `cli/session-runner.ts` (V3 loop path calls new pipeline)
+- Delete from src/lib: `scoreEvidence()`, `scoreMetadataOnly()`, `extractClaims()`, match threshold logic
 - Test: publish with data-first flow, verify attestation references match post content
 
 ### Phase 3: Strategy Engine
-Replace fixed engage → gate → publish sequence with strategy-driven action selection.
-- New: `src/toolkit/strategy/engine.ts`, `src/toolkit/strategy/actions.ts`
-- Modify: session-runner V3 loop to call strategy engine instead of sequential phases
-- Test: strategy produces correct action mix given various colony states
+Build the engine as toolkit, rules as strategy YAML.
+- New toolkit: `src/toolkit/strategy/engine.ts`, `actions.ts`
+- New strategy: `agents/sentinel/strategy.yaml`
+- Modify cli (strategy): session-runner V3 loop calls strategy engine
+- Test: engine produces correct action mix given various colony states + YAML rules
 
 ### Phase 4: Cleanup
 Remove eliminated phases and dead code.
 - Delete: `cli/gate.ts`, harden logic, separate audit/review
 - Simplify: extension hooks (beforeSense, afterAct, afterConfirm only)
 - Update: CLAUDE.md, docs, memory
+- Verify: `npm test` — boundary test passes, no toolkit→strategy imports
 
 ### What breaks
 - Plugins hooking into `afterGate`, `beforePublish` with the old signature
