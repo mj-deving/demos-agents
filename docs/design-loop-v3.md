@@ -85,7 +85,7 @@ This is backwards. You don't write a research paper and then go looking for cita
 │  Strategy engine picks actions from ColonyState:                 │
 │  ├── ENGAGE: react to posts (agree/disagree/tip)                │
 │  ├── REPLY: respond to threads, mentions, discussions            │
-│  │         (uses PUBLISH as primitive — same data-first flow,   │
+│  │         (uses PUBLISH as primitive — same signal-first flow,  │
 │  │          but with replyTo=parentTxHash)                       │
 │  └── PUBLISH: create new top-level post (signal-first — see §4)  │
 │                                                                  │
@@ -118,6 +118,49 @@ This is backwards. You don't write a research paper and then go looking for cita
 ```
 
 **Total session budget: <170s** (SENSE 40s + ACT 90s + CONFIRM 40s). Rebalanced from original 30/120/20 after simulation showed ACT has 4x headroom while CONFIRM is tight on reaction updates.
+
+### Phase data contracts (frozen interfaces)
+
+```
+// SENSE produces:
+SenseOutput {
+  colonyState: {
+    activity: { postsPerHour, activeAuthors, trendingTopics }
+    gaps: { underservedTopics, unansweredQuestions, staleThreads }
+    threads: { activeDiscussions, mentionsOfUs, hotThreads }
+    agents: { topContributors, ourPerformance }  // ourPerformance = cached from last CONFIRM
+  }
+  availableEvidence: Array<{
+    sourceId, subject, metrics[], richness, freshness, stale
+  }>
+  performanceFeedback: {   // cached from last CONFIRM, read-only in SENSE
+    avgScore, topPerformers, trendingTopics, insights
+  }
+}
+
+// ACT consumes SenseOutput, produces:
+ActOutput {
+  actions: Array<{
+    type: "ENGAGE" | "REPLY" | "PUBLISH" | "TIP"
+    txHash: string | null
+    claim: StructuredClaim | null
+    attestation: { txHash, method, provenance } | null
+    status: "published" | "ditched" | "failed"
+  }>
+}
+
+// CONFIRM consumes ActOutput, produces (persisted for next SENSE):
+ConfirmOutput {
+  verifiedActions: ActOutput.actions with verification status
+  reactionUpdates: { postTxHash, agrees, disagrees, tips }[]  // <48h posts only
+  performanceSnapshot: {                                        // cached for next SENSE
+    avgScore, topPerformers, trendingTopics, insights
+  }
+  calibrationDelta: { predictedVsActual, confidenceAdjustment }
+}
+```
+
+**`topPerformers` ownership:** Computed in CONFIRM from cached reaction data, stored in `ConfirmOutput.performanceSnapshot`, read by SENSE via `SenseOutput.performanceFeedback`. SENSE does NOT compute it — it reads the cached value. Strategy reads it from `SenseOutput.performanceFeedback.topPerformers`.
 
 ## 4. Signal-First Publishing with Attestation Feedback Loop
 
@@ -230,23 +273,47 @@ Post is generated blind. Source is found after. Matching fails because the post 
 
 Claims are NOT raw text strings with a hash. They are structured records with typed fields. This is the foundation for the faithfulness gate, claim ledger, deduplication, and verification.
 
+**A claim is like a clause in a legal contract — every term must be unambiguous.** DAHR attestations prove "this URL returned this data at this time" (node-signed). TLSN attestations prove "this TLS session with this server produced this response" (cryptographically verified). Both are on-chain records. The claim schema must be precise enough that any party can independently verify whether the attestation supports the claim.
+
+#### Claim Identity (canonical, unambiguous)
+
+The claim identity uniquely identifies WHAT is being claimed about WHICH specific object on WHICH chain. `{subject: "compound", metric: "tvl"}` is NOT specific enough — it could mean Compound on Ethereum vs Base, USDC market vs WETH market.
+
+```
+ClaimIdentity {
+  chain: string              // "eth:1" (mainnet), "sol:mainnet", "demos", "web2"
+  address: string | null     // contract/program address (null for web2 or Demos-native)
+  market: string | null      // "usdc", "weth" — for multi-market protocols (null if single)
+  entityId: string | null    // "247" for proposal #247, txHash for specific transaction
+  metric: string             // "totalSupply", "proposalState", "price_usd", "hash_rate"
+}
+```
+
+**Deduplication key:** `ClaimIdentity + timeWindow`. NOT `subject + metric + timeWindow`. "Compound USDC TVL on Ethereum" and "Compound WETH TVL on Ethereum" are DIFFERENT claims.
+
+#### Full StructuredClaim
+
 ```
 StructuredClaim {
-  // What is claimed
-  subject: string              // normalized entity: "bitcoin", "compound", "ethereum"
-  metric: string               // canonical metric name: "hash_rate", "tvl", "price_usd"
-  value: number | null         // 877.9. Phase 1: null-value claims are auto-classified as editorial (see note below)
+  // Canonical identity — unambiguous, dedup key
+  identity: ClaimIdentity
+
+  // Human-readable subject (for LLM prompts and post text, NOT for dedup)
+  subject: string              // "compound", "bitcoin" — display name
+
+  // Claimed value
+  value: number | null         // 877.9. Phase 1: null-value = auto-editorial (see below)
   unit: string                 // "EH/s", "USD", "%", "blocks", "none"
-  direction: "up"|"down"|"stable"|null  // for trend claims: "hash rate surging" → "up"
+  direction: "up"|"down"|"stable"|null  // for trend claims
 
-  // When
-  dataTimestamp: string | null // when the underlying data was captured (from attestation)
+  // When the underlying data was captured
+  dataTimestamp: string | null
 
-  // Source binding — which entity does this value belong to?
-  sourceField: string | null   // JSON path in attested data: "hash_rate", "market_price_usd"
+  // Source binding — where in the attested data this value lives
+  sourceField: string | null   // JSON path: "hash_rate", "market_price_usd", "state"
 
   // Classification
-  type: "factual" | "editorial"  // factual = needs attestation, editorial = analysis/opinion
+  type: "factual" | "editorial"  // factual = needs attestation, editorial = opinion
 }
 ```
 
@@ -522,6 +589,61 @@ Colony Cache (local HIVE mirror — SQLite via better-sqlite3)
 - **Contradiction detection**: Two claims about `(bitcoin, hash_rate)` within the same time window with different values → flag as contradicting. Useful for disagree decisions.
 - **Stale claim detection**: `claim.dataTimestamp + STALENESS_THRESHOLDS[claim.metric] < now()` → claim was true at attestation time but data has likely moved.
 
+**Proof ingestion pipeline (how we verify OTHER agents' attestations):**
+
+When the scanner encounters a post with attestation references, it must resolve and verify the proof — not just store the txHash.
+
+```
+function ingestAttestation(post, attestationTxHash, sdk):
+  // Step 1: Resolve the attestation transaction on Demos chain
+  tx = await sdk.verifyTransaction(attestationTxHash)
+  if !tx: return { verified: false, reason: "attestation tx not found on chain" }
+
+  // Step 2: Determine attestation type from transaction data
+  if tx.type === "web2" and tx.action === "START_PROXY":
+    // DAHR attestation — Demos node proxied the request
+    return {
+      verified: true,
+      method: "DAHR",
+      sourceUrl: tx.params.url,           // the URL that was proxied
+      responseHash: tx.params.responseHash, // hash of the response body
+      nodeSignature: tx.signature,         // Demos node signed this
+      timestamp: tx.timestamp,             // when the attestation happened
+      // Note: DAHR does NOT store the response body on-chain — only the hash.
+      // To verify claims against the data, we must re-fetch the URL or trust
+      // that the responseHash matches what the post claims.
+    }
+
+  elif tx.type === "storage" and isProofStorage(tx):
+    // TLSN attestation — cryptographic proof stored on-chain
+    proof = JSON.parse(tx.params.data)     // the stored Presentation JSON
+    return {
+      verified: true,
+      method: "TLSN",
+      sourceUrl: proof.serverName,         // verified server identity
+      responseData: proof.recv,            // actual response data (in the proof!)
+      sentData: proof.sent,                // the HTTP request that was made
+      notaryKey: proof.notaryKey,          // who notarized this
+      timestamp: proof.time,               // TLS session timestamp
+      // TLSN proofs contain the actual response data — we can verify
+      // claims directly against proof.recv without re-fetching.
+    }
+
+  return { verified: false, reason: "unknown attestation type" }
+```
+
+**Key difference between DAHR and TLSN for verification:**
+
+| | DAHR | TLSN |
+|---|---|---|
+| What's on-chain | URL + response hash + node signature | Full proof with actual response data |
+| Can verify claim value? | Only if we re-fetch the URL (data may have changed) | YES — `proof.recv` contains the exact data at attestation time |
+| Trust model | Trust the Demos node signed honestly | Cryptographic — trust the MPC-TLS math |
+| Cost | ~1 DEM (attestation tx) | ~1 + proof_size_kb DEM (token + storage) |
+| Verification strength | Medium (hash-based, node-trusted) | Strong (cryptographic, server identity verified) |
+
+**For verified engagement:** When deciding to agree/tip another agent's post, prefer posts with TLSN attestations (we can verify the actual data) over DAHR-only posts (we can only verify the hash, not the content). DAHR posts are still trustworthy (the Demos node is trusted), but TLSN is independently verifiable.
+
 **Scan algorithm:**
 
 ```
@@ -574,11 +696,8 @@ function incrementalScan(cache, sdk):
         stale: false,  // staleness computed lazily on read
       })
 
-  // 3. Get reactions for recent posts (batch)
-  recentHashes = cache.getPostsNewerThan(24h).map(p => p.txHash)
-  reactions = sdk.getHiveReactions(recentHashes)
-  for (hash, count) in reactions:
-    cache.reactions.set(hash, count)
+  // 3. Reactions are NOT fetched here — CONFIRM is the canonical owner (§5.4)
+  //    SENSE reads cached reaction counts from last CONFIRM run.
 
   // 4. Return delta for SENSE phase
   return {
@@ -1327,7 +1446,7 @@ function decideActions(colonyState, availableEvidence, calibration):
     if evidence and not thread.repliedByUs:
       actions.push({ type: "REPLY", target: thread, evidence, priority: 80 })
 
-  // Rule 4: Publish to fill gaps (data-first)
+  // Rule 4: Publish to fill gaps (signal-first — draft, attest, gate, publish)
   for gap in colonyState.gaps.underservedTopics:
     evidence = findBestEvidence(gap, availableEvidence)
     if evidence and evidence.freshness < 1h and evidence.richness > MIN_RICHNESS:
@@ -1384,8 +1503,8 @@ function trackPostPerformance(cache, sdk, ourAddress):
   ourPosts = cache.getPostsByAuthor(ourAddress, since: 30_DAYS_AGO)
 
   for post in ourPosts:
-    // Fetch current reaction counts from chain
-    reactions = sdk.getHiveReactions([post.txHash])
+    // Read CACHED reaction counts — NOT from chain (§5.4, CONFIRM owns updates)
+    reactions = cache.reactionCache.get(post.txHash)
     replies = cache.getRepliesTo(post.txHash)
 
     // Compute performance score (0-100)
@@ -1503,7 +1622,7 @@ Not everything in the current loop is wrong. These must carry forward:
 | What | Why | Where in V3 |
 |------|-----|-------------|
 | TDD discipline (2053 tests) | Non-negotiable quality bar | All new code gets tests first |
-| Chain-only principle | Proven correct by API death. No DNS dependency. | All V3 ops use SDK/RPC only |
+| Chain-first principle | On-chain methods preferred when they exist. HTTP allowed as fallback for web2 data with no on-chain equivalent. SuperColony API NEVER used for operational data. The agent IS the oracle — bridges web2 claims to on-chain via DAHR/TLSN attestation. | Discovery priority: chain-native → catalog → colony → API patterns. See §5.7 trust hierarchy. |
 | Security-first (ADR-0007) | Real money on mainnet | `executeChainTx()` mandatory for all writes |
 | Transcript logging | H0 baseline data was invaluable | CONFIRM phase logs all actions to JSONL |
 | Rate limiting (self-imposed) | Chain has no limits but we don't want to spam | Strategy engine applies limits |
@@ -1523,7 +1642,7 @@ Not everything in the current loop is wrong. These must carry forward:
 | **AUDIT as separate from REVIEW** | Both read the same session log. Both propose improvements. Neither acts on them. Merged into CONFIRM. |
 | **6-axis scoring pipeline** | Eliminated by flow inversion. When you generate FROM attested data, matching is tautological. |
 | **Match threshold** | No matching step = no threshold. |
-| **`extractClaims()` regex pipeline** | Produced bag-of-words tokens that never matched structured JSON. Irrelevant in data-first flow. |
+| **`extractClaims()` regex pipeline** | Produced bag-of-words tokens that never matched structured JSON. Replaced by typed `StructuredClaim` extraction in signal-first flow. |
 | **`extractClaimsLLM()` / `scoreBodyMatchLLM()`** | Built to fix regex matching. Obsoleted by eliminating the problem entirely. |
 | **Gate tool scripts** (`cli/gate.ts`) | Strategy engine subsumes gating logic. |
 | **Separate subprocess per phase** | 8 tmux sessions per loop run. V3 inlines most work. |
