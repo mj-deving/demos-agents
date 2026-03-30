@@ -37,7 +37,7 @@ First-principles analysis (2026-03-30) revealed:
 
 **What's missing — extend the existing transcript with:**
 
-1. **Match-level instrumentation** — Emit match scores per post (raw score, threshold, pass/fail, which sources were candidates vs selected). Currently the matcher runs but doesn't log its scoring decisions to the transcript.
+1. **Match-level instrumentation** — Emit match scores per post: **per-axis scores** (topic relevance, body match, metrics overlap, metadata match — not just composite), threshold, pass/fail, which sources were candidates vs selected. Currently the matcher runs but doesn't log its scoring decisions to the transcript. Per-axis breakdown is essential for diagnosing which scoring dimension is weak.
 
 2. **Source relevance tracking** — Track whether fetched sources actually contained evidence for the claimed topic (not just fetch success). This distinguishes "source is up" from "source is useful."
 
@@ -49,39 +49,49 @@ First-principles analysis (2026-03-30) revealed:
 
 **Trigger to start H1:** Baseline captured from ≥5 sessions. Root cause of quality issues identified with data, not assumption.
 
-### H1 — Make Posts Better
+### H1a — Fix the Confirmed Bottleneck
 **Status:** Parked (trigger: H0 complete)
-**Estimated:** 2-3 sessions
+**Estimated:** 1-2 sessions
 
-4. **Fix the confirmed bottleneck** — Targeted fix based on H0 data. Likely the matcher, but let data decide. If matcher:
+4. **Fix whatever H0 data identifies** — Targeted fix based on data, not assumption. Likely the matcher, but let data decide. If matcher:
    - Calibrate scoring weights against real match data
    - Add LLM-assisted claim extraction (requires: cost estimate per session, 30s phase budget analysis, prompt injection security review for untrusted source content)
    - Threshold tuning with data-backed rationale
 
-5. **Build chain-only colony census** — Map who's active, what topics get engagement, which niches are underserved. Uses existing chain methods: `getHivePosts`, `getHiveReactionsByAuthor`, `getRepliesTo`. Must define minimum viable census: what network activity level makes census-driven topic selection better than current approach?
+5. **Measure improvement** — Run 5+ sessions with the fix. Compare against H0 baseline on the same metrics.
 
-6. **Wire colony signals into topic selection** — Stop publishing blind. Use census data for topic selection. Measure impact against H0 baseline.
+**Rollback clause:** If post-fix metrics are worse than H0 baseline on any primary metric (match scores, gate pass rate, engagement), revert and re-diagnose before proceeding. Improvement is not assumed to be monotonic.
 
-**Trigger to start H2:** H1 ships. Post-H1 metrics show measurable improvement over H0 baseline.
+**Trigger to start H1b:** H1a metrics show ≥15% improvement in median match score OR ≥20% improvement in gate pass rate over H0 baseline. These thresholds are initial — adjust based on what H0 data reveals about variance.
+
+### H1b — Colony Awareness
+**Status:** Parked (trigger: H1a shows improvement)
+**Estimated:** 1-2 sessions
+
+6. **Build chain-only colony census** — Map who's active, what topics get engagement, which niches are underserved. Uses existing chain methods: `getHivePosts`, `getHiveReactionsByAuthor`, `getRepliesTo`. Must define minimum viable census: what network activity level makes census-driven topic selection better than current approach? Spike test RPC rate limits before building.
+
+7. **Wire colony signals into topic selection** — Stop publishing blind. Use census data for topic selection. Measure impact against H0 baseline.
+
+**Trigger to start H2:** H1b ships. Post-H1b metrics show measurable improvement over H0 baseline (engagement increase or topic diversity improvement).
 
 ### H2 — Iterate & Expand
 **Status:** Parked (trigger: H1 + measurable improvement)
 **Estimated:** Ongoing
 
-7. **Measure improvement against baseline** — Compare H1 metrics to H0 baseline. Did match scores improve? Did gate pass rates change? Did engagement increase? If not, diagnose why before expanding.
+8. **Measure improvement against baseline** — Compare H1a+H1b metrics to H0 baseline. Did match scores improve? Did gate pass rates change? Did engagement increase? If not, diagnose why before expanding.
 
-8. **Auto-tune calibration** — Use transcript data to adjust confidence predictions. EMA smoothing (alpha=0.3), bounded offset ([-5,+15]), age-out after 20 sessions.
+9. **Auto-tune calibration** — Use transcript data to adjust confidence predictions. EMA smoothing (alpha=0.3), bounded offset ([-5,+15]), age-out after 20 sessions.
 
-9. **Expand source catalog** — First: audit 81 archived sources for quick revival (cheaper than new specs). Then add new sources in underserved topic areas identified by colony census.
+10. **Expand source catalog** — First: audit 81 archived sources for quick revival (cheaper than new specs). Then add new sources in underserved topic areas identified by colony census.
 
 ### H3 — Scale When Needed
 **Status:** Parked (trigger: real second consumer or second agent)
 
-10. **Toolkit packaging** — Extract @demos-agents/core as publishable package. Move files, remove 12 deprecated shims, set up proper exports.
+11. **Toolkit packaging** — Extract @demos-agents/core as publishable package. Move files, remove 12 deprecated shims, set up proper exports.
 
-11. **Agent composition** — Replace hook registration with skill-loader. Internalize plugin logic into plugin files. Phase 0 prerequisite (2-3 sessions) + Phases A-D.
+12. **Agent composition** — Replace hook registration with skill-loader. Internalize plugin logic into plugin files. Phase 0 prerequisite (2-3 sessions) + Phases A-D.
 
-12. **Reactive mode (production deploy)** — 20 files of reactive infrastructure already exist (`src/reactive/`, `cli/event-runner.ts`, 4 event sources, 6 handlers, generic `EventLoop<TAction>`). What's deferred is the operational decision to run it in production.
+13. **Reactive mode (production deploy)** — 20 files of reactive infrastructure already exist (`src/reactive/`, `cli/event-runner.ts`, 4 event sources, 6 handlers, generic `EventLoop<TAction>`). What's deferred is the operational decision to run it in production.
 
 **Triggers (any one):** A real second consumer needs the toolkit (OpenClaw, ElizaOS). A real second agent needs to run. Chain event volume justifies real-time response over cron.
 
@@ -95,7 +105,7 @@ First-principles analysis (2026-03-30) revealed:
 | Reactive mode production deploy | Cron works. 20 files already built. | Engagement data shows latency matters |
 | Multi-agent Skill-Dojo clusters | Multiple prerequisite triggers not met | WS2 + WS4 triggers |
 | SDK-blocked verticals | StorageProgram, DemosWork, L2PS bugs. Externally blocked. | KyneSys fixes |
-| Desloppify target 85 | Currently 81.2. Diminishing returns. | Feature-driven, not standalone |
+| Desloppify target 85 | Currently 81.2. Diminishing returns. New H0/H1 code must not regress below 81.2. | Feature-driven, not standalone |
 | Unified skill roadmap tiers 2-3 | Blocked on SDK bugs | KyneSys fixes |
 
 ## Explicitly Kept
