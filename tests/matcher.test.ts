@@ -172,6 +172,7 @@ describe("evidence and metadata scoring", () => {
       postTags: ["crypto", "macro"],
       candidates: [makeCandidate(source)],
       sourceView: emptySourceView,
+      llm: mockLLM('{"score":18,"matched_claims":["bitcoin","45%"]}'),
     });
 
     expect(result.best?.score).toBeGreaterThan(0);
@@ -287,6 +288,7 @@ describe("evidence and metadata scoring", () => {
       candidates: [makeCandidate(source)],
       sourceView: emptySourceView,
       matchThreshold: 30,
+      llm: mockLLM('{"score":17,"matched_claims":["bitcoin"]}'),
     });
 
     expect(result.scoreDetail).toEqual({
@@ -505,6 +507,7 @@ describe("claim extraction transcript logging in match()", () => {
       sourceView: emptySourceView,
       matchThreshold: 30,
       transcript,
+      llm: mockLLM('{"score":17,"matched_claims":["bitcoin"]}'),
     });
 
     const events = readTranscript(transcript.filePath);

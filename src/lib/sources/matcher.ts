@@ -49,10 +49,6 @@ const STOPWORDS = new Set([
   "after", "before", "while", "still", "might", "being", "does", "here",
 ]);
 
-function isNumericClaim(claim: string): boolean {
-  return /^\$?[\d,.]+[%bmkt]?$/.test(claim);
-}
-
 // ── Types ───────────────────────────────────────────
 
 export interface MatchInput {
@@ -191,6 +187,76 @@ Return ONLY the JSON array, no other text. Example: ["bitcoin", "$64000", "45% i
   }
 }
 
+function emptyBodyMatchResult(): { bodyScore: number; bodyMatches: number; matchedClaims: string[] } {
+  return {
+    bodyScore: 0,
+    bodyMatches: 0,
+    matchedClaims: [],
+  };
+}
+
+export async function scoreBodyMatchLLM(
+  claims: string[],
+  entries: EvidenceEntry[],
+  llm: LLMProvider,
+): Promise<{ bodyScore: number; bodyMatches: number; matchedClaims: string[] }> {
+  const limitedClaims = claims
+    .slice(0, 15)
+    .map((claim) => claim.trim())
+    .filter((claim) => claim.length > 0);
+  const sourceData = entries
+    .map((entry) => entry.bodyText.trim())
+    .filter((text) => text.length > 0)
+    .join("\n")
+    .slice(0, 500);
+
+  if (limitedClaims.length === 0 || sourceData.length === 0) {
+    return emptyBodyMatchResult();
+  }
+
+  const prompt = `Score how well this source data supports these claims. Return ONLY JSON.
+
+Claims: ${limitedClaims.join(", ")}
+Source data: ${sourceData}
+
+Return: {"score": 0-25, "matched_claims": ["claim1", "claim2"]}
+Score 0 = no support, 25 = strong direct evidence.`;
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const response = await Promise.race([
+      llm.complete(prompt, { maxTokens: 128, modelTier: "fast" }),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("LLM body match timeout")), LLM_CLAIM_TIMEOUT_MS);
+      }),
+    ]);
+    clearTimeout(timeoutId);
+
+    const parsed = JSON.parse(cleanLLMJson(response)) as {
+      score?: unknown;
+      matched_claims?: unknown;
+    };
+
+    if (typeof parsed.score !== "number" || !Array.isArray(parsed.matched_claims)) {
+      return emptyBodyMatchResult();
+    }
+
+    const matchedClaims = parsed.matched_claims
+      .filter((claim): claim is string => typeof claim === "string" && claim.trim().length > 0)
+      .map((claim) => claim.trim());
+
+    return {
+      bodyScore: Math.max(0, Math.min(25, Math.round(Number.isFinite(parsed.score) ? parsed.score : 0))),
+      bodyMatches: matchedClaims.length,
+      matchedClaims,
+    };
+  } catch {
+    return emptyBodyMatchResult();
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 /**
  * Async claim extraction — always extracts regex claims for baseline,
  * then optionally enhances with LLM claims when available.
@@ -317,12 +383,13 @@ interface MatchScoreAxes {
  * - Evidence metrics overlap (0-15): numeric claims found in metrics
  * - Source metadata match (0-15): topic/domain overlap (from Phase 3)
  */
-function scoreEvidence(
+export async function scoreEvidence(
   claims: string[],
   entries: EvidenceEntry[],
   source: SourceRecordV2,
-  postTags: string[]
-): { score: number; axes: MatchScoreAxes; matchedClaims: string[]; evidence: string[] } {
+  postTags: string[],
+  llm?: LLMProvider | null,
+): Promise<{ score: number; axes: MatchScoreAxes; matchedClaims: string[]; evidence: string[] }> {
   const matched: string[] = [];
   const evidenceNotes: string[] = [];
   let score = 0;
@@ -351,18 +418,13 @@ function scoreEvidence(
   if (titleMatches > 0) evidenceNotes.push(`${titleMatches} title match(es)`);
 
   // Evidence body match (0-25)
-  let bodyMatches = 0;
-  for (const entry of entries) {
-    const bodyLower = entry.bodyText.toLowerCase();
-    for (const claim of claimSet) {
-      if ((claim.length >= 4 || isNumericClaim(claim)) && bodyLower.includes(claim)) {
-        bodyMatches++;
-        if (!matched.includes(claim)) matched.push(claim);
-      }
-    }
-  }
-  const bodyScore = Math.min(25, Math.round((bodyMatches / Math.max(claimSet.size, 1)) * 25));
+  const { bodyScore, bodyMatches, matchedClaims: bodyMatchedClaims } = llm
+    ? await scoreBodyMatchLLM(claims, entries, llm)
+    : emptyBodyMatchResult();
   score += bodyScore;
+  for (const claim of bodyMatchedClaims) {
+    if (!matched.includes(claim)) matched.push(claim);
+  }
   if (bodyMatches > 0) evidenceNotes.push(`${bodyMatches} body match(es)`);
 
   // Evidence topic overlap (0-20)
@@ -662,7 +724,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
   for (const { candidate, entries, fetchSuccess } of fetchResults) {
     try {
       const scoreResult = entries.length > 0
-        ? scoreEvidence(claims, entries, candidate.source, postTags)
+        ? await scoreEvidence(claims, entries, candidate.source, postTags, input.llm)
         : scoreMetadataOnly(claims, candidate.source, postTags);
 
       scored.push({
