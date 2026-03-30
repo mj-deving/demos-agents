@@ -3,6 +3,7 @@ import type { LLMProvider } from "../src/lib/llm/llm-provider.js";
 import type { AgentSourceView } from "../src/lib/sources/catalog.js";
 import type { PreflightCandidate } from "../src/lib/sources/policy.js";
 import type { MatchResult } from "../src/lib/sources/matcher.js";
+import { createTranscriptContext } from "../src/lib/transcript.js";
 
 // ── Mocks ────────────────────────────────────────────
 
@@ -206,5 +207,15 @@ describe("extensions LLM wiring", () => {
 
     const callArg = matchMock.mock.calls[0][0];
     expect(callArg.prefetchedResponses).toBe(prefetchedResponses);
+  });
+
+  it("passes transcript from context to sourcesMatch", async () => {
+    const transcript = createTranscriptContext("sentinel", 9, "/tmp/transcript-test");
+    const ctx = makeContext({ transcript });
+
+    await runAfterPublishDraft(registry, ["sources"], ctx);
+
+    const callArg = matchMock.mock.calls[0][0];
+    expect(callArg.transcript).toBe(transcript);
   });
 });

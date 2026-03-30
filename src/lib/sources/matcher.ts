@@ -20,6 +20,7 @@
 
 import type { AttestationType } from "../attestation/attestation-policy.js";
 import type { LLMProvider } from "../llm/llm-provider.js";
+import type { ClaimExtractionDetail, MatchScoreDetail, SourceRelevanceEntry, TranscriptContext } from "../transcript.js";
 import type { AgentSourceView, SourceRecordV2 } from "./catalog.js";
 import { tokenizeTopic, sourceTopicTokens } from "./catalog.js";
 import type { PreflightCandidate } from "./policy.js";
@@ -27,6 +28,7 @@ import { fetchSource } from "./fetch.js";
 import { getProviderAdapter } from "./providers/index.js";
 import type { EvidenceEntry } from "./providers/types.js";
 import { toErrorMessage } from "../util/errors.js";
+import { emitTranscriptEvent } from "../transcript.js";
 
 // ── Constants ───────────────────────────────────────
 
@@ -47,6 +49,10 @@ const STOPWORDS = new Set([
   "after", "before", "while", "still", "might", "being", "does", "here",
 ]);
 
+function isNumericClaim(claim: string): boolean {
+  return /^\$?[\d,.]+[%bmkt]?$/.test(claim);
+}
+
 // ── Types ───────────────────────────────────────────
 
 export interface MatchInput {
@@ -61,12 +67,15 @@ export interface MatchInput {
   prefetchedResponses?: Map<string, import("./providers/types.js").FetchedResponse>;
   /** Override match score threshold (default: 10) — configurable per-agent via persona.yaml */
   matchThreshold?: number;
+  /** Optional transcript context for claim extraction observability. */
+  transcript?: TranscriptContext;
 }
 
 export interface MatchResult {
   pass: boolean;
   reason: string;
   reasonCode: "PASS" | "NO_POST_MATCH" | "MATCH_FETCH_FAILED" | "MATCH_THRESHOLD_NOT_MET";
+  scoreDetail?: MatchScoreDetail;
   best?: {
     sourceId: string;
     method: AttestationType;
@@ -75,7 +84,7 @@ export interface MatchResult {
     matchedClaims: string[];
     evidence: string[];
   };
-  considered: Array<{ sourceId: string; score?: number; error?: string }>;
+  considered: Array<SourceRelevanceEntry & { sourceId: string; score?: number; error?: string }>;
 }
 
 // ── Claim Extraction ────────────────────────────────
@@ -192,12 +201,39 @@ export async function extractClaimsAsync(
   postTags: string[],
   llm?: LLMProvider | null,
 ): Promise<string[]> {
+  const { claims } = await extractClaimsDetailed(postText, postTags, llm);
+  return claims;
+}
+
+async function extractClaimsDetailed(
+  postText: string,
+  postTags: string[],
+  llm?: LLMProvider | null,
+): Promise<{ claims: string[]; detail: ClaimExtractionDetail }> {
   const regexClaims = extractClaims(postText, postTags);
 
-  if (!llm) return regexClaims;
+  if (!llm) {
+    return {
+      claims: regexClaims,
+      detail: {
+        claims: regexClaims,
+        extraction_method: "regex",
+        claim_count: regexClaims.length,
+      },
+    };
+  }
 
   const llmClaims = await extractClaimsLLM(postText, postTags, llm);
-  if (llmClaims.length === 0) return regexClaims;
+  if (llmClaims.length === 0) {
+    return {
+      claims: regexClaims,
+      detail: {
+        claims: regexClaims,
+        extraction_method: "regex",
+        claim_count: regexClaims.length,
+      },
+    };
+  }
 
   // Merge: LLM claims first, then regex claims not already present
   const seen = new Set(llmClaims);
@@ -209,7 +245,14 @@ export async function extractClaimsAsync(
     }
   }
 
-  return merged;
+  return {
+    claims: merged,
+    detail: {
+      claims: merged,
+      extraction_method: "llm",
+      claim_count: merged.length,
+    },
+  };
 }
 
 // ── Cross-Source Diversity Scoring (PR6) ─────────────
@@ -256,6 +299,13 @@ function calculateDiversityBonus(
 
 // ── Evidence-Based Scoring ──────────────────────────
 
+interface MatchScoreAxes {
+  topic_relevance: number;
+  body_match: number;
+  metrics_overlap: number;
+  metadata_match: number;
+}
+
 /**
  * Score how well structured evidence entries match the post's claims.
  * Phase 4 upgrade: uses EvidenceEntry fields for deeper matching.
@@ -272,7 +322,7 @@ function scoreEvidence(
   entries: EvidenceEntry[],
   source: SourceRecordV2,
   postTags: string[]
-): { score: number; matchedClaims: string[]; evidence: string[] } {
+): { score: number; axes: MatchScoreAxes; matchedClaims: string[]; evidence: string[] } {
   const matched: string[] = [];
   const evidenceNotes: string[] = [];
   let score = 0;
@@ -305,7 +355,7 @@ function scoreEvidence(
   for (const entry of entries) {
     const bodyLower = entry.bodyText.toLowerCase();
     for (const claim of claimSet) {
-      if (claim.length >= 4 && bodyLower.includes(claim)) {
+      if ((claim.length >= 4 || isNumericClaim(claim)) && bodyLower.includes(claim)) {
         bodyMatches++;
         if (!matched.includes(claim)) matched.push(claim);
       }
@@ -355,6 +405,12 @@ function scoreEvidence(
 
   return {
     score: Math.min(100, score),
+    axes: {
+      topic_relevance: titleScore + topicScore,
+      body_match: bodyScore,
+      metrics_overlap: metricsScore,
+      metadata_match: metadataScore,
+    },
     matchedClaims: [...new Set(matched)],
     evidence: evidenceNotes,
   };
@@ -385,7 +441,7 @@ function scoreMetadataOnly(
   claims: string[],
   source: SourceRecordV2,
   postTags: string[]
-): { score: number; matchedClaims: string[]; evidence: string[] } {
+): { score: number; axes: MatchScoreAxes; matchedClaims: string[]; evidence: string[] } {
   const matched: string[] = [];
   const evidence: string[] = [];
   let score = 0;
@@ -468,6 +524,12 @@ function scoreMetadataOnly(
 
   return {
     score: Math.min(100, score),
+    axes: {
+      topic_relevance: topicScore + domainScore + providerScore,
+      body_match: 0,
+      metrics_overlap: 0,
+      metadata_match: nameScore + aliasScore,
+    },
     matchedClaims: matched,
     evidence,
   };
@@ -481,8 +543,25 @@ interface ScoredCandidate {
   method: AttestationType;
   url: string;
   score: number;
+  axes: MatchScoreAxes;
   matchedClaims: string[];
   evidence: string[];
+}
+
+function buildMatchScoreDetail(
+  best: ScoredCandidate,
+  threshold: number,
+  passed: boolean,
+  candidates: PreflightCandidate[],
+): MatchScoreDetail {
+  return {
+    ...best.axes,
+    composite: best.score,
+    threshold,
+    passed,
+    candidateSourceNames: candidates.map((candidate) => candidate.source.name || candidate.sourceId),
+    selectedSourceName: best.source.name || best.sourceId,
+  };
 }
 
 // ── Match ───────────────────────────────────────────
@@ -498,7 +577,7 @@ interface ScoredCandidate {
  * reasonCode MATCH_THRESHOLD_NOT_MET.
  */
 export async function match(input: MatchInput): Promise<MatchResult> {
-  const { postText, postTags, candidates, llm, prefetchedResponses, matchThreshold } = input;
+  const { topic, postText, postTags, candidates, llm, prefetchedResponses, matchThreshold, transcript } = input;
   const threshold = Math.max(5, Math.min(100, matchThreshold ?? DEFAULT_MATCH_THRESHOLD));
 
   if (candidates.length === 0) {
@@ -511,14 +590,28 @@ export async function match(input: MatchInput): Promise<MatchResult> {
   }
 
   // Extract claims — LLM-assisted when available, regex fallback (PR6)
-  const claims = await extractClaimsAsync(postText, postTags, llm);
+  const { claims, detail } = await extractClaimsDetailed(postText, postTags, llm);
+  if (transcript) {
+    emitTranscriptEvent(transcript, {
+      type: "phase-complete",
+      phase: "match",
+      data: { topic, candidateCount: candidates.length },
+      metrics: { claimExtraction: detail },
+    });
+  }
   if (claims.length === 0) {
-    return {
-      pass: false,
-      reason: "No claims extracted from post text",
-      reasonCode: "NO_POST_MATCH",
-      considered: candidates.map((c) => ({ sourceId: c.sourceId })),
-    };
+      return {
+        pass: false,
+        reason: "No claims extracted from post text",
+        reasonCode: "NO_POST_MATCH",
+        considered: candidates.map((candidate) => ({
+          sourceId: candidate.sourceId,
+          source_name: candidate.source.name,
+          fetch_success: false,
+          evidence_entries_found: 0,
+          evidence_relevance_score: 0,
+        })),
+      };
   }
 
   // Fetch all candidates in parallel (network I/O is the bottleneck)
@@ -527,7 +620,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
     candidates.map(async (candidate) => {
       const adapter = getProviderAdapter(candidate.source.provider);
       if (!adapter || !adapter.supports(candidate.source)) {
-        return { candidate, entries: [] as EvidenceEntry[] };
+        return { candidate, entries: [] as EvidenceEntry[], fetchSuccess: false };
       }
       try {
         // Check cache first — pre-fetched by session-runner for LLM context
@@ -550,15 +643,15 @@ export async function match(input: MatchInput): Promise<MatchResult> {
         if (response) {
           try {
             const parsed = adapter.parseResponse(candidate.source, response);
-            return { candidate, entries: parsed.entries };
+            return { candidate, entries: parsed.entries, fetchSuccess: true };
           } catch {
-            return { candidate, entries: [] as EvidenceEntry[] };
+            return { candidate, entries: [] as EvidenceEntry[], fetchSuccess: true };
           }
         }
       } catch {
         // fetch failed — fall through to metadata-only
       }
-      return { candidate, entries: [] as EvidenceEntry[] };
+      return { candidate, entries: [] as EvidenceEntry[], fetchSuccess: false };
     })
   );
 
@@ -566,7 +659,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
   const scored: ScoredCandidate[] = [];
   const considered: MatchResult["considered"] = [];
 
-  for (const { candidate, entries } of fetchResults) {
+  for (const { candidate, entries, fetchSuccess } of fetchResults) {
     try {
       const scoreResult = entries.length > 0
         ? scoreEvidence(claims, entries, candidate.source, postTags)
@@ -579,10 +672,24 @@ export async function match(input: MatchInput): Promise<MatchResult> {
         url: candidate.url,
         ...scoreResult,
       });
-      considered.push({ sourceId: candidate.sourceId, score: scoreResult.score });
+      considered.push({
+        sourceId: candidate.sourceId,
+        source_name: candidate.source.name,
+        fetch_success: fetchSuccess,
+        evidence_entries_found: entries.length,
+        evidence_relevance_score: scoreResult.score,
+        score: scoreResult.score,
+      });
     } catch (err: unknown) {
       const msg = toErrorMessage(err);
-      considered.push({ sourceId: candidate.sourceId, error: msg });
+      considered.push({
+        sourceId: candidate.sourceId,
+        source_name: candidate.source.name,
+        fetch_success: fetchSuccess,
+        evidence_entries_found: entries.length,
+        evidence_relevance_score: 0,
+        error: msg,
+      });
     }
   }
 
@@ -609,12 +716,24 @@ export async function match(input: MatchInput): Promise<MatchResult> {
   // Sort by score descending
   scored.sort((a, b) => b.score - a.score);
   const best = scored[0];
+  const passed = best.score >= threshold;
+  const scoreDetail = buildMatchScoreDetail(best, threshold, passed, candidates);
 
-  if (best.score >= threshold) {
+  if (transcript) {
+    emitTranscriptEvent(transcript, {
+      type: "phase-complete",
+      phase: "match",
+      data: { topic, sourceId: best.sourceId },
+      metrics: { matchScoreDetail: scoreDetail },
+    });
+  }
+
+  if (passed) {
     return {
       pass: true,
       reason: `Source "${best.source.name}" matches with score ${best.score}`,
       reasonCode: "PASS",
+      scoreDetail,
       best: {
         sourceId: best.sourceId,
         method: best.method,
@@ -631,6 +750,7 @@ export async function match(input: MatchInput): Promise<MatchResult> {
     pass: false,
     reason: `Best source "${best.source.name}" scored ${best.score} (threshold: ${threshold})`,
     reasonCode: "MATCH_THRESHOLD_NOT_MET",
+    scoreDetail,
     best: {
       sourceId: best.sourceId,
       method: best.method,

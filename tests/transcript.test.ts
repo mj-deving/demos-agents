@@ -9,6 +9,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import {
+  type ClaimExtractionDetail,
+  type MatchScoreDetail,
   type TranscriptEvent,
   type TranscriptMetrics,
   emitTranscriptEvent,
@@ -16,7 +18,6 @@ import {
   pruneOldTranscripts,
   buildSessionId,
   createTranscriptContext,
-  type TranscriptContext,
 } from "../src/lib/transcript.js";
 
 // ── Test Helpers ──────────────────────────────────────
@@ -50,16 +51,41 @@ describe("transcript types", () => {
     expect(event.sessionId).toBe("sentinel-42");
   });
 
-  it("TranscriptMetrics supports all 4 core metrics", () => {
+  it("TranscriptMetrics supports core metrics and claim extraction detail", () => {
+    const claimExtraction: ClaimExtractionDetail = {
+      claims: ["bitcoin", "$64000", "federal reserve"],
+      extraction_method: "llm",
+      claim_count: 3,
+    };
     const metrics: TranscriptMetrics = {
       tokenCost: undefined, // v1 placeholder
       gatePass: 2,
       gateFail: 1,
       attestationSuccess: 1,
       attestationFailed: 0,
+      claimExtraction,
     };
     expect(metrics.gatePass).toBe(2);
     expect(metrics.tokenCost).toBeUndefined();
+    expect(metrics.claimExtraction).toEqual(claimExtraction);
+  });
+
+  it("TranscriptMetrics supports match score detail", () => {
+    const matchScoreDetail: MatchScoreDetail = {
+      topic_relevance: 13,
+      body_match: 17,
+      metrics_overlap: 5,
+      metadata_match: 3,
+      composite: 38,
+      threshold: 30,
+      passed: true,
+      candidateSourceNames: ["Bitcoin Market Data", "Macro Digest"],
+      selectedSourceName: "Bitcoin Market Data",
+    };
+
+    const metrics: TranscriptMetrics = { matchScoreDetail };
+
+    expect(metrics.matchScoreDetail).toEqual(matchScoreDetail);
   });
 });
 
@@ -120,6 +146,30 @@ describe("emitTranscriptEvent", () => {
     const events = readTranscript(join(tmpDir, "session-1.jsonl"));
     expect(events[0].metrics?.gatePass).toBe(2);
     expect(events[0].metrics?.gateFail).toBe(1);
+  });
+
+  it("persists match score detail when provided", () => {
+    const ctx = createTranscriptContext("sentinel", 1, tmpDir);
+    const matchScoreDetail: MatchScoreDetail = {
+      topic_relevance: 13,
+      body_match: 17,
+      metrics_overlap: 5,
+      metadata_match: 3,
+      composite: 38,
+      threshold: 30,
+      passed: true,
+      candidateSourceNames: ["Bitcoin Market Data"],
+      selectedSourceName: "Bitcoin Market Data",
+    };
+
+    emitTranscriptEvent(ctx, {
+      type: "phase-complete",
+      phase: "match",
+      metrics: { matchScoreDetail },
+    });
+
+    const events = readTranscript(join(tmpDir, "session-1.jsonl"));
+    expect(events[0].metrics?.matchScoreDetail).toEqual(matchScoreDetail);
   });
 
   it("includes data when provided", () => {

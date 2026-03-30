@@ -14,6 +14,12 @@ import { join, dirname } from "node:path";
 // ── Types ─────────────────────────────────────────────
 
 export interface TranscriptMetrics {
+  /** Claim extraction quality detail for source matching. */
+  claimExtraction?: ClaimExtractionDetail;
+  /** Detailed score breakdown for a completed source match attempt. */
+  matchScoreDetail?: MatchScoreDetail;
+  /** Per-source relevance from post-generation matching. */
+  sourceRelevance?: SourceRelevanceEntry[];
   /** LLM token cost for this phase (USD). Placeholder in v1 — provider doesn't expose usage. */
   tokenCost?: number;
   /** LLM call count */
@@ -30,6 +36,47 @@ export interface TranscriptMetrics {
   attestationFailed?: number;
   /** Post reactions (for verify phase) */
   reactions?: { agree: number; disagree: number };
+}
+
+export interface ClaimExtractionDetail {
+  /** Final extracted claims emitted to source matching. */
+  claims: string[];
+  /** Extraction path that produced the final claim set. */
+  extraction_method: "regex" | "llm";
+  /** Convenience count for aggregation/querying. */
+  claim_count: number;
+}
+
+export interface SourceRelevanceEntry {
+  /** Human-readable source name shown in matching/transcript analysis. */
+  source_name: string;
+  /** Whether the source fetch produced a response, independent of usefulness. */
+  fetch_success: boolean;
+  /** Parsed evidence entries returned by the provider adapter. */
+  evidence_entries_found: number;
+  /** Match relevance score for the fetched evidence (0-100). */
+  evidence_relevance_score: number;
+}
+
+export interface MatchScoreDetail {
+  /** Title/topic or metadata-derived relevance contribution. */
+  topic_relevance: number;
+  /** Body-text evidence contribution. */
+  body_match: number;
+  /** Numeric/metrics evidence contribution. */
+  metrics_overlap: number;
+  /** Source metadata contribution. */
+  metadata_match: number;
+  /** Final composite score used for thresholding. */
+  composite: number;
+  /** Effective threshold after clamping/config resolution. */
+  threshold: number;
+  /** Final match decision for the selected candidate. */
+  passed: boolean;
+  /** Human-readable candidate sources considered for this match attempt. */
+  candidateSourceNames: string[];
+  /** Human-readable source name selected as the best match. */
+  selectedSourceName: string;
 }
 
 export interface TranscriptEvent {
@@ -88,6 +135,49 @@ export function createTranscriptContext(
     filePath: join(transcriptDir, `session-${sessionNumber}.jsonl`),
     dirCreated: false,
   };
+}
+
+/**
+ * Extract transcript metrics from a phase result.
+ * Kept in src/lib so transcript typing and metric shaping stay in one place.
+ */
+export function extractTranscriptMetrics(
+  phase: string,
+  result: any,
+  state: any,
+): TranscriptMetrics | undefined {
+  switch (phase) {
+    case "scan":
+      return {
+        sourcesFetched: result.sourceSignals?.sourcesFetched,
+        signalsDetected: result.sourceSignals?.signalCount,
+      };
+    case "gate": {
+      const posts = result.posts || [];
+      const gateResults = posts.map((p: any) => p.gateResult?.summary);
+      const totalPass = gateResults.reduce((sum: number, gate: any) => sum + (gate?.pass || 0), 0);
+      const totalFail = gateResults.reduce((sum: number, gate: any) => sum + (gate?.fail || 0), 0);
+      return { gatePass: totalPass, gateFail: totalFail };
+    }
+    case "publish": {
+      const published = state.posts?.length || 0;
+      return {
+        attestationSuccess: published,
+        sourceRelevance: Array.isArray(result.sourceRelevance) ? result.sourceRelevance : undefined,
+      };
+    }
+    case "verify": {
+      const summary = result.summary || {};
+      return {
+        reactions: {
+          agree: summary.agrees || 0,
+          disagree: summary.disagrees || 0,
+        },
+      };
+    }
+    default:
+      return undefined;
+  }
 }
 
 // ── Emit ──────────────────────────────────────────────

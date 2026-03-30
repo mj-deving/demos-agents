@@ -99,9 +99,10 @@ import {
 import {
   createTranscriptContext,
   emitTranscriptEvent,
+  extractTranscriptMetrics,
   pruneOldTranscripts,
+  type SourceRelevanceEntry,
   type TranscriptContext,
-  type TranscriptMetrics,
 } from "../src/lib/transcript.js";
 
 // ── Transcript Metric Extraction ────────────────────
@@ -162,40 +163,6 @@ function extractPhaseData(phase: string, result: any, state: any): Record<string
         proposed: result.proposed || 0,
         skipped: result.skipped || 0,
       };
-    default:
-      return undefined;
-  }
-}
-
-/** Extract metrics for transcript from phase result.
- * Paths verified against actual result shapes in session-runner.ts. */
-function extractPhaseMetrics(phase: string, result: any, state: any): TranscriptMetrics | undefined {
-  switch (phase) {
-    case "scan":
-      return {
-        sourcesFetched: result.sourceSignals?.sourcesFetched,
-        signalsDetected: result.sourceSignals?.signalCount,
-      };
-    case "gate": {
-      const posts = result.posts || [];
-      const gateResults = posts.map((p: any) => p.gateResult?.summary);
-      const totalPass = gateResults.reduce((s: number, g: any) => s + (g?.pass || 0), 0);
-      const totalFail = gateResults.reduce((s: number, g: any) => s + (g?.fail || 0), 0);
-      return { gatePass: totalPass, gateFail: totalFail };
-    }
-    case "publish": {
-      const published = state.posts?.length || 0;
-      return { attestationSuccess: published };
-    }
-    case "verify": {
-      const summary = result.summary || {};
-      return {
-        reactions: {
-          agree: summary.agrees || 0,
-          disagree: summary.disagrees || 0,
-        },
-      };
-    }
     default:
       return undefined;
   }
@@ -2082,15 +2049,16 @@ async function runPublishManual(
 async function runPublishAutonomous(
   state: AnySessionState,
   flags: RunnerFlags,
-  extensionRegistry: ExtensionHookRegistry
-): Promise<{ txHashes: string[] }> {
+  extensionRegistry: ExtensionHookRegistry,
+  transcript?: TranscriptContext,
+): Promise<{ txHashes: string[]; sourceRelevance: SourceRelevanceEntry[] }> {
   const gateResult = getGateResult(state) || { posts: [] };
   const gatePosts: GatePost[] = gateResult.posts || [];
   const scanResult = getScanResult(state) || {};
 
   if (gatePosts.length === 0) {
     phaseSkipped("No posts gated — nothing to publish");
-    const result = { txHashes: [] as string[] };
+    const result = { txHashes: [] as string[], sourceRelevance: [] as SourceRelevanceEntry[] };
     if (!isV2(state)) completePhase(state, "publish", result);
     return result;
   }
@@ -2125,6 +2093,7 @@ async function runPublishAutonomous(
   // Per-topic publish ledger — tracks status for resume and reporting
   type TopicLedgerEntry = { topic: string; category: string; status: "published" | "skipped" | "failed"; txHash?: string; error?: string };
   const topicLedger: TopicLedgerEntry[] = [];
+  const sourceRelevance: SourceRelevanceEntry[] = [];
 
   // Resolve enabled extensions for hook dispatch
   const enabledExtensions = agentConfig.loopExtensions;
@@ -2339,7 +2308,11 @@ async function runPublishAutonomous(
         sourceView,
         llm: provider,
         prefetchedResponses: prefetchedResponses.size > 0 ? prefetchedResponses : undefined,
+        transcript,
       });
+      if (matchDecision?.considered?.length) {
+        sourceRelevance.push(...matchDecision.considered);
+      }
 
       // Resolve source selection from match/preflight/legacy
       //
@@ -2626,7 +2599,7 @@ async function runPublishAutonomous(
     throw new Error(`Autonomous publish failed: 0/${gatePosts.length} posts succeeded`);
   }
 
-  const result = { txHashes: publishedHashes, topicLedger };
+  const result = { txHashes: publishedHashes, topicLedger, sourceRelevance };
   if (!isV2(state)) completePhase(state, "publish", result);
   return result;
 }
@@ -4020,7 +3993,7 @@ async function main(): Promise<void> {
               else await runGateAutonomous(v1State, flags);
               break;
             case "publish":
-              if (flags.oversight === "autonomous") await runPublishAutonomous(v1State, flags, extensionRegistry);
+              if (flags.oversight === "autonomous") await runPublishAutonomous(v1State, flags, extensionRegistry, transcript);
               else await runPublishManual(v1State, flags, rl!);
               break;
             case "verify":
@@ -4057,7 +4030,7 @@ async function main(): Promise<void> {
             phase,
             durationMs: Date.now() - phaseStartMs,
             data: extractPhaseData(phase, phaseResult, v1State),
-            metrics: extractPhaseMetrics(phase, phaseResult, v1State),
+            metrics: extractTranscriptMetrics(phase, phaseResult, v1State),
           });
         } catch (e: any) {
           // Transcript: phase-error

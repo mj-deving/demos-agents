@@ -77,6 +77,7 @@ export async function sourcesAfterPublishDraft(
     sourceView: ctx.sourceView,
     llm: ctx.llm,
     prefetchedResponses: ctx.prefetchedResponses,
+    transcript: ctx.transcript,
   });
 
   return {
@@ -116,6 +117,7 @@ export function createSourcesPlugin(): FrameworkPlugin {
           sourceView: hookCtx.sourceView,
           llm: hookCtx.llm,
           prefetchedResponses: hookCtx.prefetchedResponses,
+          transcript: hookCtx.transcript,
         });
         hookCtx.matchResult = result;
       },

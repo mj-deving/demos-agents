@@ -17,8 +17,10 @@ import type { AgentConfig } from "../agent-config.js";
 import type { AnySessionState, V2SessionState, PublishedPostRecord } from "../state.js";
 import type { AttestationType } from "../attestation/attestation-policy.js";
 import type { LLMProvider } from "../llm/llm-provider.js";
+import type { SourceRelevanceEntry } from "../transcript.js";
 import type { AgentSourceView, SourceRecordV2 } from "../sources/catalog.js";
 import type { PreflightCandidate } from "../sources/policy.js";
+import type { TranscriptContext } from "../transcript.js";
 
 // ── Logger Interface ──────────────────────────────
 
@@ -76,6 +78,8 @@ export interface AfterPublishDraftContext {
   llm?: LLMProvider | null;
   /** Pre-fetched responses — avoids double-fetching sources already fetched for LLM context */
   prefetchedResponses?: Map<string, import("../sources/providers/types.js").FetchedResponse>;
+  /** Optional transcript context for per-post observability. */
+  transcript?: TranscriptContext;
 }
 
 export interface AfterConfirmContext {
@@ -120,7 +124,7 @@ export interface SourceMatchDecision {
     matchedClaims: string[];
     evidence: string[];
   };
-  considered?: Array<{ sourceId: string; score?: number; error?: string }>;
+  considered?: Array<SourceRelevanceEntry & { sourceId: string; score?: number; error?: string }>;
 }
 
 // ── Hook Interface ────────────────────────────────

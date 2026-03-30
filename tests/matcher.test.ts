@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { SourceRecordV2, AgentSourceView } from "../src/lib/sources/catalog.js";
 import type { PreflightCandidate } from "../src/lib/sources/policy.js";
+import { createTranscriptContext, readTranscript } from "../src/lib/transcript.js";
 
 const { fetchSourceMock, getProviderAdapterMock } = vi.hoisted(() => ({
   fetchSourceMock: vi.fn(),
@@ -88,6 +92,19 @@ const emptySourceView: AgentSourceView = {
   },
 };
 
+let transcriptTmpDir: string;
+
+beforeEach(() => {
+  transcriptTmpDir = join(tmpdir(), `matcher-transcript-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  mkdirSync(transcriptTmpDir, { recursive: true });
+});
+
+afterEach(() => {
+  if (existsSync(transcriptTmpDir)) {
+    rmSync(transcriptTmpDir, { recursive: true, force: true });
+  }
+});
+
 describe("extractClaims", () => {
   it("extracts named entities, numeric claims, and filters stopwords", () => {
     const claims = extractClaims(
@@ -165,6 +182,124 @@ describe("evidence and metadata scoring", () => {
         expect.stringContaining("metrics match"),
       ])
     );
+  });
+
+  it("tracks per-source fetch success separately from evidence usefulness", async () => {
+    const source = makeSource({
+      name: "Weather Feed",
+      provider: "github",
+      topics: ["weather"],
+      topicAliases: ["rain"],
+      domainTags: ["climate"],
+    });
+    fetchSourceMock.mockResolvedValue({
+      ok: true,
+      response: {
+        url: source.url,
+        status: 200,
+        headers: {},
+        bodyText: "{}",
+      },
+      attempts: 1,
+      totalMs: 5,
+    });
+    getProviderAdapterMock.mockReturnValue({
+      provider: "github",
+      domains: ["devtools"],
+      rateLimit: { bucket: "github" },
+      supports: () => true,
+      buildCandidates: () => [],
+      validateCandidate: () => ({ ok: true }),
+      parseResponse: () => ({
+        entries: [
+          {
+            id: "entry-1",
+            title: "Rainfall update",
+            bodyText: "Weather patterns remain stable.",
+            topics: ["climate"],
+            raw: {},
+          },
+        ],
+      }),
+    });
+
+    const result = await match({
+      topic: "bitcoin",
+      postText: "Bitcoin liquidity may rise 45% in 2026.",
+      postTags: ["crypto"],
+      candidates: [makeCandidate(source)],
+      sourceView: emptySourceView,
+    });
+
+    expect(result.considered).toEqual([
+      expect.objectContaining({
+        sourceId: source.id,
+        source_name: "Weather Feed",
+        fetch_success: true,
+        evidence_entries_found: 1,
+        evidence_relevance_score: 0,
+      }),
+    ]);
+  });
+
+  it("returns match score detail for the selected source", async () => {
+    const source = makeSource({
+      name: "Bitcoin Market Data",
+      topics: ["bitcoin"],
+      domainTags: ["crypto"],
+    });
+    fetchSourceMock.mockResolvedValue({
+      ok: true,
+      response: {
+        url: source.url,
+        status: 200,
+        headers: {},
+        bodyText: "{}",
+      },
+      attempts: 1,
+      totalMs: 5,
+    });
+    getProviderAdapterMock.mockReturnValue({
+      provider: "coingecko",
+      domains: ["crypto"],
+      rateLimit: { bucket: "coingecko" },
+      supports: () => true,
+      buildCandidates: () => [],
+      validateCandidate: () => ({ ok: true }),
+      parseResponse: () => ({
+        entries: [
+          {
+            id: "entry-1",
+            title: "Bitcoin",
+            bodyText: "Bitcoin moved 45%",
+            topics: ["crypto"],
+            metrics: { change: "45%" },
+            raw: {},
+          },
+        ],
+      }),
+    });
+
+    const result = await match({
+      topic: "bitcoin",
+      postText: "Bitcoin 45%",
+      postTags: ["crypto"],
+      candidates: [makeCandidate(source)],
+      sourceView: emptySourceView,
+      matchThreshold: 30,
+    });
+
+    expect(result.scoreDetail).toEqual({
+      topic_relevance: 13,
+      body_match: 17,
+      metrics_overlap: 5,
+      metadata_match: 3,
+      composite: 38,
+      threshold: 30,
+      passed: true,
+      candidateSourceNames: ["Bitcoin Market Data"],
+      selectedSourceName: "Bitcoin Market Data",
+    });
   });
 
   it("scores metadata overlap through scoreMatch()", () => {
@@ -290,6 +425,102 @@ describe("extractClaimsAsync", () => {
     );
     expect(claims).toContain("$64000");
     expect(claims).toContain("bitcoin");
+  });
+});
+
+describe("claim extraction transcript logging in match()", () => {
+  beforeEach(() => {
+    fetchSourceMock.mockReset();
+    getProviderAdapterMock.mockReset();
+  });
+
+  it("emits extracted claims and method to the transcript when configured", async () => {
+    const source = makeSource({ id: "src-transcript", topics: ["bitcoin", "market"] });
+    const transcript = createTranscriptContext("sentinel", 7, transcriptTmpDir);
+    getProviderAdapterMock.mockReturnValue(null);
+
+    await match({
+      topic: "bitcoin",
+      postText: "Federal Reserve says Bitcoin may reach $64000 in 2026.",
+      postTags: ["crypto"],
+      candidates: [makeCandidate(source)],
+      sourceView: emptySourceView,
+      transcript,
+    });
+
+    const events = readTranscript(transcript.filePath);
+    const claimExtractionEvent = events.find((event) => event.metrics?.claimExtraction);
+    expect(claimExtractionEvent).toBeDefined();
+    expect(claimExtractionEvent?.phase).toBe("match");
+    expect(claimExtractionEvent?.metrics?.claimExtraction).toEqual({
+      claims: expect.arrayContaining(["federal reserve", "bitcoin", "$64000", "2026", "crypto"]),
+      extraction_method: "regex",
+      claim_count: expect.any(Number),
+    });
+    expect(claimExtractionEvent?.metrics?.claimExtraction?.claim_count).toBe(
+      claimExtractionEvent?.metrics?.claimExtraction?.claims.length,
+    );
+  });
+
+  it("emits match score detail to the transcript when scoring completes", async () => {
+    const source = makeSource({ id: "src-score", name: "Bitcoin Market Data", topics: ["bitcoin"] });
+    const transcript = createTranscriptContext("sentinel", 8, transcriptTmpDir);
+    fetchSourceMock.mockResolvedValue({
+      ok: true,
+      response: {
+        url: source.url,
+        status: 200,
+        headers: {},
+        bodyText: "{}",
+      },
+      attempts: 1,
+      totalMs: 5,
+    });
+    getProviderAdapterMock.mockReturnValue({
+      provider: "coingecko",
+      domains: ["crypto"],
+      rateLimit: { bucket: "coingecko" },
+      supports: () => true,
+      buildCandidates: () => [],
+      validateCandidate: () => ({ ok: true }),
+      parseResponse: () => ({
+        entries: [
+          {
+            id: "entry-1",
+            title: "Bitcoin",
+            bodyText: "Bitcoin moved 45%",
+            topics: ["crypto"],
+            metrics: { change: "45%" },
+            raw: {},
+          },
+        ],
+      }),
+    });
+
+    await match({
+      topic: "bitcoin",
+      postText: "Bitcoin 45%",
+      postTags: ["crypto"],
+      candidates: [makeCandidate(source)],
+      sourceView: emptySourceView,
+      matchThreshold: 30,
+      transcript,
+    });
+
+    const events = readTranscript(transcript.filePath);
+    expect(events).toHaveLength(2);
+    expect(events[1].phase).toBe("match");
+    expect(events[1].metrics?.matchScoreDetail).toEqual({
+      topic_relevance: 13,
+      body_match: 17,
+      metrics_overlap: 5,
+      metadata_match: 3,
+      composite: 38,
+      threshold: 30,
+      passed: true,
+      candidateSourceNames: ["Bitcoin Market Data"],
+      selectedSourceName: "Bitcoin Market Data",
+    });
   });
 });
 
