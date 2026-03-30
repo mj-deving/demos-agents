@@ -8,6 +8,10 @@ export default {
   },
   resolve: {
     alias: {
+      "@demos-agents/core/supercolony/scoring": resolve(
+        __dirname,
+        "packages/core/src/supercolony/scoring.ts"
+      ),
       "@demos-agents/core": resolve(__dirname, "packages/core/src/index.ts"),
     },
   },

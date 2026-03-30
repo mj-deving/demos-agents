@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
+    },
+    "./supercolony/scoring": {
+      "types": "./src/supercolony/scoring.ts",
+      "import": "./src/supercolony/scoring.ts"
     }
   },
   "peerDependencies": {

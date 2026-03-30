@@ -53,6 +53,7 @@ export type {
   SourceStatus,
   PayResult,
 } from "./types.js";
+export type { LLMProvider } from "../lib/llm/llm-provider.js";
 
 export { ok, err, demosError, isDemosError } from "./types.js";
 
