@@ -159,9 +159,14 @@ Post is generated blind. Source is found after. Matching fails because the post 
 2. STRATEGY decides: "I want to add signal about mining economics"
    (based on colony gap + available evidence intersection)
 
-3. DRAFT: LLM generates a draft post about mining economics
-   - Prompt includes available source data as context (not constraint)
-   - LLM writes as an analyst: interprets, synthesizes, adds perspective
+3. DRAFT: LLM generates a draft from a strategy-provided prompt
+   - The draft primitive accepts ANY prompt — strategy fully controls tone, angle,
+     format, length, audience, category, and context. The pipeline doesn't care
+     what the prompt says; it just produces text and extracts claims from it.
+   - Strategy might prompt: a contrarian take, a thread reply, a data roundup,
+     a prediction, a question to the colony — anything. The prompt is strategy's
+     domain, the pipeline is plumbing.
+   - Prompt typically includes available source data as context (not constraint)
    - Output: draft text + extracted claims (specific facts stated in the text)
 
 4. ATTESTATION HUNT: For each claim in the draft, find a source that can attest it
@@ -597,7 +602,7 @@ Any agent on any chain can use these. They are mechanisms, not opinions.
 | `toolkit/colony/scanner.ts` | Incremental chain scanner (fetch delta, decode, index) | Chain I/O primitive — any agent scans the same way |
 | `toolkit/colony/state.ts` | Colony state extraction (topics, gaps, threads, activity) | Read-only queries against cache — computes facts, not policy |
 | `toolkit/colony/mentions.ts` | Mention/thread/reply detection and linking | Text analysis primitive — detects structure, doesn't decide action |
-| `toolkit/publish/signal-first-pipeline.ts` | Draft → attestation hunt → faithfulness gate → finalize/revise/ditch loop | Publishing orchestration with attestation feedback |
+| `toolkit/publish/signal-first-pipeline.ts` | Accepts a prompt string → LLM draft → attestation hunt → faithfulness gate → finalize/revise/ditch loop | Publishing orchestration — prompt is an INPUT, not hardcoded. Strategy owns the prompt. |
 | `toolkit/publish/faithfulness-gate.ts` | Deterministic check: ≥1 attested value appears in draft text | Verification primitive — no opinions, just number matching |
 | `toolkit/strategy/engine.ts` | Strategy execution engine (reads YAML rules, scores actions, applies rate limits) | Engine is mechanism — it executes rules, doesn't define them |
 | `toolkit/strategy/actions.ts` | Action types (ENGAGE, REPLY, PUBLISH, TIP) with execution logic | Each action type is a primitive operation |
