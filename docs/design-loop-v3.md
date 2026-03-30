@@ -68,8 +68,8 @@ This is backwards. You don't write a research paper and then go looking for cita
 ┌──────────────────────────────────────────────────────────────────┐
 │  SENSE — "What's happening?"                                     │
 │                                                                  │
-│  1. Incremental chain scan (delta since cursor, parallel with 2) │
-│  2. Reaction update for <48h posts (parallel with 1, from cache) │
+│  1. Incremental chain scan (delta since cursor)                  │
+│  2. Source cache seeding (up to 10 unfetched/stale sources)      │
 │  3. Colony state extraction (SQLite queries on cached data)      │
 │  4. AvailableEvidence from source response cache (see §5.3)     │
 │  5. Performance feedback (read cached scores from last CONFIRM)  │
@@ -103,9 +103,10 @@ This is backwards. You don't write a research paper and then go looking for cita
 │                                                                  │
 │  Verify broadcasts (inline, ~3s per tx)                          │
 │  Log actions with FULL context: attested data, post text, source │
-│  Performance Tracker: update reaction counts for <48h posts      │
-│    (batched SDK call, NOT per-post). Older posts use cached      │
-│    counts. Compute scores. Identify what hit a nerve.            │
+│  Reaction update: batched fetch for <48h posts (1 SDK call).     │
+│    Older posts trust cached counts. This is the SINGLE canonical │
+│    owner of reaction data — not SENSE, not a separate path.      │
+│  Performance Tracker: compute scores from cached reactions.      │
 │  Prediction vs actual tracking (merged AUDIT + REVIEW)           │
 │  Calibration model update (informed by performance scores)       │
 │  Colony cache update with own posts                              │
@@ -234,7 +235,7 @@ StructuredClaim {
   // What is claimed
   subject: string              // normalized entity: "bitcoin", "compound", "ethereum"
   metric: string               // canonical metric name: "hash_rate", "tvl", "price_usd"
-  value: number | null         // 877.9 (null for non-numeric claims like "launched v2")
+  value: number | null         // 877.9. Phase 1: null-value claims are auto-classified as editorial (see note below)
   unit: string                 // "EH/s", "USD", "%", "blocks", "none"
   direction: "up"|"down"|"stable"|null  // for trend claims: "hash rate surging" → "up"
 
@@ -249,11 +250,13 @@ StructuredClaim {
 }
 ```
 
+**Phase 1 rule: only numeric claims are "factual."** Claims with `value: null` (events, governance, qualitative assertions like "proposal passed") are auto-classified as `type: "editorial"` because the faithfulness gate cannot verify them beyond subject-presence + freshness. This is a deliberate scope limit — event verification requires a different kind of check (string containment in source response, or LLM semantic comparison) that adds complexity beyond Phase 1 scope. Non-numeric factual claims can be promoted to verifiable in a future phase when an event verifier is built.
+
 **Claim extraction** is a two-tier process (toolkit primitive):
 
-1. **Regex tier (fast, deterministic, free)**: Extract `$amounts`, `percentages`, `numbers + known units` (EH/s, gwei, TVL, blocks). Map nearby entity names to subjects using the existing `ASSET_MAP`. This handles 80% of claims in data-heavy posts.
+1. **Regex tier (fast, deterministic, free)**: Extract `$amounts`, `percentages`, `numbers + known units` (EH/s, gwei, TVL, blocks). Map nearby entity names to subjects using the existing `ASSET_MAP`. This handles 80% of claims in data-heavy posts. All regex-extracted claims have a numeric `value` → classified as `type: "factual"`.
 
-2. **LLM tier (fallback for complex claims)**: If regex finds zero claims, ask LLM to extract structured claims. Use `modelTier: "fast"`, max 128 tokens, same timeout pattern as `extractClaimsLLM()`. Only for claims like "protocol launched v2" or "governance proposal passed" that have no numbers.
+2. **LLM tier (deferred to ACT, not scan)**: If regex finds zero claims AND the strategy is about to publish/reply to this post, ask LLM to extract structured claims. Returns claims with `value: null` → auto-classified as `type: "editorial"` in Phase 1. LLM tier is NOT used during SENSE/bootstrap scanning (see §5.6).
 
 **Deduplication key**: `subject + metric + timeWindow`. Two claims about "bitcoin hash_rate" within the same 6-hour window are duplicates regardless of wording. Two claims 24 hours apart are different data points. Time window is metric-dependent: price = 1h (volatile), TVL = 24h (slow-moving), hash_rate = 6h.
 
@@ -288,7 +291,13 @@ function faithfulnessGate(draft, primaryClaim, attestations):
         suggestedRevision: { field: primaryClaim.metric, correctValue: attestedValue }
       }
 
-  // Step 4: Freshness — is the attested data recent enough for this metric?
+  // Step 4: Unit sanity — does the unit make sense for this metric?
+  if primaryClaim.unit != "none":
+    expectedUnits = METRIC_UNITS[primaryClaim.metric]  // e.g., hash_rate → ["EH/s", "TH/s"]
+    if expectedUnits and primaryClaim.unit not in expectedUnits:
+      return { pass: false, reason: "unit mismatch: claim says ${primaryClaim.unit}, metric expects ${expectedUnits}" }
+
+  // Step 5: Freshness — is the attested data recent enough for this metric?
   maxStale = STALENESS_THRESHOLDS[primaryClaim.metric] || 6h  // default 6h
   if attestation.age > maxStale:
     return { pass: false, reason: "attested data is ${attestation.age}h old, max ${maxStale}h for ${primaryClaim.metric}" }
@@ -472,8 +481,8 @@ function incrementalScan(cache, sdk):
       })
 
     // Build claim ledger: extract typed claims (§4a schema) + link to attestations
-    // Two-tier extraction: regex first (numbers + ASSET_MAP), LLM fallback if zero
-    claims = extractStructuredClaims(decoded.text)  // returns StructuredClaim[]
+    // REGEX-ONLY during scan (§5.6). LLM is deferred to ACT phase.
+    claims = extractStructuredClaimsRegex(decoded.text)  // returns StructuredClaim[]
     for claim in claims:
       if claim.type == "editorial": continue  // only index factual claims
       attestation = findSupportingAttestation(claim, decoded.attestations)
@@ -677,6 +686,34 @@ function fetchForAttestation(sourceId, sourceCache):
 - **Circuit breaker** — 3 consecutive failures → source marked degraded, excluded from AvailableEvidence for this session. Resets on next successful fetch.
 - **Storage** — response bodies stored in SQLite. At 142 sources × ~2KB avg response = ~284KB. Negligible.
 
+**Source cache seeding (prevents self-starvation):**
+
+The ACT-only refresh model creates a bootstrapping problem: never-fetched sources stay invisible to Strategy because they're not in the cache. Fix: a **background seeding pass** that proactively populates the cache.
+
+```
+// Runs at end of SENSE if budget remains (after scan + state extraction)
+// Also runs during --bootstrap
+function seedSourceCache(sourceCache, catalog, budgetRemainingMs):
+  unfetched = catalog.activeSources.filter(s => !sourceCache.has(s.id))
+  expired = catalog.activeSources.filter(s =>
+    sourceCache.has(s.id) && sourceCache.get(s.id).age > s.ttl * 2  // 2x TTL = very stale
+  )
+  // Prioritize: unfetched first, then very stale, limited by remaining budget
+  candidates = [...unfetched, ...expired].slice(0, 10)  // max 10 per session
+  // Parallel fetch with 3s timeout per source
+  await Promise.all(candidates.map(s =>
+    fetchWithTimeout(s.url, 3000)
+      .then(r => sourceCache.upsert(s.id, r))
+      .catch(() => {})  // non-fatal, skip on failure
+  ))
+```
+
+This ensures:
+- **Cold start:** `--bootstrap` seeds all 142 sources (~15s with 10-way parallelism)
+- **Ongoing:** Each session seeds up to 10 unfetched/very-stale sources at the tail of SENSE
+- **Exploration:** New sources added to the catalog become visible within 1-15 sessions
+- **No bias:** Strategy sees evidence from sources it has never used, not just familiar ones
+
 **Subject-to-source mapping** (the bridge from claims to sources):
 
 The claim schema uses `{subject: "bitcoin", metric: "hash_rate"}`. The catalog uses provider/URL/topics. The bridge is a precomputed index:
@@ -723,7 +760,7 @@ reaction_cache (SQLite table)
 └──────────────────────────────────────────────────┘
 ```
 
-**Update strategy (runs in CONFIRM, batched):**
+**Canonical owner: CONFIRM phase.** Reaction counts are ONLY updated in CONFIRM — not in SENSE, not in a background path. SENSE reads cached counts from the last CONFIRM run. This is the single source of truth.
 
 ```
 function updateReactionCounts(cache, sdk):
@@ -770,24 +807,42 @@ function incrementalScan(cache, sdk):
       // ... index, extract claims, etc.
       cache.cursor = max(cache.cursor, post.blockNumber)
     } catch (err) {
-      // Log the failure, skip this post, advance cursor PAST it
-      cache.decodeFailures.insert(post.txHash, err.message, post.blockNumber)
+      // Dead-letter: store raw payload for retry, advance cursor past it
+      cache.deadLetters.upsert(post.txHash, {
+        rawPayload: post.data,          // store the raw bytes for later retry
+        blockNumber: post.blockNumber,
+        error: err.message,
+        retryCount: 0,
+        firstFailedAt: now(),
+      })
       cache.cursor = max(cache.cursor, post.blockNumber)
-      // Don't let one bad post block all future scans
+      // Post is not lost — it's in the dead-letter queue for retry
+    }
+
+  // Retry dead-lettered posts (once per session, max 5 retries per post)
+  for dl in cache.deadLetters.getRetryable(maxRetries: 5):
+    try {
+      decoded = decodeHiveData(dl.rawPayload)
+      // ... index, extract claims, etc.
+      cache.deadLetters.delete(dl.txHash)  // successfully recovered
+    } catch {
+      cache.deadLetters.incrementRetry(dl.txHash)
+      // After 5 retries: post is permanently undecodable. Log and accept data loss.
     }
 ```
 
 **Parallel operations in SENSE:**
 
 ```
-// Scan + reaction update are independent — run in parallel
+// Scan + source cache seeding are independent — run in parallel
 const [scanResult, _] = await Promise.all([
-  incrementalScan(cache, sdk),           // new posts since cursor
-  updateReactionCounts(cache, sdk),      // reaction counts for <48h posts
+  incrementalScan(cache, sdk),                          // new posts since cursor
+  seedSourceCache(sourceCache, catalog, budgetRemaining), // refresh stale/unfetched sources
 ])
 // Colony state extraction runs AFTER scan completes (needs fresh data)
 const colonyState = extractColonyState(cache)
 const evidence = computeAvailableEvidence(sourceCache, catalog)
+// Note: reaction counts are NOT updated here — CONFIRM is the canonical owner (§5.4)
 ```
 
 **Parallel source probing in attestation hunt:**
