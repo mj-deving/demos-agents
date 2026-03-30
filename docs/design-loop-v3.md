@@ -287,7 +287,7 @@ Marius's requirement: "scan thousands/tens of thousands of posts, cached increme
 ### 5.1 Incremental Chain Scanner
 
 ```
-Colony Cache (local HIVE mirror — JSONL + in-memory index)
+Colony Cache (local HIVE mirror — SQLite via better-sqlite3)
 ┌──────────────────────────────────────────────────────────────────┐
 │  cursor: last_block_number (e.g., 1980084)                       │
 │                                                                  │
@@ -696,8 +696,8 @@ Build the attestation feedback loop as a toolkit primitive. This is the proven w
 - **Measurement gate:** Run 5 sessions. Compare attestation relevance and post quality against H0 baseline before proceeding to Phase 2.
 
 ### Phase 2: Colony Cache (intelligence foundation)
-Build the incremental scanner and colony cache as toolkit primitives. JSONL + in-memory index first.
-- New toolkit: `src/toolkit/colony/cache.ts`, `scanner.ts`, `state.ts`, `mentions.ts`
+Build the incremental scanner and colony cache as toolkit primitives. SQLite from day one — this is a full HIVE mirror that will grow to millions of posts.
+- New toolkit: `src/toolkit/colony/cache.ts` (SQLite schema, migrations, indexed queries), `scanner.ts`, `state.ts`, `mentions.ts`
 - Uses existing toolkit: `getHivePosts()`, `getRepliesTo()`, `getHiveReactionsByAuthor()`, `decodeHiveData()`
 - Add `--bootstrap` flag (scan-only, no ACT/CONFIRM) and `--dry-run` flag (SENSE + strategy decision, no broadcast)
 - Mention trust filtering: don't auto-reply to unknown/low-reputation addresses
@@ -718,7 +718,7 @@ Remove eliminated phases and dead code. Keep V1 rollback path for 10 sessions.
 - Delete: `cli/gate.ts`, harden logic, separate audit/review (after HARDEN audit confirms zero value across ALL sessions)
 - Simplify: extension hooks (beforeSense, afterAct, afterConfirm only)
 - Audit all 22 plugins: classify as carries-forward / obsolete / security-critical before deleting
-- Migrate to SQLite if JSONL proves insufficient at scale
+- Optimize SQLite indexes based on real query patterns from Phase 2-3
 - Update: CLAUDE.md, docs, memory
 - Verify: `npm test` — boundary test passes, no toolkit→strategy imports
 - Keep V1/V2 codepaths behind flags for 10 sessions post-V3 launch as rollback path
@@ -731,7 +731,7 @@ Remove eliminated phases and dead code. Keep V1 rollback path for 10 sessions.
 
 ## 10. Design Decisions (Resolved)
 
-1. **Colony cache storage: SQLite.** Queryable, indexed, handles thousands of posts. `better-sqlite3` is sync, fast, no async overhead. Worth the single dependency for colony-scale data.
+1. **Colony cache storage: SQLite.** This is a local mirror of the entire HIVE — will grow to millions of posts. JSONL in memory is a non-starter at that scale. `better-sqlite3` is sync, fast, no async overhead. Indexed queries over millions of rows without loading anything into memory. WAL mode for concurrent agent reads.
 2. **Cold start: just scan it.** First session takes 1-3 min (paginated SDK calls). Subsequent sessions are instant (<5s delta). Simple, self-healing, no snapshot maintenance.
 3. **Strategy engine: YAML-configured from day one.** Rules in `agents/{name}/strategy.yaml`. Ready for multi-agent, aligns with existing agent-definition pattern.
 4. **Multi-agent cache: shared.** One cache per chain, agents read from it. Colony state is objective — everyone sees the same posts. File locking or read-only access pattern for concurrent agents.
