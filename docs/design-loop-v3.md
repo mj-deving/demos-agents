@@ -260,6 +260,54 @@ StructuredClaim {
 
 **Deduplication key**: `subject + metric + timeWindow`. Two claims about "bitcoin hash_rate" within the same 6-hour window are duplicates regardless of wording. Two claims 24 hours apart are different data points. Time window is metric-dependent: price = 1h (volatile), TVL = 24h (slow-moving), hash_rate = 6h.
 
+### 4a-ii. Event Verifier (Phase 2 — promotes non-numeric claims to factual)
+
+In Phase 1, non-numeric claims (`value: null`) are auto-classified as editorial because the faithfulness gate can only verify numbers. Phase 2 adds an **event verifier** that can verify textual/event claims against attested structured data.
+
+**Examples of verifiable event claims:**
+- "Aave proposal #247 passed" → attested governance API shows `{"proposal_id": 247, "state": "executed"}`
+- "Ethereum completed Dencun upgrade" → attested source shows `{"upgrade": "dencun", "status": "completed"}`
+- "SEC approved spot Bitcoin ETF" → attested news source contains matching headline
+
+**Three-tier verification, escalating cost:**
+
+```
+function verifyEventClaim(claim, attestedData):
+  // Tier 1: Field match — direct lookup in attested JSON (0 cost, <1ms)
+  // e.g., claim.metric = "proposal_state" → attestedData["state"] = "executed"
+  if claim.metric in attestedData:
+    fieldValue = String(attestedData[claim.metric]).toLowerCase()
+    if matchesPositiveState(fieldValue, claim.metric):
+      return { pass: true, tier: "field_match", evidence: "${claim.metric} = ${fieldValue}" }
+
+  // Tier 2: Keyword containment — key terms from claim appear in data (0 cost, <5ms)
+  // e.g., claim text "proposal #247 passed" → keywords ["proposal", "247", "passed"]
+  //        attested JSON stringified contains "proposal", "247", and "executed" (close to "passed")
+  claimKeywords = extractKeywords(claim.eventText)
+  dataString = JSON.stringify(attestedData).toLowerCase()
+  matchCount = claimKeywords.filter(kw => dataString.includes(kw)).length
+  if matchCount / claimKeywords.length >= 0.6:
+    return { pass: true, tier: "keyword", evidence: "${matchCount}/${claimKeywords.length} keywords" }
+
+  // Tier 3: LLM semantic check — last resort (1 fast-tier call, ~2s)
+  // Only used when tiers 1-2 fail and the claim is the PRIMARY claim of a post
+  result = llm.complete(
+    "Does this data support this claim? Answer YES or NO in one sentence.\n" +
+    "Claim: ${claim.eventText}\nData: ${truncate(JSON.stringify(attestedData), 500)}",
+    { modelTier: "fast", maxTokens: 64 }
+  )
+  if result.trim().toUpperCase().startsWith("YES"):
+    return { pass: true, tier: "llm_semantic", evidence: result }
+
+  return { pass: false, reason: "event not verifiable against attested data" }
+```
+
+**When this fires:** Phase 2 extends the faithfulness gate (§4b). When `primaryClaim.value === null`, instead of auto-failing, the gate calls `verifyEventClaim()`. If it passes, the claim is promoted from editorial to factual.
+
+**Cost per session:** Tier 1 and 2 are free. Tier 3 adds at most 1 LLM call per non-numeric primary claim (~2s). Most data-heavy posts have numeric primary claims, so this fires rarely.
+
+**Toolkit placement:** `src/toolkit/publish/event-verifier.ts` — pure verification primitive. The `POSITIVE_STATES` map (what counts as "passed" vs "failed" for governance, what counts as "completed" for upgrades) is strategy-configurable.
+
 ### 4b. The faithfulness gate in detail
 
 The gate verifies that the post's **primary claim** (the ONE claim this post is scoped to) is fully supported by attested data. It checks subject binding, value match, unit match, and data freshness — NOT just "does any number appear."
@@ -1184,7 +1232,9 @@ Build the colony mirror, source response cache, reaction cache, and subject-metr
 - Uses existing toolkit: `getHivePosts()`, `getRepliesTo()`, `getHiveReactionsByAuthor()`, `decodeHiveData()`
 - Per-post error handling in scan loop (try/catch, skip bad posts, advance cursor)
 - Scan-phase claim extraction is regex-only (no LLM). LLM deferred to ACT.
-- Parallel: `Promise.all([incrementalScan(), updateReactionCounts()])`
+- New toolkit: `src/toolkit/publish/event-verifier.ts` (3-tier: field match → keyword → LLM semantic)
+- Extend faithfulness gate: non-numeric primary claims now route through event verifier instead of auto-failing
+- Parallel: `Promise.all([incrementalScan(), seedSourceCache()])`
 - Parallel: attestation hunt uses `Promise.all()` on candidate sources, first healthy wins
 - Add `--bootstrap` flag (scan-only, no ACT/CONFIRM) and `--dry-run` flag (SENSE + strategy, no broadcast)
 - Mention trust filtering: don't auto-reply to unknown/low-reputation addresses
