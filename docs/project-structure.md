@@ -13,8 +13,8 @@ demos-agents/
 │   ├── types.ts                       # FrameworkPlugin, Action, EventPlugin, DataProvider, Evaluator
 │   ├── adapters/
 │   │   └── specs.ts                   # Adapter specification types (moved from src/)
-│   ├── plugins/                       # 14 FrameworkPlugin implementations
-│   ├── reactive/                      # Event loop, sources, handlers, watermarks
+│   ├── plugins/                       # 22 FrameworkPlugin implementations
+│   ├── reactive/                      # @deprecated shims → toolkit/reactive/ + event sources/handlers
 │   ├── actions/                       # Executor, LLM, publish pipeline
 │   └── lib/                           # Shared utilities (partially restructured)
 │       ├── auth/                      # auth.ts, identity.ts — challenge-response auth, token cache
@@ -26,19 +26,20 @@ demos-agents/
 │       ├── write-rate-limit.ts        # @deprecated — legacy sync/file-based. Use toolkit guards.
 │       ├── publish-pipeline.ts        # DAHR/TLSN attestation + HIVE publish
 │       └── ... (33 files remaining flat — ongoing restructuring)
-├── src/toolkit/                       # Framework-agnostic toolkit (design doc: APPROVED)
-│   ├── index.ts                       # Barrel export — all tools, guards, types, schemas
-│   ├── types.ts                       # ToolResult, DemosError, DemosSession options, isDemosError
+├── src/toolkit/                       # Framework-agnostic toolkit (45 files, ADR-0002)
+│   ├── index.ts                       # Barrel export — all tools, guards, types, schemas, new modules
+│   ├── types.ts                       # ToolResult, DemosError, DemosSession options, LLMProvider interface
 │   ├── session.ts                     # DemosSession — typed SigningHandle, expiry, bridge access
 │   ├── state-store.ts                 # FileStateStore — file-persisted state with proper-lockfile
-│   ├── sdk-bridge.ts                  # SdkBridge — DemosRpcMethods, D402ClientLike, extractTxHash,
-│   │                                  #   getHivePostsByAuthor, getHiveReactionsByAuthor, getRepliesTo
+│   ├── sdk-bridge.ts                  # SdkBridge — uses ChainTxPipeline for all chain writes
+│   ├── chain-reader.ts               # On-chain data reading (ADR-0011)
+│   ├── chain-scanner.ts              # Address-specific scanning (ADR-0011)
+│   ├── hive-codec.ts                 # HIVE payload encode/decode (ADR-0011)
 │   ├── url-validator.ts               # SSRF validator + createPinnedFetch (DNS rebinding protection)
 │   ├── schemas.ts                     # Zod schemas (11 + CatalogEntrySchema + D402RequirementSchema)
 │   ├── tools/
 │   │   ├── connect.ts                 # Session lifecycle (connect/disconnect). Throws, not ToolResult.
-│   │   ├── publish.ts                 # Attested post publishing (DAHR → HIVE → chain)
-│   │   ├── reply.ts → publish.ts      # Thin wrapper — delegates to publish with threading
+│   │   ├── publish.ts                 # Attested post publishing (publish + reply)
 │   │   ├── scan.ts                    # Feed scanning with domain filter + identifyOpportunities
 │   │   ├── verify.ts                  # Transaction confirmation (retry with backoff)
 │   │   ├── attest.ts                  # DAHR attestation
@@ -47,14 +48,39 @@ demos-agents/
 │   │   ├── discover-sources.ts        # Source catalog browser (CatalogEntrySchema, clearCatalogCache)
 │   │   ├── feed-parser.ts             # Shared parseFeedPosts() — used by scan, verify, tip
 │   │   └── tool-wrapper.ts            # withToolWrapper, isDemosErrorLike, localProvenance
-│   └── guards/
-│       ├── state-helpers.ts           # checkAndAppend, appendEntry, safeParse, DAY_MS, stateKey
-│       ├── write-rate-limit.ts        # checkAndRecordWrite (14/day, 4/hour)
-│       ├── dedup-guard.ts             # checkAndRecordDedup (24h text-hash)
-│       ├── tip-spend-cap.ts           # checkAndRecordTip (per-tip, per-post, cooldown)
-│       ├── pay-spend-cap.ts           # checkPaySpendCap, reservePaySpend (atomic with rollback)
-│       ├── pay-receipt-log.ts         # Idempotency key + receipt dedup
-│       └── backoff.ts                 # withBackoff retry wrapper
+│   ├── guards/
+│   │   ├── state-helpers.ts           # checkAndAppend, appendEntry, safeParse, DAY_MS, stateKey
+│   │   ├── write-rate-limit.ts        # checkAndRecordWrite (14/day, 4/hour)
+│   │   ├── dedup-guard.ts             # checkAndRecordDedup (24h text-hash)
+│   │   ├── tip-spend-cap.ts           # checkAndRecordTip (per-tip, per-post, cooldown)
+│   │   ├── pay-spend-cap.ts           # checkPaySpendCap, reservePaySpend (atomic with rollback)
+│   │   ├── pay-receipt-log.ts         # Idempotency key + receipt dedup
+│   │   └── backoff.ts                 # withBackoff retry wrapper
+│   ├── sources/                       # Source catalog + fetching (moved from src/lib/sources/)
+│   │   ├── catalog.ts                 # Catalog loading, indexing, tokenization
+│   │   ├── fetch.ts                   # Source data fetching with retries
+│   │   ├── health.ts                  # Source health testing + filtering
+│   │   └── rate-limit.ts             # Per-source rate limiting
+│   ├── providers/                     # Declarative provider system (moved from src/lib/sources/providers/)
+│   │   ├── declarative-engine.ts      # YAML spec → provider adapter (1534 LOC)
+│   │   ├── types.ts                   # ProviderAdapter, EvidenceEntry, FetchedResponse contracts
+│   │   └── generic.ts                 # Generic (fallback) provider adapter
+│   ├── reactive/                      # Generic event loop (moved from src/reactive/)
+│   │   ├── event-loop.ts             # EventLoop<TAction> — poll-diff-dispatch
+│   │   ├── watermark-store.ts         # File + memory watermark persistence
+│   │   └── types.ts                   # AgentEvent, EventSource, EventHandler, OmniwebAction
+│   ├── chain/                         # Chain transaction primitives
+│   │   ├── tx-pipeline.ts            # executeChainTx — enforced store→confirm→broadcast
+│   │   └── asset-helpers.ts          # inferAssetAlias, inferMacroEntity (pure functions)
+│   ├── math/                          # Statistical primitives
+│   │   └── baseline.ts               # Ring buffer, MAD, z-score, winsorize
+│   ├── network/                       # Network utilities
+│   │   ├── fetch-with-timeout.ts     # Generic fetch with timeout
+│   │   └── storage-client.ts         # On-chain storage queries
+│   ├── supercolony/                   # SC-specific constants (namespaced)
+│   │   └── scoring.ts                # On-chain scoring formula + constants
+│   └── util/                          # Generic utilities
+│       └── errors.ts                  # toErrorMessage helper
 ├── packages/core/                     # @demos-agents/core (PR1 shipped — re-export barrel)
 ├── cli/                               # CLI entry points
 │   ├── session-runner.ts              # Cron loop orchestrator (8-phase)
@@ -75,14 +101,14 @@ demos-agents/
 │   └── infra-ops/                     # Infrastructure operations
 ├── skills/supercolony/                # SuperColony CLI skill (auth, post, feed, search, react)
 ├── scripts/                           # Cron wrapper + log rotation
-├── tests/                             # vitest — 1943 tests, 129 suites
+├── tests/                             # vitest — 2022 tests, 137 suites
 ├── .desloppify/                       # Desloppify scan state, plans, review results
 └── docs/                              # Architecture docs + this file
 ```
 
 ## Claim-Driven Attestation Pipeline
 
-YAML specs declare `claimTypes` + `extractionPath` per operation. Entity resolution: `ASSET_MAP` (21 crypto) + `MACRO_ENTITY_MAP` (15 macro: GDP, unemployment, inflation, debt, earthquake, etc.) in `attestation-policy.ts`. `buildSurgicalUrl` uses `adapter.operation` to filter to the correct spec operation per source, and `extractUrlParams` flows source URL parameters into the build context (claim-derived vars override). Auth guard: specs with `auth.mode !== "none"` return null from `buildSurgicalUrl` to prevent API key leakage in on-chain attestation URLs. Source routing uses scored selection (health + recency penalty + provider diversity) with fallback candidates.
+YAML specs declare `claimTypes` + `extractionPath` per operation. Entity resolution: `ASSET_MAP` (21 crypto) + `MACRO_ENTITY_MAP` (15 macro: GDP, unemployment, inflation, debt, earthquake, etc.) — now in `src/toolkit/chain/asset-helpers.ts` (extracted from attestation-policy.ts). `buildSurgicalUrl` uses `adapter.operation` to filter to the correct spec operation per source, and `extractUrlParams` flows source URL parameters into the build context (claim-derived vars override). Auth guard: specs with `auth.mode !== "none"` return null from `buildSurgicalUrl` to prevent API key leakage in on-chain attestation URLs. Source routing uses scored selection (health + recency penalty + provider diversity) with fallback candidates. `matchThreshold` clamped to [5, 100].
 
 ## Reputation Plugins
 
