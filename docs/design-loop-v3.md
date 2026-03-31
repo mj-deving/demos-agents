@@ -1724,7 +1724,7 @@ Build the colony mirror, source response cache, reaction cache, and subject-metr
 - Cross-session source health circuit breaker (3 consecutive failures → deprioritize)
 - Test: scan chain, build cache, verify thread linking, mention detection, author trust filtering, reaction cache tiering, source response TTL, circuit breaker behavior
 
-### Phase 3: Strategy Engine + Performance Tracker
+### Phase 3: Strategy Engine + Performance Tracker ✅ COMPLETE (2026-03-29)
 Build the engine as toolkit, rules as strategy YAML. Only after Phase 1 proves quality improvement.
 - New toolkit: `src/toolkit/strategy/engine.ts`, `actions.ts`
 - New toolkit: `src/toolkit/colony/performance.ts` (performance scoring with ageHours normalization, capped controversy bonus)
@@ -1734,15 +1734,88 @@ Build the engine as toolkit, rules as strategy YAML. Only after Phase 1 proves q
 - Modify cli (strategy): session-runner V3 loop calls strategy engine
 - Test: engine produces correct action mix given various colony states + YAML rules
 
-### Phase 4: Cleanup + Scale
-Remove eliminated phases and dead code. Keep V1 rollback path for 10 sessions.
-- Delete: `cli/gate.ts`, harden logic, separate audit/review (after HARDEN audit confirms zero value across ALL sessions)
-- Simplify: extension hooks (beforeSense, afterAct, afterConfirm only)
-- Audit all 22 plugins: classify as carries-forward / obsolete / security-critical before deleting
-- Optimize SQLite indexes based on real query patterns from Phase 2-3
-- Update: CLAUDE.md, docs, memory
-- Verify: `npm test` — boundary test passes, no toolkit→strategy imports
-- Keep V1/V2 codepaths behind flags for 10 sessions post-V3 launch as rollback path
+### Phase 3b: Action Execution Wiring ✅ COMPLETE (2026-03-31)
+Route strategy actions to real chain execution — the bridge from advisory to active.
+- New: `cli/action-executor.ts` — `executeStrategyActions()` with dependency injection for bridge/observe
+- Routes ENGAGE→`publishHiveReaction`, REPLY/PUBLISH→`generateText`+`publishHivePost`, TIP→`transferDem`
+- Tip amount clamped 1-10 DEM (defense-in-depth, matches engine ceiling)
+- Fault isolation: one failed action doesn't block others
+- `dryRun` defaults to `true` (safe default for new feature, opt-in to real execution)
+- Wired into session runner: ENGAGE actions only (REPLY/PUBLISH/TIP deferred to Phase 3c)
+- 11 tests, Fabric-reviewed and all findings fixed
+
+### Phase 3c: Complete Action Routing
+**Goal:** All 4 action types flow through `executeStrategyActions()` — full capability parity with V2 substages.
+**Blocked by:** Nothing (3b complete). **Last feature work before loop swap.**
+
+- Wire `generateText` callback: wraps existing `generatePost()` from `src/actions/llm.ts` to provide LLM text generation for REPLY/PUBLISH actions
+- REPLY routing: `generateText(action)` → `publishHivePost({ text, category: "discussion", replyTo: target })`
+- PUBLISH routing: `generateText(action)` → gate check → `publishHivePost({ text, category: "analysis" })`
+- TIP routing: wire in session runner alongside ENGAGE (executor already handles it, just not called yet)
+- Expand session runner ENGAGE-only block to route all 4 action types
+- Tests: integration tests for REPLY/PUBLISH with mock `generateText`, TIP with amount clamping
+- Still open (from §11.9): reply generation needs different LLM prompts than top-level publishing — decide prompt templates here
+
+### Phase 4: TS 6.0 Upgrade + Standards Audit
+**Goal:** Align codebase with 2026 toolchain best practices. Enables `using` declarations for the V3 loop swap.
+**Blocked by:** Nothing (can run parallel with Phase 3c).
+
+**Step 4a: TypeScript 6.0 Upgrade**
+- `npm install typescript@^6.0.0` (5.9.3 → 6.0, shipped 2026-03-23)
+- tsconfig: `target: "ES2025"` (from ES2022), `moduleResolution: "nodenext"` (from bundler), remove redundant `esModuleInterop: true`
+- Fix any breakage from TS 6.0 stricter contextual function inference
+- Verify `using` declarations compile: `using x = { [Symbol.dispose]() {} }`
+- `npm test` — full green regression check
+
+**Step 4b: Codebase Standards Screen**
+- `catch (e: any)` → `catch (e: unknown)` + type guard (29 instances, codemod)
+- Audit and remove `as any` casts — replace with proper types
+- Verify `.js` import extensions work under `nodenext` resolution (may surface missing extensions)
+- Scan for `Disposable` adoption opportunities: grep for `.close()` patterns, identify closeable resources (DB handles, file handles)
+- Confirm no import assertions syntax (clean — already verified)
+
+### Phase 5: V3 Loop Swap
+**Goal:** Replace V2 8-phase scaffolding with V3 SENSE→ACT→CONFIRM. This is the architectural shift.
+**Blocked by:** Phases 3c + 4 (need all action types + `using` keyword).
+
+**Step 5a: Build `runV3Loop()`**
+- New function in session runner: 3 phases (SENSE, ACT, CONFIRM)
+- `using bridge = initStrategyBridge(...)` scopes the entire loop — auto-closes colony DB on exit/throw
+- ACT = `executeStrategyActions()` for ALL action types (no more subprocess engage, no separate gate/publish flows)
+- Session report: 3-phase format (not 8)
+- Transcript schema: add colony scan + strategy decision event types
+
+**Step 5b: Simplify Extension Hooks**
+- Reduce to `beforeSense`, `afterAct`, `afterConfirm` only
+- Plugins hooking old signatures (`afterGate`, `beforePublish`) must be migrated or deleted
+
+**Step 5c: V2 Rollback Path**
+- V2 retained behind `--legacy-loop` flag for 10 sessions post-V3 launch
+- After 10 successful V3 sessions: proceed to Step 5d
+
+**Step 5d: Dead Code Deletion** (after 10 successful V3 sessions)
+- Delete: `cli/gate.ts`, `cli/engage.ts` (subprocess), harden logic, separate audit/review
+- Plugin audit: classify all 22 plugins as keeps / obsolete / security-critical
+- Remove deprecated shims: `closeStrategyBridge()`, `updateWalletAddress()` free functions
+- Delete V2 codepaths: `runV2Loop()`, V1 phase switch, old substage machinery
+- Clean dead re-exports from `src/toolkit/index.ts`
+- SQLite index optimization based on real query patterns from Phases 2-3
+
+**Step 5e: Documentation**
+- `CLAUDE.md`: update phase sequence, CLI reference, remove V2 references
+- `docs/design-loop-v3.md`: mark all phases complete with dates
+- ADR-0017: document TS 6.0 upgrade + `using` adoption decision
+- MEMORY.md: final state, updated metrics
+- `npm test` — boundary test passes, no toolkit→strategy imports
+
+### Execution Order
+```
+Phase 3c ─────────┐
+                   ├──→ Phase 5a-c (V3 loop swap) → 5d (deletion after 10 sessions) → 5e (docs)
+Phase 4a (TS 6.0) ┤
+                   └──→ Phase 4b (standards screen)
+```
+Phases 3c and 4a can run in parallel. Phase 4b can overlap with Phase 5a (different files).
 
 ### What breaks
 - Plugins hooking into `afterGate`, `beforePublish` with the old signature
