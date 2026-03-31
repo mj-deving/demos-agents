@@ -192,7 +192,7 @@ export async function verifyClaimOnChain(
         ? deriveValue(extractedValue, resolved.metricDef.derivation)
         : null,
       provenance,
-      trustTier: provenance ? "authoritative" : "discovered",
+      trustTier: provenance.blockNumber !== null ? "authoritative" : "discovered",
     };
   } catch (error) {
     return failedResult(toErrorMessage(error));

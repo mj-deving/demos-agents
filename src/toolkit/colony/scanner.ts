@@ -350,6 +350,8 @@ export function processBatch(
 
   process(rawPosts);
 
+  // Cursor tracks "seen through block N" — advances past dead-lettered posts.
+  // Dead-letter queue handles retries separately (V3 design §5.5).
   if (rawPosts.length > 0) {
     const batchMaxBlock = Math.max(...rawPosts.map((post) => post.blockNumber));
     setCursor(db, Math.max(getCursor(db), batchMaxBlock));

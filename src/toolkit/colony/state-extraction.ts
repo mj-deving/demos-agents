@@ -121,15 +121,23 @@ function getUnansweredQuestions(db: ColonyDatabase): Array<{ tx_hash: string; te
 
 function getThreadStats(db: ColonyDatabase): ThreadRow[] {
   return db.prepare(`
+    WITH RECURSIVE thread_tree AS (
+      SELECT tx_hash, reply_to, timestamp, reply_to AS root_hash
+      FROM posts
+      WHERE reply_to IS NOT NULL
+        AND reply_to IN (SELECT tx_hash FROM posts WHERE reply_to IS NULL)
+      UNION ALL
+      SELECT p.tx_hash, p.reply_to, p.timestamp, tt.root_hash
+      FROM posts p
+      JOIN thread_tree tt ON p.reply_to = tt.tx_hash
+    )
     SELECT
-      root.tx_hash AS root_tx_hash,
-      COUNT(reply.tx_hash) AS reply_count,
-      MAX(reply.timestamp) AS last_reply_at
-    FROM posts root
-    JOIN posts reply ON reply.reply_to = root.tx_hash
-    WHERE root.reply_to IS NULL
-    GROUP BY root.tx_hash
-    ORDER BY last_reply_at DESC, root.tx_hash ASC
+      root_hash AS root_tx_hash,
+      COUNT(*) AS reply_count,
+      MAX(timestamp) AS last_reply_at
+    FROM thread_tree
+    GROUP BY root_hash
+    ORDER BY last_reply_at DESC, root_hash ASC
   `).all() as ThreadRow[];
 }
 
@@ -159,7 +167,13 @@ function getMentionsOfUs(
     }));
 }
 
-function getTopContributors(db: ColonyDatabase): Array<{ author: string; postCount: number; avgReactions: number }> {
+interface ContributorRow {
+  author: string;
+  post_count: number;
+  avg_reactions: number | null;
+}
+
+function getTopContributors(db: ColonyDatabase): ContributorRow[] {
   return db.prepare(`
     SELECT
       p.author AS author,
@@ -170,7 +184,7 @@ function getTopContributors(db: ColonyDatabase): Array<{ author: string; postCou
     GROUP BY p.author
     ORDER BY post_count DESC, avg_reactions DESC, p.author ASC
     LIMIT 10
-  `).all() as Array<{ author: string; post_count: number; avg_reactions: number | null }>;
+  `).all() as ContributorRow[];
 }
 
 export function extractColonyState(

@@ -192,12 +192,23 @@ function resolveProtocolKey(
 
 function toNumeric(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "bigint") return Number(value);
   if (typeof value === "string" && value.trim().length > 0) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+/** BigInt-safe derivation: uses string math to preserve precision for uint256-scale values. */
+function deriveBigInt(value: bigint, decimals: number): number {
+  const str = value.toString();
+  if (decimals <= 0) return Number(value);
+  if (str.length <= decimals) {
+    return Number(`0.${str.padStart(decimals, "0")}`);
+  }
+  const intPart = str.slice(0, str.length - decimals);
+  const fracPart = str.slice(str.length - decimals);
+  return Number(`${intPart}.${fracPart}`);
 }
 
 export function resolveChainSource(
@@ -220,6 +231,9 @@ export function deriveValue(
   rawValue: unknown,
   derivation: MetricDerivation,
 ): number | null {
+  if (typeof rawValue === "bigint") {
+    return deriveBigInt(rawValue, derivation.decimals);
+  }
   const numericValue = toNumeric(rawValue);
   if (numericValue === null) return null;
 
