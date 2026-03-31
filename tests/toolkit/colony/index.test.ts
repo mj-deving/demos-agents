@@ -10,5 +10,8 @@ describe("toolkit colony barrel", () => {
     expect(typeof colony.upsertReaction).toBe("function");
     expect(typeof colony.upsertSourceResponse).toBe("function");
     expect(typeof colony.insertDeadLetter).toBe("function");
+    expect(typeof colony.processBatch).toBe("function");
+    expect(typeof colony.extractColonyState).toBe("function");
+    expect(typeof colony.computeAvailableEvidence).toBe("function");
   });
 });

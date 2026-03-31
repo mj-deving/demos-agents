@@ -14,3 +14,12 @@ export { getDegradedSources, getFreshSources, getSourceResponse, getUnfetchedSou
 export type { CachedSourceResponse } from "./source-cache.js";
 
 export { deleteDeadLetter, getRetryable, incrementRetry, insertDeadLetter } from "./dead-letters.js";
+
+export { computeAvailableEvidence } from "./available-evidence.js";
+export type { AvailableEvidence } from "./available-evidence.js";
+
+export { decodeHiveData, extractMentions, processBatch, retryDeadLetters } from "./scanner.js";
+export type { DecodedHivePost, RawHivePost, ScanResult } from "./scanner.js";
+
+export { extractColonyState } from "./state-extraction.js";
+export type { ColonyState, StateExtractionOptions } from "./state-extraction.js";
