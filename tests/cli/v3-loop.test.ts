@@ -21,6 +21,8 @@ const {
   loadDeclarativeProviderAdaptersSyncMock,
   appendSessionLogMock,
   logQualityDataMock,
+  insertPostMock,
+  countPostsMock,
 } = vi.hoisted(() => ({
   initStrategyBridgeMock: vi.fn(),
   senseMock: vi.fn(),
@@ -38,6 +40,8 @@ const {
   loadDeclarativeProviderAdaptersSyncMock: vi.fn(),
   appendSessionLogMock: vi.fn(),
   logQualityDataMock: vi.fn(),
+  insertPostMock: vi.fn(),
+  countPostsMock: vi.fn().mockReturnValue(0),
 }));
 
 vi.mock("../../cli/v3-strategy-bridge.js", () => ({
@@ -82,6 +86,11 @@ vi.mock("../../src/lib/util/log.js", () => ({
 
 vi.mock("../../src/lib/scoring/quality-score.js", () => ({
   logQualityData: logQualityDataMock,
+}));
+
+vi.mock("../../src/toolkit/colony/posts.js", () => ({
+  insertPost: insertPostMock,
+  countPosts: countPostsMock,
 }));
 
 import { runV3Loop, type V3LoopDeps, type V3LoopFlags } from "../../cli/v3-loop.js";
@@ -174,6 +183,7 @@ describe("runV3Loop", () => {
       publishHiveReaction: vi.fn(),
       publishHivePost: vi.fn(),
       transferDem: vi.fn(),
+      getHivePosts: vi.fn().mockResolvedValue([]),
     });
     executeStrategyActionsMock.mockResolvedValue({
       executed: [{ action: { type: "ENGAGE" }, success: true, txHash: "0xengage" }],

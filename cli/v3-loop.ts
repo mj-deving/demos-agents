@@ -25,6 +25,8 @@ import { executeStrategyActions } from "./action-executor.js";
 import { executePublishActions } from "./publish-executor.js";
 import { initStrategyBridge, sense, plan, computePerformance } from "./v3-strategy-bridge.js";
 import type { StrategyBridge } from "./v3-strategy-bridge.js";
+import { insertPost, countPosts } from "../src/toolkit/colony/posts.js";
+import type { CachedPost } from "../src/toolkit/colony/posts.js";
 
 export interface V3LoopFlags {
   agent: string;
@@ -69,6 +71,48 @@ function getSensePayload(state: V3SessionState): { scan: any; strategy: any } | 
   }
 
   return null;
+}
+
+/**
+ * Ingest chain posts into the colony SQLite DB using ScanPost[] from the SDK.
+ * scan-feed writes to a JSON cache with filtered/truncated posts — not suitable for the colony DB.
+ * We fetch the full posts directly via the SDK bridge and insert them with full text + metadata.
+ */
+async function ingestChainPostsIntoColonyDb(
+  db: import("../src/toolkit/colony/schema.js").ColonyDatabase,
+  sdkBridge: { getHivePosts: (limit: number) => Promise<import("../src/toolkit/types.js").ScanPost[]> },
+  observe: (type: string, msg: string, meta?: Record<string, unknown>) => void,
+): Promise<void> {
+  const before = countPosts(db);
+  const chainPosts = await sdkBridge.getHivePosts(500);
+
+  if (chainPosts.length === 0) return;
+
+  const ingest = db.transaction((posts: import("../src/toolkit/types.js").ScanPost[]) => {
+    for (const p of posts) {
+      const post: CachedPost = {
+        txHash: p.txHash,
+        author: p.author,
+        blockNumber: p.blockNumber ?? 0,
+        timestamp: String(p.timestamp),
+        replyTo: p.replyTo ?? null,
+        tags: p.tags ?? [],
+        text: p.text,
+        rawData: { category: p.category, reactions: p.reactions, reactionsKnown: p.reactionsKnown },
+      };
+      if (post.txHash) insertPost(db, post);
+    }
+  });
+  ingest(chainPosts);
+
+  const after = countPosts(db);
+  const newCount = after - before;
+  observe("insight", `Colony DB: ingested ${newCount} new posts (${after} total, ${chainPosts.length} from chain)`, {
+    source: "v3-loop:ingestChainPosts",
+    newPosts: newCount,
+    totalPosts: after,
+    chainFetched: chainPosts.length,
+  });
 }
 
 function mergeExecutionResults(lightResult: LightExecutionResult, heavyResult: HeavyExecutionResult) {
@@ -155,6 +199,13 @@ export async function runV3Loop(
         ["--agent", flags.agent, "--json", "--env", flags.env],
         "scan-feed",
       );
+
+      // Bridge the gap: scan-feed writes JSON cache with truncated posts,
+      // but strategy engine reads full posts from the colony SQLite DB.
+      // Fetch full chain posts via SDK and ingest into colony DB.
+      const sdkBridge = createSdkBridge(demos, undefined, AUTH_PENDING_TOKEN);
+      await ingestChainPostsIntoColonyDb(bridge.db, sdkBridge, deps.observe);
+
       const sourceView = deps.getSourceView();
       const senseResult = sense(bridge, sourceView);
 
