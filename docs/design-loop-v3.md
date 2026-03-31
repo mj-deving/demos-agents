@@ -1774,24 +1774,92 @@ Route strategy actions to real chain execution — the bridge from advisory to a
 - Scan for `Disposable` adoption opportunities: grep for `.close()` patterns, identify closeable resources (DB handles, file handles)
 - Confirm no import assertions syntax (clean — already verified)
 
-### Phase 5: V3 Loop Swap
-**Goal:** Replace V2 8-phase scaffolding with V3 SENSE→ACT→CONFIRM. This is the architectural shift.
-**Blocked by:** Phases 3c + 4 (need all action types + `using` keyword).
+### Phase 5: V3 Loop Swap (Detailed Architecture)
+**Goal:** Replace V2 `runV2Loop()` with clean V3 `runV3Loop()` driven entirely by the strategy engine.
+**Blocked by:** Phases 3c + 4 (need all action types + `using` keyword). ✅ ALL UNBLOCKED as of 2026-03-31.
 
-**Step 5a: Build `runV3Loop()`**
-- New function in session runner: 3 phases (SENSE, ACT, CONFIRM)
-- `using bridge = initStrategyBridge(...)` scopes the entire loop — auto-closes colony DB on exit/throw
-- ACT = `executeStrategyActions()` for ALL action types (no more subprocess engage, no separate gate/publish flows)
-- Session report: 3-phase format (not 8)
-- Transcript schema: add colony scan + strategy decision event types
+#### Key Decision: Option B — Two Executors
 
-**Step 5b: Simplify Extension Hooks**
-- Reduce to `beforeSense`, `afterAct`, `afterConfirm` only
-- Plugins hooking old signatures (`afterGate`, `beforePublish`) must be migrated or deleted
+ENGAGE/TIP are simple chain ops (1 call each) → existing `cli/action-executor.ts`.
+PUBLISH/REPLY are complex multi-step pipelines (LLM → claims → attestation → verify → publish) → new `cli/publish-executor.ts`.
 
-**Step 5c: V2 Rollback Path**
-- V2 retained behind `--legacy-loop` flag for 10 sessions post-V3 launch
-- After 10 successful V3 sessions: proceed to Step 5d
+All 9 attestation/publish pipeline functions are reusable as-is — zero refactoring needed.
+
+#### V3 Loop Flow
+
+```
+runV3Loop(state, flags, sessionsDir, extensionRegistry, deps)
+  │
+  ├── using bridge = initStrategyBridge(...)     // auto-dispose via Disposable
+  │
+  ├── [beforeSense hooks]                        // calibrate, signals, prices, etc.
+  │
+  ├── SENSE
+  │   ├── runSubprocess("cli/scan-feed.ts")      // populates colony cache
+  │   └── bridge.sense(sourceView)               // ColonyState + evidence
+  │
+  ├── ACT
+  │   ├── bridge.plan(senseResult)               // → StrategyAction[]
+  │   ├── partition: light (ENGAGE+TIP) / heavy (PUBLISH+REPLY)
+  │   ├── executeStrategyActions(light)           // existing executor
+  │   ├── executePublishActions(heavy)            // NEW publish executor
+  │   └── [afterAct hooks]
+  │
+  └── CONFIRM
+      ├── runSubprocess("cli/verify.ts")         // verify published posts
+      ├── bridge.computePerformance()            // V3 scoring
+      └── [afterConfirm hooks]
+```
+
+#### New Modules
+
+**`cli/v3-loop.ts`** (~250 lines) — V3 loop function with DI for testability:
+- `using bridge` scopes entire function (auto-dispose colony DB)
+- 3 phases with resume support
+- `bridge.updateWalletAddress(address)` after `connectWallet()` in ACT
+- Hooks: beforeSense, afterAct, afterConfirm only
+- Autonomous-only (no readline)
+
+**`cli/publish-executor.ts`** (~200 lines) — PUBLISH/REPLY executor wrapping attestation pipeline:
+- Per-action: rate limit → source resolution → LLM gen → claims → attestation → verify → publish
+- Source resolution: 2 paths (action.evidence[] → catalog lookup fallback)
+- Eliminates `beforePublishDraft`/`afterPublishDraft` hooks (only used by sources plugin)
+- Reuses: `extractStructuredClaimsAuto`, `buildAttestationPlan`, `executeAttestationPlan`, `verifyAttestedValues`, `attestDahr`, `attestTlsn`, `publishPost`
+
+#### Modified Modules
+
+**`src/lib/state.ts`** — Add `V3SessionState` (like V2 but `loopVersion: 3`, no `substages`, adds `strategyResults?`), `isV3()`, update `LoopVersion = 1|2|3`, `AnySessionState`, `startSession()`, `normalizeState()`
+
+**`cli/session-runner.ts`** — Flag parsing (default loopVersion → 3, `--legacy-loop` sugar), entry point dispatch (`isV3` → `runV3Loop`), new `writeV3SessionReport()`
+
+**`src/lib/util/extensions.ts`** — `@deprecated` JSDoc on `BeforePublishDraftContext`/`AfterPublishDraftContext` (no functional changes, V2 still works)
+
+#### Extension Hook Simplification
+
+| Hook | V2 | V3 | Users |
+|------|----|----|-------|
+| beforeSense | ✓ | ✓ | calibrate, signals, predictions, tips, lifecycle, sc-oracle, sc-prices |
+| beforePublishDraft | ✓ | ✗ | sources plugin only → replaced by strategy evidence |
+| afterPublishDraft | ✓ | ✗ | sources plugin only → replaced by strategy evidence |
+| afterAct | ✓ | ✓ | tips |
+| afterConfirm | ✓ | ✓ | predictions |
+
+#### Implementation Sequence
+
+```
+1. src/lib/state.ts              — V3SessionState, isV3(), LoopVersion
+2. cli/publish-executor.ts       — new (depends on state.ts)
+3. cli/v3-loop.ts                — new (depends on publish-executor, action-executor, bridge)
+4. cli/session-runner.ts         — wiring (depends on v3-loop)
+5. src/lib/util/extensions.ts    — deprecation annotations (independent)
+6. tests/*                       — v3-loop, publish-executor, v3-state tests
+```
+
+#### Rollback
+
+- V2 code untouched — retained behind `--legacy-loop`
+- Rollback = change default in `parseArgs()` from 3 to 2 (1 line)
+- After 10 successful V3 sessions: proceed to Step 5d (dead code deletion)
 
 **Step 5d: Dead Code Deletion** (after 10 successful V3 sessions)
 - Delete: `cli/gate.ts`, `cli/engage.ts` (subprocess), harden logic, separate audit/review
@@ -1807,15 +1875,6 @@ Route strategy actions to real chain execution — the bridge from advisory to a
 - ADR-0017: document TS 6.0 upgrade + `using` adoption decision
 - MEMORY.md: final state, updated metrics
 - `npm test` — boundary test passes, no toolkit→strategy imports
-
-### Execution Order
-```
-Phase 3c ─────────┐
-                   ├──→ Phase 5a-c (V3 loop swap) → 5d (deletion after 10 sessions) → 5e (docs)
-Phase 4a (TS 6.0) ┤
-                   └──→ Phase 4b (standards screen)
-```
-Phases 3c and 4a can run in parallel. Phase 4b can overlap with Phase 5a (different files).
 
 ### What breaks
 - Plugins hooking into `afterGate`, `beforePublish` with the old signature
