@@ -1777,6 +1777,7 @@ Route strategy actions to real chain execution — the bridge from advisory to a
 ### Phase 5: V3 Loop Swap (Detailed Architecture)
 **Goal:** Replace V2 `runV2Loop()` with clean V3 `runV3Loop()` driven entirely by the strategy engine.
 **Blocked by:** Phases 3c + 4 (need all action types + `using` keyword). ✅ ALL UNBLOCKED as of 2026-03-31.
+**Full plan:** [`docs/phase5-v3-loop-swap-plan.md`](phase5-v3-loop-swap-plan.md) — complete implementation plan with function signatures, pseudocode, test strategy, migration phasing, risks/mitigations, plugin audit, and publish pipeline analysis.
 
 #### Key Decision: Option B — Two Executors
 
