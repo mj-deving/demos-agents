@@ -40,7 +40,7 @@ export async function tipsBeforeSense(ctx: BeforeSenseContext): Promise<void> {
     limit: 100,
   });
 
-  if (ctx.state.loopVersion === 2) {
+  if ("loopVersion" in ctx.state && ctx.state.loopVersion >= 2) {
     ctx.state.pendingMentions = mentions.slice(-20);
     saveState(ctx.state, ctx.config.paths.sessionDir);
   }

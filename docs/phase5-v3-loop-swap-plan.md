@@ -95,10 +95,13 @@ export async function runV3Loop(
 
 ```typescript
 export async function runV3Loop(state, flags, sessionsDir, extensionRegistry, deps) {
+  // Connect wallet early — needed for bridge AND computePerformance() (Codex review HIGH-2)
+  const { demos, address } = await deps.connectWallet(flags.env);
+
   using bridge = initStrategyBridge(
     flags.agent,
     deps.agentConfig.paths.strategyYaml,
-    flags.agent, // lazy wallet placeholder
+    address, // real wallet address from the start (fixes HIGH-2 wallet placeholder bug)
   );
 
   // ── beforeSense hooks ──
@@ -118,15 +121,15 @@ export async function runV3Loop(state, flags, sessionsDir, extensionRegistry, de
   }
 
   // ── ACT ──
+  // actResult declared at function scope so afterAct hooks can access it (Codex review HIGH-2)
+  let actResult: unknown = undefined;
+
   if (state.phases.act.status !== "completed") {
     beginPhase(state, "act", sessionsDir);
     const senseResult = extractSenseResult(state);
     const planResult = await plan(bridge, senseResult, (state.engagements || []).length);
 
     if (planResult.actions.length > 0 && !flags.shadow) {
-      const { demos, address } = await deps.connectWallet(flags.env);
-      bridge.updateWalletAddress(address); // <-- fixes the TODO from Phase 3
-
       const light = planResult.actions.filter(a => a.type === "ENGAGE" || a.type === "TIP");
       const heavy = planResult.actions.filter(a => a.type === "PUBLISH" || a.type === "REPLY");
 
@@ -152,10 +155,11 @@ export async function runV3Loop(state, flags, sessionsDir, extensionRegistry, de
         dryRun: flags.dryRun,
       });
 
-      const actResult = mergeExecutionResults(lightResult, heavyResult);
+      actResult = mergeExecutionResults(lightResult, heavyResult);
       completePhase(state, "act", actResult, sessionsDir);
     } else {
-      completePhase(state, "act", { skipped: true, reason: flags.shadow ? "shadow" : "no actions" }, sessionsDir);
+      actResult = { skipped: true, reason: flags.shadow ? "shadow" : "no actions" };
+      completePhase(state, "act", actResult, sessionsDir);
     }
 
     await runAfterAct(extensionRegistry, deps.agentConfig.loopExtensions, {
@@ -554,34 +558,50 @@ Only the `sources` plugin uses the deprecated hooks. In V3, the strategy engine'
 
 ---
 
-## Implementation Sequence (revised per review findings)
+## Implementation Sequence (revised per Codex pre-implementation review, 2026-03-31)
+
+> **Codex review findings incorporated (6 findings, 2 questions resolved):**
+> - HIGH-1: getNextPhase()/getPhaseOrder() must handle V3 → expanded into Step 1
+> - HIGH-2: actResult scope bug + wallet placeholder in shadow path → fixed in Step 4 pseudocode
+> - HIGH-3: --shadow rejected for V3 → fix parser guard in Step 5
+> - MED-4: Step 3 (substantiation.ts) unnecessary — preflight()/match() already exported → Step 3 ELIMINATED
+> - MED-5: Cross-resume guard in session-runner.ts → validateResumeVersion() in state.ts, called from session-runner
+> - MED-6: lookupPost() nonexistent → use getPost() from src/toolkit/colony/posts.ts
 
 ```
-1. src/lib/state.ts + resume guard     — V3SessionState, isV3(), LoopVersion, resume guard (Finding 6)
-   + tests/cli/v3-state.test.ts        — including cross-resume rejection tests
+1. src/lib/state.ts                    — V3SessionState, isV3(), LoopVersion=1|2|3,
+                                         getNextPhase() V3 branch, getPhaseOrder() V3 branch,
+                                         normalizeState() V3 branch, startSession() V3 branch,
+                                         validateResumeVersion() (new export)
+   + tests/cli/v3-state.test.ts        — including cross-resume rejection, phase ordering
    (atomic commit — MUST ship before any V3 loop code)
 
 2. src/lib/util/extensions.ts          — widen hook contexts to AnySessionState (Finding 1)
-   + src/plugins/*.ts (6 plugins)      — update loopVersion guards to >= 2 (Finding 1)
+   + src/plugins/*.ts (4 plugins)      — update loopVersion guards to >= 2
    (must ship before V3 loop to avoid silent plugin breakage)
 
-3. src/lib/sources/substantiation.ts   — extract preflight+match from sources-plugin (Finding 2)
-   + src/plugins/sources-plugin.ts     — delegate to shared module
-   (must ship before publish-executor)
+3. [ELIMINATED — preflight()/match() already exported from src/lib/sources/index.ts.
+    publish-executor imports them directly. No new module needed.]
 
-4. cli/publish-executor.ts             — new module, expanded deps (Findings 2-5)
+4. cli/publish-executor.ts             — new module, expanded deps
    + tests/cli/publish-executor.test.ts
-   (depends on: state.ts, substantiation.ts)
+   (depends on: state.ts; uses getPost() from toolkit/colony/posts.ts,
+    preflight() from lib/sources/policy.ts, match() from lib/sources/matcher.ts)
 
-5. cli/v3-loop.ts                      — new module
+5. cli/v3-loop.ts                      — new module (fix: actResult scope, wallet before bridge)
+   + cli/session-runner.ts             — wiring, flag defaults, --shadow guard for V3,
+                                         --skip-to validation for V3, V3 report
    + tests/cli/v3-loop.test.ts
    (depends on: state.ts, publish-executor.ts, action-executor.ts, v3-strategy-bridge.ts)
-
-6. cli/session-runner.ts               — wiring, flag defaults, V3 report
-   (depends on: v3-loop.ts, state.ts)
 ```
 
-Steps 1 and 2 can be parallel. Step 3 is independent but must precede 4. Steps 4→5→6 are sequential. Each step is a separate commit with tests.
+Steps 1 and 2 can be parallel. Steps 3→4→5 are sequential (3 is now just step 4). Each step is a separate commit with tests.
+
+### Revised Batch Plan (for Codex delegation)
+
+- **Batch A** (parallel): Step 1 (A1: state.ts) + Step 2 (A2: hooks+plugins)
+- **Batch B** (sequential): Step 4 (B1: publish-executor.ts)
+- **Batch C** (sequential): Step 5 (C1: v3-loop.ts + session-runner wiring)
 
 ---
 
@@ -650,7 +670,7 @@ The preflight/match functions from `sources-plugin.ts` (lines 40-90) should be e
 // For REPLY actions: fetch parent post from colony cache
 if (action.type === "REPLY" && action.target) {
   const parentPost = deps.colonyDb
-    ? lookupPost(deps.colonyDb, action.target)
+    ? getPost(deps.colonyDb, action.target)  // from src/toolkit/colony/posts.ts (Codex review MED-6)
     : null;
   replyContext = parentPost
     ? { txHash: action.target, author: parentPost.author, text: parentPost.text }

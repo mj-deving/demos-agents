@@ -41,6 +41,7 @@ import {
   clearState,
   releaseLock,
   isV2,
+  isV3,
   CORE_PHASE_ORDER,
   type SessionState,
   type V2SessionState,
@@ -555,32 +556,38 @@ function getPhaseBudgetMs(phase: PhaseName, config: AgentConfig): number {
 
 // ── V2 State Accessors ────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- V2 result shapes are untyped
 function getScanResult(state: AnySessionState): any {
+  if (isV3(state)) return undefined; // V3 uses strategyResults
   if (isV2(state)) return state.phases.sense?.result;
-  return state.phases.scan?.result;
+  return "scan" in state.phases ? state.phases.scan?.result : undefined;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- V2 result shapes are untyped
 function getGateResult(state: AnySessionState): any {
+  if (isV3(state)) return undefined; // V3 uses strategyResults
   if (isV2(state)) {
-    // Prefer act.result.gate (final state), fall back to v1-compat phases.gate
-    // written by v1 gate handlers during ACT substage execution.
     const actResult = state.phases.act?.result as any;
     return actResult?.gate || (state as any).phases.gate?.result;
   }
-  return state.phases.gate?.result;
+  return "gate" in state.phases ? state.phases.gate?.result : undefined;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- V2 result shapes are untyped
 function getEngageResult(state: AnySessionState): any {
+  if (isV3(state)) return undefined; // V3 uses strategyResults
   if (isV2(state)) {
     const actResult = state.phases.act?.result as any;
     return actResult?.engage;
   }
-  return state.phases.engage?.result;
+  return "engage" in state.phases ? state.phases.engage?.result : undefined;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- V2 result shapes are untyped
 function getVerifyResult(state: AnySessionState): any {
+  if (isV3(state)) return undefined; // V3 uses strategyResults
   if (isV2(state)) return state.phases.confirm?.result;
-  return state.phases.verify?.result;
+  return "verify" in state.phases ? state.phases.verify?.result : undefined;
 }
 
 // ── V2 Phase Budgets ──────────────────────────────

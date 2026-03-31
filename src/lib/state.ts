@@ -88,7 +88,7 @@ const PHASE_ORDER: PhaseName[] = [
 // ── V2 Types ─────────────────────────────────────
 
 export type CorePhase = "sense" | "act" | "confirm";
-export type LoopVersion = 1 | 2;
+export type LoopVersion = 1 | 2 | 3;
 export const CORE_PHASE_ORDER: CorePhase[] = ["sense", "act", "confirm"];
 export const KNOWN_EXTENSIONS = ["calibrate", "sources", "observe", "signals", "predictions", "tips", "lifecycle", "sc-oracle", "sc-prices"] as const;
 
@@ -155,10 +155,39 @@ export interface V2SessionState {
   pendingMentions?: PendingMentionRecord[];
 }
 
-export type AnySessionState = SessionState | V2SessionState;
+export interface V3SessionState {
+  loopVersion: 3;
+  sessionNumber: number;
+  agentName: string;
+  startedAt: string;
+  pid: number;
+  phases: Record<CorePhase, PhaseState>;
+  // No substages field — strategy actions replace substages
+  posts: Array<string | SessionPostRecord>;
+  engagements: Record<string, unknown>[];
+  publishSuppressed?: boolean;
+  publishedPosts?: PublishedPostRecord[];
+  signalSnapshot?: unknown;
+  priceSnapshot?: unknown;
+  oracleSnapshot?: unknown;
+  briefingContext?: string;
+  pendingMentions?: PendingMentionRecord[];
+  /** V3: Strategy execution results persisted for resume/reporting */
+  strategyResults?: {
+    senseResult?: unknown;
+    planResult?: unknown;
+    executionResult?: unknown;
+  };
+}
+
+export type AnySessionState = SessionState | V2SessionState | V3SessionState;
 
 export function isV2(state: AnySessionState): state is V2SessionState {
   return "loopVersion" in state && state.loopVersion === 2;
+}
+
+export function isV3(state: AnySessionState): state is V3SessionState {
+  return "loopVersion" in state && state.loopVersion === 3;
 }
 
 // ── Path Helpers ───────────────────────────────────
@@ -263,9 +292,19 @@ function ensureDir(sessionsDir: string = DEFAULT_SESSIONS_DIR): void {
  * resumed sessions always have the full phase set.
  */
 export function normalizeState(state: SessionState): SessionState;
+export function normalizeState(state: V3SessionState): V3SessionState;
 export function normalizeState(state: V2SessionState): V2SessionState;
 export function normalizeState(state: AnySessionState): AnySessionState;
 export function normalizeState(state: AnySessionState): AnySessionState {
+  if (isV3(state)) {
+    for (const phase of CORE_PHASE_ORDER) {
+      if (!state.phases[phase]) state.phases[phase] = { status: "pending" };
+    }
+    if (!state.posts) state.posts = [];
+    if (!state.engagements) state.engagements = [];
+    if (!state.pendingMentions) state.pendingMentions = [];
+    return state;
+  }
   if (isV2(state)) {
     for (const phase of CORE_PHASE_ORDER) {
       if (!state.phases[phase]) {
@@ -350,6 +389,26 @@ export function startSession(
 ): AnySessionState {
   ensureDir(sessionsDir);
   acquireLock(sessionNumber, sessionsDir, agentName);
+
+  if (loopVersion === 3) {
+    const phases = Object.fromEntries(
+      CORE_PHASE_ORDER.map((phase) => [phase, { status: "pending" as const }])
+    ) as Record<CorePhase, PhaseState>;
+
+    const state: V3SessionState = {
+      loopVersion: 3,
+      sessionNumber,
+      agentName,
+      startedAt: new Date().toISOString(),
+      pid: process.pid,
+      phases,
+      posts: [],
+      engagements: [],
+    };
+
+    saveState(state, sessionsDir);
+    return state;
+  }
 
   if (loopVersion === 2) {
     const phases = Object.fromEntries(
@@ -452,6 +511,15 @@ export function failPhase(
  * Returns null if all phases are completed.
  */
 export function getNextPhase(state: AnySessionState): PhaseName | CorePhase | null {
+  if (isV3(state)) {
+    for (const phase of CORE_PHASE_ORDER) {
+      const status = state.phases[phase].status;
+      if (status === "pending" || status === "in_progress" || status === "failed") {
+        return phase;
+      }
+    }
+    return null;
+  }
   if (isV2(state)) {
     for (const phase of CORE_PHASE_ORDER) {
       const status = state.phases[phase].status;
@@ -473,9 +541,27 @@ export function getNextPhase(state: AnySessionState): PhaseName | CorePhase | nu
 /**
  * Get ordered list of all phases for the given state version.
  */
+export function getPhaseOrder(): PhaseName[];
+export function getPhaseOrder(state: V2SessionState | V3SessionState): CorePhase[];
+export function getPhaseOrder(state: SessionState): PhaseName[];
+export function getPhaseOrder(state?: AnySessionState): (PhaseName | CorePhase)[];
 export function getPhaseOrder(state?: AnySessionState): (PhaseName | CorePhase)[] {
-  if (state && isV2(state)) return [...CORE_PHASE_ORDER];
+  if (state && (isV2(state) || isV3(state))) return [...CORE_PHASE_ORDER];
   return [...PHASE_ORDER];
+}
+
+/**
+ * Validate that a resumed session matches the requested loop version.
+ * Prevents cross-version resume (e.g., V2 session resumed with --loop-version 3).
+ */
+export function validateResumeVersion(state: AnySessionState, requestedVersion: LoopVersion): void {
+  const stateVersion: LoopVersion = isV3(state) ? 3 : isV2(state) ? 2 : 1;
+  if (stateVersion !== requestedVersion) {
+    throw new Error(
+      `Cannot resume session ${state.sessionNumber}: session is V${stateVersion} but --loop-version ${requestedVersion} was requested. ` +
+        `Use --loop-version ${stateVersion} to resume, or start a new session.`
+    );
+  }
 }
 
 /**

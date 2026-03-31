@@ -28,7 +28,7 @@ export async function scOracleBeforeSense(ctx: BeforeSenseContext): Promise<void
       getAuthHeaders: async () => ({ Authorization: `Bearer ${cached.token}` }),
     });
     const result = await plugin.providers![0].fetch("oracle");
-    if (result.ok && ctx.state.loopVersion === 2) {
+    if (result.ok && "loopVersion" in ctx.state && ctx.state.loopVersion >= 2) {
       ctx.state.oracleSnapshot = result.data;
       ctx.logger?.result("SC Oracle: data injected into session state");
     } else if (!result.ok) {

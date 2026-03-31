@@ -14,7 +14,7 @@
 
 import type { KNOWN_EXTENSIONS } from "../state.js";
 import type { AgentConfig } from "../agent-config.js";
-import type { AnySessionState, V2SessionState, PublishedPostRecord } from "../state.js";
+import type { AnySessionState, PublishedPostRecord } from "../state.js";
 import type { AttestationType } from "../attestation/attestation-policy.js";
 import type { LLMProvider } from "../llm/llm-provider.js";
 import type { SourceRelevanceEntry } from "../transcript.js";
@@ -35,7 +35,7 @@ export interface HookLogger {
 // ── Context Types ─────────────────────────────────
 
 export interface BeforeSenseContext {
-  state: V2SessionState;
+  state: AnySessionState;
   config: AgentConfig;
   // Keep this subset local: session-runner owns RunnerFlags and imports this
   // module, so importing RunnerFlags here would introduce a circular dependency.
@@ -54,6 +54,7 @@ type BeforeSenseFlags = {
   pretty: boolean;
 };
 
+// V3 loop does not use this hook. Retained for V2 --legacy-loop compatibility.
 export interface BeforePublishDraftContext {
   topic: string;
   category: string;
@@ -63,6 +64,7 @@ export interface BeforePublishDraftContext {
   sourceView?: AgentSourceView;
 }
 
+// V3 loop does not use this hook. Retained for V2 --legacy-loop compatibility.
 export interface AfterPublishDraftContext {
   topic: string;
   postText: string;
@@ -83,7 +85,7 @@ export interface AfterPublishDraftContext {
 }
 
 export interface AfterConfirmContext {
-  state: V2SessionState;
+  state: AnySessionState;
   config: AgentConfig;
   /** Full context for posts published this session — includes text, category, confidence */
   publishedPosts: PublishedPostRecord[];
@@ -94,7 +96,7 @@ export interface AfterConfirmContext {
 }
 
 export interface AfterActContext {
-  state: V2SessionState;
+  state: AnySessionState;
   config: AgentConfig;
   actResult?: unknown;
   flags: BeforeSenseFlags;

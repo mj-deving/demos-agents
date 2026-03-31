@@ -32,11 +32,11 @@ export async function signalsBeforeSense(ctx: BeforeSenseContext): Promise<void>
       fetchSignals(cached.token),
       fetchLatestBriefing(cached.token),
     ]);
-    if (signalResult.status === "fulfilled" && signalResult.value && ctx.state.loopVersion === 2) {
+    if (signalResult.status === "fulfilled" && signalResult.value && "loopVersion" in ctx.state && ctx.state.loopVersion >= 2) {
       ctx.state.signalSnapshot = signalResult.value;
       ctx.logger?.result(`Signals: ${signalResult.value.topics.length} topic(s), ${signalResult.value.alerts.length} alert(s)`);
     }
-    if (briefingResult.status === "fulfilled" && briefingResult.value && ctx.state.loopVersion === 2) {
+    if (briefingResult.status === "fulfilled" && briefingResult.value && "loopVersion" in ctx.state && ctx.state.loopVersion >= 2) {
       ctx.state.briefingContext = briefingResult.value;
       ctx.logger?.info(`Briefing: ${briefingResult.value.length} chars`);
     }
