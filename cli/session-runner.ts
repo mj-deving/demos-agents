@@ -82,6 +82,17 @@ import { FileStateStore } from "../src/toolkit/state-store.js";
 import { checkAndRecordWrite, getWriteRateRemaining } from "../src/toolkit/guards/write-rate-limit.js";
 import { type SignalSnapshot } from "../src/lib/pipeline/signals.js";
 import {
+  initStrategyBridge,
+  closeStrategyBridge,
+  sense as strategySense,
+  plan as strategyPlan,
+  computePerformance as strategyPerformance,
+  summarizeActions,
+  type StrategyBridgeContext,
+  type SenseResult,
+  type PlanResult,
+} from "./v3-strategy-bridge.js";
+import {
   loadAgentSourceView,
   preflight as sourcesPreflight,
   selectSourceForTopicV2,
@@ -3402,6 +3413,51 @@ async function runV2Loop(
     checkV2PhaseBudget("sense", Date.now() - senseStartMs);
   }
 
+  // ── V3 Strategy: Colony Intelligence ────────────
+  // After scan-feed populates the colony cache, extract structured state
+  // and run the strategy engine to plan actions for the ACT phase.
+  let strategyBridge: StrategyBridgeContext | null = null;
+  let strategySenseResult: SenseResult | null = null;
+  let strategyPlanResult: PlanResult | null = null;
+
+  try {
+    strategyBridge = initStrategyBridge(
+      flags.agent,
+      agentConfig.paths.strategyYaml,
+      flags.agent,  // wallet address resolved lazily; agent name used for rate-limit key
+    );
+
+    const sourceView = getSourceView();
+    strategySenseResult = strategySense(strategyBridge, sourceView);
+
+    const { colonyState, evidence } = strategySenseResult;
+    observe("insight", `V3 colony state: ${colonyState.activity.activeAuthors} authors, ${colonyState.gaps.underservedTopics.length} gaps, ${evidence.length} evidence sources`, {
+      phase: "sense",
+      source: "session-runner.ts:runV2Loop:v3-strategy",
+    });
+
+    // Run strategy engine to plan actions
+    const engageSoFar = (state.engagements || []).length;
+    strategyPlanResult = await strategyPlan(strategyBridge, strategySenseResult, engageSoFar);
+
+    const actionSummary = summarizeActions(strategyPlanResult.actions);
+    const summaryParts = Object.entries(actionSummary).map(([type, count]) => `${count} ${type}`);
+    const rejectedCount = strategyPlanResult.log.rejected.length;
+    observe("insight", `V3 strategy: ${strategyPlanResult.actions.length} actions planned [${summaryParts.join(", ")}], ${rejectedCount} rejected`, {
+      phase: "act",
+      source: "session-runner.ts:runV2Loop:v3-strategy",
+      data: { actions: actionSummary, rejected: rejectedCount, rateLimits: strategyPlanResult.log.rateLimitState },
+    });
+    info(`V3 strategy engine: ${strategyPlanResult.actions.length} actions [${summaryParts.join(", ")}]`);
+  } catch (e: any) {
+    // Strategy bridge is advisory — don't fail the session if it errors
+    observe("error", `V3 strategy bridge failed: ${e.message}`, {
+      phase: "sense",
+      source: "session-runner.ts:runV2Loop:v3-strategy",
+    });
+    phaseError(`V3 strategy bridge failed (non-critical): ${e.message}`);
+  }
+
   // ── ACT ────────────────────────────────────────
   if (actCompleted) {
     info("ACT already completed — skipping (resume)");
@@ -3609,7 +3665,32 @@ async function runV2Loop(
       throw e;
     }
 
+    // V3 Strategy: compute post performance scores
+    if (strategyBridge) {
+      try {
+        const perfScores = strategyPerformance(strategyBridge);
+        if (perfScores.length > 0) {
+          const topScore = perfScores[0];
+          observe("insight", `V3 performance: ${perfScores.length} posts scored, top=${topScore.decayedScore.toFixed(1)} (${topScore.txHash.slice(0, 10)})`, {
+            phase: "confirm",
+            source: "session-runner.ts:runV2Loop:v3-strategy",
+            data: { scores: perfScores.map(s => ({ txHash: s.txHash, raw: s.rawScore, decayed: s.decayedScore })) },
+          });
+        }
+      } catch (e: any) {
+        observe("error", `V3 performance scoring failed: ${e.message}`, {
+          phase: "confirm",
+          source: "session-runner.ts:runV2Loop:v3-strategy",
+        });
+      }
+    }
+
     checkV2PhaseBudget("confirm", Date.now() - confirmStartMs);
+  }
+
+  // Close V3 strategy bridge (colony DB)
+  if (strategyBridge) {
+    closeStrategyBridge(strategyBridge);
   }
 
   // ── AFTER CONFIRM — extension hooks (PR1: prediction tracking) ──
