@@ -191,7 +191,7 @@ async function main(): Promise<void> {
 
       const topic =
         post.payload?.tags?.[0] ||
-        post.payload?.topic ||
+        (post.payload as any)?.topic ||
         post.payload?.cat ||
         "unknown";
 
@@ -247,7 +247,7 @@ async function main(): Promise<void> {
       if (reactOk) {
         const topic =
           post.payload?.tags?.[0] ||
-          post.payload?.topic ||
+          (post.payload as any)?.topic ||
           post.payload?.cat ||
           "unknown";
 

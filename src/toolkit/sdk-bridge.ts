@@ -477,7 +477,7 @@ export function createSdkBridge(
       try {
         if (!cachedD402Client) {
           const { D402Client } = await import("@kynesyslabs/demosdk/d402/client");
-          cachedD402Client = new D402Client(demos) as D402ClientLike;
+          cachedD402Client = new D402Client(demos) as unknown as D402ClientLike;
         }
         const client = cachedD402Client;
         const payment = await client.createPayment(requirement);

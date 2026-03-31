@@ -102,7 +102,7 @@ export async function getHivePosts(rpc: ChainReaderRpc, limit: number): Promise<
     }
 
     const lastTx = txs[txs.length - 1];
-    const prevStart = start;
+    const prevStart: number | "latest" = start;
     if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
       start = lastTx.blockNumber - 1;
     } else {
@@ -154,7 +154,7 @@ export async function getHiveReactions(
     }
 
     const lastTx = txs[txs.length - 1];
-    const prevStart = start;
+    const prevStart: number | "latest" = start;
     if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
       start = lastTx.blockNumber - 1;
     } else {
@@ -257,7 +257,7 @@ export async function getRepliesTo(rpc: ChainReaderRpc, txHashes: string[]): Pro
     }
 
     const lastTx = txs[txs.length - 1];
-    const prevStart = start;
+    const prevStart: number | "latest" = start;
     if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
       start = lastTx.blockNumber - 1;
     } else {

@@ -49,6 +49,7 @@ function parseFlags(): {
   agent: string;
   env: string;
   limit: number;
+  startOffset: number;
   dryRun: boolean;
   pretty: boolean;
 } {

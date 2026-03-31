@@ -26,10 +26,13 @@ export interface SessionLogEntry {
   predicted_reactions: number;
   actual_reactions?: number;
   actual_score?: number;
+  actual_agrees?: number;
+  actual_disagrees?: number;
   agents_referenced: string[];
   topic: string;
   confidence: number;
   text_preview: string;
+  text_length?: number;
   tags: string[];
   is_reply?: boolean;
   parent_tx_hash?: string;

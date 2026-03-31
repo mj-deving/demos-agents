@@ -64,7 +64,7 @@ async function submitIdentityTx(
       amount: 0,
       data: [
         "identity",
-        { context, method, payload },
+        { context, method, payload } as any,
       ],
       nonce: 1,
       timestamp: Date.now(),

@@ -7,7 +7,6 @@
  */
 
 // Re-export SDK types that other modules need
-export type { Demos } from "@kynesyslabs/demosdk/websdk";
 export { Demos, DemosTransactions } from "@kynesyslabs/demosdk/websdk";
 
 // SDK connection factory

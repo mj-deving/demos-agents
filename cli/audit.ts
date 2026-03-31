@@ -84,7 +84,7 @@ interface AuditResult {
   actual_score: number | null;
   delta: number | null;
   highDisagree: boolean;
-  status: "audited" | "not_found" | "already_audited" | "error";
+  status: "audited" | "not_found" | "already_audited" | "error" | "invalid_txhash";
   error?: string;
 }
 

@@ -198,7 +198,7 @@ async function main(): Promise<void> {
 
   const replySrc = createSocialReplySource({
     fetchFeed: async () => {
-      const posts = await fetchFeedCached(token);
+      const posts = await fetchFeedCached(token!);
       return posts.map((p: any): ReplyPost => ({
         txHash: String(p?.txHash || ""),
         author: String(p?.author || p?.address || "").toLowerCase(),
@@ -212,7 +212,7 @@ async function main(): Promise<void> {
 
   const mentionSrc = createSocialMentionSource({
     fetchFeed: async () => {
-      const posts = await fetchFeedCached(token);
+      const posts = await fetchFeedCached(token!);
       return posts.map((p: any): MentionPost => ({
         txHash: String(p?.txHash || ""),
         author: String(p?.author || p?.address || "").toLowerCase(),
@@ -226,7 +226,7 @@ async function main(): Promise<void> {
   const tipSrc = createTipReceivedSource({
     fetchTips: async () => {
       // Filter feed for tip transactions to this agent
-      const posts = await fetchFeedCached(token);
+      const posts = await fetchFeedCached(token!);
       return posts
         .filter((p: any) => {
           const tipTo = String(p?.payload?.tipTo || p?.tipTo || "").toLowerCase();
@@ -245,7 +245,7 @@ async function main(): Promise<void> {
   const disagreeSrc = createDisagreeMonitorSource({
     fetchOwnPosts: async () => {
       // Filter feed for agent's own posts, compute disagree ratios
-      const posts = await fetchFeedCached(token);
+      const posts = await fetchFeedCached(token!);
       return posts
         .filter((p: any) => {
           const author = String(p?.author || p?.address || "").toLowerCase();
@@ -274,11 +274,11 @@ async function main(): Promise<void> {
   const sseFeedSrc = createSSEFeedSource({
     streamUrl: "https://www.supercolony.ai/api/feed/stream",
     getToken: async () => {
-      token = await refreshTokenIfNeeded(demos, address, token);
-      return token;
+      token = await refreshTokenIfNeeded(demos, address, token!);
+      return token!;
     },
     fetchFeedFallback: async () => {
-      const posts = await fetchFeedCached(token);
+      const posts = await fetchFeedCached(token!);
       return posts.map((p: any) => ({
         txHash: String(p?.txHash || ""),
         author: String(p?.author || p?.address || "").toLowerCase(),
@@ -316,8 +316,8 @@ async function main(): Promise<void> {
     address,
     dryRun: flags.dryRun,
     getToken: async () => {
-      token = await refreshTokenIfNeeded(demos, address, token);
-      return token;
+      token = await refreshTokenIfNeeded(demos, address, token!);
+      return token!;
     },
     dailyReactive,
     hourlyReactive: 2,

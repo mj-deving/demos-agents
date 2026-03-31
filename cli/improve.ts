@@ -443,6 +443,10 @@ async function cmdDefault(
       }
 
       const id = proposeImprovement(improvements, issue, issue.category!);
+      if (!id) {
+        if (pretty) console.log(`  Skipped: could not propose improvement for ${issue.category}`);
+        continue;
+      }
       markResolved(allObservations, issue, id);
       proposed.push(id);
       if (pretty) console.log(`\n  Proposed ${id}: ${issue.category} — ${issue.proposal}`);

@@ -27,7 +27,7 @@ export function createCalibrateBeforeSense(runTool: RunToolFn) {
     ctx.logger?.info("Extension: calibrate (running audit)...");
     const auditArgs = ["--agent", ctx.flags.agent, "--update", "--log", ctx.flags.log, "--env", ctx.flags.env];
     const auditResult = await runTool("cli/audit.ts", auditArgs, "audit.ts (calibrate)");
-    const stats = auditResult.stats || {};
+    const stats = (auditResult as any).stats || {};
     ctx.logger?.result(
       `Calibrate: ${stats.total_entries || 0} entries | avg error: ${stats.avg_prediction_error !== undefined ? stats.avg_prediction_error.toFixed(1) : "N/A"}`
     );

@@ -232,7 +232,7 @@ async function connectAndAuthenticate(
 
     // Connect wallet with algorithm selection
     const address = algorithm !== "ed25519"
-      ? await demos.connectWallet(mnemonic, { algorithm })
+      ? await demos.connectWallet(mnemonic, { algorithm: algorithm as any })
       : await demos.connectWallet(mnemonic);
 
     // Authenticate with SuperColony API (skip in chain-only mode)

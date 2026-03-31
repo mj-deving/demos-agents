@@ -42,7 +42,7 @@ export function createTlsnotaryAction(config: SkillAdapterConfig): Action {
       return {
         success: true,
         data: {
-          ...response.result?.data,
+          ...(response.result?.data as Record<string, unknown> ?? {}),
           proofs: extractProofs(response.result?.data),
         },
         text: response.result?.message,

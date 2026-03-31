@@ -63,7 +63,7 @@ const json = hasFlag("json");
 async function main() {
   const agentName = resolveAgentName(agentFlag ? { agent: agentFlag } : undefined);
   const config = loadAgentConfig(agentName);
-  const sourceView = loadAgentSourceView(agentName, config.sourceRegistryMode);
+  const sourceView = loadAgentSourceView(agentName as any, config.paths.sourceCatalog, config.paths.sourcesRegistry, config.sourceRegistryMode);
   const maxSources = maxSourcesFlag ? parseInt(maxSourcesFlag, 10) : 10;
   const minStrength = minStrengthFlag ? parseFloat(minStrengthFlag) : 0.3;
 

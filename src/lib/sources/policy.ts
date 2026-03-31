@@ -19,7 +19,7 @@ import {
   fillUrlTemplate,
   unresolvedPlaceholders,
   type AttestationType,
-  type AttestationPlan,
+  type AttestationMethodPlan,
 } from "../attestation/attestation-policy.js";
 import type { AgentConfig } from "../agent-config.js";
 import {
@@ -227,7 +227,7 @@ export interface PreflightResult {
   reason: string;
   reasonCode: "PASS" | "NO_MATCHING_SOURCE" | "TLSN_REQUIRED_NO_TLSN_SOURCE" | "SOURCE_PRECHECK_HTTP_ERROR";
   candidates: PreflightCandidate[];
-  plan: AttestationPlan;
+  plan: AttestationMethodPlan;
 }
 
 /**

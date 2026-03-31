@@ -563,7 +563,7 @@ function getGateResult(state: AnySessionState): any {
   if (isV2(state)) {
     // Prefer act.result.gate (final state), fall back to v1-compat phases.gate
     // written by v1 gate handlers during ACT substage execution.
-    const actResult = state.phases.act?.result;
+    const actResult = state.phases.act?.result as any;
     return actResult?.gate || (state as any).phases.gate?.result;
   }
   return state.phases.gate?.result;
@@ -571,7 +571,7 @@ function getGateResult(state: AnySessionState): any {
 
 function getEngageResult(state: AnySessionState): any {
   if (isV2(state)) {
-    const actResult = state.phases.act?.result;
+    const actResult = state.phases.act?.result as any;
     return actResult?.engage;
   }
   return state.phases.engage?.result;
@@ -2853,7 +2853,7 @@ const SENSE_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
 function collectHardenFindings(state: SessionState): HardenFinding[] {
   const findings: HardenFinding[] = [];
   const phaseErrors: HardenFinding[] = [];
-  const reviewResult = state.phases.review?.result || {};
+  const reviewResult = (state.phases.review?.result || {}) as any;
 
   // Q1 failures
   for (const f of (reviewResult.q1_failures || [])) {
@@ -3203,7 +3203,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
 
   const duration = ((Date.now() - new Date(state.startedAt).getTime()) / 60000).toFixed(1);
   const date = new Date(state.startedAt).toISOString().slice(0, 10);
-  const engage = state.phases.engage.result || {};
+  const engage = (state.phases.engage.result || {}) as any;
   const lines: string[] = [];
 
   lines.push(`# ${state.agentName.charAt(0).toUpperCase() + state.agentName.slice(1)} Session ${state.sessionNumber} — ${date}`);
@@ -3212,7 +3212,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // AUDIT
-  const audit = state.phases.audit.result || {};
+  const audit = (state.phases.audit.result || {}) as any;
   lines.push(`## 1. AUDIT${phaseDuration(state, "audit")}`);
   if (audit.stats) {
     const s = audit.stats;
@@ -3227,7 +3227,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // SCAN
-  const scan = state.phases.scan.result || {};
+  const scan = (state.phases.scan.result || {}) as any;
   lines.push(`## 2. SCAN${phaseDuration(state, "scan")}`);
   if (scan.activity) {
     lines.push(`- ${scan.activity.level || "?"} activity (${scan.activity.posts_per_hour ?? "?"} posts/hr)`);
@@ -3252,7 +3252,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // GATE
-  const gate = state.phases.gate.result || {};
+  const gate = (state.phases.gate.result || {}) as any;
   const gatePosts = gate.posts || [];
   lines.push(`## 4. GATE${phaseDuration(state, "gate")}`);
   if (gatePosts.length > 0) {
@@ -3269,7 +3269,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // PUBLISH
-  const publish = state.phases.publish.result || {};
+  const publish = (state.phases.publish.result || {}) as any;
   const txHashes = publish.txHashes || [];
   lines.push(`## 5. PUBLISH${phaseDuration(state, "publish")}`);
   if (txHashes.length > 0) {
@@ -3284,7 +3284,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // VERIFY
-  const verify = state.phases.verify.result || {};
+  const verify = (state.phases.verify.result || {}) as any;
   lines.push(`## 6. VERIFY${phaseDuration(state, "verify")}`);
   if (verify.skipped) {
     lines.push("- Skipped (no posts)");
@@ -3296,7 +3296,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // REVIEW
-  const review = state.phases.review.result || {};
+  const review = (state.phases.review.result || {}) as any;
   lines.push(`## 7. REVIEW${phaseDuration(state, "review")}`);
   const reviewStats = review.stats;
   if (reviewStats) {
@@ -3311,7 +3311,7 @@ function writeSessionReport(state: SessionState, oversight: OversightLevel, sess
   lines.push("");
 
   // HARDEN
-  const harden = state.phases.harden?.result || {};
+  const harden = (state.phases.harden?.result || {}) as any;
   lines.push(`## 8. HARDEN${phaseDuration(state, "harden")}`);
   if (harden.findings !== undefined) {
     lines.push(`- ${harden.findings} findings classified`);
@@ -3381,7 +3381,7 @@ async function runV2Loop(
     info("SENSE already completed — skipping (resume)");
   } else if (senseHasFreshCache) {
     info(`SENSE cache fresh (${Math.round(senseCacheAgeMs / 1000)}s old) — reusing cached results`);
-    const cachedResult = state.phases.sense!.result;
+    const cachedResult = state.phases.sense!.result as any;
     const level = cachedResult.activity?.level || "unknown";
     const gapCount = cachedResult.gaps?.topics?.length || 0;
     phaseResult(`${level} activity (cached) | ${gapCount} gap topics found`);
@@ -3583,7 +3583,7 @@ async function runV2Loop(
       // Bridge substage result to state.phases.act.result for getEngageResult()
       if (isV2(state)) {
         if (!state.phases.act.result) state.phases.act.result = {};
-        state.phases.act.result.engage = engageResult;
+        (state.phases.act.result as any).engage = engageResult;
       }
       state.substages = substages;
       saveState(state, sessionsDir);
@@ -3604,7 +3604,7 @@ async function runV2Loop(
     // Bridge on resume too — getGateResult reads state.phases.act.result.gate
     if (isV2(state)) {
       if (!state.phases.act.result) state.phases.act.result = {};
-      state.phases.act.result.gate = gateResult;
+      (state.phases.act.result as any).gate = gateResult;
     }
     info("ACT/gate already completed — skipping (resume)");
   } else {
@@ -3624,7 +3624,7 @@ async function runV2Loop(
       // runPublishAutonomous/runPublishManual can find the gated posts.
       if (isV2(state)) {
         if (!state.phases.act.result) state.phases.act.result = {};
-        state.phases.act.result.gate = gateResult;
+        (state.phases.act.result as any).gate = gateResult;
       }
       state.substages = substages;
       saveState(state, sessionsDir);
@@ -3810,7 +3810,7 @@ function writeV2SessionReport(state: V2SessionState, oversight: OversightLevel, 
   lines.push("");
 
   // SENSE
-  const sense = state.phases.sense?.result || {};
+  const sense = (state.phases.sense?.result || {}) as any;
   lines.push(`## 1. SENSE`);
   if (sense.activity) {
     lines.push(`- ${sense.activity.level || "?"} activity (${sense.activity.posts_per_hour ?? "?"} posts/hr)`);
@@ -3822,7 +3822,7 @@ function writeV2SessionReport(state: V2SessionState, oversight: OversightLevel, 
   lines.push("");
 
   // ACT (with substage breakdown)
-  const actResult = state.phases.act?.result || {};
+  const actResult = (state.phases.act?.result || {}) as any;
   lines.push(`## 2. ACT`);
 
   for (const sub of state.substages || []) {
@@ -3856,7 +3856,7 @@ function writeV2SessionReport(state: V2SessionState, oversight: OversightLevel, 
   lines.push("");
 
   // CONFIRM
-  const confirm = state.phases.confirm?.result || {};
+  const confirm = (state.phases.confirm?.result || {}) as any;
   lines.push(`## 3. CONFIRM`);
   if (confirm.skipped) {
     lines.push("- Skipped (no posts)");
@@ -4266,10 +4266,10 @@ async function main(): Promise<void> {
       console.log(`  Duration: ${duration} min`);
       console.log(`  Posts: ${v1State.posts.length}`);
 
-      const engageResult = v1State.phases.engage.result || {};
+      const engageResult = (v1State.phases.engage.result || {}) as any;
       console.log(`  Reactions: ${engageResult.reactions_cast || 0} (${engageResult.agrees || 0} agree, ${engageResult.disagrees || 0} disagree)`);
 
-      const verifyResult = v1State.phases.verify.result || {};
+      const verifyResult = (v1State.phases.verify.result || {}) as any;
       if (!verifyResult.skipped) {
         console.log(`  Verified: ${verifyResult.summary?.verified || 0}/${verifyResult.summary?.total || 0}`);
       }

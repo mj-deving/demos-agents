@@ -116,7 +116,7 @@ export async function scanAddressStorage(
       }
 
       const lastTx = txs[txs.length - 1];
-      const prevStart = start;
+      const prevStart: number | "latest" = start;
       if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
         start = lastTx.blockNumber - 1;
       } else {
