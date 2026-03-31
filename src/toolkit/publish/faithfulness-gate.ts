@@ -103,7 +103,13 @@ export function runFaithfulnessGate(
     }
   }
 
-  const thresholds = { ...DEFAULT_STALENESS_THRESHOLDS_MS, ...options.stalenessThresholdsMs };
+  const overrides: Record<string, number> = {};
+  if (options.stalenessThresholdsMs) {
+    for (const [k, v] of Object.entries(options.stalenessThresholdsMs)) {
+      if (v !== undefined) overrides[k] = v;
+    }
+  }
+  const thresholds: Record<string, number> = { ...DEFAULT_STALENESS_THRESHOLDS_MS, ...overrides };
   const dataAgeMs = calculateAgeMs(supporting.attestation.timestamp, options.now);
   const maxStale = resolveStalenessThreshold(primaryClaim.identity.metric, thresholds);
   if (dataAgeMs > maxStale) {
