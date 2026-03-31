@@ -230,6 +230,16 @@ export async function runV3Loop(
             : { executed: [], skipped: [] };
 
         actResult = mergeExecutionResults(lightResult, heavyResult);
+
+        // Fail ACT if all actions failed — don't silently succeed
+        const merged = actResult as { executed: Array<{ success: boolean }>; skipped: unknown[] };
+        const successCount = merged.executed.filter((e) => e.success).length;
+        if (merged.executed.length > 0 && successCount === 0) {
+          throw new Error(
+            `All ${merged.executed.length} action(s) failed. ` +
+            `Skipped: ${merged.skipped.length}. See session log for details.`,
+          );
+        }
       } else {
         state.publishSuppressed = flags.shadow ? true : state.publishSuppressed;
         actResult = {

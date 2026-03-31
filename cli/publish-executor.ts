@@ -2,6 +2,7 @@ import type { Demos } from "@kynesyslabs/demosdk/websdk";
 
 import type { StrategyAction } from "./v3-strategy-bridge.js";
 import type { V3SessionState, PublishedPostRecord } from "../src/lib/state.js";
+import { saveState } from "../src/lib/state.js";
 import type { AgentConfig } from "../src/lib/agent-config.js";
 import type { AgentSourceView, SourceRecordV2 } from "../src/lib/sources/catalog.js";
 import type { LLMProvider } from "../src/lib/llm/llm-provider.js";
@@ -624,6 +625,9 @@ export async function executePublishActions(
         textLength: publishResult.textLength,
         attestationType,
       });
+
+      // Persist state after each successful action for crash-safe resume
+      saveState(deps.state, deps.sessionsDir);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       deps.observe("error", `Publish action failed: ${action.type}`, {

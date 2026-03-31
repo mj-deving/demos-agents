@@ -363,4 +363,45 @@ describe("runV3Loop", () => {
 
     expect(order).toEqual(["wallet", "bridge"]);
   });
+
+  it("fails ACT when all publish actions fail", async () => {
+    const state = makeState();
+    planMock.mockResolvedValueOnce({
+      actions: [{ type: "PUBLISH", target: null, reason: "test", evidence: [], metadata: { topics: ["test"] } }],
+      decisions: [],
+    });
+    executePublishActionsMock.mockResolvedValueOnce({
+      executed: [{ action: { type: "PUBLISH" }, success: false, error: "chain error" }],
+      skipped: [],
+    });
+
+    await expect(
+      runV3Loop(state, makeFlags(), mkdtempSync(join(tmpdir(), "v3-loop-")), new Map(), makeDeps()),
+    ).rejects.toThrow("All 1 action(s) failed");
+
+    expect(state.phases.act.status).toBe("failed");
+  });
+
+  it("succeeds ACT when at least one action succeeds among failures", async () => {
+    const state = makeState();
+    planMock.mockResolvedValueOnce({
+      actions: [
+        { type: "PUBLISH", target: null, reason: "test", evidence: [], metadata: { topics: ["test"] } },
+        { type: "ENGAGE", target: "tx1", reason: "agree", evidence: [], metadata: {} },
+      ],
+      decisions: [],
+    });
+    executeStrategyActionsMock.mockResolvedValueOnce({
+      executed: [{ action: { type: "ENGAGE" }, success: true }],
+      skipped: [],
+    });
+    executePublishActionsMock.mockResolvedValueOnce({
+      executed: [{ action: { type: "PUBLISH" }, success: false, error: "chain error" }],
+      skipped: [],
+    });
+
+    await runV3Loop(state, makeFlags(), mkdtempSync(join(tmpdir(), "v3-loop-")), new Map(), makeDeps());
+
+    expect(state.phases.act.status).toBe("completed");
+  });
 });

@@ -334,6 +334,10 @@ function parseArgs(): RunnerFlags {
       console.error("Error: --skip-to is not supported with --loop-version 2. Use --resume instead.");
       process.exit(1);
     }
+    if (loopVersion === 3 && flags["skip-to"] !== "sense") {
+      console.error("Error: V3 --skip-to only supports 'sense'. ACT and CONFIRM require a real SENSE payload from the strategy engine.");
+      process.exit(1);
+    }
 
     const validPhases = (loopVersion === 3 ? CORE_PHASE_ORDER : getPhaseOrder()) as string[];
     if (!validPhases.includes(flags["skip-to"])) {
@@ -381,7 +385,7 @@ FLAGS:
   --log PATH             Session log path (default: ~/.{agent}-session-log.jsonl)
   --oversight LEVEL      Oversight level: full|approve|autonomous (default: autonomous)
   --resume               Resume interrupted session from last completed phase
-  --skip-to PHASE        Start from specific phase (v3: sense|act|confirm, v1: audit|scan|engage|gate|publish|verify|review|harden)
+  --skip-to PHASE        Start from specific phase (v3: sense only, v1: audit|scan|engage|gate|publish|verify|review|harden)
   --force-skip-audit     Required with --skip-to when skipping AUDIT phase
   --loop-version 1|2|3   Loop version: 1 (8-phase), 2 (legacy 3-phase), 3 (default 3-phase strategy loop)
   --legacy-loop          Sugar for --loop-version 2
