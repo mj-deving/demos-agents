@@ -308,3 +308,25 @@ export {
 
 export type { ChainTxResult, ChainTxStages } from "./chain/tx-pipeline.js";
 export { executeChainTx } from "./chain/tx-pipeline.js";
+export type {
+  ChainId,
+  ChainReadResult,
+  ChainProvenance,
+  ChainAdapter,
+  ChainFamily,
+  MockChainAdapterOptions,
+  MockChainAdapterReadCall,
+  ContractEntry,
+  MetricDefinition,
+  MetricDerivation,
+  ProtocolEntry,
+  ChainVerificationResult,
+  ChainVerifierOptions,
+} from "./chain/index.js";
+export {
+  MockChainAdapter,
+  CONTRACT_REGISTRY,
+  resolveChainSource,
+  deriveValue,
+  verifyClaimOnChain,
+} from "./chain/index.js";
