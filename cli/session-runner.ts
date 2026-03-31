@@ -83,13 +83,11 @@ import { checkAndRecordWrite, getWriteRateRemaining } from "../src/toolkit/guard
 import { type SignalSnapshot } from "../src/lib/pipeline/signals.js";
 import {
   initStrategyBridge,
-  closeStrategyBridge,
-  updateWalletAddress as updateStrategyWallet,
   sense as strategySense,
   plan as strategyPlan,
   computePerformance as strategyPerformance,
   summarizeActions,
-  type StrategyBridgeContext,
+  type StrategyBridge,
   type SenseResult,
   type PlanResult,
 } from "./v3-strategy-bridge.js";
@@ -3417,7 +3415,7 @@ async function runV2Loop(
   // ── V3 Strategy: Colony Intelligence ────────────
   // After scan-feed populates the colony cache, extract structured state
   // and run the strategy engine to plan actions for the ACT phase.
-  let strategyBridge: StrategyBridgeContext | null = null;
+  let strategyBridge: StrategyBridge | null = null;
   let strategySenseResult: SenseResult | null = null;
   let strategyPlanResult: PlanResult | null = null;
 
@@ -3467,7 +3465,7 @@ async function runV2Loop(
     phaseError(`V3 strategy bridge failed (non-critical): ${e.message}`);
     // Close bridge on error path to prevent DB leak
     if (strategyBridge) {
-      closeStrategyBridge(strategyBridge);
+      strategyBridge.close();
       strategyBridge = null;
     }
   }
@@ -3706,7 +3704,7 @@ async function runV2Loop(
   } finally {
     // Always close V3 strategy bridge (colony DB) — even on CONFIRM throw
     if (strategyBridge) {
-      closeStrategyBridge(strategyBridge);
+      strategyBridge.close();
     }
   }
 

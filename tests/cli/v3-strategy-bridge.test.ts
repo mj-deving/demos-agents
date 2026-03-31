@@ -9,12 +9,12 @@ import { upsertReaction } from "../../src/toolkit/colony/reactions.js";
 import { upsertSourceResponse } from "../../src/toolkit/colony/source-cache.js";
 import { loadStrategyConfig } from "../../src/toolkit/strategy/config-loader.js";
 import {
+  StrategyBridge,
   sense,
   plan,
   computePerformance,
   filterActions,
   summarizeActions,
-  type StrategyBridgeContext,
 } from "../../cli/v3-strategy-bridge.js";
 import { FileStateStore } from "../../src/toolkit/state-store.js";
 
@@ -67,18 +67,13 @@ topicWeights:
   defi: 1.0
 `;
 
-function createBridgeContext(db: ColonyDatabase): StrategyBridgeContext {
+function createBridgeContext(db: ColonyDatabase): StrategyBridge {
   const config = loadStrategyConfig(STRATEGY_YAML);
   const stateDir = resolve(tmpdir(), `bridge-test-${Date.now()}`);
   mkdirSync(stateDir, { recursive: true });
   const store = new FileStateStore(stateDir);
 
-  return {
-    db,
-    config,
-    walletAddress: "demos1sentinel",
-    store,
-  };
+  return new StrategyBridge(db, config, store, "demos1sentinel");
 }
 
 function seedColony(db: ColonyDatabase): void {
@@ -331,6 +326,36 @@ describe("v3-strategy-bridge", () => {
 
     it("returns empty object for no actions", () => {
       expect(summarizeActions([])).toEqual({});
+    });
+  });
+
+  describe("Disposable protocol", () => {
+    it("implements Symbol.dispose for automatic cleanup", () => {
+      const testDb = initColonyCache(":memory:");
+      const bridge = createBridgeContext(testDb);
+
+      expect(typeof bridge[Symbol.dispose]).toBe("function");
+      bridge[Symbol.dispose]();
+      // Calling close again should be idempotent (no throw)
+      bridge.close();
+    });
+
+    it("close() is idempotent — safe to call multiple times without throwing", () => {
+      const testDb = initColonyCache(":memory:");
+      const bridge = createBridgeContext(testDb);
+
+      bridge.close();
+      bridge.close(); // should not throw
+      bridge[Symbol.dispose](); // should not throw
+      expect(true).toBe(true); // confirms no exception was thrown
+    });
+
+    it("updateWalletAddress changes the wallet key", () => {
+      const ctx = createBridgeContext(db);
+      expect(ctx.walletAddress).toBe("demos1sentinel");
+
+      ctx.updateWalletAddress("demos1real_wallet_abc");
+      expect(ctx.walletAddress).toBe("demos1real_wallet_abc");
     });
   });
 });

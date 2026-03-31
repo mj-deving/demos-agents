@@ -1,8 +1,12 @@
 /**
  * V3 Strategy Bridge — connects the strategy engine to the session runner.
  *
+ * Implements Disposable for automatic resource cleanup via `using`:
+ *   using bridge = initStrategyBridge(...)
+ *   // bridge.db auto-closed when scope exits (normal or throw)
+ *
  * Provides three functions mapping to V3 phases:
- *   sense()   → ColonyState + AvailableEvidence + DecisionContext
+ *   sense()   → ColonyState + AvailableEvidence
  *   plan()    → StrategyAction[] + DecisionLog (via decideActions)
  *   confirm() → PostPerformance[] (via computePerformanceScores)
  *
@@ -39,30 +43,66 @@ export type { StrategyAction, StrategyConfig, DecisionContext, DecisionLog, Post
 const DAILY_LIMIT = 14;
 const HOURLY_LIMIT = 5;
 
-// ── Colony DB Management ────────────────────────────
+// ── Strategy Bridge (Disposable) ────────────────────
 
-export interface StrategyBridgeContext {
-  db: ColonyDatabase;
-  config: StrategyConfig;
+/**
+ * Strategy bridge context — implements Disposable for automatic DB cleanup.
+ *
+ * Usage with `using` (preferred):
+ *   using bridge = initStrategyBridge(agentName, yamlPath, wallet);
+ *   // bridge.db closed automatically when scope exits
+ *
+ * Usage with manual close (for long-lived contexts):
+ *   const bridge = initStrategyBridge(...);
+ *   try { ... } finally { bridge[Symbol.dispose](); }
+ */
+export class StrategyBridge implements Disposable {
+  readonly db: ColonyDatabase;
+  readonly config: StrategyConfig;
+  readonly store: FileStateStore;
   walletAddress: string;
-  store: FileStateStore;
+  private disposed = false;
+
+  constructor(db: ColonyDatabase, config: StrategyConfig, store: FileStateStore, walletAddress: string) {
+    this.db = db;
+    this.config = config;
+    this.store = store;
+    this.walletAddress = walletAddress;
+  }
+
+  /** Update wallet address after connectWallet() resolves. */
+  updateWalletAddress(walletAddress: string): void {
+    this.walletAddress = walletAddress;
+  }
+
+  /** Close the colony database. Idempotent — safe to call multiple times. */
+  close(): void {
+    if (!this.disposed) {
+      this.db.close();
+      this.disposed = true;
+    }
+  }
+
+  /** Disposable protocol — called by `using` declarations. */
+  [Symbol.dispose](): void {
+    this.close();
+  }
 }
+
+// Keep type alias for backward compat with existing session runner imports
+export type StrategyBridgeContext = StrategyBridge;
 
 /**
  * Initialize the strategy bridge for a session.
- * Opens/creates colony cache, loads strategy config.
  *
- * walletAddress may be the agent name as fallback if the actual address
- * isn't known yet (wallet is connected lazily during publish).
- * Rate limit lookups are wallet-scoped in the StateStore, so consistency
- * with the publish phase's key is important. The session runner should
- * update ctx.walletAddress when connectWallet() succeeds.
+ * Reads/validates config BEFORE opening DB to prevent handle leaks on parse errors.
+ * Returns a Disposable — use `using bridge = initStrategyBridge(...)` for automatic cleanup.
  */
 export function initStrategyBridge(
   agentName: string,
   strategyYamlPath: string,
   walletAddress: string,
-): StrategyBridgeContext {
+): StrategyBridge {
   // Read and validate config BEFORE opening DB to avoid leaking the handle on parse errors
   const yamlContent = readFileSync(strategyYamlPath, "utf-8");
   const config = loadStrategyConfig(yamlContent);
@@ -76,20 +116,17 @@ export function initStrategyBridge(
   mkdirSync(stateDir, { recursive: true });
   const store = new FileStateStore(stateDir);
 
-  return { db, config, walletAddress, store };
+  return new StrategyBridge(db, config, store, walletAddress);
 }
 
-/**
- * Update the wallet address after connectWallet() resolves.
- * Ensures rate-limit key consistency with the publish path.
- */
-export function updateWalletAddress(ctx: StrategyBridgeContext, walletAddress: string): void {
-  ctx.walletAddress = walletAddress;
+/** @deprecated Use bridge[Symbol.dispose]() or bridge.close() instead. */
+export function closeStrategyBridge(ctx: StrategyBridge): void {
+  ctx.close();
 }
 
-/** Close the colony database. Call at end of session. */
-export function closeStrategyBridge(ctx: StrategyBridgeContext): void {
-  ctx.db.close();
+/** @deprecated Use bridge.updateWalletAddress() instead. */
+export function updateWalletAddress(ctx: StrategyBridge, walletAddress: string): void {
+  ctx.updateWalletAddress(walletAddress);
 }
 
 // ── SENSE Phase ─────────────────────────────────────
@@ -106,7 +143,7 @@ export interface SenseResult {
  * with fresh posts from the chain. This extracts structured state from that cache.
  */
 export function sense(
-  ctx: StrategyBridgeContext,
+  ctx: StrategyBridge,
   sourceView: AgentSourceView,
 ): SenseResult {
   const colonyState = extractColonyState(ctx.db, {
@@ -138,7 +175,7 @@ export interface PlanResult {
  * (StateStore-backed, wallet-scoped).
  */
 export async function buildDecisionContext(
-  ctx: StrategyBridgeContext,
+  ctx: StrategyBridge,
   sessionReactionsUsed: number,
 ): Promise<DecisionContext> {
   const remaining = await getWriteRateRemaining(ctx.store, ctx.walletAddress);
@@ -156,11 +193,11 @@ export async function buildDecisionContext(
  * ACT/plan: Run the strategy engine to decide what actions to take.
  *
  * Returns prioritized actions + full decision log for observability.
- * Does NOT execute actions — that remains in the session runner's
- * existing engage/gate/publish substage code.
+ * Does NOT execute actions — the session runner routes actions to
+ * existing engage/gate/publish substage code or V3 executors.
  */
 export async function plan(
-  ctx: StrategyBridgeContext,
+  ctx: StrategyBridge,
   senseResult: SenseResult,
   sessionReactionsUsed: number,
 ): Promise<PlanResult> {
@@ -186,7 +223,7 @@ export async function plan(
  * into future strategy decisions.
  */
 export function computePerformance(
-  ctx: StrategyBridgeContext,
+  ctx: StrategyBridge,
 ): PostPerformance[] {
   return computePerformanceScores(
     ctx.db,
