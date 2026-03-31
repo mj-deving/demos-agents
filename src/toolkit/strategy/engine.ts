@@ -150,6 +150,8 @@ export function decideActions(
         },
       );
 
+      considered.push({ action, rule: mentionsRule.name });
+
       if (!trusted || trusted.postCount < MIN_TRUST_POSTS) {
         reject(
           rejected,
@@ -167,7 +169,6 @@ export function decideActions(
       }
 
       candidates.push({ action, rule: mentionsRule.name });
-      considered.push({ action, rule: mentionsRule.name });
     }
   }
 

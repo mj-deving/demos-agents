@@ -138,6 +138,9 @@ describe("strategy engine", () => {
       priority: 100,
       target: "0xmention-trusted",
     });
+    // Both mentions should be considered; eve rejected for low trust
+    expect(result.log.considered).toHaveLength(2);
+    expect(result.log.rejected).toHaveLength(1);
   });
 
   it("creates engage actions for verified trending topics from top contributors", () => {
@@ -337,7 +340,7 @@ describe("strategy engine", () => {
     expect(result.log.rejected[0].reason).toMatch(/daily/i);
   });
 
-  it("logs low-trust mentions as rejected and selects nothing", () => {
+  it("logs low-trust mentions as considered and rejected", () => {
     const state = createEmptyState();
     state.threads.mentionsOfUs = [
       { txHash: "0xmention", author: "eve", text: "@loop are you there?" },
@@ -354,11 +357,12 @@ describe("strategy engine", () => {
     }), createContext());
 
     expect(result.actions).toEqual([]);
+    expect(result.log.considered).toHaveLength(1);
     expect(result.log.rejected).toHaveLength(1);
     expect(result.log.rejected[0].reason).toMatch(/trusted/i);
   });
 
-  it("rejects bait mentions without attestation data", () => {
+  it("rejects bait mentions without attestation data and logs as considered", () => {
     const state = createEmptyState();
     state.threads.mentionsOfUs = [
       { txHash: "0xbait", author: "alice", text: "@loop this scam is pathetic and fraudulent" },
@@ -375,6 +379,7 @@ describe("strategy engine", () => {
     }), createContext());
 
     expect(result.actions).toEqual([]);
+    expect(result.log.considered).toHaveLength(1);
     expect(result.log.rejected).toHaveLength(1);
     expect(result.log.rejected[0].reason).toMatch(/bait/i);
   });
@@ -431,5 +436,68 @@ describe("strategy engine", () => {
     const result = decideActions(createEmptyState(), [], createConfig(), createContext({ now: fixedNow }));
 
     expect(result.log.timestamp).toBe("2026-03-31T12:00:00.000Z");
+  });
+
+  it("allows 14th daily post but rejects 15th", () => {
+    const state = createEmptyState();
+    state.gaps.underservedTopics = [
+      { topic: "defi", lastPostAt: "2026-03-31T09:00:00.000Z" },
+      { topic: "governance", lastPostAt: "2026-03-31T09:00:00.000Z" },
+    ];
+
+    // 13 posts today — 14th should pass, creating 1 action for first gap
+    const result13 = decideActions(state, [
+      createEvidence("defi"),
+      createEvidence("governance"),
+    ], createConfig({
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "publish_to_gaps",
+      })),
+    }), createContext({ postsToday: 13 }));
+
+    expect(result13.actions).toHaveLength(1);
+    expect(result13.log.rejected).toHaveLength(1);
+    expect(result13.log.rejected[0].reason).toMatch(/daily/i);
+
+    // 14 posts today — all rejected
+    const result14 = decideActions(state, [
+      createEvidence("defi"),
+    ], createConfig({
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "publish_to_gaps",
+      })),
+    }), createContext({ postsToday: 14 }));
+
+    expect(result14.actions).toEqual([]);
+    expect(result14.log.rejected).toHaveLength(1);
+  });
+
+  it("allows 5th hourly post but rejects 6th", () => {
+    const state = createEmptyState();
+    state.gaps.underservedTopics = [
+      { topic: "defi", lastPostAt: "2026-03-31T09:00:00.000Z" },
+    ];
+
+    const result4 = decideActions(state, [createEvidence("defi")], createConfig({
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "publish_to_gaps",
+      })),
+    }), createContext({ postsThisHour: 4 }));
+
+    expect(result4.actions).toHaveLength(1);
+
+    const result5 = decideActions(state, [createEvidence("defi")], createConfig({
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "publish_to_gaps",
+      })),
+    }), createContext({ postsThisHour: 5 }));
+
+    expect(result5.actions).toEqual([]);
+    expect(result5.log.rejected).toHaveLength(1);
+    expect(result5.log.rejected[0].reason).toMatch(/hourly/i);
   });
 });
