@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+
 import { beginPhase, completePhase, failPhase, type V3SessionState } from "../src/lib/state.js";
 import type { AgentConfig } from "../src/lib/agent-config.js";
 import type { LLMProvider } from "../src/lib/llm/llm-provider.js";
@@ -28,6 +29,9 @@ import type { StrategyBridge } from "./v3-strategy-bridge.js";
 import { insertPost, countPosts } from "../src/toolkit/colony/posts.js";
 import type { CachedPost } from "../src/toolkit/colony/posts.js";
 import { setCursor } from "../src/toolkit/colony/schema.js";
+import { upsertSourceResponse } from "../src/toolkit/colony/source-cache.js";
+import { deriveIntentsFromTopics, selectSourcesByIntent } from "../src/lib/pipeline/source-scanner.js";
+import { fetchSource } from "../src/toolkit/sources/fetch.js";
 
 export interface V3LoopFlags {
   agent: string;
@@ -231,7 +235,45 @@ export async function runV3Loop(
       const sdkBridge = createSdkBridge(demos, undefined, AUTH_PENDING_TOKEN);
       await ingestChainPostsIntoColonyDb(bridge.db, sdkBridge, deps.observe);
 
+      // Fetch sources and cache responses so computeAvailableEvidence() has data.
+      // The strategy engine gates ALL actions on evidence from source_response_cache.
       const sourceView = deps.getSourceView();
+      const topics = deps.agentConfig.topics;
+      const intents = topics?.primary?.length ? deriveIntentsFromTopics(topics) : [];
+      let sourcesFetched = 0;
+      let sourcesCached = 0;
+      for (const intent of intents) {
+        const sources = selectSourcesByIntent(intent, sourceView);
+        for (const source of sources.slice(0, 5)) {
+          try {
+            const result = await fetchSource(source.url, source);
+            sourcesFetched++;
+            if (result.ok && result.response) {
+              upsertSourceResponse(bridge.db, {
+                sourceId: source.id,
+                url: result.response.url,
+                lastFetchedAt: new Date().toISOString(),
+                responseStatus: result.response.status,
+                responseSize: result.response.bodyText.length,
+                responseBody: result.response.bodyText.slice(0, 10000),
+                ttlSeconds: 900,
+                consecutiveFailures: 0,
+              });
+              sourcesCached++;
+            }
+          } catch {
+            // Non-fatal: source fetch failure doesn't block the session
+          }
+        }
+      }
+      if (sourcesFetched > 0) {
+        deps.observe("insight", `Source fetch: ${sourcesCached}/${sourcesFetched} cached in colony DB`, {
+          source: "v3-loop:sourceFetch",
+          sourcesFetched,
+          sourcesCached,
+        });
+      }
+
       const senseResult = sense(bridge, sourceView);
 
       state.strategyResults = {
