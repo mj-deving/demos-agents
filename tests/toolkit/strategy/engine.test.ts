@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AvailableEvidence } from "../../../src/toolkit/colony/available-evidence.js";
 import type { ColonyState } from "../../../src/toolkit/colony/state-extraction.js";
 import { decideActions } from "../../../src/toolkit/strategy/engine.js";
-import type { StrategyConfig } from "../../../src/toolkit/strategy/types.js";
+import type { DecisionContext, StrategyConfig } from "../../../src/toolkit/strategy/types.js";
 
 function createEmptyState(): ColonyState {
   return {
@@ -90,6 +90,17 @@ function createConfig(overrides: Partial<StrategyConfig> = {}): StrategyConfig {
   };
 }
 
+function createContext(overrides: Partial<DecisionContext> = {}): DecisionContext {
+  return {
+    ourAddress: "demos1loop",
+    sessionReactionsUsed: 0,
+    postsToday: 0,
+    postsThisHour: 0,
+    now: new Date("2026-03-31T12:00:00.000Z"),
+    ...overrides,
+  };
+}
+
 function createEvidence(subject: string, overrides: Partial<AvailableEvidence> = {}): AvailableEvidence {
   return {
     sourceId: `${subject}-source`,
@@ -119,10 +130,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "reply_to_mentions",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toHaveLength(1);
     expect(result.actions[0]).toMatchObject({
@@ -144,10 +152,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "engage_verified",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([
       expect.objectContaining({
@@ -171,10 +176,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "reply_with_evidence",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([
       expect.objectContaining({
@@ -197,10 +199,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "publish_to_gaps",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([
       expect.objectContaining({
@@ -225,10 +224,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "tip_valuable",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toHaveLength(1);
     expect(result.actions[0]).toMatchObject({
@@ -236,6 +232,25 @@ describe("strategy engine", () => {
       target: "alice",
       priority: 30,
     });
+    expect(Number(result.actions[0].metadata?.amount)).toBeLessThanOrEqual(10);
+  });
+
+  it("enforces absolute 10 DEM tip ceiling even with unclamped config", () => {
+    const state = createEmptyState();
+    state.agents.topContributors = [
+      { author: "alice", postCount: 4, avgReactions: 100 },
+      { author: "bob", postCount: 4, avgReactions: 1 },
+    ];
+
+    const result = decideActions(state, [], createConfig({
+      rateLimits: { postsPerDay: 14, postsPerHour: 5, reactionsPerSession: 8, maxTipAmount: 50 },
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "tip_valuable",
+      })),
+    }), createContext());
+
+    expect(result.actions).toHaveLength(1);
     expect(Number(result.actions[0].metadata?.amount)).toBeLessThanOrEqual(10);
   });
 
@@ -263,17 +278,13 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name !== "engage_verified",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions.map((action) => action.priority)).toEqual([100, 80, 50, 30]);
   });
 
-  it("applies reaction and post rate limits and records rejections in the log", () => {
+  it("applies reaction and post rate limits using actual counts", () => {
     const state = createEmptyState();
-    state.activity.postsPerHour = 1;
     state.activity.trendingTopics = [{ topic: "defi", count: 4 }];
     state.gaps.underservedTopics = [{ topic: "defi", lastPostAt: "2026-03-31T09:00:00.000Z" }];
     state.agents.topContributors = [
@@ -282,6 +293,7 @@ describe("strategy engine", () => {
       { author: "carol", postCount: 4, avgReactions: 1 },
     ];
 
+    // postsToday=1 with limit=1 means daily is exhausted; reactionsPerSession=1 allows 1 engage
     const result = decideActions(state, [createEvidence("defi")], createConfig({
       rateLimits: {
         postsPerDay: 1,
@@ -292,10 +304,7 @@ describe("strategy engine", () => {
       rules: createConfig().rules.filter((rule) =>
         rule.name === "engage_verified" || rule.name === "publish_to_gaps"
       ),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext({ postsToday: 1, postsThisHour: 0 }));
 
     expect(result.actions).toHaveLength(1);
     expect(result.actions[0].type).toBe("ENGAGE");
@@ -308,6 +317,24 @@ describe("strategy engine", () => {
         expect.stringMatching(/daily/i),
       ]),
     );
+  });
+
+  it("rejects posts when postsToday exceeds daily limit", () => {
+    const state = createEmptyState();
+    state.gaps.underservedTopics = [
+      { topic: "security", lastPostAt: "2026-03-31T09:00:00.000Z" },
+    ];
+
+    const result = decideActions(state, [createEvidence("security")], createConfig({
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "publish_to_gaps",
+      })),
+    }), createContext({ postsToday: 14 }));
+
+    expect(result.actions).toEqual([]);
+    expect(result.log.rejected).toHaveLength(1);
+    expect(result.log.rejected[0].reason).toMatch(/daily/i);
   });
 
   it("logs low-trust mentions as rejected and selects nothing", () => {
@@ -324,10 +351,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "reply_to_mentions",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([]);
     expect(result.log.rejected).toHaveLength(1);
@@ -348,10 +372,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "reply_to_mentions",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([]);
     expect(result.log.rejected).toHaveLength(1);
@@ -372,10 +393,7 @@ describe("strategy engine", () => {
         ...rule,
         enabled: false,
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([]);
     expect(result.log.considered).toEqual([]);
@@ -383,10 +401,7 @@ describe("strategy engine", () => {
   });
 
   it("returns no actions for an empty colony state", () => {
-    const result = decideActions(createEmptyState(), [], createConfig(), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    const result = decideActions(createEmptyState(), [], createConfig(), createContext());
 
     expect(result.actions).toEqual([]);
     expect(result.log.selected).toEqual([]);
@@ -405,12 +420,16 @@ describe("strategy engine", () => {
         ...rule,
         enabled: rule.name === "publish_to_gaps",
       })),
-    }), {
-      ourAddress: "demos1loop",
-      sessionReactionsUsed: 0,
-    });
+    }), createContext());
 
     expect(result.actions).toEqual([]);
     expect(result.log.selected).toEqual([]);
+  });
+
+  it("uses injected now for deterministic timestamps", () => {
+    const fixedNow = new Date("2026-03-31T12:00:00.000Z");
+    const result = decideActions(createEmptyState(), [], createConfig(), createContext({ now: fixedNow }));
+
+    expect(result.log.timestamp).toBe("2026-03-31T12:00:00.000Z");
   });
 });

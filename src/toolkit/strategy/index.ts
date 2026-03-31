@@ -6,6 +6,7 @@ export type {
   StrategyAction,
   StrategyRule,
   StrategyConfig,
+  DecisionContext,
   DecisionLog,
   PostPerformance,
 } from "./types.js";

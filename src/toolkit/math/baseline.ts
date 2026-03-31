@@ -77,6 +77,13 @@ function median(sorted: number[]): number {
   return sorted[mid];
 }
 
+/** Public median — sorts a copy of the input array first. */
+export function computeMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return median(sorted);
+}
+
 export function calculateMAD(values: number[]): number {
   if (values.length < 2) return 0;
   const sorted = [...values].sort((a, b) => a - b);

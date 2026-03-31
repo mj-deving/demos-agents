@@ -1,4 +1,5 @@
 import type { ColonyDatabase } from "./schema.js";
+import { computeMedian } from "../math/baseline.js";
 import type { PostPerformance, StrategyConfig } from "../strategy/types.js";
 
 interface PerformanceRow {
@@ -17,19 +18,6 @@ interface ReactionTotalRow {
 interface ThreadStatsRow {
   total_replies: number;
   max_depth: number;
-}
-
-function median(values: number[]): number {
-  if (values.length === 0) return 0;
-
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-
-  if (sorted.length % 2 === 1) {
-    return sorted[middle] ?? 0;
-  }
-
-  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }
 
 function getOurPosts(db: ColonyDatabase, ourAddress: string): PerformanceRow[] {
@@ -92,7 +80,7 @@ export function computePerformanceScores(
     return [];
   }
 
-  const colonyMedianReactions = median(getColonyReactionTotals(db));
+  const colonyMedianReactions = computeMedian(getColonyReactionTotals(db));
 
   return posts
     .map((post) => {
@@ -112,7 +100,7 @@ export function computePerformanceScores(
         ? config.economic + config.tipBase + Math.min(post.tips_total_dem * config.tipMultiplier, config.tipCap)
         : 0;
       const controversy = post.agrees > 0 && post.disagrees > 0 && threadStats.max_depth > 1
-        ? Math.min(config.controversy, config.controversy)
+        ? config.controversy
         : 0;
       const rawScore = engagement + discussion + replyBonuses + economic + controversy;
       const ageHours = Math.max(0, (now.getTime() - Date.parse(post.timestamp)) / (1000 * 60 * 60));

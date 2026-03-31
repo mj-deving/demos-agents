@@ -38,7 +38,18 @@ export interface StrategyConfig {
     controversy: number;
     ageHalfLife: number;
   };
+  // TODO(phase-3b): Wire topicWeights into publish/engage priority scoring
   topicWeights: Record<string, number>;
+}
+
+export interface DecisionContext {
+  ourAddress: string;
+  sessionReactionsUsed: number;
+  /** Actual number of posts by this agent today. Required for accurate rate limiting. */
+  postsToday: number;
+  /** Actual number of posts by this agent in the current hour. Required for accurate rate limiting. */
+  postsThisHour: number;
+  now?: Date;
 }
 
 export interface DecisionLog {

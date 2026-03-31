@@ -1,10 +1,13 @@
 import type { AvailableEvidence } from "../colony/available-evidence.js";
 import type { ColonyState } from "../colony/state-extraction.js";
-import type { DecisionLog, StrategyAction, StrategyConfig, StrategyRule } from "./types.js";
+import { computeMedian } from "../math/baseline.js";
+import type { DecisionContext, DecisionLog, StrategyAction, StrategyConfig, StrategyRule } from "./types.js";
 
 const MIN_TRUST_POSTS = 3;
 const MAX_PUBLISH_EVIDENCE_FRESHNESS_SECONDS = 3600;
 const MIN_PUBLISH_EVIDENCE_RICHNESS = 100;
+/** Absolute toolkit ceiling — cannot be exceeded regardless of config. */
+const ABSOLUTE_TIP_CEILING_DEM = 10;
 const BAIT_PATTERNS = [
   /\bscam\b/i,
   /\bfraud(?:ulent)?\b/i,
@@ -21,19 +24,6 @@ type RejectedAction = DecisionLog["rejected"][number];
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
-}
-
-function median(values: number[]): number {
-  if (values.length === 0) return 0;
-
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-
-  if (sorted.length % 2 === 1) {
-    return sorted[middle] ?? 0;
-  }
-
-  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }
 
 function buildEvidenceIndex(availableEvidence: AvailableEvidence[]): Map<string, AvailableEvidence[]> {
@@ -107,14 +97,23 @@ function getVerifiedTopics(
 }
 
 function getRateLimitState(
-  colonyState: ColonyState,
   config: StrategyConfig,
-  sessionReactionsUsed: number,
+  context: DecisionContext,
 ): DecisionLog["rateLimitState"] {
   return {
-    dailyRemaining: Math.max(0, Math.floor(config.rateLimits.postsPerDay - (colonyState.activity.postsPerHour * 24))),
-    hourlyRemaining: Math.max(0, Math.floor(config.rateLimits.postsPerHour - colonyState.activity.postsPerHour)),
-    reactionsRemaining: Math.max(0, config.rateLimits.reactionsPerSession - sessionReactionsUsed),
+    dailyRemaining: Math.max(0, config.rateLimits.postsPerDay - context.postsToday),
+    hourlyRemaining: Math.max(0, config.rateLimits.postsPerHour - context.postsThisHour),
+    reactionsRemaining: Math.max(0, config.rateLimits.reactionsPerSession - context.sessionReactionsUsed),
+  };
+}
+
+function findRule(config: StrategyConfig, ruleName: string): StrategyRule {
+  return config.rules.find((rule) => rule.name === ruleName) ?? {
+    name: ruleName,
+    type: "ENGAGE",
+    priority: 0,
+    conditions: [],
+    enabled: true,
   };
 }
 
@@ -122,8 +121,9 @@ export function decideActions(
   colonyState: ColonyState,
   availableEvidence: AvailableEvidence[],
   config: StrategyConfig,
-  context: { ourAddress: string; sessionReactionsUsed: number },
+  context: DecisionContext,
 ): { actions: StrategyAction[]; log: DecisionLog } {
+  const now = context.now ?? new Date();
   const evidenceIndex = buildEvidenceIndex(availableEvidence);
   const considered: DecisionLog["considered"] = [];
   const rejected: DecisionLog["rejected"] = [];
@@ -131,6 +131,9 @@ export function decideActions(
   const trustedAuthors = new Map(
     colonyState.agents.topContributors.map((contributor) => [normalize(contributor.author), contributor]),
   );
+
+  // Compute verified topics once — used by engage_verified and reply_with_evidence
+  const verifiedTopics = getVerifiedTopics(colonyState, evidenceIndex);
 
   const mentionsRule = getRule(config, "reply_to_mentions");
   if (mentionsRule) {
@@ -170,8 +173,7 @@ export function decideActions(
 
   const engageRule = getRule(config, "engage_verified");
   if (engageRule) {
-    const verifiedTopics = getVerifiedTopics(colonyState, evidenceIndex);
-    const contributorMedian = median(colonyState.agents.topContributors.map((contributor) => contributor.avgReactions));
+    const contributorMedian = computeMedian(colonyState.agents.topContributors.map((contributor) => contributor.avgReactions));
 
     if (verifiedTopics.length > 0) {
       for (const contributor of colonyState.agents.topContributors) {
@@ -201,7 +203,6 @@ export function decideActions(
 
   const replyWithEvidenceRule = getRule(config, "reply_with_evidence");
   if (replyWithEvidenceRule) {
-    const verifiedTopics = getVerifiedTopics(colonyState, evidenceIndex);
     const evidenceIds = verifiedTopics.flatMap(({ evidence }) => evidence.map((item) => item.sourceId));
 
     if (verifiedTopics.length > 0) {
@@ -258,16 +259,18 @@ export function decideActions(
 
   const tipRule = getRule(config, "tip_valuable");
   if (tipRule) {
-    const contributorMedian = median(colonyState.agents.topContributors.map((contributor) => contributor.avgReactions));
+    const contributorMedian = computeMedian(colonyState.agents.topContributors.map((contributor) => contributor.avgReactions));
 
     for (const contributor of colonyState.agents.topContributors) {
       if (contributor.avgReactions <= contributorMedian) {
         continue;
       }
 
+      // Defense-in-depth: clamp to absolute toolkit ceiling regardless of config
       const amount = Math.max(
         1,
         Math.min(
+          ABSOLUTE_TIP_CEILING_DEM,
           config.rateLimits.maxTipAmount,
           Math.round(contributor.avgReactions - contributorMedian),
         ),
@@ -296,19 +299,13 @@ export function decideActions(
     || (left.action.target ?? "").localeCompare(right.action.target ?? "")
   );
 
-  const remaining = getRateLimitState(colonyState, config, context.sessionReactionsUsed);
+  const remaining = getRateLimitState(config, context);
   const selected: StrategyAction[] = [];
 
   for (const candidate of candidates) {
     if (candidate.action.type === "ENGAGE") {
       if (remaining.reactionsRemaining <= 0) {
-        reject(rejected, config.rules.find((rule) => rule.name === candidate.rule) ?? {
-          name: candidate.rule,
-          type: candidate.action.type,
-          priority: candidate.action.priority,
-          conditions: [],
-          enabled: true,
-        }, candidate.action, "Reaction session limit exhausted");
+        reject(rejected, findRule(config, candidate.rule), candidate.action, "Reaction session limit exhausted");
         continue;
       }
 
@@ -319,23 +316,11 @@ export function decideActions(
 
     if (candidate.action.type === "REPLY" || candidate.action.type === "PUBLISH") {
       if (remaining.dailyRemaining <= 0) {
-        reject(rejected, config.rules.find((rule) => rule.name === candidate.rule) ?? {
-          name: candidate.rule,
-          type: candidate.action.type,
-          priority: candidate.action.priority,
-          conditions: [],
-          enabled: true,
-        }, candidate.action, "Daily post limit exhausted");
+        reject(rejected, findRule(config, candidate.rule), candidate.action, "Daily post limit exhausted");
         continue;
       }
       if (remaining.hourlyRemaining <= 0) {
-        reject(rejected, config.rules.find((rule) => rule.name === candidate.rule) ?? {
-          name: candidate.rule,
-          type: candidate.action.type,
-          priority: candidate.action.priority,
-          conditions: [],
-          enabled: true,
-        }, candidate.action, "Hourly post limit exhausted");
+        reject(rejected, findRule(config, candidate.rule), candidate.action, "Hourly post limit exhausted");
         continue;
       }
 
@@ -351,7 +336,7 @@ export function decideActions(
   return {
     actions: selected,
     log: {
-      timestamp: new Date().toISOString(),
+      timestamp: now.toISOString(),
       considered,
       selected,
       rejected,
