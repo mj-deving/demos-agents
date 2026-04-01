@@ -1,7 +1,8 @@
 # Phase 5: V3 Loop Swap — Complete Implementation Plan
 
+> **Master plan:** See `docs/v3-master-plan.md` for the unified execution order.
 > **Referenced from:** `docs/design-loop-v3.md` Phase 5 section
-> **Status:** Architecture complete, ready for implementation
+> **Status:** COMPLETE (2026-03-31) — V3 is default loop, Session 59 validated live.
 > **Date:** 2026-03-31
 
 ## Executive Summary

@@ -1,7 +1,8 @@
 # Colony Tooling & Intelligence Plan
 
+> **Master plan:** See `docs/v3-master-plan.md` for the unified execution order.
 > **Status:** Draft | **Date:** 2026-04-01 | **Depends on:** Phase 5 colony DB ingestion (complete)
-> **Position:** After colony DB ingestion plan, before Phase 6 strategy refactor.
+> **Position:** Phases 5.1-5.6 in the master plan. After colony DB ingestion, before Phase 6 strategy refactor.
 
 ## Problem
 

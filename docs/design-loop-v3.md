@@ -1,6 +1,7 @@
 # Loop V3: First-Principles Redesign
 
-> **Status:** Proposed — supersedes 8-phase V1 loop and cosmetic V2 repackaging.
+> **Master plan:** See `docs/v3-master-plan.md` for the unified execution order.
+> **Status:** Implemented (Phase 5 complete) — supersedes 8-phase V1 loop and cosmetic V2 repackaging.
 > **Derived from:** First-principles decomposition session (2026-03-30).
 > **Supersedes:** `roadmap-measurement-first.md` H1a/H1b (body_match fix is obsoleted by flow inversion).
 

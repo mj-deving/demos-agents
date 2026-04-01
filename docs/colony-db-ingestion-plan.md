@@ -1,6 +1,7 @@
 # Colony DB Ingestion Plan
 
-> **Status:** Draft | **Date:** 2026-03-31 | **Depends on:** Phase 5 V3 loop (complete)
+> **Master plan:** See `docs/v3-master-plan.md` for the unified execution order.
+> **Status:** Steps 1a-1c COMPLETE (2026-03-31). Step 2 (backfill) PLANNED. | **Depends on:** Phase 5 V3 loop (complete)
 
 ## Problem
 
