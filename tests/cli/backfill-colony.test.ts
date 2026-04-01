@@ -170,7 +170,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(2);
+      expect(stats.postsInserted).toBe(2);
       expect(stats.skipped).toBe(0);
       expect(stats.deadLettered).toBe(0);
       expect(countPosts(db)).toBe(2);
@@ -229,7 +229,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc2, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(1);
+      expect(stats.postsInserted).toBe(1);
       // Corrupt tx gets skipped (null decode), not dead-lettered
       expect(stats.skipped).toBeGreaterThanOrEqual(1);
       expect(countPosts(db)).toBe(1);
@@ -249,7 +249,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(1);
+      expect(stats.postsInserted).toBe(1);
       expect(stats.skipped).toBeGreaterThanOrEqual(1);
     });
 
@@ -267,13 +267,34 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(1);
+      expect(stats.postsInserted).toBe(1);
       expect(stats.skipped).toBeGreaterThanOrEqual(1);
     });
 
-    it("should skip reaction transactions (action field present)", async () => {
+    it("should ingest reaction transactions into hive_reactions table", async () => {
+      // Create a reaction tx with proper fields (action=react, target, type)
+      const reactionPayload: Record<string, unknown> = {
+        v: 1,
+        action: "react",
+        target: "0xpostHash123",
+        type: "agree",
+      };
+      const encoded = encodeHivePayload(reactionPayload);
+      const hexData = Buffer.from(encoded).toString("hex");
+      const reactionTx = {
+        id: nextTxId++,
+        hash: "rx1",
+        blockNumber: 100,
+        status: "confirmed",
+        from: "0xreactor",
+        to: "0xcontract",
+        type: "storage",
+        content: JSON.stringify({ from: "0xreactor", to: "0xcontract", type: "storage", data: hexData, timestamp: Date.now() }),
+        timestamp: Date.now(),
+      };
+
       const txs = [
-        makeTx({ hash: "tx1", blockNumber: 100, text: "Post", action: "react" }),
+        reactionTx,
         makeTx({ hash: "tx2", blockNumber: 99, text: "Real post" }),
       ];
 
@@ -285,8 +306,15 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(1);
-      expect(stats.skipped).toBeGreaterThanOrEqual(1);
+      expect(stats.postsInserted).toBe(1);
+      expect(stats.reactionsInserted).toBe(1);
+
+      // Verify reaction is in hive_reactions table
+      const row = db.prepare("SELECT * FROM hive_reactions WHERE tx_hash = ?").get("rx1") as any;
+      expect(row).not.toBeNull();
+      expect(row.target_tx_hash).toBe("0xpostHash123");
+      expect(row.reaction_type).toBe("agree");
+      expect(row.author).toBe("0xreactor");
     });
 
     it("should resume from backfill_offset", async () => {
@@ -309,7 +337,7 @@ describe("backfill-colony", () => {
 
       // Verify getTransactions was called starting from saved offset
       expect(rpc.getTransactions).toHaveBeenCalledWith(500, 100);
-      expect(stats.inserted).toBe(1);
+      expect(stats.postsInserted).toBe(1);
     });
 
     it("should update backfill_offset after each batch", async () => {
@@ -350,7 +378,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 2, limit: 100 });
 
-      expect(stats.inserted).toBe(3);
+      expect(stats.postsInserted).toBe(3);
       expect(stats.pagesScanned).toBeGreaterThanOrEqual(2);
       expect(countPosts(db)).toBe(3);
     });
@@ -371,7 +399,7 @@ describe("backfill-colony", () => {
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 2 });
 
       // Should stop after reaching the limit
-      expect(stats.inserted).toBeLessThanOrEqual(2);
+      expect(stats.postsInserted).toBeLessThanOrEqual(2);
     });
 
     it("should not write to DB in dry-run mode", async () => {
@@ -391,7 +419,7 @@ describe("backfill-colony", () => {
         dryRun: true,
       });
 
-      expect(stats.inserted).toBe(1); // counted but not persisted
+      expect(stats.postsInserted).toBe(1); // counted but not persisted
       expect(countPosts(db)).toBe(0); // DB unchanged
     });
 
@@ -412,7 +440,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(2);
+      expect(stats.postsInserted).toBe(2);
       // non-hive storage tx + non-storage transfer tx = at least 2 skipped
       expect(stats.skipped).toBeGreaterThanOrEqual(2);
       expect(stats.totalScanned).toBe(4);
@@ -425,7 +453,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(0);
+      expect(stats.postsInserted).toBe(0);
       expect(stats.totalScanned).toBe(0);
       expect(stats.pagesScanned).toBe(1);
     });
@@ -446,7 +474,7 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      expect(stats.inserted).toBe(2);
+      expect(stats.postsInserted).toBe(2);
       const reply = getPost(db, "tx-reply");
       expect(reply).not.toBeNull();
       expect(reply!.replyTo).toBe("tx-parent");

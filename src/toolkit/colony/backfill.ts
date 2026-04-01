@@ -1,36 +1,43 @@
 /**
- * Colony backfill logic — paginate chain transactions and ingest HIVE posts.
+ * Colony backfill logic — paginate chain transactions and ingest ALL HIVE data.
  *
+ * Captures posts AND reactions with full SDK RawTransaction metadata.
  * Pure toolkit module: no SDK imports, no CLI deps. Takes a typed RPC
  * interface and colony DB handle. Used by cli/backfill-colony.ts.
  */
 
 import type { ColonyDatabase } from "./schema.js";
 import { insertPost } from "./posts.js";
+import { insertHiveReaction, recomputeReactionCache } from "./hive-reactions.js";
 import { insertDeadLetter } from "./dead-letters.js";
 import { decodeHiveData } from "../hive-codec.js";
 import { safeParse } from "../guards/state-helpers.js";
-import { toErrorMessage } from "../util/errors.js";  // toolkit, not src/lib
+import { toErrorMessage } from "../util/errors.js";
 
 // ── Types ───────────────────────────────────────────
 
-/** Minimal RPC interface for chain transaction pagination */
+/** Minimal RPC interface — mirrors SDK RawTransaction fields */
 export interface BackfillRpc {
   getTransactions(
     start: number | "latest",
     limit: number,
   ): Promise<
     Array<{
-      /** Global transaction index — used for offset-based pagination */
       id: number;
       hash: string;
       blockNumber: number;
       status: string;
       from: string;
+      from_ed25519_address?: string;
       to: string;
       type: string;
       content: string;
       timestamp: number;
+      nonce?: number;
+      amount?: number;
+      networkFee?: number;
+      rpcFee?: number;
+      additionalFee?: number;
     }>
   >;
 }
@@ -44,7 +51,8 @@ export interface BackfillOptions {
 }
 
 export interface BackfillStats {
-  inserted: number;
+  postsInserted: number;
+  reactionsInserted: number;
   skipped: number;
   deadLettered: number;
   totalScanned: number;
@@ -72,52 +80,74 @@ function setBackfillCursor(db: ColonyDatabase, offset: number): void {
   ).run(CURSOR_KEY, String(offset));
 }
 
-// ── Decode helper ───────────────────────────────────
+// ── Decode helpers ──────────────────────────────────
 
-interface DecodedPost {
+interface TxEnvelope {
+  txId: number;
   txHash: string;
   author: string;
+  fromEd25519?: string;
   blockNumber: number;
   timestamp: string;
+  nonce?: number;
+  amount?: number;
+  networkFee?: number;
+  rpcFee?: number;
+  additionalFee?: number;
+}
+
+interface DecodedPost extends TxEnvelope {
+  kind: "post";
   text: string;
   tags: string[];
   replyTo: string | null;
   rawData: Record<string, unknown>;
 }
 
+interface DecodedReaction extends TxEnvelope {
+  kind: "reaction";
+  targetTxHash: string;
+  reactionType: "agree" | "disagree";
+  rawData: Record<string, unknown>;
+}
+
+type DecodeResult = DecodedPost | DecodedReaction | "not-hive" | "malformed";
+
 function decodeRawTransaction(rawTx: {
+  id: number;
   hash: string;
   blockNumber: number;
   from: string;
+  from_ed25519_address?: string;
   content: string;
   timestamp: number;
   type: string;
-}): DecodedPost | "not-hive" | "malformed" {
+  nonce?: number;
+  amount?: number;
+  networkFee?: number;
+  rpcFee?: number;
+  additionalFee?: number;
+}): DecodeResult {
   const content =
     typeof rawTx.content === "string"
       ? (safeParse(rawTx.content) as Record<string, unknown>)
       : (rawTx.content as unknown as Record<string, unknown>);
 
-  if (!content) return "not-hive" as const;
+  if (!content) return "not-hive";
 
   const rawData = content.data;
   const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
 
-  // Check if the payload looks like HIVE data (has prefix) BEFORE decoding.
-  // This lets us distinguish "not HIVE" from "malformed HIVE".
   const looksLikeHive = typeof data === "string" && (
     data.toLowerCase().startsWith("48495645") || data.startsWith("HIVE")
   );
 
   const hive = decodeHiveData(data);
   if (!hive) {
-    return looksLikeHive ? "malformed" as const : "not-hive" as const;
+    return looksLikeHive ? "malformed" : "not-hive";
   }
 
-  // Skip reactions — only ingest posts
-  if (hive.action) return "not-hive" as const;
-
-  // Validate timestamp
+  // Build shared tx envelope
   const tsNum = rawTx.timestamp ?? Number(content.timestamp ?? 0);
   let isoTimestamp: string;
   if (Number.isFinite(tsNum) && !Number.isNaN(new Date(tsNum).getTime())) {
@@ -126,11 +156,41 @@ function decodeRawTransaction(rawTx: {
     isoTimestamp = new Date().toISOString();
   }
 
-  return {
+  const envelope: TxEnvelope = {
+    txId: rawTx.id,
     txHash: rawTx.hash,
     author: String(rawTx.from ?? content.from ?? ""),
+    fromEd25519: rawTx.from_ed25519_address,
     blockNumber: rawTx.blockNumber,
     timestamp: isoTimestamp,
+    nonce: rawTx.nonce,
+    amount: rawTx.amount,
+    networkFee: rawTx.networkFee,
+    rpcFee: rawTx.rpcFee,
+    additionalFee: rawTx.additionalFee,
+  };
+
+  // Reactions have an action field
+  if (hive.action === "react") {
+    const target = String(hive.target ?? "");
+    const reactionType = String(hive.type ?? "agree");
+    if (reactionType !== "agree" && reactionType !== "disagree") return "not-hive";
+    return {
+      ...envelope,
+      kind: "reaction",
+      targetTxHash: target,
+      reactionType: reactionType as "agree" | "disagree",
+      rawData: hive,
+    };
+  }
+
+  // Any other action we don't recognize — skip
+  if (hive.action) return "not-hive";
+
+  // Posts — no action field, has text
+  return {
+    ...envelope,
+    kind: "post",
     text: String(hive.text ?? ""),
     tags: Array.isArray(hive.tags) ? hive.tags.map(String) : [],
     replyTo: hive.replyTo ? String(hive.replyTo) : null,
@@ -141,12 +201,14 @@ function decodeRawTransaction(rawTx: {
 // ── Core backfill logic ─────────────────────────────
 
 /**
- * Paginate through chain transactions and ingest HIVE posts.
+ * Paginate through chain transactions and ingest ALL HIVE data:
+ * posts + reactions, with full SDK RawTransaction metadata.
  *
- * - Uses a separate `backfill_cursor` (not the V3 loop's `cursor`)
+ * - Forward offset-based pagination (start=1 → genesis, increment by page)
+ * - Uses separate `backfill_offset` cursor (not the V3 loop's `cursor`)
  * - Disables FK constraints during bulk load
  * - Routes decode failures to dead_letters
- * - Respects limit and dryRun options
+ * - Recomputes reaction_cache aggregates after each batch
  */
 export async function backfillFromTransactions(
   db: ColonyDatabase,
@@ -156,7 +218,8 @@ export async function backfillFromTransactions(
   const { batchSize, limit, dryRun = false, resetCursor = false, onProgress } = options;
 
   const stats: BackfillStats = {
-    inserted: 0,
+    postsInserted: 0,
+    reactionsInserted: 0,
     skipped: 0,
     deadLettered: 0,
     totalScanned: 0,
@@ -164,9 +227,6 @@ export async function backfillFromTransactions(
     lastBlockNumber: null,
   };
 
-  // Determine start position — offset-based forward pagination.
-  // SDK's getTransactions(start) treats start as a global tx index (1-based).
-  // Forward scan: start=1 → genesis, increment by page size each iteration.
   let start: number;
   if (resetCursor) {
     start = 1;
@@ -175,14 +235,14 @@ export async function backfillFromTransactions(
     start = cursor !== null ? cursor : 1;
   }
 
-  // Disable FK constraints during bulk load for performance
-  // (replyTo may reference posts not yet inserted)
   if (!dryRun) {
     db.pragma("foreign_keys = OFF");
   }
 
   try {
-    while (stats.inserted < limit) {
+    const totalInserted = () => stats.postsInserted + stats.reactionsInserted;
+
+    while (totalInserted() < limit) {
       const txs = await rpc.getTransactions(start, batchSize);
       stats.pagesScanned++;
 
@@ -191,11 +251,10 @@ export async function backfillFromTransactions(
       let lastProcessedBlock: number | null = null;
 
       for (const rawTx of txs) {
-        if (stats.inserted >= limit) break;
+        if (totalInserted() >= limit) break;
 
         stats.totalScanned++;
 
-        // Only process storage transactions
         if (rawTx.type !== "storage") {
           stats.skipped++;
           lastProcessedBlock = rawTx.blockNumber;
@@ -210,66 +269,85 @@ export async function backfillFromTransactions(
             continue;
           }
           if (decoded === "malformed") {
-            // Malformed HIVE payload — route to dead letters, not silent skip
             stats.deadLettered++;
             if (!dryRun) {
-              insertDeadLetter(
-                db,
-                rawTx.hash,
-                rawTx.content,
-                rawTx.blockNumber,
-                "Malformed HIVE payload: decodeHiveData returned null for storage transaction",
-              );
+              insertDeadLetter(db, rawTx.hash, rawTx.content, rawTx.blockNumber,
+                "Malformed HIVE payload: decodeHiveData returned null for storage transaction");
             }
             lastProcessedBlock = rawTx.blockNumber;
             continue;
           }
 
           if (!dryRun) {
-            insertPost(db, {
-              txHash: decoded.txHash,
-              author: decoded.author,
-              blockNumber: decoded.blockNumber,
-              timestamp: decoded.timestamp,
-              replyTo: decoded.replyTo,
-              tags: decoded.tags,
-              text: decoded.text,
-              rawData: decoded.rawData,
-            });
+            if (decoded.kind === "post") {
+              insertPost(db, {
+                txHash: decoded.txHash,
+                author: decoded.author,
+                blockNumber: decoded.blockNumber,
+                timestamp: decoded.timestamp,
+                replyTo: decoded.replyTo,
+                tags: decoded.tags,
+                text: decoded.text,
+                rawData: decoded.rawData,
+                txId: decoded.txId,
+                fromEd25519: decoded.fromEd25519,
+                nonce: decoded.nonce,
+                amount: decoded.amount,
+                networkFee: decoded.networkFee,
+                rpcFee: decoded.rpcFee,
+                additionalFee: decoded.additionalFee,
+              });
+              stats.postsInserted++;
+            } else {
+              insertHiveReaction(db, {
+                txHash: decoded.txHash,
+                txId: decoded.txId,
+                targetTxHash: decoded.targetTxHash,
+                reactionType: decoded.reactionType,
+                author: decoded.author,
+                fromEd25519: decoded.fromEd25519,
+                blockNumber: decoded.blockNumber,
+                timestamp: decoded.timestamp,
+                nonce: decoded.nonce,
+                amount: decoded.amount,
+                networkFee: decoded.networkFee,
+                rpcFee: decoded.rpcFee,
+                additionalFee: decoded.additionalFee,
+                rawData: decoded.rawData,
+              });
+              stats.reactionsInserted++;
+            }
+          } else {
+            if (decoded.kind === "post") stats.postsInserted++;
+            else stats.reactionsInserted++;
           }
 
-          stats.inserted++;
           lastProcessedBlock = rawTx.blockNumber;
         } catch (err) {
           stats.deadLettered++;
           if (!dryRun) {
-            insertDeadLetter(
-              db,
-              rawTx.hash,
-              rawTx.content,
-              rawTx.blockNumber,
-              toErrorMessage(err),
-            );
+            insertDeadLetter(db, rawTx.hash, rawTx.content, rawTx.blockNumber, toErrorMessage(err));
           }
           lastProcessedBlock = rawTx.blockNumber;
         }
       }
 
-      // Track last block seen for stats
       if (lastProcessedBlock != null) {
         stats.lastBlockNumber = lastProcessedBlock;
       }
 
-      // Advance offset — forward pagination by page size.
-      // SDK's getTransactions(start, limit) returns txs starting from index `start`.
       start += txs.length;
 
-      // Persist cursor as the next offset to resume from
       if (!dryRun) {
         setBackfillCursor(db, start);
       }
 
       onProgress?.(structuredClone(stats));
+    }
+
+    // Recompute reaction_cache aggregates from individual records
+    if (!dryRun && stats.reactionsInserted > 0) {
+      recomputeReactionCache(db);
     }
   } finally {
     if (!dryRun) {

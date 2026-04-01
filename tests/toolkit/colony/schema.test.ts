@@ -26,10 +26,35 @@ describe("colony schema", () => {
       "attestations",
       "claim_ledger",
       "dead_letters",
+      "hive_reactions",
       "posts",
       "reaction_cache",
       "source_response_cache",
     ]));
+  });
+
+  it("schema v2 adds tx metadata columns to posts and hive_reactions table", () => {
+    // Verify posts has the new columns
+    const postCols = db.prepare("PRAGMA table_info(posts)").all() as Array<{ name: string }>;
+    const colNames = postCols.map((c) => c.name);
+    expect(colNames).toContain("tx_id");
+    expect(colNames).toContain("from_ed25519");
+    expect(colNames).toContain("nonce");
+    expect(colNames).toContain("amount");
+    expect(colNames).toContain("network_fee");
+    expect(colNames).toContain("rpc_fee");
+    expect(colNames).toContain("additional_fee");
+
+    // Verify hive_reactions table exists with correct columns
+    const rxCols = db.prepare("PRAGMA table_info(hive_reactions)").all() as Array<{ name: string }>;
+    const rxColNames = rxCols.map((c) => c.name);
+    expect(rxColNames).toContain("tx_hash");
+    expect(rxColNames).toContain("tx_id");
+    expect(rxColNames).toContain("target_tx_hash");
+    expect(rxColNames).toContain("reaction_type");
+    expect(rxColNames).toContain("author");
+    expect(rxColNames).toContain("from_ed25519");
+    expect(rxColNames).toContain("network_fee");
   });
 
   it("updates the scan cursor in metadata", () => {

@@ -128,7 +128,7 @@ async function main(): Promise<void> {
       resetCursor,
       onProgress: (s) => {
         info(
-          `Progress: ${s.inserted} inserted, ${s.deadLettered} dead-lettered, ${s.pagesScanned} pages scanned`,
+          `Progress: ${s.postsInserted} posts, ${s.reactionsInserted} reactions, ${s.deadLettered} dead-lettered, ${s.pagesScanned} pages`,
         );
       },
     });
@@ -136,7 +136,8 @@ async function main(): Promise<void> {
     console.log(`\n${"=".repeat(60)}`);
     console.log(`  Backfill Complete`);
     console.log(`${"=".repeat(60)}`);
-    console.log(`  Posts inserted:    ${stats.inserted}`);
+    console.log(`  Posts inserted:     ${stats.postsInserted}`);
+    console.log(`  Reactions inserted: ${stats.reactionsInserted}`);
     console.log(`  Skipped:           ${stats.skipped}`);
     console.log(`  Dead-lettered:     ${stats.deadLettered}`);
     console.log(`  Total scanned:     ${stats.totalScanned}`);
