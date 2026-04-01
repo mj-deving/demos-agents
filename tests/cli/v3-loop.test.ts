@@ -25,6 +25,7 @@ const {
   countPostsMock,
   getRecentPostsMock,
   upsertReactionMock,
+  getReactionMock,
   upsertSourceResponseMock,
   getSourceResponseMock,
   deriveIntentsFromTopicsMock,
@@ -51,6 +52,7 @@ const {
   countPostsMock: vi.fn().mockReturnValue(0),
   getRecentPostsMock: vi.fn().mockReturnValue([]),
   upsertReactionMock: vi.fn(),
+  getReactionMock: vi.fn().mockReturnValue(null),
   upsertSourceResponseMock: vi.fn(),
   getSourceResponseMock: vi.fn().mockReturnValue(null),
   deriveIntentsFromTopicsMock: vi.fn().mockReturnValue([]),
@@ -110,6 +112,7 @@ vi.mock("../../src/toolkit/colony/posts.js", () => ({
 
 vi.mock("../../src/toolkit/colony/reactions.js", () => ({
   upsertReaction: upsertReactionMock,
+  getReaction: getReactionMock,
 }));
 
 vi.mock("../../src/toolkit/colony/source-cache.js", () => ({
@@ -549,6 +552,53 @@ describe("runV3Loop", () => {
       "insight",
       expect.stringContaining("Reaction refresh: 2 posts updated"),
       expect.objectContaining({ source: "v3-loop:reactionRefresh", postsRefreshed: 2 }),
+    );
+  });
+
+  it("preserves existing tip/reply metrics when refreshing agree/disagree counts", async () => {
+    const recentPosts = [
+      { txHash: "0xwithTips", author: "a1", blockNumber: 200, timestamp: new Date().toISOString(), replyTo: null, tags: [], text: "recent1", rawData: {} },
+    ];
+    getRecentPostsMock.mockReturnValue(recentPosts);
+
+    // Existing row has tip data that must be preserved
+    getReactionMock.mockReturnValue({
+      postTxHash: "0xwithTips",
+      agrees: 1,
+      disagrees: 0,
+      tipsCount: 3,
+      tipsTotalDem: 15,
+      replyCount: 2,
+      lastUpdatedAt: "2026-03-31T00:00:00.000Z",
+    });
+
+    const reactionsMap = new Map([
+      ["0xwithTips", { agree: 8, disagree: 2 }],
+    ]);
+    createSdkBridgeMock.mockReturnValue({
+      publishHiveReaction: vi.fn(),
+      publishHivePost: vi.fn(),
+      transferDem: vi.fn(),
+      getHivePosts: vi.fn().mockResolvedValue([]),
+      getHiveReactions: vi.fn().mockResolvedValue(reactionsMap),
+    });
+
+    planMock.mockResolvedValueOnce({ actions: [], log: {} });
+    const state = makeState();
+
+    await runV3Loop(state, makeFlags(), mkdtempSync(join(tmpdir(), "v3-loop-")), new Map(), makeDeps());
+
+    // agree/disagree updated, tip/reply preserved from existing row
+    expect(upsertReactionMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        postTxHash: "0xwithTips",
+        agrees: 8,
+        disagrees: 2,
+        tipsCount: 3,
+        tipsTotalDem: 15,
+        replyCount: 2,
+      }),
     );
   });
 

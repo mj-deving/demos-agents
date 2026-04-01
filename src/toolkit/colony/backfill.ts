@@ -90,21 +90,30 @@ function decodeRawTransaction(rawTx: {
   content: string;
   timestamp: number;
   type: string;
-}): DecodedPost | null {
+}): DecodedPost | "not-hive" | "malformed" {
   const content =
     typeof rawTx.content === "string"
       ? (safeParse(rawTx.content) as Record<string, unknown>)
       : (rawTx.content as unknown as Record<string, unknown>);
 
-  if (!content) return null;
+  if (!content) return "not-hive" as const;
 
   const rawData = content.data;
   const data = Array.isArray(rawData) && rawData[0] === "storage" ? rawData[1] : rawData;
+
+  // Check if the payload looks like HIVE data (has prefix) BEFORE decoding.
+  // This lets us distinguish "not HIVE" from "malformed HIVE".
+  const looksLikeHive = typeof data === "string" && (
+    data.toLowerCase().startsWith("48495645") || data.startsWith("HIVE")
+  );
+
   const hive = decodeHiveData(data);
-  if (!hive) return null;
+  if (!hive) {
+    return looksLikeHive ? "malformed" as const : "not-hive" as const;
+  }
 
   // Skip reactions — only ingest posts
-  if (hive.action) return null;
+  if (hive.action) return "not-hive" as const;
 
   // Validate timestamp
   const tsNum = rawTx.timestamp ?? Number(content.timestamp ?? 0);
@@ -175,6 +184,8 @@ export async function backfillFromTransactions(
 
       if (!txs || txs.length === 0) break;
 
+      let lastProcessedBlock: number | null = null;
+
       for (const rawTx of txs) {
         if (stats.inserted >= limit) break;
 
@@ -183,13 +194,30 @@ export async function backfillFromTransactions(
         // Only process storage transactions
         if (rawTx.type !== "storage") {
           stats.skipped++;
+          lastProcessedBlock = rawTx.blockNumber;
           continue;
         }
 
         try {
           const decoded = decodeRawTransaction(rawTx);
-          if (!decoded) {
+          if (decoded === "not-hive") {
             stats.skipped++;
+            lastProcessedBlock = rawTx.blockNumber;
+            continue;
+          }
+          if (decoded === "malformed") {
+            // Malformed HIVE payload — route to dead letters, not silent skip
+            stats.deadLettered++;
+            if (!dryRun) {
+              insertDeadLetter(
+                db,
+                rawTx.hash,
+                rawTx.content,
+                rawTx.blockNumber,
+                "Malformed HIVE payload: decodeHiveData returned null for storage transaction",
+              );
+            }
+            lastProcessedBlock = rawTx.blockNumber;
             continue;
           }
 
@@ -207,6 +235,7 @@ export async function backfillFromTransactions(
           }
 
           stats.inserted++;
+          lastProcessedBlock = rawTx.blockNumber;
         } catch (err) {
           stats.deadLettered++;
           if (!dryRun) {
@@ -218,24 +247,26 @@ export async function backfillFromTransactions(
               toErrorMessage(err),
             );
           }
+          lastProcessedBlock = rawTx.blockNumber;
         }
       }
 
-      // Update cursor to lowest block seen in this batch
-      const lastTx = txs[txs.length - 1];
-      if (lastTx?.blockNumber != null) {
-        stats.lastBlockNumber = lastTx.blockNumber;
+      // Update cursor to last PROCESSED block, not last fetched
+      // This prevents skipping unprocessed transactions when limit is hit mid-batch
+      if (lastProcessedBlock != null) {
+        stats.lastBlockNumber = lastProcessedBlock;
         if (!dryRun) {
-          setBackfillCursor(db, lastTx.blockNumber);
+          setBackfillCursor(db, lastProcessedBlock);
         }
       }
 
       onProgress?.(structuredClone(stats));
 
-      // Advance pagination
+      // Advance pagination using last tx in fetched batch
       const prevStart = start;
-      if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-        start = lastTx.blockNumber - 1;
+      const batchLastTx = txs[txs.length - 1];
+      if (batchLastTx?.blockNumber != null && batchLastTx.blockNumber > 1) {
+        start = batchLastTx.blockNumber - 1;
       } else {
         break;
       }

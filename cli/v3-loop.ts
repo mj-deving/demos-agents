@@ -28,7 +28,7 @@ import { initStrategyBridge, sense, plan, computePerformance } from "./v3-strate
 import type { StrategyBridge } from "./v3-strategy-bridge.js";
 import { insertPost, countPosts, getRecentPosts } from "../src/toolkit/colony/posts.js";
 import type { CachedPost } from "../src/toolkit/colony/posts.js";
-import { upsertReaction } from "../src/toolkit/colony/reactions.js";
+import { upsertReaction, getReaction } from "../src/toolkit/colony/reactions.js";
 import { upsertSourceResponse, getSourceResponse } from "../src/toolkit/colony/source-cache.js";
 import { deriveIntentsFromTopics, selectSourcesByIntent } from "../src/lib/pipeline/source-scanner.js";
 import { fetchSource } from "../src/toolkit/sources/fetch.js";
@@ -248,13 +248,16 @@ export async function runV3Loop(
         const reactions = await sdkBridge.getHiveReactions(recentPostHashes);
         const now = new Date().toISOString();
         for (const [txHash, counts] of reactions) {
+          // Merge with existing row to preserve tip/reply fields
+          // that may have been populated by other means.
+          const existing = getReaction(bridge.db, txHash);
           upsertReaction(bridge.db, {
             postTxHash: txHash,
             agrees: counts.agree,
             disagrees: counts.disagree,
-            tipsCount: 0,
-            tipsTotalDem: 0,
-            replyCount: 0,
+            tipsCount: existing?.tipsCount ?? 0,
+            tipsTotalDem: existing?.tipsTotalDem ?? 0,
+            replyCount: existing?.replyCount ?? 0,
             lastUpdatedAt: now,
           });
         }
