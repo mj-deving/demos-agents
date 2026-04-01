@@ -3,7 +3,7 @@
 > **The one document you read to understand the project.**
 > Architecture lives in CLAUDE.md. Operational knowledge lives in MEMORY.md. This file tracks the **evolving narrative** — what we're building, what Demos offers, what's working, what's next.
 
-**Last updated:** 2026-03-30 | **SDK:** 2.11.5 | **Tests:** 138 suites, 2031 passing | **Toolkit:** 45 files | **Agents:** 6 defined, 1 active (sentinel) | **Sources:** 229 catalog (142 active, 81 archived) | **ADRs:** 14
+**Last updated:** 2026-04-01 | **SDK:** 2.11.5 | **Tests:** 169 suites, 2200 passing | **Toolkit:** ~85 files | **Agents:** 6 defined, 1 active (sentinel) | **Sources:** 226 catalog | **ADRs:** 14
 
 ---
 
@@ -11,23 +11,13 @@
 
 demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is our infrastructure layer — identity, attestation, cross-chain operations, storage, messaging. We don't compete with Demos; we consume it.
 
-**Where we are (March 2026):**
-- Core loop works: 8-phase session (AUDIT→SCAN→ENGAGE→GATE→PUBLISH→VERIFY→REVIEW→HARDEN)
-- 3 agents actively publishing to SuperColony (sentinel, crawler, pioneer)
-- 20 plugins (9 session loop + 3 SC API + 4 omniweb real + 4 omniweb scaffold→silent-fail)
-- Event-driven reactive loop alongside cron
-- DAHR attestation pipeline functional. TLSN disabled 2026-03-25 — zero ecosystem adoption (0/145 feed posts), proof generation hangs 300s. All agents on `dahr_only`.
-- Post-quantum wallet signing available (Falcon via Demos SDK)
-- CCI identity queries wired (RPC-direct, bypassing NAPI crash in abstraction barrel)
-- Claim-driven attestation (Phases 1-4): extract claims → surgical URLs → attest per-claim → verify values
-- **Intent-driven signal detection pipeline (Phases 1-5 COMPLETE):** threshold/change/z-score detection, anti-signals with cross-source confirmation, source scanning CLI, session loop integration, convergence detection
-- **Session transcript (H2 SHIPPED):** append-only JSONL event logger, phase metrics, query CLI
-- **Operational hardening:** SourceUsageTracker, attestation retry with backoff, anti-signal double-fetch verification
-- **Correlation analysis (n=68):** `predicted_reactions` gate disabled (r=-0.002, no predictive value). Quality gate threshold 7→1.
-- **Attestation policy enforcement:** Executor respects `dahr_only`/`tlsn_preferred`/`tlsn_only`; claim-driven path no longer bypasses policy.
-- **Test quality enforcement (anti-vibe-testing):** Two-layer gate prevents assertion-free tests — vitest globalSetup (hard gate) + PostToolUse hook (write-time warning).
-- **Improvement dedup:** Fuzzy normalization strips numeric values and hex hashes, preventing 60+ duplicate improvements per agent.
-- **Source URL resolution:** `buildCandidates` extracts URL params from static source URLs, broadcasts to operation variable aliases.
+**Where we are (April 2026):**
+- **V3 loop is LIVE** — SENSE/ACT/CONFIRM replaces 8-phase V1. Session 59 published 1 post with 4 DAHR attestations, verified on-chain.
+- V2 available via `--legacy-loop`. V1 retired.
+- Colony DB populated: 88 posts, 8 sources cached, cursor at block 1990525
+- Strategy engine: 5 rules (publish_to_gaps, engage_verified, reply_to_mentions, reply_with_evidence, tip_valuable)
+- DAHR attestation pipeline functional. TLSN disabled — zero ecosystem adoption. All agents `dahr_only`.
+- **Full roadmap with tickable checklist:** See `docs/v3-roadmap.md` (14/23 items complete, 9 open)
 
 **Shipped 2026-03-26:**
 - **Speed fixes (5 optimizations, ~77s savings):** Removed --wait 15, skip indexer check, faster verify retries [3,5,10]s, harden findings cap at 10 (autonomous log-only), sense cache on V2 resume
@@ -41,13 +31,12 @@ demos-agents is an autonomous agent toolkit built ON the Demos Network. Demos is
 - **102 new tests** (1713→1815), 10 new suites. Boundary tests, connect error paths, domain filtering, feed parser shapes.
 - **CLAUDE.md trimmed** 296→69 lines. Detail moved to `.ai/guides/` (cli-reference, gotchas-detail, dev-workflow).
 
-**Where we're going (measurement-first pivot, 2026-03-30):**
-- **H0 — Measure What Exists (active):** Build session instrumentation (JSONL per phase), capture baseline from 5-10 real sessions, diagnose actual bottleneck with data. See [roadmap-measurement-first.md](roadmap-measurement-first.md).
-- **H1 — Make Posts Better (after H0):** Fix confirmed bottleneck (likely matcher, but data decides), chain-only colony census, wire colony signals into topic selection.
-- **H2 — Iterate & Expand (after H1 + measurable improvement):** Measure against baseline, auto-tune calibration, source expansion (81 archived first, then new).
-- **H3 — Scale When Needed (trigger: real second consumer):** Toolkit packaging, agent composition, reactive mode production deploy (20 files already built).
-- **Deferred indefinitely:** Architecture migration Phase 2-4, SDK-blocked verticals, multi-agent clusters, desloppify target 85.
-- **Architecture enforcement (ADR-0014):** Boundary test + placement rules + ADR auto-discovery. Runs on every `npm test`.
+**Where we're going (V3 roadmap, 2026-04-01):**
+- **Phases 5.1-5.3 (unblocked, parallel):** hive-query CLI for on-chain inspection, reaction refresh in V3 sense, colony backfill for full chain history
+- **Phases 5.4-5.6:** FTS5 full-text search, colony intelligence layer (agent profiles + interactions), sqlite-vec semantic search
+- **Phase 6:** Strategy domain refactor (after 5.1-5.3)
+- **Phases 7-8:** Strategy Phase 2 rules (event verifier, thread fan-out), advanced (proof ingestion, contradiction detection)
+- See **[v3-roadmap.md](v3-roadmap.md)** for the full tickable checklist.
 
 ---
 
@@ -87,9 +76,9 @@ What Demos offers vs what we use. **Updated each session.**
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
 | [design-toolkit-architecture.md](design-toolkit-architecture.md) | `APPROVED` | 2026-03-27 | **Framework-agnostic toolkit design.** Taxonomy, three-layer architecture, decision log. Toolkit shipped: 10 tools, 6 guards, Zod validation, SSRF protection. |
-| [session-loop-explained.md](session-loop-explained.md) | `current` | 2026-03-25 | Comprehensive session loop reference — 8-phase V1, V2 architecture, hooks, timing, bottlenecks |
-| [loop-heuristics.md](loop-heuristics.md) | `current` | 2026-03-20 | **Single source of truth** for SCAN→GATE→PUBLISH pipeline, agent differentiation, 8 constitutional rules |
-| [project-structure.md](project-structure.md) | `stale` | 2026-03-17 | Codebase tree + file descriptions. Test counts outdated (89 suites now). Missing signal-detection, transcript, source-scanner, test-quality-validator files. |
+| [session-loop-explained.md](session-loop-explained.md) | `stale` | 2026-03-25 | V1/V2 loop reference. V3 supersedes but V2 still available via `--legacy-loop` |
+| [loop-heuristics.md](loop-heuristics.md) | `stale` | 2026-03-20 | V1 SCAN→GATE→PUBLISH heuristics. V3 strategy engine replaces this pipeline |
+| [project-structure.md](project-structure.md) | `current` | 2026-04-01 | Codebase tree + file descriptions |
 | [omniweb-agent-architecture.md](omniweb-agent-architecture.md) | `stale` | 2026-03-18 | Two-tier agent model. References omniweb-runner.ts which doesn't exist. Aspirational, not current. |
 | [agent-workspace.md](agent-workspace.md) | `reference` | 2026-03-17 | YAML agent config format spec. agents/ directory exists but format not fully enforced by loader yet. |
 
@@ -117,10 +106,20 @@ What Demos offers vs what we use. **Updated each session.**
 
 | Document | Status | Updated | Purpose |
 |----------|--------|---------|---------|
-| [roadmap-measurement-first.md](roadmap-measurement-first.md) | `active` | 2026-03-30 | **Authoritative roadmap.** Four horizons (H0-H3), measurement-first. Supersedes all prior roadmaps. Codex + Fabric reviewed. |
-| [roadmap-unified.md](roadmap-unified.md) | `superseded` | 2026-03-20 | Superseded by roadmap-measurement-first.md. Skill roadmap tiers deferred. |
+| **[v3-roadmap.md](v3-roadmap.md)** | **`active`** | 2026-04-01 | **Authoritative roadmap.** Single tickable checklist (14/23 done). Phases 1-8. |
+| [colony-tooling-plan.md](colony-tooling-plan.md) | `active` | 2026-04-01 | Detail specs for Phases 5.1-5.6 (query CLI, reactions, backfill, FTS5, intelligence, semantic) |
+| [colony-db-ingestion-plan.md](colony-db-ingestion-plan.md) | `active` | 2026-04-01 | Colony DB ingestion (steps 1a-1c DONE) + backfill spec (step 2 open) |
 | [roadmap-skill-dojo-local.md](roadmap-skill-dojo-local.md) | `reference` | 2026-03-20 | Course correction: extract Skill Dojo as local SDK-direct implementations |
-| [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `deferred` | 2026-03-20 | Skill loader + manifest design. Deferred to H3 (trigger: real second agent). Phase 0 + Phase 5 already implemented. |
+| [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `deferred` | 2026-03-20 | Skill loader + manifest design. Deferred (trigger: real second agent). |
+
+### Archive (completed/superseded plans)
+
+| Document | Purpose |
+|----------|---------|
+| [archive/design-loop-v3.md](archive/design-loop-v3.md) | V3 architectural vision — first principles, signal-first publishing, claim schema, colony intelligence design |
+| [archive/phase5-v3-loop-swap-plan.md](archive/phase5-v3-loop-swap-plan.md) | Phase 5 implementation plan — module signatures, Codex review findings |
+| [archive/roadmap-measurement-first.md](archive/roadmap-measurement-first.md) | Measurement-first roadmap (H0-H3). H0 baseline data historically valuable. Superseded by V3 redesign. |
+| [archive/roadmap-unified.md](archive/roadmap-unified.md) | Skill cookbook vision. Superseded. |
 
 ---
 

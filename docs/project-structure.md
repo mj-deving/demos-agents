@@ -26,7 +26,7 @@ demos-agents/
 │       ├── write-rate-limit.ts        # @deprecated — legacy sync/file-based. Use toolkit guards.
 │       ├── publish-pipeline.ts        # DAHR/TLSN attestation + HIVE publish
 │       └── ... (33 files remaining flat — ongoing restructuring)
-├── src/toolkit/                       # Framework-agnostic toolkit (45 files, ADR-0002)
+├── src/toolkit/                       # Framework-agnostic toolkit (~85 files, ADR-0002)
 │   ├── index.ts                       # Barrel export — all tools, guards, types, schemas, new modules
 │   ├── types.ts                       # ToolResult, DemosError, DemosSession options, LLMProvider interface
 │   ├── session.ts                     # DemosSession — typed SigningHandle, expiry, bridge access
@@ -79,18 +79,38 @@ demos-agents/
 │   │   └── storage-client.ts         # On-chain storage queries
 │   ├── supercolony/                   # SC-specific constants (namespaced)
 │   │   └── scoring.ts                # On-chain scoring formula + constants
+│   ├── colony/                        # Colony intelligence layer
+│   │   ├── schema.ts                  # Colony DB schema + migrations (better-sqlite3)
+│   │   ├── posts.ts                   # Post CRUD (insertPost, getPost, getRecentPosts, countPosts)
+│   │   ├── source-cache.ts            # Source response cache (upsertSourceResponse, getFreshSources)
+│   │   ├── state-extraction.ts        # extractColonyState() — activity, gaps, threads, agents
+│   │   ├── available-evidence.ts      # computeAvailableEvidence() — reads source cache
+│   │   ├── performance.ts             # computePerformanceScores()
+│   │   ├── reactions.ts               # Reaction cache CRUD
+│   │   ├── claims.ts                  # Claim ledger CRUD
+│   │   ├── dead-letters.ts            # Dead letter queue for failed ingestion
+│   │   ├── scanner.ts                 # Batch post processor
+│   │   └── index.ts                   # Barrel export
+│   ├── strategy/                      # Strategy engine
+│   │   ├── engine.ts                  # decideActions() — 5 rules, rate limiting, evidence gating
+│   │   ├── config-loader.ts           # Load strategy YAML
+│   │   └── types.ts                   # StrategyAction, StrategyConfig, DecisionLog
 │   └── util/                          # Generic utilities
 │       └── errors.ts                  # toErrorMessage helper
 ├── packages/core/                     # @demos-agents/core (PR1 shipped — re-export barrel)
 ├── cli/                               # CLI entry points
-│   ├── session-runner.ts              # Cron loop orchestrator (8-phase)
+│   ├── session-runner.ts              # Cron loop orchestrator (V2 legacy + V3 default)
+│   ├── v3-loop.ts                     # V3 loop: SENSE→ACT→CONFIRM (~460 lines)
+│   ├── v3-strategy-bridge.ts          # Strategy bridge: sense/plan/computePerformance
+│   ├── publish-executor.ts            # PUBLISH/REPLY executor with full attestation pipeline
+│   ├── action-executor.ts             # ENGAGE/TIP lightweight executor
 │   ├── event-runner.ts                # Event loop — long-lived reactive process
-│   └── ... (audit, scan-feed, engage, gate, verify, publish, improvements, source-*)
+│   └── ... (audit, scan-feed, engage, gate, verify, publish, source-scan, etc.)
 │         # All CLI tools are 100% chain-only — no API auth required
 ├── platform/                          # SuperColony-specific barrel exports
 ├── connectors/                        # SDK isolation (@kynesyslabs/demosdk bridge)
 ├── config/
-│   ├── sources/catalog.json           # Unified source catalog (229 sources, 38 specs)
+│   ├── sources/catalog.json           # Unified source catalog (226 sources)
 │   └── strategies/base-loop.yaml      # Base loop strategy definition
 ├── agents/                            # Agent definitions (YAML persona + strategy)
 │   ├── sentinel/                      # General-purpose verification agent
@@ -101,9 +121,14 @@ demos-agents/
 │   └── infra-ops/                     # Infrastructure operations
 ├── skills/supercolony/                # SuperColony CLI skill (auth, post, feed, search, react)
 ├── scripts/                           # Cron wrapper + log rotation
-├── tests/                             # vitest — 2022 tests, 137 suites
+├── tests/                             # vitest — 2200 tests, 169 suites
 ├── .desloppify/                       # Desloppify scan state, plans, review results
-└── docs/                              # Architecture docs + this file
+└── docs/                              # Architecture docs, roadmap, archive/
+    ├── v3-roadmap.md                  # THE roadmap — tickable checklist (14/23 done)
+    ├── colony-tooling-plan.md         # Active detail spec (Phases 5.1-5.6)
+    ├── colony-db-ingestion-plan.md    # Backfill spec (step 2 open)
+    ├── archive/                       # Completed/superseded plans (read-only)
+    └── decisions/                     # ADRs (14 accepted)
 ```
 
 ## Claim-Driven Attestation Pipeline
