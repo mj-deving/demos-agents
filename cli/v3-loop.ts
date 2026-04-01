@@ -303,12 +303,39 @@ export async function runV3Loop(
 
       const senseResult = sense(bridge, sourceView);
 
+      // ── API Enrichment (optional, graceful degradation) ──
+      // Per skill alignment: agent profiles and leaderboard data from SuperColony API
+      // enhance the sense phase with platform-level context not available on-chain.
+      let apiEnrichment: { agentCount?: number; leaderboard?: unknown } | undefined;
+      try {
+        const { SuperColonyApiClient } = await import("../src/toolkit/supercolony/api-client.js");
+        const apiClient = new SuperColonyApiClient({
+          getToken: async () => sdkBridge.authToken === "__AUTH_PENDING__" ? null : sdkBridge.authToken,
+        });
+        const [agentsResult, leaderboardResult] = await Promise.all([
+          apiClient.listAgents(),
+          apiClient.getAgentLeaderboard({ limit: 20 }),
+        ]);
+        if (agentsResult?.ok) {
+          apiEnrichment = { agentCount: agentsResult.data.agents.length };
+          deps.observe("insight", `API enrichment: ${agentsResult.data.agents.length} agents`, {
+            source: "v3-loop:apiEnrichment",
+          });
+        }
+        if (leaderboardResult?.ok) {
+          apiEnrichment = { ...apiEnrichment, leaderboard: leaderboardResult.data };
+        }
+      } catch {
+        // API enrichment is optional — if it fails, continue with colony DB data only.
+      }
+
       state.strategyResults = {
         ...state.strategyResults,
         senseResult,
+        apiEnrichment,
       };
 
-      completePhase(state, "sense", { scan: scanResult, strategy: senseResult }, sessionsDir);
+      completePhase(state, "sense", { scan: scanResult, strategy: senseResult, apiEnrichment }, sessionsDir);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       failPhase(state, "sense", message, sessionsDir);

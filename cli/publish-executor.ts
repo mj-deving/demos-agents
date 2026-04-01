@@ -26,6 +26,7 @@ import {
 } from "../src/lib/attestation/attestation-planner.js";
 import { resolveAttestationPlan } from "../src/lib/attestation/attestation-policy.js";
 import { calculateStrategyScore } from "../src/lib/scoring/quality-score.js";
+import { calculateOfficialScore } from "../src/toolkit/supercolony/scoring.js";
 import { fetchSource } from "../src/lib/sources/fetch.js";
 import { preflight, selectSourceForTopicV2 } from "../src/lib/sources/policy.js";
 import { match } from "../src/lib/sources/matcher.js";
@@ -593,6 +594,13 @@ export async function executePublishActions(
         isReply: !!draft.replyTo,
         hasAttestation: true,
       });
+      // Official SuperColony score — used for platform compatibility assessment
+      const officialScore = calculateOfficialScore({
+        text: draft.text,
+        hasSourceAttestations: true, // DAHR attestation present
+        confidence: draft.confidence,
+        reactionCount: 0, // pre-publish, no reactions yet
+      });
       deps.logQuality({
         timestamp: new Date().toISOString(),
         agent: deps.agentConfig.name,
@@ -600,7 +608,7 @@ export async function executePublishActions(
         category: draft.category,
         quality_score: quality.score,
         quality_max: quality.maxScore,
-        quality_breakdown: quality.breakdown,
+        quality_breakdown: { ...quality.breakdown, officialScore: officialScore.score },
         predicted_reactions: draft.predicted_reactions,
         confidence: draft.confidence,
         text_length: draft.text.length,
