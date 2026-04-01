@@ -2,10 +2,10 @@
 type: roadmap
 status: active
 phase: 5.1-5.6
-progress: 14/23
+progress: 17/23
 updated: 2026-04-01
-open_items: 9
-next_action: "Phase 5.2 reaction refresh"
+open_items: 6
+next_action: "Phase 5.4 FTS5 full-text search"
 tags: [v3, colony, strategy]
 ---
 
@@ -17,9 +17,9 @@ tags: [v3, colony, strategy]
 ## Status
 
 - **V3 loop:** LIVE (session 59 — 1 post, 4 DAHR attestations, verified on-chain)
-- **Tests:** 2200 passing, 169 suites, zero tsc errors
-- **Colony DB:** 88 posts, 8 sources cached, reaction cache empty
-- **Next:** Phase 5.2 (reaction refresh — 3 strategy rules blocked on empty reactions)
+- **Tests:** 2237 passing, 171 suites, zero tsc errors
+- **Colony DB:** 88 posts, 8 sources cached, reaction cache NOW POPULATED
+- **Next:** Phase 5.4 (FTS5 full-text search — blocked on 5.3 backfill data)
 
 ## Checklist
 
@@ -54,28 +54,28 @@ tags: [v3, colony, strategy]
 
 ### Phase 5.1: hive-query CLI
 
-- [ ] 5.1a — `cli/hive-query.ts` scaffold: arg parsing, wallet connect, --pretty/--json
-- [ ] 5.1b — `posts` subcommand: posts by author + reactions + attestations
-- [ ] 5.1c — `performance` subcommand: our post scores over time
-- [ ] 5.1d — `engagement` subcommand: who reacts to us, patterns
-- [ ] 5.1e — `colony` subcommand: top agents, trending topics, activity
-- [ ] 5.1f — `tx` subcommand: raw transaction lookup + decode
+- [x] 5.1a — `cli/hive-query.ts` scaffold: arg parsing, wallet connect, --pretty/--json (`b437a63`)
+- [x] 5.1b — `posts` subcommand: posts by author + reactions + attestations (`b437a63`)
+- [x] 5.1c — `performance` subcommand: our post scores over time (`b437a63`)
+- [x] 5.1d — `engagement` subcommand: who reacts to us, patterns (`b437a63`)
+- [x] 5.1e — `colony` subcommand: top agents, trending topics, activity (`b437a63`)
+- [x] 5.1f — `tx` subcommand: raw transaction lookup + decode (`b437a63`)
 
 **Spec:** `docs/colony-tooling-plan.md` P0
 
 ### Phase 5.2: Reaction Refresh
 
-- [ ] 5.2a — Wire `getHiveReactions()` into V3 sense phase after post ingestion
-- [ ] 5.2b — `upsertReaction()` for recent posts (24h window)
-- [ ] 5.2c — Verify `tip_valuable` and `engage_verified` rules fire with populated cache
+- [x] 5.2a — Wire `getHiveReactions()` into V3 sense phase after post ingestion (`d045809`)
+- [x] 5.2b — `upsertReaction()` for recent posts (24h window) with existing row merge (`3ad5078`)
+- [x] 5.2c — Verify `tip_valuable` and `engage_verified` rules fire with populated cache (`d045809`)
 
 **Spec:** `docs/colony-tooling-plan.md` P1 | ~10 lines of code + 1 chain call
 
 ### Phase 5.3: Colony Backfill
 
-- [ ] 5.3a — `cli/backfill-colony.ts`: cursor-based pagination, resume support
-- [ ] 5.3b — Batch inserts (1000/tx), dead-letter routing for decode failures
-- [ ] 5.3c — Progress reporting + final stats
+- [x] 5.3a — `cli/backfill-colony.ts`: cursor-based pagination, resume support (`4acb468`)
+- [x] 5.3b — Batch inserts (1000/tx), dead-letter routing for decode failures (`4acb468`, `3ad5078`)
+- [x] 5.3c — Progress reporting + final stats (`4acb468`)
 
 **Spec:** `docs/colony-tooling-plan.md` P2 + `docs/colony-db-ingestion-plan.md` step 2
 
