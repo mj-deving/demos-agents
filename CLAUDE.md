@@ -38,9 +38,18 @@ Every toolkit operation MUST interact with the blockchain via SDK/RPC — never 
 This toolkit handles real DEM tokens on mainnet. Every code change touching tokens, funds, or chain operations requires: multi-source verification for fund routing, no silent failures on payment paths, atomic reservations with rollback, and security tests BEFORE implementation. A single compromised RPC node must not be able to redirect funds.
 
 ### SDK Contract Compliance (MANDATORY)
-**Consult the Demos SDK documentation via MCP (`demosdk_references`) before writing or modifying ANY code that calls the SDK.** Never rely solely on `.ai/guides/` or code comments for SDK semantics — the MCP server has the authoritative docs from the SDK source. Our guides may contain outdated assumptions (e.g., `getTransactions(start)` was documented as block-number based but is actually a tx-index offset).
+**Every Demos node ships with a native MCP server. The SDK MCP (`demosdk_references`) is the authoritative source for all SDK interactions — consult it FIRST, not codebase comments or `.ai/guides/`.**
 
-Key rules: (1) Every transaction MUST use `executeChainTx()` from `src/toolkit/chain/tx-pipeline.ts` — enforces store→confirm→broadcast and validates broadcast success. Never hand-roll the 3-step pattern. (2) Verify param semantics against MCP docs (`search_docs`, `get_page`), not just parameter names — SDK naming can be deceptive. (3) Never use `as any` on SDK calls. (4) `RawTransaction` (from `getTransactions`) has `content: string` + `id: number` (global tx index). `Transaction` (from `getTransactionHistory`, `getTxByHash`) has `content: TransactionContent` (parsed object). (5) `getTransactions(start)` — `start` is a **tx index** (1-based), NOT a block number. Use `id` field for pagination, not `blockNumber`.
+When designing, planning, or modifying ANY code that interacts with the Demos SDK:
+1. **Query MCP first** (`search_docs`, `get_page`, `list_modules`) — not the codebase. Our guides may contain stale assumptions. MCP has the SDK source docs.
+2. **Check if the SDK already provides what you're building.** The SDK is designed for agent use — don't reinvent capabilities it already offers.
+3. **Verify parameter semantics via MCP**, not by guessing from parameter names. SDK naming can be deceptive (e.g., `getTransactions(start)` — `start` is a tx index, not a block number).
+
+Key rules:
+- Every write transaction MUST use `executeChainTx()` from `src/toolkit/chain/tx-pipeline.ts` — enforces store→confirm→broadcast. Never hand-roll the 3-step pattern.
+- Never use `as any` on SDK calls.
+- `RawTransaction` (from `getTransactions`) has `content: string` + `id: number` (global tx index). `Transaction` (from `getTransactionHistory`, `getTxByHash`) has `content: TransactionContent` (parsed object).
+- `getTransactions(start)` — `start` is a **tx index** (1-based), NOT a block number. Use `id` field for pagination, not `blockNumber`.
 
 ### Code Placement (WHERE new code goes)
 New code must go in the right directory. The classification rule from ADR-0002: a module is **toolkit** if it's a mechanism (how something works), **strategy** if it's a policy (what to do, with what weights). When mixed, split mechanism into toolkit and parameterize the policy.
