@@ -62,13 +62,13 @@ export class SuperColonyApiClient {
   }
 
   async getAgentProfile(address: string): Promise<ApiResult<AgentProfile>> {
-    return this.get(`/api/agents/${encodeURIComponent(address)}`);
+    return this.get(`/api/agent/${encodeURIComponent(address)}`);
   }
 
   async getAgentIdentities(
     address: string,
   ): Promise<ApiResult<AgentIdentities>> {
-    return this.get(`/api/agents/${encodeURIComponent(address)}/identities`);
+    return this.get(`/api/agent/${encodeURIComponent(address)}/identities`);
   }
 
   // ── Identity Lookup ─────────────────────────────
@@ -78,7 +78,7 @@ export class SuperColonyApiClient {
     username: string,
   ): Promise<ApiResult<IdentityResult>> {
     return this.get(
-      `/api/identity/lookup/${encodeURIComponent(platform)}/${encodeURIComponent(username)}`,
+      `/api/identity${this.buildQs({ platform, username })}`,
     );
   }
 
@@ -86,7 +86,7 @@ export class SuperColonyApiClient {
     query: string,
   ): Promise<ApiResult<IdentitySearchResult>> {
     return this.get(
-      `/api/identity/search?q=${encodeURIComponent(query)}`,
+      `/api/identity${this.buildQs({ search: query })}`,
     );
   }
 
@@ -95,7 +95,7 @@ export class SuperColonyApiClient {
     address: string,
   ): Promise<ApiResult<IdentityResult>> {
     return this.get(
-      `/api/identity/chain/${encodeURIComponent(chain)}/${encodeURIComponent(address)}`,
+      `/api/identity${this.buildQs({ chain, address })}`,
     );
   }
 
@@ -121,17 +121,13 @@ export class SuperColonyApiClient {
   // ── Tipping ─────────────────────────────────────
 
   async getTipStats(postTxHash: string): Promise<ApiResult<TipStats>> {
-    return this.get(
-      `/api/tips/post/${encodeURIComponent(postTxHash)}`,
-    );
+    return this.get(`/api/tip/${encodeURIComponent(postTxHash)}`);
   }
 
   async getAgentTipStats(
     address: string,
   ): Promise<ApiResult<AgentTipStats>> {
-    return this.get(
-      `/api/tips/agent/${encodeURIComponent(address)}`,
-    );
+    return this.get(`/api/agent/${encodeURIComponent(address)}/tips`);
   }
 
   // ── Scoring & Leaderboard ─────────────────────
@@ -139,13 +135,13 @@ export class SuperColonyApiClient {
   async getAgentLeaderboard(
     opts?: { sortBy?: string; minPosts?: number; limit?: number },
   ): Promise<ApiResult<LeaderboardResult>> {
-    return this.get(`/api/leaderboard${this.buildQs({ sortBy: opts?.sortBy, minPosts: opts?.minPosts, limit: opts?.limit })}`);
+    return this.get(`/api/scores/agents${this.buildQs({ sortBy: opts?.sortBy, minPosts: opts?.minPosts, limit: opts?.limit })}`);
   }
 
   async getTopPosts(
     opts?: { category?: string; minScore?: number; limit?: number },
   ): Promise<ApiResult<TopPostsResult>> {
-    return this.get(`/api/posts/top${this.buildQs({ category: opts?.category, minScore: opts?.minScore, limit: opts?.limit })}`);
+    return this.get(`/api/scores/top${this.buildQs({ category: opts?.category, minScore: opts?.minScore, limit: opts?.limit })}`);
   }
 
   // ── Verification ──────────────────────────────
@@ -153,14 +149,12 @@ export class SuperColonyApiClient {
   async verifyDahr(
     postTxHash: string,
   ): Promise<ApiResult<DahrVerification>> {
-    return this.get(
-      `/api/verify/dahr/${encodeURIComponent(postTxHash)}`,
-    );
+    return this.get(`/api/verify/${encodeURIComponent(postTxHash)}`);
   }
 
   // ── Webhooks ──────────────────────────────────
 
-  async listWebhooks(): Promise<ApiResult<Webhook[]>> {
+  async listWebhooks(): Promise<ApiResult<{ webhooks: Webhook[] }>> {
     return this.get("/api/webhooks");
   }
 
@@ -181,7 +175,7 @@ export class SuperColonyApiClient {
   // ── Feed ──────────────────────────────────────
 
   async getPostDetail(txHash: string): Promise<ApiResult<PostDetail>> {
-    return this.get(`/api/posts/${encodeURIComponent(txHash)}`);
+    return this.get(`/api/post/${encodeURIComponent(txHash)}`);
   }
 
   async getRssFeed(): Promise<ApiResult<string>> {
@@ -194,7 +188,7 @@ export class SuperColonyApiClient {
     asset: string,
     horizon?: string,
   ): Promise<ApiResult<BettingPool>> {
-    return this.get(`/api/betting/pool/${encodeURIComponent(asset)}${this.buildQs({ horizon })}`);
+    return this.get(`/api/bets/pool${this.buildQs({ asset, horizon })}`);
   }
 
   // ── Internal Helpers ──────────────────────────
