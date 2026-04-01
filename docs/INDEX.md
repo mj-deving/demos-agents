@@ -73,53 +73,35 @@ What Demos offers vs what we use. **Updated each session.**
 
 ### Architecture & Design
 
-| Document | Status | Updated | Purpose |
-|----------|--------|---------|---------|
-| [design-toolkit-architecture.md](design-toolkit-architecture.md) | `APPROVED` | 2026-03-27 | **Framework-agnostic toolkit design.** Taxonomy, three-layer architecture, decision log. Toolkit shipped: 10 tools, 6 guards, Zod validation, SSRF protection. |
-| [session-loop-explained.md](session-loop-explained.md) | `stale` | 2026-03-25 | V1/V2 loop reference. V3 supersedes but V2 still available via `--legacy-loop` |
-| [loop-heuristics.md](loop-heuristics.md) | `stale` | 2026-03-20 | V1 SCAN→GATE→PUBLISH heuristics. V3 strategy engine replaces this pipeline |
-| [project-structure.md](project-structure.md) | `current` | 2026-04-01 | Codebase tree + file descriptions |
-| [omniweb-agent-architecture.md](omniweb-agent-architecture.md) | `stale` | 2026-03-18 | Two-tier agent model. References omniweb-runner.ts which doesn't exist. Aspirational, not current. |
-| [agent-workspace.md](agent-workspace.md) | `reference` | 2026-03-17 | YAML agent config format spec. agents/ directory exists but format not fully enforced by loader yet. |
-
-### Research & Analysis
-
-| Document | Status | Updated | Purpose |
-|----------|--------|---------|---------|
-| [agent-auth-demos-cci-analysis.md](agent-auth-demos-cci-analysis.md) | `current` | 2026-03-20 | Agent Auth Protocol + Demos CCI = complementary layers. Passport + boarding pass model. |
-| [architecture-comparison-elizaos.md](architecture-comparison-elizaos.md) | `reference` | 2026-03-18 | ElizaOS, demos-agents, OpenClaw, Claude Code architecture comparison |
-| [research-agent-frameworks-modularization.md](research-agent-frameworks-modularization.md) | `reference` | 2026-03-17 | OpenClaw, CrewAI, LangGraph, ElizaOS as modularization inspiration |
-| [skill-dojo-integration-research.md](skill-dojo-integration-research.md) | `current` | 2026-03-19 | Contract-tested inventory of 15 Skill Dojo skills. 5 req/hr rate limit. |
-
-### SDK & Integration
-
-| Document | Status | Updated | Purpose |
-|----------|--------|---------|---------|
-| [attestation-reference.md](attestation-reference.md) | `current` | 2026-03-14 | TLSN + DAHR design constraints, performance drift, pipeline detail |
-| [claim-driven-attestation-spec.md](claim-driven-attestation-spec.md) | `current` | 2026-03-21 | Claim-driven attestation design spec (Phases 1-4). Codex-reviewed. |
-| [design-intent-driven-scanning.md](design-intent-driven-scanning.md) | `complete` | 2026-03-24 | Intent-driven source scanning (Phases 1-5). Council-reviewed. All phases implemented. |
-| [design-session-transcript.md](design-session-transcript.md) | `complete` | 2026-03-24 | Session transcript H2. Council-validated (4×3 rounds) + Codex plan review (8 findings). Implemented. |
-| [sdk-exploration-results.md](sdk-exploration-results.md) | `current` | 2026-03-18 | StorageProgram / DemosWork / L2PS blocker diagnosis. SDK 2.11.2 (now 2.11.4, blockers likely unchanged) |
-| [TLSN-Report-KyneSys-2026-03-14.md](TLSN-Report-KyneSys-2026-03-14.md) | `current` | 2026-03-14 | MPC-TLS proxy relay failure diagnosis — KyneSys infrastructure issue |
+| Document | Status | Purpose |
+|----------|--------|---------|
+| [project-structure.md](project-structure.md) | `current` | Codebase tree with colony/, strategy/, V3 CLI modules |
+| [architecture-plumbing-vs-strategy.md](architecture-plumbing-vs-strategy.md) | `current` | Toolkit vs strategy boundary (ADR-0002 foundation) |
+| [agent-workspace.md](agent-workspace.md) | `current` | YAML agent config format spec |
+| [agent-auth-demos-cci-analysis.md](agent-auth-demos-cci-analysis.md) | `current` | Agent Auth Protocol + Demos CCI analysis |
+| [attestation-reference.md](attestation-reference.md) | `current` | DAHR + TLSN design constraints and pipeline |
+| [claim-driven-attestation-spec.md](claim-driven-attestation-spec.md) | `current` | Claim-driven attestation Phases 1-4 (implemented) |
+| [design-intent-driven-scanning.md](design-intent-driven-scanning.md) | `complete` | Intent-driven source scanning Phases 1-5 (implemented) |
+| [design-session-transcript.md](design-session-transcript.md) | `complete` | Session transcript — JSONL event logger (implemented) |
 
 ### Roadmap & Planning
 
-| Document | Status | Updated | Purpose |
-|----------|--------|---------|---------|
-| **[v3-roadmap.md](v3-roadmap.md)** | **`active`** | 2026-04-01 | **Authoritative roadmap.** Single tickable checklist (14/23 done). Phases 1-8. |
-| [colony-tooling-plan.md](colony-tooling-plan.md) | `active` | 2026-04-01 | Detail specs for Phases 5.1-5.6 (query CLI, reactions, backfill, FTS5, intelligence, semantic) |
-| [colony-db-ingestion-plan.md](colony-db-ingestion-plan.md) | `active` | 2026-04-01 | Colony DB ingestion (steps 1a-1c DONE) + backfill spec (step 2 open) |
-| [roadmap-skill-dojo-local.md](roadmap-skill-dojo-local.md) | `reference` | 2026-03-20 | Course correction: extract Skill Dojo as local SDK-direct implementations |
-| [phase5-agent-composition-plan.md](phase5-agent-composition-plan.md) | `deferred` | 2026-03-20 | Skill loader + manifest design. Deferred (trigger: real second agent). |
+| Document | Status | Purpose |
+|----------|--------|---------|
+| **[v3-roadmap.md](v3-roadmap.md)** | **`active`** | **Authoritative roadmap.** Tickable checklist (14/23 done). Phases 1-8. |
+| [colony-tooling-plan.md](colony-tooling-plan.md) | `active` | Detail specs for Phases 5.1-5.6 |
+| [colony-db-ingestion-plan.md](colony-db-ingestion-plan.md) | `active` | Colony DB ingestion + backfill spec |
 
-### Archive (completed/superseded plans)
+### Archive (46 files)
 
-| Document | Purpose |
-|----------|---------|
-| [archive/design-loop-v3.md](archive/design-loop-v3.md) | V3 architectural vision — first principles, signal-first publishing, claim schema, colony intelligence design |
-| [archive/phase5-v3-loop-swap-plan.md](archive/phase5-v3-loop-swap-plan.md) | Phase 5 implementation plan — module signatures, Codex review findings |
-| [archive/roadmap-measurement-first.md](archive/roadmap-measurement-first.md) | Measurement-first roadmap (H0-H3). H0 baseline data historically valuable. Superseded by V3 redesign. |
-| [archive/roadmap-unified.md](archive/roadmap-unified.md) | Skill cookbook vision. Superseded. |
+| Directory | Contents |
+|-----------|----------|
+| `archive/` | 14 completed/superseded docs (V3 design, Phase 5 plan, V1/V2 loop docs, toolkit audit, TLSN report) |
+| `archive/reference/` | 5 research docs (ElizaOS comparison, framework research, SDK exploration, Skill Dojo) |
+| `archive/plans/` | 27 Claude Code session plan artifacts (declarative-adapters, source-registry-v2, chain-first-migration, etc.) |
+| `decisions/` | 14 ADRs (architecture decision records, all with Status: accepted) |
+
+**Project evolution narrative:** `~/.claude/diagrams/demos-agents-evolution.html`
 
 ---
 
