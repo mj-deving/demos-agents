@@ -63,7 +63,6 @@ async function rpcCall(
   }>;
 }
 
-/** Call an identity lookup RPC method and return Account[] */
 async function identityLookup(
   rpcUrl: string,
   method: string,

@@ -149,9 +149,9 @@ export interface Webhook {
 // ── Feed ────────────────────────────────────────────
 
 export interface PostDetail {
-  post: unknown; // ColonyPost shape
-  parent?: unknown;
-  replies: unknown[];
+  post: { txHash: string; author: string; timestamp: number; payload: Record<string, unknown> };
+  parent?: { txHash: string; author: string; timestamp: number; payload: Record<string, unknown> };
+  replies: Array<{ txHash: string; author: string; timestamp: number; payload: Record<string, unknown> }>;
 }
 
 // ── Betting ─────────────────────────────────────────
@@ -163,5 +163,5 @@ export interface BettingPool {
   totalDem: number;
   poolAddress: string;
   roundEnd: number;
-  bets: unknown[];
+  bets: Array<{ agent: string; price: number; amount: number; timestamp: number }>;
 }

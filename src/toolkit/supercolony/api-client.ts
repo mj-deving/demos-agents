@@ -104,11 +104,7 @@ export class SuperColonyApiClient {
   async queryPredictions(
     opts?: { status?: string; asset?: string },
   ): Promise<ApiResult<Prediction[]>> {
-    const params = new URLSearchParams();
-    if (opts?.status) params.set("status", opts.status);
-    if (opts?.asset) params.set("asset", opts.asset);
-    const qs = params.toString();
-    return this.get(`/api/predictions${qs ? `?${qs}` : ""}`);
+    return this.get(`/api/predictions${this.buildQs({ status: opts?.status, asset: opts?.asset })}`);
   }
 
   async resolvePrediction(
@@ -143,25 +139,13 @@ export class SuperColonyApiClient {
   async getAgentLeaderboard(
     opts?: { sortBy?: string; minPosts?: number; limit?: number },
   ): Promise<ApiResult<LeaderboardResult>> {
-    const params = new URLSearchParams();
-    if (opts?.sortBy) params.set("sortBy", opts.sortBy);
-    if (opts?.minPosts !== undefined)
-      params.set("minPosts", String(opts.minPosts));
-    if (opts?.limit !== undefined) params.set("limit", String(opts.limit));
-    const qs = params.toString();
-    return this.get(`/api/leaderboard${qs ? `?${qs}` : ""}`);
+    return this.get(`/api/leaderboard${this.buildQs({ sortBy: opts?.sortBy, minPosts: opts?.minPosts, limit: opts?.limit })}`);
   }
 
   async getTopPosts(
     opts?: { category?: string; minScore?: number; limit?: number },
   ): Promise<ApiResult<TopPostsResult>> {
-    const params = new URLSearchParams();
-    if (opts?.category) params.set("category", opts.category);
-    if (opts?.minScore !== undefined)
-      params.set("minScore", String(opts.minScore));
-    if (opts?.limit !== undefined) params.set("limit", String(opts.limit));
-    const qs = params.toString();
-    return this.get(`/api/posts/top${qs ? `?${qs}` : ""}`);
+    return this.get(`/api/posts/top${this.buildQs({ category: opts?.category, minScore: opts?.minScore, limit: opts?.limit })}`);
   }
 
   // ── Verification ──────────────────────────────
@@ -201,7 +185,7 @@ export class SuperColonyApiClient {
   }
 
   async getRssFeed(): Promise<ApiResult<string>> {
-    return this.requestRaw("/api/feed/rss");
+    return this.request("/api/feed/rss", { method: "GET" }, { raw: true });
   }
 
   // ── Betting ───────────────────────────────────
@@ -210,12 +194,7 @@ export class SuperColonyApiClient {
     asset: string,
     horizon?: string,
   ): Promise<ApiResult<BettingPool>> {
-    const params = new URLSearchParams();
-    if (horizon) params.set("horizon", horizon);
-    const qs = params.toString();
-    return this.get(
-      `/api/betting/pool/${encodeURIComponent(asset)}${qs ? `?${qs}` : ""}`,
-    );
+    return this.get(`/api/betting/pool/${encodeURIComponent(asset)}${this.buildQs({ horizon })}`);
   }
 
   // ── Internal Helpers ──────────────────────────
@@ -234,18 +213,31 @@ export class SuperColonyApiClient {
     });
   }
 
+  /** Build query string from optional params, filtering out undefined values */
+  private buildQs(params: Record<string, string | number | undefined>): string {
+    const qs = new URLSearchParams();
+    for (const [key, val] of Object.entries(params)) {
+      if (val !== undefined) qs.set(key, String(val));
+    }
+    const str = qs.toString();
+    return str ? `?${str}` : "";
+  }
+
   private async request<T>(
     path: string,
     init: RequestInit,
+    opts?: { raw?: boolean },
   ): Promise<ApiResult<T>> {
     try {
       const url = `${this.baseUrl}${path}`;
       const token = await this.getToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
+      const headers: Record<string, string> = {};
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
+      }
+      // Only set Content-Type for methods with a body
+      if (init.method !== "GET" && init.method !== "HEAD") {
+        headers["Content-Type"] = "application/json";
       }
 
       const res = await globalThis.fetch(url, {
@@ -254,12 +246,17 @@ export class SuperColonyApiClient {
         signal: AbortSignal.timeout(this.timeout),
       });
 
-      // Graceful degradation on 502
       if (res.status === 502) {
         return null;
       }
 
       const text = await res.text();
+
+      if (opts?.raw) {
+        if (!res.ok) return { ok: false, status: res.status, error: text };
+        return { ok: true, data: text as T };
+      }
+
       let data: unknown;
       try {
         data = JSON.parse(text);
@@ -276,39 +273,6 @@ export class SuperColonyApiClient {
       }
 
       return { ok: true, data: data as T };
-    } catch {
-      // Network error, timeout, etc. -- graceful degradation
-      return null;
-    }
-  }
-
-  /** Raw text response (no JSON parsing) -- used for RSS/Atom feeds */
-  private async requestRaw(path: string): Promise<ApiResult<string>> {
-    try {
-      const url = `${this.baseUrl}${path}`;
-      const token = await this.getToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const res = await globalThis.fetch(url, {
-        method: "GET",
-        headers,
-        signal: AbortSignal.timeout(this.timeout),
-      });
-
-      if (res.status === 502) {
-        return null;
-      }
-
-      const text = await res.text();
-
-      if (!res.ok) {
-        return { ok: false, status: res.status, error: text };
-      }
-
-      return { ok: true, data: text };
     } catch {
       return null;
     }

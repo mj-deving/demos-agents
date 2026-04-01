@@ -241,10 +241,7 @@ export async function runV3Loop(
       // Fetch full chain posts via SDK and ingest into colony DB.
       await ingestChainPostsIntoColonyDb(bridge.db, sdkBridge, deps.observe);
 
-      // NOTE: Reaction counts are API-only (not on-chain). The previous chain-based
-      // reaction scanning returned incorrect data. API enrichment for reaction counts
-      // will be wired in a follow-up (Phase A: API enrichment for sense phase).
-      // Colony DB reaction_cache retains any previously stored data.
+      // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
 
       // Fetch sources and cache responses so computeAvailableEvidence() has data.
       // The strategy engine gates ALL actions on evidence from source_response_cache.

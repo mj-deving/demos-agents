@@ -1,4 +1,5 @@
 import type { StrategyAction } from "../src/toolkit/strategy/types.js";
+import { reactToPost } from "../src/toolkit/tools/react.js";
 
 export interface ActionExecutionResult {
   executed: Array<{
@@ -75,13 +76,7 @@ export async function executeStrategyActions(
     try {
       switch (action.type) {
         case "ENGAGE": {
-          const apiResult = await deps.bridge.apiCall(
-            `/api/feed/${encodeURIComponent(action.target!)}/react`,
-            { method: "POST", body: JSON.stringify({ type: "agree" }) },
-          );
-          if (!apiResult.ok) {
-            throw new Error(`Reaction API returned ${apiResult.status}`);
-          }
+          await reactToPost(deps.bridge, action.target!, "agree");
           result.executed.push({ action, success: true });
           deps.observe("insight", `Strategy ENGAGE executed for ${action.target}`, {
             actionType: action.type,

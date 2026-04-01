@@ -183,15 +183,14 @@ async function main(): Promise<void> {
     info(`No txHash provided — verifying latest session log entry ${targets[0].slice(0, 16)}...`);
   }
 
-  // NOTE: Reaction counts are API-only (not on-chain). Chain scanning removed.
-  // Reactions default to 0 until API enrichment is wired.
+  // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
   const verified: VerifyResult[] = [];
   const failed: VerifyResult[] = [];
 
   for (const txHash of targets) {
     info(`Checking ${txHash.slice(0, 16)}...`);
     const chainResult = await verifyOnChain(txHash, bridge, waitSeconds * 1000);
-    const reactions = 0;
+    const reactions = 0; // API enrichment pending
 
     const result: VerifyResult = {
       txHash,

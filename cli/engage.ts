@@ -22,6 +22,7 @@ import { connectWallet, info, setLogAgent } from "../src/lib/network/sdk.js";
 import { createSdkBridge, AUTH_PENDING_TOKEN } from "../src/toolkit/sdk-bridge.js";
 import { resolveAgentName, loadAgentConfig } from "../src/lib/agent-config.js";
 import { selectReaction, enforceDisagreeMinimum } from "../src/lib/pipeline/engage-heuristics.js";
+import { reactToPost } from "../src/toolkit/tools/react.js";
 
 // ── Arg Parsing ────────────────────────────────────
 
@@ -185,15 +186,8 @@ async function main(): Promise<void> {
 
     processedTxHashes.add(post.txHash);
 
-    // Cast reaction via API (reactions are API-only, not on-chain)
     try {
-      const reactResult = await bridge.apiCall(
-        `/api/feed/${encodeURIComponent(post.txHash)}/react`,
-        { method: "POST", body: JSON.stringify({ type: decision.reaction }) },
-      );
-      if (!reactResult.ok) {
-        throw new Error(`Reaction API returned ${reactResult.status}`);
-      }
+      await reactToPost(bridge, post.txHash, decision.reaction);
 
       const topic =
         post.payload?.tags?.[0] ||
@@ -244,13 +238,7 @@ async function main(): Promise<void> {
 
       let reactOk = false;
       try {
-        const reactResult = await bridge.apiCall(
-          `/api/feed/${encodeURIComponent(target.txHash)}/react`,
-          { method: "POST", body: JSON.stringify({ type: "disagree" }) },
-        );
-        if (!reactResult.ok) {
-          throw new Error(`Reaction API returned ${reactResult.status}`);
-        }
+        await reactToPost(bridge, target.txHash, "disagree");
         reactOk = true;
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);

@@ -311,22 +311,18 @@ async function main(): Promise<void> {
     if (validUnaudited.length === 0) {
       info("No valid unaudited entries to scan");
     } else {
-    // NOTE: Reaction counts are API-only (not on-chain). Chain-based reaction
-    // scanning has been removed. Until API enrichment is wired, reactions default to 0.
-    info(`Scoring ${validUnaudited.length} unaudited posts (reactions unavailable — API enrichment pending)...`);
+    // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
+    info(`Scoring ${validUnaudited.length} unaudited posts (reactions pending API enrichment)...`);
 
     try {
       for (const entry of validUnaudited) {
-        const agrees = 0;
-        const disagrees = 0;
-        const totalReactions = agrees + disagrees;
+        const totalReactions = 0; // API enrichment pending
         const score = computeScore(entry, totalReactions);
 
-        // Update entry in-memory (store agree/disagree for future cached runs)
-        entry.actual_reactions = totalReactions;
+        entry.actual_reactions = 0;
         entry.actual_score = score;
-        entry.actual_agrees = agrees;
-        entry.actual_disagrees = disagrees;
+        entry.actual_agrees = 0;
+        entry.actual_disagrees = 0;
 
         results.push({
           txHash: entry.txHash,

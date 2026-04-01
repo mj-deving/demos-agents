@@ -185,9 +185,7 @@ export async function handlePosts(
 ): Promise<PostsResult> {
   const posts = await bridge.getHivePostsByAuthor(options.author, { limit: options.limit });
 
-  // NOTE: Reaction counts are API-only (not on-chain). Chain-based reaction
-  // scanning has been removed. API enrichment will be wired in a follow-up.
-  // Until then, reactions default to { agree: 0, disagree: 0 }.
+  // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
   if (options.reactions && posts.length > 0) {
     return {
       posts: posts.map((p) => ({
@@ -219,7 +217,7 @@ export async function handlePerformance(
     };
   }
 
-  // Reaction counts are API-only — chain scanning removed. Defaults to zero.
+  // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
   let totalAgrees = 0;
   let totalDisagrees = 0;
 
@@ -269,7 +267,7 @@ export async function handleEngagement(
     };
   }
 
-  // Reaction counts are API-only — chain scanning removed. Defaults to zero.
+  // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
   let totalReactions = 0;
   let topPost: { txHash: string; reactions: number } | null = null;
 

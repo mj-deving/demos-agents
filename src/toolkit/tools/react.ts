@@ -7,11 +7,37 @@
  * Also provides getReactionCounts() for reading reaction tallies.
  */
 
-import type { ReactOptions, ReactResult, ReactionCounts, ToolResult } from "../types.js";
+import type { ReactOptions, ReactResult, ReactionCounts, ReactionType, ToolResult } from "../types.js";
 import { ok, err, demosError } from "../types.js";
 import { DemosSession } from "../session.js";
 import { withToolWrapper, localProvenance } from "./tool-wrapper.js";
 import { validateInput, ReactOptionsSchema } from "../schemas.js";
+
+// ── Shared reaction helper (used by CLI callers without full DemosSession) ──
+
+interface ReactionBridge {
+  apiCall(path: string, options?: RequestInit): Promise<{ ok: boolean; status: number; data: unknown }>;
+}
+
+/**
+ * Post a reaction to a post via SuperColony API.
+ *
+ * Shared helper for all call sites that need to react to a post.
+ * Avoids duplicating the URL pattern + error check across CLI files.
+ */
+export async function reactToPost(
+  bridge: ReactionBridge,
+  txHash: string,
+  type: ReactionType,
+): Promise<void> {
+  const result = await bridge.apiCall(
+    `/api/feed/${encodeURIComponent(txHash)}/react`,
+    { method: "POST", body: JSON.stringify({ type }) },
+  );
+  if (!result.ok) {
+    throw new Error(`Reaction API returned ${result.status}`);
+  }
+}
 
 /**
  * React to a post via SuperColony API.
