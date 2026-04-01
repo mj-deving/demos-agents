@@ -17,6 +17,8 @@ interface ChainTxByHash {
 }
 
 interface ChainRawTransaction {
+  /** Global transaction index — used as `start` param for getTransactions pagination */
+  id: number;
   hash: string;
   blockNumber: number;
   status: string;
@@ -101,10 +103,13 @@ export async function getHivePosts(rpc: ChainReaderRpc, limit: number): Promise<
       }
     }
 
+    // Paginate backward using transaction id (global index), NOT blockNumber.
+    // SDK's getTransactions(start) treats start as a tx index, not a block number.
     const lastTx = txs[txs.length - 1];
     const prevStart: number | "latest" = start;
-    if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-      start = lastTx.blockNumber - 1;
+    if (lastTx?.id != null && lastTx.id > 1) {
+      start = lastTx.id - PAGE_SIZE;
+      if (start < 1) start = 1;
     } else {
       break;
     }
@@ -153,10 +158,12 @@ export async function getHiveReactions(
       }
     }
 
+    // Paginate backward using transaction id (global index), NOT blockNumber.
     const lastTx = txs[txs.length - 1];
     const prevStart: number | "latest" = start;
-    if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-      start = lastTx.blockNumber - 1;
+    if (lastTx?.id != null && lastTx.id > 1) {
+      start = lastTx.id - PAGE_SIZE;
+      if (start < 1) start = 1;
     } else {
       break;
     }
@@ -256,10 +263,12 @@ export async function getRepliesTo(rpc: ChainReaderRpc, txHashes: string[]): Pro
       if (targets.size <= foundTargets.size) break;
     }
 
+    // Paginate backward using transaction id (global index), NOT blockNumber.
     const lastTx = txs[txs.length - 1];
     const prevStart: number | "latest" = start;
-    if (lastTx?.blockNumber != null && lastTx.blockNumber > 1) {
-      start = lastTx.blockNumber - 1;
+    if (lastTx?.id != null && lastTx.id > 1) {
+      start = lastTx.id - PAGE_SIZE;
+      if (start < 1) start = 1;
     } else {
       break;
     }

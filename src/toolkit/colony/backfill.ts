@@ -21,6 +21,8 @@ export interface BackfillRpc {
     limit: number,
   ): Promise<
     Array<{
+      /** Global transaction index — used for offset-based pagination */
+      id: number;
       hash: string;
       blockNumber: number;
       status: string;
@@ -52,7 +54,7 @@ export interface BackfillStats {
 
 // ── Cursor helpers ──────────────────────────────────
 
-const CURSOR_KEY = "backfill_cursor";
+const CURSOR_KEY = "backfill_offset";
 
 function getBackfillCursor(db: ColonyDatabase): number | null {
   const value = db
@@ -64,10 +66,10 @@ function getBackfillCursor(db: ColonyDatabase): number | null {
   return Number.isFinite(num) ? num : null;
 }
 
-function setBackfillCursor(db: ColonyDatabase, blockNumber: number): void {
+function setBackfillCursor(db: ColonyDatabase, offset: number): void {
   db.prepare(
     "INSERT INTO _meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-  ).run(CURSOR_KEY, String(blockNumber));
+  ).run(CURSOR_KEY, String(offset));
 }
 
 // ── Decode helper ───────────────────────────────────
@@ -162,13 +164,15 @@ export async function backfillFromTransactions(
     lastBlockNumber: null,
   };
 
-  // Determine start position
-  let start: number | "latest";
+  // Determine start position — offset-based forward pagination.
+  // SDK's getTransactions(start) treats start as a global tx index (1-based).
+  // Forward scan: start=1 → genesis, increment by page size each iteration.
+  let start: number;
   if (resetCursor) {
-    start = "latest";
+    start = 1;
   } else {
     const cursor = getBackfillCursor(db);
-    start = cursor !== null ? cursor : "latest";
+    start = cursor !== null ? cursor : 1;
   }
 
   // Disable FK constraints during bulk load for performance
@@ -251,26 +255,21 @@ export async function backfillFromTransactions(
         }
       }
 
-      // Update cursor to last PROCESSED block, not last fetched
-      // This prevents skipping unprocessed transactions when limit is hit mid-batch
+      // Track last block seen for stats
       if (lastProcessedBlock != null) {
         stats.lastBlockNumber = lastProcessedBlock;
-        if (!dryRun) {
-          setBackfillCursor(db, lastProcessedBlock);
-        }
+      }
+
+      // Advance offset — forward pagination by page size.
+      // SDK's getTransactions(start, limit) returns txs starting from index `start`.
+      start += txs.length;
+
+      // Persist cursor as the next offset to resume from
+      if (!dryRun) {
+        setBackfillCursor(db, start);
       }
 
       onProgress?.(structuredClone(stats));
-
-      // Advance pagination using last tx in fetched batch
-      const prevStart = start;
-      const batchLastTx = txs[txs.length - 1];
-      if (batchLastTx?.blockNumber != null && batchLastTx.blockNumber > 1) {
-        start = batchLastTx.blockNumber - 1;
-      } else {
-        break;
-      }
-      if (start === prevStart) break;
     }
   } finally {
     if (!dryRun) {

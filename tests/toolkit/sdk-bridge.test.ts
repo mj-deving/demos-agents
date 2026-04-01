@@ -326,10 +326,12 @@ describe("SDK Bridge Adapter", () => {
     }
 
     // Helper: make a tx using the base64 {"bytes":"..."} envelope (real chain format)
+    let nextTestTxId = 50000;
     function makeBase64ReactionTx(target: string, type: "agree" | "disagree", hash = "rx-b64") {
       const payload = JSON.stringify({ v: 1, action: "react", target, type });
       const b64 = Buffer.from("HIVE" + payload).toString("base64");
       return {
+        id: nextTestTxId++,
         hash,
         blockNumber: 100,
         status: "confirmed",
@@ -345,6 +347,7 @@ describe("SDK Bridge Adapter", () => {
       const payload = JSON.stringify({ v: 1, text, cat: "ANALYSIS" });
       const b64 = Buffer.from("HIVE" + payload).toString("base64");
       return {
+        id: nextTestTxId++,
         hash,
         blockNumber: 100,
         status: "confirmed",

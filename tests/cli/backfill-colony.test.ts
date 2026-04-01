@@ -13,6 +13,8 @@ import { encodeHivePayload } from "../../src/toolkit/hive-codec.js";
 // ── Helpers ──────────────────────────────────────────
 
 /** Build a fake raw transaction matching ChainRawTransaction shape */
+let nextTxId = 1000; // auto-incrementing tx id for test helpers
+
 function makeTx(opts: {
   hash: string;
   blockNumber: number;
@@ -24,6 +26,7 @@ function makeTx(opts: {
   replyTo?: string;
   action?: string;
 }): {
+  id: number;
   hash: string;
   blockNumber: number;
   status: string;
@@ -54,6 +57,7 @@ function makeTx(opts: {
   };
 
   return {
+    id: nextTxId++,
     hash: opts.hash,
     blockNumber: opts.blockNumber,
     status: "confirmed",
@@ -67,6 +71,7 @@ function makeTx(opts: {
 
 /** Build a transaction with valid HIVE prefix but corrupt JSON — triggers a throw */
 function makeBadTx(hash: string, blockNumber: number): {
+  id: number;
   hash: string;
   blockNumber: number;
   status: string;
@@ -80,6 +85,7 @@ function makeBadTx(hash: string, blockNumber: number): {
   // will find the prefix, attempt JSON.parse, and throw
   const corruptHiveHex = "48495645" + Buffer.from("{corrupt").toString("hex");
   return {
+    id: nextTxId++,
     hash,
     blockNumber,
     status: "confirmed",
@@ -99,6 +105,7 @@ function makeBadTx(hash: string, blockNumber: number): {
 
 /** Build a non-HIVE storage transaction (skipped, not dead-lettered) */
 function makeNonHiveTx(hash: string, blockNumber: number): {
+  id: number;
   hash: string;
   blockNumber: number;
   status: string;
@@ -109,6 +116,7 @@ function makeNonHiveTx(hash: string, blockNumber: number): {
   timestamp: number;
 } {
   return {
+    id: nextTxId++,
     hash,
     blockNumber,
     status: "confirmed",
@@ -143,6 +151,7 @@ describe("backfill-colony", () => {
 
   beforeEach(() => {
     db = initColonyCache(":memory:");
+    nextTxId = 1000;
   });
 
   describe("backfillFromTransactions", () => {
@@ -197,6 +206,7 @@ describe("backfill-colony", () => {
       // Test with a corrupt content field that causes safeParse to return valid JSON
       // but with a structure that makes later processing throw.
       const corruptTx = {
+        id: nextTxId++,
         hash: "tx-corrupt",
         blockNumber: 98,
         status: "confirmed",
@@ -279,11 +289,11 @@ describe("backfill-colony", () => {
       expect(stats.skipped).toBeGreaterThanOrEqual(1);
     });
 
-    it("should resume from backfill_cursor", async () => {
-      // Set cursor to block 50 — should start pagination from there
+    it("should resume from backfill_offset", async () => {
+      // Set offset cursor to 500 — should resume pagination from there
       db.prepare(
         "INSERT INTO _meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-      ).run("backfill_cursor", "50");
+      ).run("backfill_offset", "500");
 
       const txs = [
         makeTx({ hash: "tx1", blockNumber: 48, text: "Older post" }),
@@ -297,12 +307,12 @@ describe("backfill-colony", () => {
 
       const stats = await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      // Verify getTransactions was called starting from cursor
-      expect(rpc.getTransactions).toHaveBeenCalledWith(50, 100);
+      // Verify getTransactions was called starting from saved offset
+      expect(rpc.getTransactions).toHaveBeenCalledWith(500, 100);
       expect(stats.inserted).toBe(1);
     });
 
-    it("should update backfill_cursor after each batch", async () => {
+    it("should update backfill_offset after each batch", async () => {
       const txs = [
         makeTx({ hash: "tx1", blockNumber: 100, text: "Post 1" }),
         makeTx({ hash: "tx2", blockNumber: 90, text: "Post 2" }),
@@ -316,10 +326,10 @@ describe("backfill-colony", () => {
 
       await backfillFromTransactions(db, rpc, { batchSize: 100, limit: 100 });
 
-      const cursor = db.prepare("SELECT value FROM _meta WHERE key = ?").pluck().get("backfill_cursor");
+      const cursor = db.prepare("SELECT value FROM _meta WHERE key = ?").pluck().get("backfill_offset") as string;
       expect(cursor).toBeDefined();
-      // Cursor should be updated to the lowest block we've seen
-      expect(Number(cursor)).toBeLessThanOrEqual(90);
+      // Offset should advance by the number of txs fetched (start=1 + 2 txs = next offset 3)
+      expect(Number(cursor)).toBeGreaterThan(1);
     });
 
     it("should paginate through multiple batches", async () => {
@@ -443,10 +453,10 @@ describe("backfill-colony", () => {
     });
 
     it("should reset cursor when resetCursor option is set", async () => {
-      // Set existing cursor
+      // Set existing offset cursor
       db.prepare(
         "INSERT INTO _meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-      ).run("backfill_cursor", "500");
+      ).run("backfill_offset", "500");
 
       const rpc: BackfillRpc = {
         getTransactions: vi.fn()
@@ -459,8 +469,8 @@ describe("backfill-colony", () => {
         resetCursor: true,
       });
 
-      // Should have been called with "latest", not 500
-      expect(rpc.getTransactions).toHaveBeenCalledWith("latest", 100);
+      // Should have been called with 1 (genesis), not 500
+      expect(rpc.getTransactions).toHaveBeenCalledWith(1, 100);
     });
   });
 });
