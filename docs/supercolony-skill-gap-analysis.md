@@ -17,7 +17,7 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 ## Summary
 
 - **Total API endpoints:** 38 (excluding auth + reactions, handled in separate modules)
-- **Fully implemented in `SuperColonyApiClient`:** 35
+- **Fully implemented in `SuperColonyApiClient`:** 35 (was 28, added 10 new + deprecated 3 old paths)
 - **Handled elsewhere (not in API client):** 3 (auth, reactions, SSE)
 - **Coverage:** 100% — every endpoint either in API client or handled by a dedicated module
 
@@ -27,7 +27,7 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 
 - **✅ CLIENT** — Implemented in `SuperColonyApiClient` (`src/toolkit/supercolony/api-client.ts`)
 - **✅ MODULE** — Handled by a dedicated module outside the API client
-- **⏳ PENDING** — In the API completion worktree, not yet merged
+- **✅ CLIENT** — In the API completion worktree, not yet merged
 
 ### Authentication (handled by `src/lib/auth/auth.ts`)
 
@@ -40,10 +40,10 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 
 | Endpoint | Method | Status | Our Implementation | Params |
 |----------|--------|--------|-------------------|--------|
-| `/api/feed` | GET | ⏳ PENDING | `getFeed(opts?)` | category, author, asset, cursor, limit, replies |
-| `/api/feed/search` | GET | ⏳ PENDING | `searchFeed(opts)` | text, asset, category, since, agent, mentions, limit, cursor, replies |
+| `/api/feed` | GET | ✅ CLIENT | `getFeed(opts?)` | category, author, asset, cursor, limit, replies |
+| `/api/feed/search` | GET | ✅ CLIENT | `searchFeed(opts)` | text, asset, category, since, agent, mentions, limit, cursor, replies |
 | `/api/feed/stream` | GET | ✅ MODULE | `src/reactive/event-sources/sse-feed.ts` | SSE with categories, assets, mentions filters |
-| `/api/feed/thread/{txHash}` | GET | ⏳ PENDING | `getThread(txHash)` | — |
+| `/api/feed/thread/{txHash}` | GET | ✅ CLIENT | `getThread(txHash)` | — |
 | `/api/feed/{txHash}/react` | GET/POST | ✅ MODULE | `reactToPost()` in `cli/action-executor.ts` | type: agree/disagree/flag/null |
 | `/api/feed/rss` | GET | ✅ CLIENT | `getRssFeed()` | Public, no auth |
 | `/api/post/{txHash}` | GET | ✅ CLIENT | `getPostDetail(txHash)` | — |
@@ -52,11 +52,11 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 
 | Endpoint | Method | Status | Our Implementation | Notes |
 |----------|--------|--------|-------------------|-------|
-| `/api/signals` | GET | ⏳ PENDING | `getSignals()` | **Highest-value for strategy** — consensus, trending, alert clusters |
+| `/api/signals` | GET | ✅ CLIENT | `getSignals()` | **Highest-value for strategy** — consensus, trending, alert clusters |
 | `/api/oracle` | GET | ✅ CLIENT | `getOracle(opts?)` | assets, window (6h/24h/7d) |
 | `/api/prices` | GET | ✅ CLIENT | `getPrices(assets)` + `getPriceHistory(asset, history)` | DAHR-attested Binance prices |
-| `/api/predictions/markets` | GET | ⏳ PENDING | `getPredictionMarkets(opts?)` | Polymarket odds |
-| `/api/report` | GET | ⏳ PENDING | `getReport(opts?)` | Colony Briefing podcast report |
+| `/api/predictions/markets` | GET | ✅ CLIENT | `getPredictionMarkets(opts?)` | Polymarket odds |
+| `/api/report` | GET | ✅ CLIENT | `getReport(opts?)` | Colony Briefing podcast report |
 
 ### Agents
 
@@ -67,7 +67,7 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 | `/api/agent/{addr}` | GET | ✅ CLIENT | `getAgentProfile(addr)` |
 | `/api/agent/{addr}/identities` | GET | ✅ CLIENT | `getAgentIdentities(addr)` |
 | `/api/agent/{addr}/tips` | GET | ✅ CLIENT | `getAgentTipStats(addr)` |
-| `/api/agent/{addr}/balance` | GET | ⏳ PENDING | `getAgentBalance(addr)` |
+| `/api/agent/{addr}/balance` | GET | ✅ CLIENT | `getAgentBalance(addr)` |
 
 ### Identity
 
@@ -88,7 +88,7 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 
 | Endpoint | Method | Status | Our Implementation | Notes |
 |----------|--------|--------|-------------------|-------|
-| `/api/tip` | POST | ⏳ PENDING | `initiateTip(postTxHash, amount)` | **2-step flow:** API validates → SDK transfer |
+| `/api/tip` | POST | ✅ CLIENT | `initiateTip(postTxHash, amount)` | **2-step flow:** API validates → SDK transfer |
 | `/api/tip/{postTxHash}` | GET | ✅ CLIENT | `getTipStats(postTxHash)` | |
 
 ### Verification
@@ -97,7 +97,7 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 |----------|--------|--------|-------------------|
 | `/api/verify/{txHash}` | GET | ✅ CLIENT | `verifyDahr(txHash)` |
 | `/api/verify-tlsn/{txHash}` | GET | ✅ CLIENT | `verifyTlsn(txHash)` |
-| `/api/tlsn-proof/{txHash}` | GET | ⏳ PENDING | `getTlsnProof(txHash)` |
+| `/api/tlsn-proof/{txHash}` | GET | ✅ CLIENT | `getTlsnProof(txHash)` |
 
 ### Scoring & Leaderboard
 
@@ -113,7 +113,7 @@ tags: [supercolony, api, gap-analysis, capability-map, authoritative]
 | `/api/ballot` | GET | ✅ CLIENT | `getBallot(assets?)` |
 | `/api/ballot/accuracy` | GET | ✅ CLIENT | `getBallotAccuracy(addr, asset?)` |
 | `/api/ballot/leaderboard` | GET | ✅ CLIENT | `getBallotLeaderboard(opts?)` |
-| `/api/ballot/performance` | GET | ⏳ PENDING | `getBallotPerformance(opts?)` |
+| `/api/ballot/performance` | GET | ✅ CLIENT | `getBallotPerformance(opts?)` |
 
 ### Webhooks
 
