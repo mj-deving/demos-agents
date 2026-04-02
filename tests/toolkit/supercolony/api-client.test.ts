@@ -543,4 +543,278 @@ describe("SuperColonyApiClient", () => {
       expect(signal).toBeDefined();
     });
   });
+
+  // ── Oracle ──────────────────────────────────
+
+  describe("oracle endpoints", () => {
+    it("getOracle fetches from /api/oracle", async () => {
+      const payload = {
+        sentiment: { BTC: 0.8 },
+        priceDivergences: [],
+        polymarketOdds: [],
+        timestamp: Date.now(),
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getOracle();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.sentiment).toHaveProperty("BTC");
+        expect(result.data.timestamp).toBeTypeOf("number");
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toBe("https://www.supercolony.ai/api/oracle");
+    });
+
+    it("getOracle passes assets query param", async () => {
+      const payload = {
+        sentiment: { BTC: 0.8, ETH: 0.6 },
+        priceDivergences: [{ asset: "BTC", cex: 100000, dex: 99500, spread: 0.5 }],
+        polymarketOdds: [],
+        timestamp: Date.now(),
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getOracle({ assets: ["BTC", "ETH"] });
+      expect(result?.ok).toBe(true);
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("assets=BTC%2CETH");
+    });
+  });
+
+  // ── Prices ──────────────────────────────────
+
+  describe("prices endpoints", () => {
+    it("getPrices builds correct assets query param", async () => {
+      const payload = [
+        { asset: "BTC", price: 100000, timestamp: Date.now(), source: "binance" },
+        { asset: "ETH", price: 3500, timestamp: Date.now(), source: "binance" },
+      ];
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getPrices(["BTC", "ETH"]);
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data).toHaveLength(2);
+        expect(result.data[0].asset).toBe("BTC");
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("assets=BTC%2CETH");
+    });
+
+    it("getPriceHistory builds asset and minutes params", async () => {
+      const payload = [
+        { price: 99000, timestamp: Date.now() - 3600000 },
+        { price: 100000, timestamp: Date.now() },
+      ];
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getPriceHistory("BTC", 60);
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data).toHaveLength(2);
+        expect(result.data[0].price).toBe(99000);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("asset=BTC");
+      expect(fetchUrl).toContain("minutes=60");
+    });
+  });
+
+  // ── Ballot ──────────────────────────────────
+
+  describe("ballot endpoints", () => {
+    it("getBallot returns typed BallotState", async () => {
+      const payload = {
+        votes: [{
+          asset: "BTC",
+          direction: "up",
+          agent: "0xabc",
+          confidence: 0.9,
+          timestamp: Date.now(),
+        }],
+        totalVotes: 1,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getBallot(["BTC"]);
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.totalVotes).toBe(1);
+        expect(result.data.votes[0].direction).toBe("up");
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("assets=BTC");
+    });
+
+    it("getBallotAccuracy passes address param", async () => {
+      const payload = {
+        address: "0xabc",
+        totalVotes: 50,
+        correctVotes: 40,
+        accuracy: 0.8,
+        streak: 5,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getBallotAccuracy("0xabc");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.accuracy).toBe(0.8);
+        expect(result.data.streak).toBe(5);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("address=0xabc");
+    });
+
+    it("getBallotLeaderboard fetches leaderboard", async () => {
+      const payload = {
+        entries: [{
+          address: "0xabc",
+          name: "sentinel",
+          accuracy: 0.85,
+          totalVotes: 100,
+          streak: 10,
+        }],
+        count: 1,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getBallotLeaderboard();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.entries).toHaveLength(1);
+        expect(result.data.entries[0].accuracy).toBe(0.85);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toBe("https://www.supercolony.ai/api/ballot/leaderboard");
+    });
+  });
+
+  // ── Public Endpoints ────────────────────────
+
+  describe("public endpoints", () => {
+    it("getStats does not send Authorization header", async () => {
+      const mockFn = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify({
+          totalPosts: 100,
+          totalAgents: 50,
+          totalReactions: 200,
+          uptime: 99.9,
+        })),
+      });
+      vi.stubGlobal("fetch", mockFn);
+
+      const client = new SuperColonyApiClient({
+        getToken: async () => "my-secret-token",
+        baseUrl: "https://www.supercolony.ai",
+      });
+      const result = await client.getStats();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.totalPosts).toBe(100);
+      }
+
+      const headers = mockFn.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("getHealth does not send Authorization header", async () => {
+      const mockFn = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify({
+          status: "ok",
+          version: "1.0.0",
+          timestamp: Date.now(),
+        })),
+      });
+      vi.stubGlobal("fetch", mockFn);
+
+      const client = new SuperColonyApiClient({
+        getToken: async () => "my-secret-token",
+        baseUrl: "https://www.supercolony.ai",
+      });
+      const result = await client.getHealth();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.status).toBe("ok");
+      }
+
+      const headers = mockFn.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+  });
+
+  // ── TLSN Verification ──────────────────────
+
+  describe("tlsn endpoints", () => {
+    it("verifyTlsn URL-encodes txHash", async () => {
+      const payload = {
+        verified: true,
+        proof: { notary: "example" },
+        txHash: "0xabc/def",
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.verifyTlsn("0xabc/def");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.verified).toBe(true);
+        expect(result.data.txHash).toBe("0xabc/def");
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/verify-tlsn/0xabc%2Fdef");
+    });
+  });
+
+  // ── Feed (FEED category) ────────────────────
+
+  describe("feed category endpoints", () => {
+    it("getFeeds includes category=FEED in query", async () => {
+      const payload = {
+        posts: [{
+          txHash: "0xfeed1",
+          author: "0xagent",
+          text: "Feed post",
+          timestamp: Date.now(),
+          tags: ["crypto"],
+        }],
+        count: 1,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getFeeds();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.posts).toHaveLength(1);
+        expect(result.data.posts[0].txHash).toBe("0xfeed1");
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("category=FEED");
+    });
+
+    it("getFeeds passes limit and offset", async () => {
+      const payload = { posts: [], count: 0 };
+      mockFetchResponse(payload);
+      const client = createClient();
+      await client.getFeeds({ limit: 10, offset: 20 });
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("category=FEED");
+      expect(fetchUrl).toContain("limit=10");
+      expect(fetchUrl).toContain("offset=20");
+    });
+  });
 });
