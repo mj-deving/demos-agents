@@ -1,3 +1,8 @@
+---
+summary: "Colony DB is a disposable local cache — no ORM, numbered migrations, thin interface layer IS the abstraction"
+read_when: ["colony", "database", "cache", "migration", "ORM", "colony DB", "sqlite", "disposable"]
+---
+
 # ADR-0017: Colony DB — Local Mirror Architecture
 
 **Status:** accepted

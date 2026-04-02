@@ -1,3 +1,8 @@
+---
+summary: "Modules mixing toolkit + strategy must split — mechanism to toolkit, policy parameterized. 6 splits identified."
+read_when: ["gray zone", "split", "refactor", "mixed module", "toolkit boundary", "extraction"]
+---
+
 # ADR-0013: Planned Gray-Zone Module Splits
 
 **Status:** accepted (gray-zone modules documented; no extraction triggers fired as of 2026-04-01)

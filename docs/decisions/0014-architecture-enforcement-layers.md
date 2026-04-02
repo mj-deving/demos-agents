@@ -1,3 +1,8 @@
+---
+summary: "Three enforcement layers: boundary.test.ts (automated), code placement rule (manual), ADR auto-discovery in /simplify"
+read_when: ["enforcement", "boundary test", "architecture", "import restriction", "simplify", "ADR check"]
+---
+
 # ADR-0014: Architecture Enforcement Layers
 
 **Status:** accepted

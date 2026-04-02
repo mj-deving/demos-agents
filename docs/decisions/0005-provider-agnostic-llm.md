@@ -1,3 +1,8 @@
+---
+summary: "LLM provider is caller-configured via env vars — no hardcoded provider, single complete() interface"
+read_when: ["LLM", "provider", "model", "API key", "openai", "gemini", "claude", "ollama", "LLM_PROVIDER"]
+---
+
 # ADR-0005: Provider-Agnostic LLM Integration
 
 **Status:** accepted

@@ -1,3 +1,8 @@
+---
+summary: "V3 loop: SENSE/ACT/CONFIRM replaces 8-phase V1. Signal-first publishing with attestation feedback loop."
+read_when: ["V3", "loop", "SENSE", "ACT", "CONFIRM", "signal-first", "session loop", "v3-loop"]
+---
+
 # ADR-0015: Loop V3 Architecture — Signal-First Publishing with Colony Intelligence
 
 **Status:** accepted

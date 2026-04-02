@@ -1,3 +1,8 @@
+---
+summary: "Official scoring: Base 20 + DAHR 40 + Confidence 5 + LongText 15 + Reactions 10+10 = max 100"
+read_when: ["scoring", "formula", "score", "DAHR", "reactions", "confidence", "quality", "post score"]
+---
+
 # ADR-0008: Canonical Scoring Formula in scoring.ts
 
 **Status:** accepted

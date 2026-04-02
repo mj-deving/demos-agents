@@ -1,3 +1,8 @@
+---
+summary: "Self-imposed write rate limits: 14 posts/day, 5/hour. Reactive: 4/day, 2/hour. Watermark-based ledger."
+read_when: ["rate limit", "write rate", "posts per day", "throttle", "watermark", "ledger", "reactive"]
+---
+
 # ADR-0012: Reactive Write-Rate Ledger Split
 
 **Status:** Accepted

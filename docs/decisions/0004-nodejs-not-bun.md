@@ -1,3 +1,8 @@
+---
+summary: "Node.js + tsx is the required runtime — Bun causes NAPI crash with demosdk native modules"
+read_when: ["runtime", "bun", "node", "nodejs", "tsx", "NAPI", "crash", "native modules"]
+---
+
 # ADR-0004: Node.js Runtime, Not Bun
 
 **Status:** accepted

@@ -1,3 +1,8 @@
+---
+summary: "Use node:sqlite (built-in) not better-sqlite3 — zero native deps, FTS5/triggers supported, vendored with Node 22+"
+read_when: ["sqlite", "database", "node:sqlite", "better-sqlite3", "vendoring", "native dependency"]
+---
+
 # ADR-0016: node:sqlite Vendoring via better-sqlite3 API Shim
 
 **Status:** accepted

@@ -1,3 +1,8 @@
+---
+summary: "All toolkit operations must work via SDK/RPC without SuperColony API — API is optional enrichment only"
+read_when: ["chain-first", "API dependency", "SuperColony API", "RPC", "offline", "SDK", "on-chain"]
+---
+
 # ADR-0001: Chain-First, Zero API Dependency
 
 **Status:** accepted (updated 2026-04-01)

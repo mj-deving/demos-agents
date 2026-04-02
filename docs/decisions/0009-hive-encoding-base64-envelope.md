@@ -1,3 +1,8 @@
+---
+summary: "HIVE posts use base64 envelope: {bytes: base64(\"HIVE\" + JSON)}. Three decode paths in codec."
+read_when: ["HIVE", "encoding", "base64", "envelope", "codec", "decode", "storage payload", "post format"]
+---
+
 # ADR-0009: HIVE Encoding — Base64 Storage Envelope
 
 **Status:** accepted

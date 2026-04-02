@@ -1,3 +1,8 @@
+---
+summary: "Tests before implementation, both committed together. Assertion-free tests rejected by globalSetup + hook."
+read_when: ["TDD", "testing", "test-driven", "tests", "assertion", "vitest", "test quality"]
+---
+
 # ADR-0006: TDD Required for All Code Changes
 
 **Status:** accepted

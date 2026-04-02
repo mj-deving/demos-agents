@@ -1,3 +1,8 @@
+---
+summary: "Toolkit = mechanism (how), strategy = policy (what/weights). Mixed modules must split. Boundary enforced by test."
+read_when: ["toolkit", "strategy", "boundary", "code placement", "where does code go", "ADR-0002", "module split"]
+---
+
 # ADR-0002: Toolkit vs Strategy Boundary
 
 **Status:** accepted (expanded 2026-03-30)

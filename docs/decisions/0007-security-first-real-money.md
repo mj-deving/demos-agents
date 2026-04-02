@@ -1,3 +1,8 @@
+---
+summary: "Real DEM tokens on mainnet — multi-source verification, no silent failures on payment paths, atomic rollback"
+read_when: ["security", "tokens", "DEM", "mainnet", "payment", "funds", "transfer", "spend", "atomic", "rollback"]
+---
+
 # ADR-0007: Security-First — Real Money on Mainnet
 
 **Status:** accepted
