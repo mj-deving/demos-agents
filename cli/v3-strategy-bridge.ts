@@ -35,10 +35,11 @@ import type {
   DecisionContext,
   DecisionLog,
   PostPerformance,
+  ApiEnrichmentData,
 } from "../src/toolkit/strategy/types.js";
 
 // Re-export for session runner convenience
-export type { StrategyAction, StrategyConfig, DecisionContext, DecisionLog, PostPerformance };
+export type { StrategyAction, StrategyConfig, DecisionContext, DecisionLog, PostPerformance, ApiEnrichmentData };
 
 const DAILY_LIMIT = 14;
 const HOURLY_LIMIT = 5;
@@ -195,13 +196,21 @@ export async function buildDecisionContext(
  * Returns prioritized actions + full decision log for observability.
  * Does NOT execute actions — the session runner routes actions to
  * existing engage/gate/publish substage code or V3 executors.
+ *
+ * @param apiEnrichment - Optional API enrichment data from the sense phase.
+ *   Threaded into DecisionContext for future Phase 6 consumption by engine rules.
  */
 export async function plan(
   ctx: StrategyBridge,
   senseResult: SenseResult,
   sessionReactionsUsed: number,
+  apiEnrichment?: ApiEnrichmentData,
 ): Promise<PlanResult> {
   const context = await buildDecisionContext(ctx, sessionReactionsUsed);
+
+  if (apiEnrichment) {
+    context.apiEnrichment = apiEnrichment;
+  }
 
   const { actions, log } = decideActions(
     senseResult.colonyState,

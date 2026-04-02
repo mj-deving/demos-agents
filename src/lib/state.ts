@@ -177,6 +177,7 @@ export interface V3SessionState {
     senseResult?: unknown;
     planResult?: unknown;
     executionResult?: unknown;
+    apiEnrichment?: unknown;
   };
 }
 

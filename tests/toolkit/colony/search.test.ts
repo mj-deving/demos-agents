@@ -218,6 +218,44 @@ describe("colony FTS5 search", () => {
     }
   });
 
+  it("FTS5 updates index on UPSERT (ON CONFLICT DO UPDATE)", () => {
+    insertPost(db, {
+      txHash: "0xupsert1",
+      author: "upsert-author",
+      blockNumber: 900,
+      timestamp: "2026-09-01T00:00:00Z",
+      replyTo: null,
+      tags: [],
+      text: "Original content about Solana ecosystem",
+      rawData: {},
+    });
+
+    const before = searchPosts(db, "Solana");
+    expect(before).toHaveLength(1);
+    expect(before[0].text).toContain("Solana");
+
+    // Re-insert with different text (triggers ON CONFLICT DO UPDATE)
+    insertPost(db, {
+      txHash: "0xupsert1",
+      author: "upsert-author",
+      blockNumber: 900,
+      timestamp: "2026-09-01T00:00:00Z",
+      replyTo: null,
+      tags: [],
+      text: "Updated content about Avalanche network",
+      rawData: {},
+    });
+
+    // Old term should be gone, new term should be found
+    const oldTerm = searchPosts(db, "Solana");
+    expect(oldTerm).toHaveLength(0);
+
+    const newTerm = searchPosts(db, "Avalanche");
+    expect(newTerm).toHaveLength(1);
+    expect(newTerm[0].txHash).toBe("0xupsert1");
+    expect(newTerm[0].text).toContain("Avalanche");
+  });
+
   it("FTS5 triggers sync correctly on insert", () => {
     // Insert a post and immediately verify FTS finds it (trigger fired)
     insertPost(db, {

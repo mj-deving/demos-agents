@@ -42,6 +42,15 @@ export interface StrategyConfig {
   topicWeights: Record<string, number>;
 }
 
+/** API enrichment data — optional, populated from SuperColony API during sense phase. */
+export interface ApiEnrichmentData {
+  agentCount?: number;
+  leaderboard?: import("../supercolony/types.js").LeaderboardResult;
+  oracle?: import("../supercolony/types.js").OracleResult;
+  prices?: import("../supercolony/types.js").PriceData[];
+  ballotAccuracy?: import("../supercolony/types.js").BallotAccuracy;
+}
+
 export interface DecisionContext {
   ourAddress: string;
   sessionReactionsUsed: number;
@@ -50,6 +59,8 @@ export interface DecisionContext {
   /** Actual number of posts by this agent in the current hour. Required for accurate rate limiting. */
   postsThisHour: number;
   now?: Date;
+  /** API enrichment — available but NOT consumed by engine rules yet (Phase 6 work). */
+  apiEnrichment?: ApiEnrichmentData;
 }
 
 export interface DecisionLog {

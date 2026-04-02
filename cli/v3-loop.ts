@@ -22,7 +22,8 @@ import {
 import { createUsageTracker } from "../src/lib/attestation/attestation-planner.js";
 import { loadDeclarativeProviderAdaptersSync } from "../src/lib/sources/providers/declarative-engine.js";
 import { AUTH_PENDING_TOKEN, createSdkBridge } from "../src/toolkit/sdk-bridge.js";
-import type { LeaderboardResult } from "../src/toolkit/supercolony/types.js";
+import type { LeaderboardResult, OracleResult, PriceData, BallotAccuracy } from "../src/toolkit/supercolony/types.js";
+import type { ApiEnrichmentData } from "../src/toolkit/strategy/types.js";
 import { executeStrategyActions } from "./action-executor.js";
 import { executePublishActions } from "./publish-executor.js";
 import { initStrategyBridge, sense, plan, computePerformance } from "./v3-strategy-bridge.js";
@@ -240,7 +241,6 @@ export async function runV3Loop(
       // Fetch full chain posts via SDK and ingest into colony DB.
       await ingestChainPostsIntoColonyDb(bridge.db, sdkBridge, deps.observe);
 
-      // TODO(api-enrichment): Wire reaction counts from SuperColony API client.
 
       // Fetch sources and cache responses so computeAvailableEvidence() has data.
       // The strategy engine gates ALL actions on evidence from source_response_cache.
@@ -302,26 +302,47 @@ export async function runV3Loop(
       const senseResult = sense(bridge, sourceView);
 
       // ── API Enrichment (optional, graceful degradation) ──
-      // Agent profiles and leaderboard from SuperColony API — not available on-chain.
-      let apiEnrichment: { agentCount?: number; leaderboard?: LeaderboardResult } | undefined;
+      // Agent profiles, leaderboard, oracle, prices, and ballot from SuperColony API.
+      // All calls are parallelized with individual 5s AbortSignal timeouts.
+      let apiEnrichment: ApiEnrichmentData | undefined;
       if (sdkBridge.apiAccess === "authenticated") {
         try {
-          // Use bridge.apiCall directly — it already handles auth token injection
-          const [agentsRaw, leaderboardRaw] = await Promise.all([
-            sdkBridge.apiCall("/api/agents"),
-            sdkBridge.apiCall("/api/scores/agents?limit=20"),
+          const enrichmentTimeout = 5_000;
+          const [agentsRaw, leaderboardRaw, oracleRaw, pricesRaw, ballotAccRaw] = await Promise.all([
+            sdkBridge.apiCall("/api/agents", { signal: AbortSignal.timeout(enrichmentTimeout) }),
+            sdkBridge.apiCall("/api/scores/agents?limit=20", { signal: AbortSignal.timeout(enrichmentTimeout) }),
+            sdkBridge.apiCall("/api/oracle", { signal: AbortSignal.timeout(enrichmentTimeout) }).catch(() => null),
+            sdkBridge.apiCall(`/api/prices?assets=BTC,ETH,DEM`, { signal: AbortSignal.timeout(enrichmentTimeout) }).catch(() => null),
+            sdkBridge.apiCall(`/api/ballot/accuracy?address=${encodeURIComponent(bridge.walletAddress)}`, { signal: AbortSignal.timeout(enrichmentTimeout) }).catch(() => null),
           ]);
-          if (agentsRaw.ok && agentsRaw.data && typeof agentsRaw.data === "object") {
+
+          apiEnrichment = {};
+
+          if (agentsRaw?.ok && agentsRaw.data && typeof agentsRaw.data === "object") {
             const agents = (agentsRaw.data as { agents?: unknown[] }).agents;
             if (Array.isArray(agents)) {
-              apiEnrichment = { agentCount: agents.length };
-              deps.observe("insight", `API enrichment: ${agents.length} agents`, {
-                source: "v3-loop:apiEnrichment",
-              });
+              apiEnrichment.agentCount = agents.length;
             }
           }
-          if (leaderboardRaw.ok && leaderboardRaw.data) {
-            apiEnrichment = { ...apiEnrichment, leaderboard: leaderboardRaw.data as LeaderboardResult };
+          if (leaderboardRaw?.ok && leaderboardRaw.data) {
+            apiEnrichment.leaderboard = leaderboardRaw.data as LeaderboardResult;
+          }
+          if (oracleRaw?.ok && oracleRaw.data) {
+            apiEnrichment.oracle = oracleRaw.data as OracleResult;
+          }
+          if (pricesRaw?.ok && pricesRaw.data) {
+            apiEnrichment.prices = pricesRaw.data as PriceData[];
+          }
+          if (ballotAccRaw?.ok && ballotAccRaw.data) {
+            apiEnrichment.ballotAccuracy = ballotAccRaw.data as BallotAccuracy;
+          }
+
+          const signals = Object.keys(apiEnrichment).filter((k) => apiEnrichment![k as keyof ApiEnrichmentData] !== undefined);
+          if (signals.length > 0) {
+            deps.observe("insight", `API enrichment: ${signals.length} signals (${signals.join(", ")})`, {
+              source: "v3-loop:apiEnrichment",
+              signals,
+            });
           }
         } catch {
           // API enrichment is optional — continue with colony DB data only.
@@ -352,7 +373,12 @@ export async function runV3Loop(
         throw new Error("Missing V3 sense result");
       }
 
-      const planResult = await plan(bridge, sensePayload.strategy, (state.engagements || []).length);
+      const planResult = await plan(
+        bridge,
+        sensePayload.strategy,
+        (state.engagements || []).length,
+        state.strategyResults?.apiEnrichment as ApiEnrichmentData | undefined,
+      );
       state.strategyResults = {
         ...state.strategyResults,
         planResult,
