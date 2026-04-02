@@ -1,10 +1,10 @@
 ---
 type: roadmap
 status: active
-phase: 6
-progress: 33/38
+phase: 7
+progress: 33/45
 updated: 2026-04-02
-open_items: 5
+open_items: 12
 next_action: "Phase 7 — event verifier and strategy Phase 2 rules"
 tags: [v3, colony, strategy]
 ---
@@ -17,9 +17,10 @@ tags: [v3, colony, strategy]
 ## Status
 
 - **V3 loop:** LIVE. Signals, oracle, prices, ballot, intelligence all wired into sense phase.
-- **Tests:** 2372 passing, 177 suites, **0 tsc errors**
-- **Colony DB:** 188K posts, schema v4 (FTS5 + agent_profiles + interactions)
+- **Tests:** 2404 passing, 180 suites, **0 tsc errors**
+- **Colony DB:** 188K posts. Schema v4 (FTS5 + agent_profiles + interactions). 293MB.
 - **API Client:** 38/38 endpoints (35 in client, 3 in dedicated modules). 100% coverage.
+- **Strategy Engine:** 8 rules. 3 enrichment-aware (signal, divergence, prediction). Auto-calibration. FTS5 dedup.
 - **Phase 5.7:** ✅ COMPLETE. Signals, 2-step tipping, agent profiles, interactions all wired.
 - **Phase 6:** ✅ COMPLETE. Enrichment-aware rules, dedup, auto-calibration, category selection. 2404 tests.
 - **Next:** Phase 7 — event verifier, strategy Phase 2 rules
@@ -146,25 +147,44 @@ tags: [v3, colony, strategy]
 
 **Spec:** `docs/archive/design-loop-v3.md` sections 5+6b | **Blocked by:** Phase 7
 
+### Phase 6 Deferred Items (valid work, not done this session)
+
+> These are from the 72-criteria PRD. Common blocker: engine takes pure data, these need DB access.
+> Path forward: pre-compute in bridge and pass as data fields on DecisionContext.
+
+- [ ] 6-defer-a — Wire dedup guards into publish-executor (checkClaimDedup + checkSelfDedup)
+- [ ] 6-defer-b — Pre-compute interaction set in bridge, pass to engine for re-tip avoidance
+- [ ] 6-defer-c — Pre-compute agent profiles in bridge, pass for trust-scored mentions
+- [ ] 6-defer-d — adapt_to_leaderboard meta-rule: design + implement priority adjustment
+- [ ] 6-defer-e — Score pre-calculation guard in publish-executor (calculateOfficialScore on draft)
+- [ ] 6-defer-f — Confidence optimization: always set, ≥40, scaled by evidence quality
+- [ ] 6-defer-g — Calibration offset consumed by publish evidence threshold + tip generosity
+
+### Phase 6 Discoveries (new capabilities from research, not in original roadmap)
+
+> Scraped supercolony.ai/docs + queried SDK MCP. These are real platform features not yet supported.
+
+- [ ] 6-disc-a — VOTE action type for price predictions (HIVE_BET memo, 5 DEM to pool)
+- [ ] 6-disc-b — Binary market bets (HIVE_BINARY memo, Polymarket integration)
+- [ ] 6-disc-c — Pluggable rule registry (rules as modules, not inline in engine.ts)
+- [ ] 6-disc-d — Colony report consumption (/api/report briefings as planning context)
+- [ ] 6-disc-e — Identity lookup enrichment (/api/identity for social handles)
+- [ ] 6-disc-f — XMCore cross-chain reads for on-chain data verification (Phase 8)
+
+**Spec:** `docs/research/supercolony-api-reference.md` + `docs/research/demos-sdk-capabilities.md`
+
 ## Dependency Graph
 
 ```
-Phase 1-4 (DONE) → Phase 5 (DONE)
-                      |
-                      +→ 5.1 hive-query CLI ──→ (unblocked)
-                      +→ 5.2 reaction refresh ─→ (unblocked)
-                      +→ 5.3 backfill ─────────→ (unblocked)
-                      |       |
-                      |       +→ 5.4 FTS5
-                      |       |    |
-                      |       |    +→ 5.5 intelligence
-                      |       |    +→ 5.6 semantic search
-                      |       |
-                      +→ Phase 6 (after 5.1-5.3)
-                              |
-                              +→ Phase 7 (after 6)
-                                    |
-                                    +→ Phase 8 (after 7)
+Phase 1-4 (DONE) → Phase 5 (DONE) → Phase 6 (DONE)
+                      |                    |
+                      +→ 5.6 semantic      +→ 6-defer (unblocked, incremental)
+                      |                    |
+                      |                    +→ Phase 7 (after 6)
+                      |                    |    |
+                      |                    |    +→ Phase 8 (after 7)
+                      |                    |
+                      |                    +→ 6-disc (parallel, independent)
 ```
 
 ## Tech Debt
@@ -189,6 +209,12 @@ Phase 1-4 (DONE) → Phase 5 (DONE)
 | 2026-04-02 | Tipping must use 2-step API validation | Direct `transferDem()` skips spam limits and indexer can't attribute tips |
 | 2026-04-01 | No ORM for colony DB | Thin interface layer IS the abstraction |
 | 2026-04-01 | Archive completed plan docs | design-loop-v3.md + phase5-plan.md → docs/archive/ (read-only reference) |
+| 2026-04-02 | Phase 6 is reference implementation, not canonical strategy | Toolkit/loop/primitives are universal; sentinel rules are ONE demo |
+| 2026-04-02 | All enrichment is optional (graceful degradation) | Rules skip when apiEnrichment is null — agent works without API |
+| 2026-04-02 | Auto-calibration replaces static JSON | computeCalibration() in sense phase, cached in strategyResults |
+| 2026-04-02 | Category selection is content-driven | inferCategory() replaces hardcoded "analysis" based on action reason |
+| 2026-04-02 | Dedup module exists but not yet wired | checkClaimDedup/checkSelfDedup ready, needs publish-executor integration |
+| 2026-04-02 | SDK capabilities doc is informational only | XMCore/StoragePrograms/ZK are Phase 8+ — no Phase 6 rules use them |
 
 ## Spec Documents
 
@@ -198,3 +224,6 @@ Phase 1-4 (DONE) → Phase 5 (DONE)
 | `docs/archive/phase5-v3-loop-swap-plan.md` | Phase 5 implementation plan + Codex review findings | Archive (complete) |
 | `docs/colony-db-ingestion-plan.md` | Colony DB ingestion fixes + backfill spec (step 2) | Active (step 2 open) |
 | `docs/colony-tooling-plan.md` | P0-P5 detail specs: query CLI, reactions, backfill, FTS5, intelligence, semantic | Active (roadmap) |
+| `docs/archive/phase6-strategy-refactor-plan.md` | Phase 6 plan: 5 sub-phases, 72 criteria, design philosophy | Archive (complete) |
+| `docs/research/supercolony-api-reference.md` | 100% SuperColony API + scoring + consensus + oracle reference | Active (reference) |
+| `docs/research/demos-sdk-capabilities.md` | Full SDK module inventory from MCP queries | Active (reference) |
