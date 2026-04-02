@@ -24,6 +24,7 @@ import { initColonyCache, type ColonyDatabase } from "../src/toolkit/colony/sche
 import { extractColonyState, type ColonyState } from "../src/toolkit/colony/state-extraction.js";
 import { computeAvailableEvidence, type AvailableEvidence } from "../src/toolkit/colony/available-evidence.js";
 import { computePerformanceScores, computeCalibration } from "../src/toolkit/colony/performance.js";
+import { getAgentProfile, getInteractionHistory } from "../src/toolkit/colony/intelligence.js";
 import { decideActions } from "../src/toolkit/strategy/engine.js";
 import { loadStrategyConfig } from "../src/toolkit/strategy/config-loader.js";
 import { FileStateStore } from "../src/toolkit/state-store.js";
@@ -206,11 +207,48 @@ export async function plan(
   senseResult: SenseResult,
   sessionReactionsUsed: number,
   apiEnrichment?: ApiEnrichmentData,
+  calibration?: import("../src/toolkit/strategy/types.js").CalibrationState,
 ): Promise<PlanResult> {
   const context = await buildDecisionContext(ctx, sessionReactionsUsed);
 
   if (apiEnrichment) {
     context.apiEnrichment = apiEnrichment;
+  }
+
+  if (calibration) {
+    context.calibration = calibration;
+  }
+
+  // Pre-compute intelligence from colony DB (pure data extraction)
+  try {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const recentInteractions = getInteractionHistory(ctx.db, { since: since24h, limit: 200 });
+
+    const interactionCounts: Record<string, number> = {};
+    for (const interaction of recentInteractions) {
+      interactionCounts[interaction.theirAddress] = (interactionCounts[interaction.theirAddress] ?? 0) + 1;
+    }
+
+    const profileAddresses = [
+      ...senseResult.colonyState.agents.topContributors.map((c) => c.author),
+      ...senseResult.colonyState.threads.mentionsOfUs.map((m) => m.author),
+    ];
+    const agentProfiles: Record<string, { postCount: number; avgAgrees: number; avgDisagrees: number; topics: string[] }> = {};
+    for (const address of new Set(profileAddresses)) {
+      const profile = getAgentProfile(ctx.db, address);
+      if (profile) {
+        agentProfiles[address] = {
+          postCount: profile.postCount,
+          avgAgrees: profile.avgAgrees,
+          avgDisagrees: profile.avgDisagrees,
+          topics: profile.topics,
+        };
+      }
+    }
+
+    context.intelligence = { recentInteractions: interactionCounts, agentProfiles };
+  } catch {
+    // Intelligence is optional — continue without it
   }
 
   const { actions, log } = decideActions(

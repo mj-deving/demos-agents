@@ -392,6 +392,7 @@ export async function runV3Loop(
         sensePayload.strategy,
         (state.engagements || []).length,
         state.strategyResults?.apiEnrichment as ApiEnrichmentData | undefined,
+        state.strategyResults?.calibration as import("./v3-strategy-bridge.js").CalibrationState | undefined,
       );
       state.strategyResults = {
         ...state.strategyResults,

@@ -71,8 +71,17 @@ export interface DecisionContext {
   /** Actual number of posts by this agent in the current hour. Required for accurate rate limiting. */
   postsThisHour: number;
   now?: Date;
-  /** API enrichment — available but NOT consumed by engine rules yet (Phase 6 work). */
+  /** API enrichment — consumed by enrichment-aware rules (Phase 6a). */
   apiEnrichment?: ApiEnrichmentData;
+  /** Pre-computed intelligence from colony DB (Phase 6b). */
+  intelligence?: {
+    /** Addresses we've interacted with recently, mapped to interaction count */
+    recentInteractions?: Record<string, number>;
+    /** Agent profiles keyed by address */
+    agentProfiles?: Record<string, { postCount: number; avgAgrees: number; avgDisagrees: number; topics: string[] }>;
+  };
+  /** Rolling calibration state (Phase 6d). */
+  calibration?: CalibrationState;
 }
 
 export interface DecisionLog {

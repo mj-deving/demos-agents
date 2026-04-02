@@ -152,12 +152,20 @@ export function decideActions(
 
       considered.push({ action, rule: mentionsRule.name });
 
-      if (!trusted || trusted.postCount < MIN_TRUST_POSTS) {
+      // Trust check: use agent profile if available (Phase 6b), fall back to topContributors
+      const profile = context.intelligence?.agentProfiles?.[normalize(mention.author)];
+      const isTrusted = profile
+        ? profile.postCount >= MIN_TRUST_POSTS && profile.avgAgrees > profile.avgDisagrees * 2
+        : trusted && trusted.postCount >= MIN_TRUST_POSTS;
+
+      if (!isTrusted) {
         reject(
           rejected,
           mentionsRule,
           action,
-          `Author ${mention.author} is not a trusted contributor (MIN_TRUST_POSTS=${MIN_TRUST_POSTS})`,
+          profile
+            ? `Author ${mention.author} profile trust check failed (posts=${profile.postCount}, agrees=${profile.avgAgrees.toFixed(1)}, disagrees=${profile.avgDisagrees.toFixed(1)})`
+            : `Author ${mention.author} is not a trusted contributor (MIN_TRUST_POSTS=${MIN_TRUST_POSTS})`,
         );
         continue;
       }
@@ -267,6 +275,15 @@ export function decideActions(
         continue;
       }
 
+      // Skip recently tipped agents (Phase 6b — avoid re-tipping)
+      const recentTipCount = context.intelligence?.recentInteractions?.[normalize(contributor.author)] ?? 0;
+      if (recentTipCount > 0) {
+        const skipAction = createAction(tipRule, `Tip ${contributor.author} skipped (already interacted ${recentTipCount}x in 24h)`, { target: contributor.author });
+        considered.push({ action: skipAction, rule: tipRule.name });
+        reject(rejected, tipRule, skipAction, `Already interacted with ${contributor.author} ${recentTipCount} time(s) in last 24h`);
+        continue;
+      }
+
       // Defense-in-depth: clamp to absolute toolkit ceiling regardless of config
       const amount = Math.max(
         1,
@@ -309,6 +326,8 @@ export function decideActions(
     for (const agent of enrichment.leaderboard.agents) {
       if (recentTargets.has(normalize(agent.address))) continue;
       if (agent.bayesianScore < (enrichment.leaderboard.globalAvg ?? 0)) continue;
+      // Skip agents we've already interacted with recently
+      if ((context.intelligence?.recentInteractions?.[normalize(agent.address)] ?? 0) > 0) continue;
 
       const action = createAction(
         engageNovelRule,

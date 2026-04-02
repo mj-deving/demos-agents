@@ -153,12 +153,12 @@ tags: [v3, colony, strategy]
 > **Decision (2026-04-02):** Pre-compute in bridge, pass as optional fields on `DecisionContext`.
 > Engine stays pure-function. See decision log entry.
 
-- [ ] 6-defer-a — Wire dedup guards into publish-executor (checkClaimDedup + checkSelfDedup)
-- [ ] 6-defer-b — Pre-compute interaction set in bridge, pass to engine for re-tip avoidance
-- [ ] 6-defer-c — Pre-compute agent profiles in bridge, pass for trust-scored mentions
+- [x] 6-defer-a — Wire dedup guards into publish-executor (checkClaimDedup + checkSelfDedup)
+- [x] 6-defer-b — Pre-compute interaction set in bridge, pass to engine for re-tip avoidance
+- [x] 6-defer-c — Pre-compute agent profiles in bridge, pass for trust-scored mentions
 - [ ] 6-defer-d — adapt_to_leaderboard meta-rule: design + implement priority adjustment
-- [ ] 6-defer-e — Score pre-calculation guard in publish-executor (calculateOfficialScore on draft)
-- [ ] 6-defer-f — Confidence optimization: always set, ≥40, scaled by evidence quality
+- [x] 6-defer-e — Score pre-calculation guard in publish-executor (calculateOfficialScore on draft)
+- [x] 6-defer-f — Confidence optimization: always set, ≥40, scaled by evidence quality
 - [ ] 6-defer-g — Calibration offset consumed by publish evidence threshold + tip generosity
 
 ### Phase 6 Discoveries (new capabilities from research, not in original roadmap)

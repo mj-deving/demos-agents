@@ -782,6 +782,110 @@ describe("strategy engine", () => {
     });
   });
 
+  describe("reply_to_mentions with agent profiles (Phase 6b)", () => {
+    it("trusts mentions from agents with high agrees/disagrees ratio", () => {
+      const state = createEmptyState();
+      state.threads.mentionsOfUs = [
+        { txHash: "0xmention", author: "alice", text: "@loop check this" },
+      ];
+      state.agents.topContributors = [
+        { author: "alice", postCount: 10, avgReactions: 5 },
+      ];
+
+      const result = decideActions(state, [], createConfig({
+        rules: createConfig().rules.map((r) => ({
+          ...r,
+          enabled: r.name === "reply_to_mentions",
+        })),
+      }), createContext({
+        intelligence: {
+          agentProfiles: {
+            alice: { postCount: 10, avgAgrees: 8.0, avgDisagrees: 1.0, topics: ["defi"] },
+          },
+        },
+      }));
+
+      expect(result.actions).toHaveLength(1);
+      expect(result.actions[0].type).toBe("REPLY");
+    });
+
+    it("rejects mentions from agents with poor agrees/disagrees ratio", () => {
+      const state = createEmptyState();
+      state.threads.mentionsOfUs = [
+        { txHash: "0xmention", author: "troll", text: "@loop hey" },
+      ];
+      state.agents.topContributors = [
+        { author: "troll", postCount: 10, avgReactions: 5 },
+      ];
+
+      const result = decideActions(state, [], createConfig({
+        rules: createConfig().rules.map((r) => ({
+          ...r,
+          enabled: r.name === "reply_to_mentions",
+        })),
+      }), createContext({
+        intelligence: {
+          agentProfiles: {
+            troll: { postCount: 10, avgAgrees: 2.0, avgDisagrees: 5.0, topics: [] },
+          },
+        },
+      }));
+
+      expect(result.actions).toEqual([]);
+      expect(result.log.rejected).toHaveLength(1);
+      expect(result.log.rejected[0].reason).toMatch(/trust check failed/);
+    });
+  });
+
+  describe("tip_valuable with re-tip avoidance (Phase 6b)", () => {
+    it("skips tipping agents we already interacted with", () => {
+      const state = createEmptyState();
+      state.agents.topContributors = [
+        { author: "alice", postCount: 10, avgReactions: 9 },
+        { author: "bob", postCount: 10, avgReactions: 5 },
+        { author: "carol", postCount: 10, avgReactions: 1 },
+      ];
+
+      const result = decideActions(state, [], createConfig({
+        rules: createConfig().rules.map((r) => ({
+          ...r,
+          enabled: r.name === "tip_valuable",
+        })),
+      }), createContext({
+        intelligence: {
+          recentInteractions: { alice: 2 },
+        },
+      }));
+
+      // Alice should be skipped (already interacted), no other above-median candidates
+      expect(result.actions).toEqual([]);
+      expect(result.log.rejected.some((r) => r.reason.includes("Already interacted"))).toBe(true);
+    });
+
+    it("tips agents we have NOT interacted with", () => {
+      const state = createEmptyState();
+      state.agents.topContributors = [
+        { author: "alice", postCount: 10, avgReactions: 9 },
+        { author: "bob", postCount: 10, avgReactions: 5 },
+        { author: "carol", postCount: 10, avgReactions: 1 },
+      ];
+
+      const result = decideActions(state, [], createConfig({
+        rules: createConfig().rules.map((r) => ({
+          ...r,
+          enabled: r.name === "tip_valuable",
+        })),
+      }), createContext({
+        intelligence: {
+          recentInteractions: {}, // No recent interactions
+        },
+      }));
+
+      expect(result.actions.length).toBeGreaterThanOrEqual(1);
+      expect(result.actions[0].type).toBe("TIP");
+    });
+  });
+
   describe("engage_novel_agents", () => {
     it("creates ENGAGE actions for high-quality agents from leaderboard", () => {
       const state = createEmptyState();
