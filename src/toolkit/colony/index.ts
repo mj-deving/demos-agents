@@ -28,3 +28,6 @@ export { searchPosts } from "./search.js";
 export type { SearchOptions } from "./search.js";
 
 export { computePerformanceScores } from "./performance.js";
+
+export { getAgentProfile, getInteractionHistory, recordInteraction, refreshAgentProfiles } from "./intelligence.js";
+export type { AgentProfileRecord, InteractionFilter, InteractionRecord } from "./intelligence.js";

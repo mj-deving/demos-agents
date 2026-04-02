@@ -64,19 +64,29 @@ describe("colony schema", () => {
   });
 
   it("schema v3 creates posts_fts virtual table and sync triggers", () => {
-    // Check for posts_fts in sqlite_master
     const tables = db.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'posts_fts'",
     ).all() as Array<{ name: string }>;
     expect(tables).toHaveLength(1);
     expect(tables[0].name).toBe("posts_fts");
 
-    // Check for 3 triggers: posts_fts_ai, posts_fts_ad, posts_fts_au
     const triggers = db.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'posts_fts_%' ORDER BY name",
     ).all() as Array<{ name: string }>;
     expect(triggers).toHaveLength(3);
     expect(triggers.map((t) => t.name)).toEqual(["posts_fts_ad", "posts_fts_ai", "posts_fts_au"]);
+  });
+
+  it("schema v4 creates agent_profiles and interactions tables", () => {
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all();
+    const names = (tables as Array<{ name: string }>).map((r) => r.name);
+    expect(names).toContain("agent_profiles");
+    expect(names).toContain("interactions");
+
+    const indexes = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'interactions'").all();
+    const idxNames = (indexes as Array<{ name: string }>).map((i) => i.name);
+    expect(idxNames).toContain("idx_interactions_address");
+    expect(idxNames).toContain("idx_interactions_type");
   });
 
   it("requests WAL mode and leaves in-memory sqlite in its supported journal mode", () => {

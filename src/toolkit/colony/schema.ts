@@ -2,7 +2,7 @@ import DatabaseConstructor from "better-sqlite3";
 
 export type ColonyDatabase = InstanceType<typeof DatabaseConstructor>;
 
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 const BASE_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS _meta (
@@ -200,6 +200,32 @@ const MIGRATIONS: Record<number, Migration> = {
 
     // Rebuild index from existing data
     db.exec(`INSERT INTO posts_fts(posts_fts) VALUES('rebuild');`);
+  },
+  4: (db) => {
+    // Phase 5.5: Colony Intelligence Layer — agent profiles and interaction tracking.
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS agent_profiles (
+        address TEXT PRIMARY KEY,
+        first_seen_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        post_count INTEGER DEFAULT 0,
+        avg_agrees REAL DEFAULT 0,
+        avg_disagrees REAL DEFAULT 0,
+        topics_json TEXT DEFAULT '[]',
+        trust_score REAL DEFAULT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS interactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        our_tx_hash TEXT NOT NULL,
+        their_tx_hash TEXT,
+        their_address TEXT NOT NULL,
+        interaction_type TEXT NOT NULL CHECK(interaction_type IN ('reply_to_us','we_replied','agreed','disagreed','tipped_us','we_tipped')),
+        timestamp TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_interactions_address ON interactions(their_address);
+      CREATE INDEX IF NOT EXISTS idx_interactions_type ON interactions(interaction_type);
+    `);
   },
 };
 
