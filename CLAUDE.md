@@ -23,6 +23,9 @@ See `docs/project-structure.md` for the full tree. Key boundaries:
 - **`src/`** — Core types + business logic. `src/lib/` has 8 subdirs (auth/, llm/, attestation/, scoring/, sources/, network/, pipeline/, util/) + flat files. Many src/lib/ modules now delegate to toolkit via `@deprecated` re-export shims (see ADR-0002). `src/reactive/` (shims to toolkit/reactive/), `src/actions/` (executor, publish pipeline using ChainTxPipeline), `src/plugins/` (22 plugins).
 - **`cli/`** — CLI entry points. Three loop modes: `session-runner.ts` with V3 default (3-phase strategy loop), `--legacy-loop` for V2, and `event-runner.ts` (long-lived, reactive). V3 modules: `v3-loop.ts` (orchestrator), `v3-strategy-bridge.ts` (sense/plan/perf), `publish-executor.ts` (PUBLISH/REPLY attestation pipeline), `action-executor.ts` (ENGAGE/TIP).
 - **`platform/`** — SuperColony-specific barrel. **`connectors/`** — SDK isolation. **`config/`** — Source catalog + strategies.
+- **`docs/research/`** — Authoritative SDK + API references (replace MCP lookups). See SDK Contract Compliance below.
+- **`docs/rules/`** — Project-specific behavioral rules with `read_when` frontmatter (6 files). Auto-indexed by DocsListInject at session start. Global rules at `~/.claude/PAI/RULES/` (8 files).
+- **`.ai/guides/`** — Agent-facing context: CLI reference, gotchas, SDK interaction rules, RPC reference, colony DB research. All have `use_when` frontmatter.
 
 ## CLI Quick Reference
 
@@ -38,12 +41,16 @@ Every toolkit operation MUST interact with the blockchain via SDK/RPC — never 
 This toolkit handles real DEM tokens on mainnet. Every code change touching tokens, funds, or chain operations requires: multi-source verification for fund routing, no silent failures on payment paths, atomic reservations with rollback, and security tests BEFORE implementation. A single compromised RPC node must not be able to redirect funds.
 
 ### SDK Contract Compliance (MANDATORY)
-**Every Demos node ships with a native MCP server. The SDK MCP (`demosdk_references`) is the authoritative source for all SDK interactions — consult it FIRST, not codebase comments or `.ai/guides/`.**
+
+**Reference docs (consult BEFORE MCP or codebase):**
+- **`docs/research/demos-sdk-capabilities.md`** — Full SDK method signatures for all 12 modules (Demos, Identities, Escrow, StorageProgram, XMCore, IPFS, Messaging, etc.). 404 lines, verified against MCP 2026-04-02.
+- **`docs/research/supercolony-api-reference.md`** — 100% SuperColony web API: scoring formula, categories, consensus, oracle, signals, leaderboard, tipping.
+- **SDK MCP (`demosdk_references`)** — Query for deep parameter types or when reference docs seem stale.
 
 When designing, planning, or modifying ANY code that interacts with the Demos SDK:
-1. **Query MCP first** (`search_docs`, `get_page`, `list_modules`) — not the codebase. Our guides may contain stale assumptions. MCP has the SDK source docs.
+1. **Check `docs/research/` first** — covers 95% of lookups. Fall back to MCP for interface definitions or edge cases.
 2. **Check if the SDK already provides what you're building.** The SDK is designed for agent use — don't reinvent capabilities it already offers.
-3. **Verify parameter semantics via MCP**, not by guessing from parameter names. SDK naming can be deceptive (e.g., `getTransactions(start)` — `start` is a tx index, not a block number).
+3. **Verify parameter semantics via reference docs or MCP**, not by guessing from parameter names. SDK naming can be deceptive (e.g., `getTransactions(start)` — `start` is a tx index, not a block number).
 
 Key rules:
 - Every write transaction MUST use `executeChainTx()` from `src/toolkit/chain/tx-pipeline.ts` — enforces store→confirm→broadcast. Never hand-roll the 3-step pattern.
@@ -110,8 +117,7 @@ Significant architectural decisions documented in `docs/decisions/` (14 ADRs, wi
 
 ### Development Workflow
 
-See `.ai/guides/dev-workflow.md` for the full tiered pipeline (Surgical/Standard/Complex).
-Key: TDD + npm test + `/simplify` + Fabric `summarize_git_diff` on every commit. Fabric `review_code` on Tier 2+.
+Three tiers — Surgical (1-2 files), Standard (multi-file), Complex (cross-cutting). All tiers: TDD + npm test + `/simplify` + Fabric `summarize_git_diff` on every commit. Tier 2+: add Fabric `review_code`. Fix ALL review findings — never defer.
 
 ## Relationship to Other Repos
 
