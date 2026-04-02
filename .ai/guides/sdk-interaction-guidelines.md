@@ -1,7 +1,13 @@
+---
+type: guide
+use_when: "SDK calls, transaction pipeline, transfer, broadcast, confirm, mock contracts"
+updated: 2026-04-02
+---
+
 # Demos SDK Interaction Guidelines
 
 > Verified against `@kynesyslabs/demosdk` v2.11.5 source (node_modules).
-> Last audit: 2026-03-28. Update after SDK version bumps.
+> Last audit: 2026-04-02. Update after SDK version bumps.
 
 ## Rule 1: Every Transaction Requires a 3-Step Pipeline
 
@@ -41,7 +47,7 @@ await demos.transfer(to, amount, memo);
 await demos.transfer(to, amount);
 ```
 
-**Key signatures (verified 2026-03-28):**
+**Key signatures (verified 2026-04-02 against MCP, 33 total methods on Demos class):**
 
 | Method | Params | Returns | Notes |
 |--------|--------|---------|-------|
@@ -51,14 +57,27 @@ await demos.transfer(to, amount);
 | `demos.confirm(tx)` | 1 (Transaction) | RPCResponseWithValidityData | Gas validation |
 | `demos.broadcast(validity)` | 1 | any | Actually submits to network |
 | `demos.sign(tx)` | 1 (Transaction) | signed Transaction | Raw signing |
+| `demos.call(method, params)` | 2 | any | Generic RPC method call |
 | `demos.connect(rpcUrl)` | 1 | Promise\<boolean\> | |
 | `demos.connectWallet(seed, opts?)` | 1-2 | Promise\<string\> (address) | opts: {algorithm?, dual_sign?} |
+| `demos.disconnect()` | 0 | void | Cleanup connection |
+| `demos.getAddress()` | 0 | string | Current wallet address |
+| `demos.getEd25519Address()` | 0 | string | Ed25519 address from keypair |
+| `demos.newMnemonic()` | 0 | string | Generate new mnemonic |
 | `demos.signMessage(msg, opts?)` | 1-2 | {type, data} | opts: {algorithm?} |
+| `demos.verifyMessage(msg, sig)` | 2 | boolean | Verify signed message |
+| `demos.generateMuid()` | 0 | string | Mutable unique ID |
 | `demos.getTxByHash(hash)` | 1 | Transaction | Parsed content |
-| `demos.getTransactions(start?, limit?)` | 0-2 | RawTransaction[] | content is string! |
+| `demos.getTransactions(start?, limit?)` | 0-2 | RawTransaction[] | content is string! start=tx index |
+| `demos.getTransactionHistory(addr, type?, opts?)` | 1-3 | Transaction[] | Per-address, type-filtered |
 | `demos.getMempool()` | 0 | Transaction[] | |
 | `demos.getAddressNonce(addr)` | 1 | number | |
 | `demos.getAddressInfo(addr)` | 1 | {balance: BigInt, ...} | |
+| `demos.getLastBlockNumber()` | 0 | number | Current chain height |
+| `demos.getBlocks(start?, limit?)` | 0-2 | Block[] | Paginated block list |
+| `demos.getPeerIdentity()` | 0 | any | This node's peer identity |
+| `demos.getPeerlist()` | 0 | any | Connected network peers |
+| `demos.tlsnotary()` | 0 | TLSNotaryService | Get TLSNotary instance |
 
 | Static Method | Params | Returns |
 |--------------|--------|---------|
@@ -282,3 +301,21 @@ const results = await Promise.all(
   addresses.map(addr => fetch(rpcUrl, ...)), // Parallel — 1 * latency
 );
 ```
+
+## Rule 15: getTransactions `start` Is a TX Index, Not a Block Number
+
+**Statement:** `getTransactions(start)` takes a **transaction index** (the `id` field, 1-based), NOT a block number. Using `blockNumber` as cursor causes missed transactions — blocks contain multiple txs.
+
+**Bad:**
+```typescript
+const txs = await demos.getTransactions(lastBlockNumber, 100);
+// Next: start = txs[txs.length - 1].blockNumber - 1  // ← WRONG!
+```
+
+**Correct:**
+```typescript
+const txs = await demos.getTransactions(startIndex, 100);
+// Next: startIndex = txs[txs.length - 1].id + 1  // Use tx `id` for pagination
+```
+
+**Discovery:** 2026-04-01. Caused 99% data loss in colony backfill until fixed.

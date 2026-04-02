@@ -1,8 +1,16 @@
+---
+type: guide
+use_when: "semantic search, sqlite-vec, vector embeddings, colony DB architecture"
+updated: 2026-04-02
+---
+
 # Colony DB Research — SQLite Vector Search Ecosystem
 
 > Research date: 2026-03-31 | Context: V3 loop needs smart colony DB for strategy engine
 
 ## Recommendation: sqlite-vec + FTS5 hybrid
+
+> **Status (2026-04-02):** FTS5 is IMPLEMENTED (Phase 5.4, 188K posts indexed). sqlite-vec remains Phase 5.6 — blocked on embedding model decision. This research is still valid for the unimplemented vector search portion.
 
 Single `.db` file with posts, metadata, FTS5 index, AND vector embeddings.
 

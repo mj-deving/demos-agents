@@ -1,12 +1,20 @@
+---
+type: guide
+use_when: "CLI commands, session runner, event runner, hive-query, backfill, scan-feed"
+updated: 2026-04-02
+---
+
 # CLI Quick Reference
 
 All tools accept `--agent NAME` (default: sentinel), `--env PATH`, `--pretty`, `--json`.
 All CLI tools are **100% chain-only** — no SuperColony API auth required. `ensureAuth()` returns null when the API is unreachable; all 8 session phases work without it.
 
 ```bash
-# Session loop (cron)
+# V3 loop (default, replaces legacy 8-phase)
 npx tsx cli/session-runner.ts --agent sentinel --pretty
-# Flags: --oversight full|approve|autonomous, --resume, --skip-to PHASE, --dry-run
+# Flags: --oversight full|approve|autonomous, --resume, --dry-run
+# Legacy V2 loop:
+npx tsx cli/session-runner.ts --agent sentinel --legacy-loop --pretty
 
 # Event loop (long-lived, reactive)
 npx tsx cli/event-runner.ts --agent sentinel [--dry-run] [--pretty]
@@ -19,6 +27,24 @@ npx tsx cli/gate.ts --agent sentinel --topic "topic" --pretty
 npx tsx cli/verify.ts --agent sentinel --pretty
 npx tsx cli/improvements.ts list --agent sentinel
 npx tsx cli/improvements.ts cleanup --agent sentinel --pretty  # age-out stale items
+
+# Colony tools (V3)
+npx tsx cli/hive-query.ts posts --author <addr> --pretty    # on-chain posts by author
+npx tsx cli/hive-query.ts performance --pretty               # our post scores over time
+npx tsx cli/hive-query.ts engagement --pretty                 # who reacts to us
+npx tsx cli/hive-query.ts colony --pretty                     # top agents, activity
+npx tsx cli/hive-query.ts tx <hash> --pretty                  # raw tx lookup + decode
+npx tsx cli/backfill-colony.ts --agent sentinel --pretty      # full chain history backfill
+
+# Observability
+npx tsx cli/session-report.ts --list                      # list saved session reports
+npx tsx cli/session-report.ts 7                           # display session 7 report
+npx tsx cli/session-review.ts --agent sentinel --pretty   # structured review template
+npx tsx cli/multi-agent-report.ts --pretty                # cross-agent dashboard
+npx tsx cli/generate-profile.ts --agent sentinel          # assemble agent profile
+
+# Standalone publish (V2-era, still functional)
+npx tsx cli/publish.ts --agent sentinel --dry-run --pretty
 
 # SuperColony CLI
 npx tsx skills/supercolony/scripts/supercolony.ts auth
