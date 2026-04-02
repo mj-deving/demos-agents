@@ -22,7 +22,7 @@ import {
 import { createUsageTracker } from "../src/lib/attestation/attestation-planner.js";
 import { loadDeclarativeProviderAdaptersSync } from "../src/lib/sources/providers/declarative-engine.js";
 import { AUTH_PENDING_TOKEN, createSdkBridge } from "../src/toolkit/sdk-bridge.js";
-import type { LeaderboardResult, OracleResult, PriceData, BallotAccuracy } from "../src/toolkit/supercolony/types.js";
+import type { LeaderboardResult, OracleResult, PriceData, BallotAccuracy, SignalData } from "../src/toolkit/supercolony/types.js";
 import type { ApiEnrichmentData } from "../src/toolkit/strategy/types.js";
 import { executeStrategyActions } from "./action-executor.js";
 import { executePublishActions } from "./publish-executor.js";
@@ -30,7 +30,7 @@ import { initStrategyBridge, sense, plan, computePerformance } from "./v3-strate
 import type { StrategyBridge } from "./v3-strategy-bridge.js";
 import { insertPost, countPosts } from "../src/toolkit/colony/posts.js";
 import type { CachedPost } from "../src/toolkit/colony/posts.js";
-// upsertReaction/getReaction removed — reaction refresh now deferred to API enrichment phase
+import { refreshAgentProfiles } from "../src/toolkit/colony/intelligence.js";
 import { upsertSourceResponse, getSourceResponse } from "../src/toolkit/colony/source-cache.js";
 import { deriveIntentsFromTopics, selectSourcesByIntent } from "../src/lib/pipeline/source-scanner.js";
 import { fetchSource } from "../src/toolkit/sources/fetch.js";
@@ -241,6 +241,21 @@ export async function runV3Loop(
       // Fetch full chain posts via SDK and ingest into colony DB.
       await ingestChainPostsIntoColonyDb(bridge.db, sdkBridge, deps.observe);
 
+      // Refresh agent profiles from colony DB (incremental — only new posts since last refresh)
+      try {
+        const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const profilesRefreshed = refreshAgentProfiles(bridge.db, since24h);
+        if (profilesRefreshed > 0) {
+          deps.observe("insight", `Agent profiles refreshed: ${profilesRefreshed} updated`, {
+            source: "v3-loop:intelligence",
+            profilesRefreshed,
+          });
+        }
+      } catch (err: unknown) {
+        deps.observe("warning", `Agent profile refresh failed: ${err instanceof Error ? err.message : String(err)}`, {
+          source: "v3-loop:intelligence",
+        });
+      }
 
       // Fetch sources and cache responses so computeAvailableEvidence() has data.
       // The strategy engine gates ALL actions on evidence from source_response_cache.
@@ -309,12 +324,13 @@ export async function runV3Loop(
           const safeCall = (path: string) =>
             sdkBridge.apiCall(path, { signal: AbortSignal.timeout(enrichmentTimeout) }).catch(() => null);
 
-          const [agentsRaw, leaderboardRaw, oracleRaw, pricesRaw, ballotAccRaw] = await Promise.all([
+          const [agentsRaw, leaderboardRaw, oracleRaw, pricesRaw, ballotAccRaw, signalsRaw] = await Promise.all([
             safeCall("/api/agents"),
             safeCall("/api/scores/agents?limit=20"),
             safeCall("/api/oracle"),
             safeCall("/api/prices?assets=BTC,ETH,DEM"),
             safeCall(`/api/ballot/accuracy?address=${encodeURIComponent(bridge.walletAddress)}`),
+            safeCall("/api/signals"),
           ]);
 
           apiEnrichment = {};
@@ -337,12 +353,15 @@ export async function runV3Loop(
           if (ballotAccRaw?.ok && ballotAccRaw.data) {
             apiEnrichment.ballotAccuracy = ballotAccRaw.data as BallotAccuracy;
           }
+          if (signalsRaw?.ok && Array.isArray(signalsRaw.data)) {
+            apiEnrichment.signals = signalsRaw.data as SignalData[];
+          }
 
-          const signals = Object.keys(apiEnrichment);
-          if (signals.length > 0) {
-            deps.observe("insight", `API enrichment: ${signals.length} signals (${signals.join(", ")})`, {
+          const enrichmentKeys = Object.keys(apiEnrichment);
+          if (enrichmentKeys.length > 0) {
+            deps.observe("insight", `API enrichment: ${enrichmentKeys.length} feeds (${enrichmentKeys.join(", ")})`, {
               source: "v3-loop:apiEnrichment",
-              signals,
+              feeds: enrichmentKeys,
             });
           }
         } catch {
@@ -399,6 +418,8 @@ export async function runV3Loop(
                 },
                 dryRun: flags.dryRun,
                 observe: deps.observe,
+                colonyDb: bridge.db,
+                ourAddress: address,
               })
             : { executed: [], skipped: [] };
 

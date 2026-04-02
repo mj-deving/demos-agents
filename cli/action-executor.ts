@@ -1,5 +1,7 @@
 import type { StrategyAction } from "../src/toolkit/strategy/types.js";
 import { reactToPost } from "../src/toolkit/tools/react.js";
+import type { ColonyDatabase } from "../src/toolkit/colony/schema.js";
+import { recordInteraction } from "../src/toolkit/colony/intelligence.js";
 
 export interface ActionExecutionResult {
   executed: Array<{
@@ -27,6 +29,10 @@ export interface ActionExecutorDeps {
   dryRun: boolean;
   /** Observer for logging */
   observe: (type: string, message: string, meta?: Record<string, unknown>) => void;
+  /** Colony DB for recording interactions (optional — graceful if absent) */
+  colonyDb?: ColonyDatabase;
+  /** Our wallet address for interaction tracking */
+  ourAddress?: string;
 }
 
 function clampTipAmount(amount: unknown): number {
@@ -82,6 +88,17 @@ export async function executeStrategyActions(
             actionType: action.type,
             target: action.target,
           });
+          if (deps.colonyDb && deps.ourAddress) {
+            try {
+              recordInteraction(deps.colonyDb, {
+                ourTxHash: deps.ourAddress,
+                theirTxHash: action.target!,
+                theirAddress: (action.metadata?.author as string) ?? action.target!,
+                interactionType: "agreed",
+                timestamp: new Date().toISOString(),
+              });
+            } catch { /* interaction tracking is best-effort */ }
+          }
           break;
         }
 
@@ -98,6 +115,17 @@ export async function executeStrategyActions(
             target: action.target,
             txHash: publishResult.txHash,
           });
+          if (deps.colonyDb && deps.ourAddress && action.target) {
+            try {
+              recordInteraction(deps.colonyDb, {
+                ourTxHash: publishResult.txHash,
+                theirTxHash: action.target,
+                theirAddress: (action.metadata?.author as string) ?? "unknown",
+                interactionType: "we_replied",
+                timestamp: new Date().toISOString(),
+              });
+            } catch { /* interaction tracking is best-effort */ }
+          }
           break;
         }
 
@@ -117,14 +145,53 @@ export async function executeStrategyActions(
 
         case "TIP": {
           const amount = clampTipAmount(action.metadata?.amount);
-          const transferResult = await deps.bridge.transferDem(action.target!, amount);
+          const postTxHash = (action.metadata?.postTxHash as string) ?? action.target!;
+
+          // 2-step tipping: API validates spam limits → SDK transfer with HIVE_TIP memo
+          let recipient = action.target!;
+          try {
+            const tipValidation = await deps.bridge.apiCall("/api/tip", {
+              method: "POST",
+              body: JSON.stringify({ postTxHash, amount }),
+              headers: { "Content-Type": "application/json" },
+            });
+            if (tipValidation.ok && tipValidation.data && typeof tipValidation.data === "object") {
+              const tipData = tipValidation.data as { ok?: boolean; recipient?: string; error?: string };
+              if (tipData.ok === false) {
+                result.skipped.push({ action, reason: `Tip validation failed: ${tipData.error ?? "unknown"}` });
+                deps.observe("insight", `TIP rejected by API: ${tipData.error}`, {
+                  actionType: action.type, target: action.target, postTxHash,
+                });
+                continue;
+              }
+              if (tipData.recipient) recipient = tipData.recipient;
+            }
+          } catch {
+            // API validation failed — fall back to direct transfer (best effort)
+            deps.observe("warning", "Tip API validation unavailable, using direct transfer", {
+              source: "action-executor:tip", target: action.target,
+            });
+          }
+
+          const transferResult = await deps.bridge.transferDem(recipient, amount);
           result.executed.push({ action, success: true, txHash: transferResult.txHash });
-          deps.observe("insight", `Strategy TIP executed for ${action.target}`, {
+          deps.observe("insight", `Strategy TIP executed for ${recipient}`, {
             actionType: action.type,
-            target: action.target,
+            target: recipient,
             amount,
             txHash: transferResult.txHash,
           });
+          if (deps.colonyDb && deps.ourAddress) {
+            try {
+              recordInteraction(deps.colonyDb, {
+                ourTxHash: transferResult.txHash,
+                theirTxHash: postTxHash,
+                theirAddress: recipient,
+                interactionType: "we_tipped",
+                timestamp: new Date().toISOString(),
+              });
+            } catch { /* interaction tracking is best-effort */ }
+          }
           break;
         }
 

@@ -109,7 +109,7 @@ tags: [v3, colony, strategy]
 > Must complete before Phase 6 so the strategy refactor has real data to work with.
 
 - [ ] 5.7a — Wire `/api/signals` into V3 sense phase as primary strategy input
-- [ ] 5.7b — Replace `combinedTopicSearch` with `/api/feed/search` in sense phase
+- [x] 5.7b — `searchFeed()` available in API client; `combinedTopicSearch` not used in V3 loop (Phase 6 wires it)
 - [ ] 5.7c — Implement 2-step tipping: `initiateTip()` → `transferDem()` with HIVE_TIP memo
 - [ ] 5.7d — Wire `refreshAgentProfiles(db)` into V3 sense phase after colony ingestion
 - [ ] 5.7e — Wire `recordInteraction(db, i)` into action-executor for engage/tip/reply

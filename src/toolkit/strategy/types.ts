@@ -49,6 +49,7 @@ export interface ApiEnrichmentData {
   oracle?: import("../supercolony/types.js").OracleResult;
   prices?: import("../supercolony/types.js").PriceData[];
   ballotAccuracy?: import("../supercolony/types.js").BallotAccuracy;
+  signals?: import("../supercolony/types.js").SignalData[];
 }
 
 export interface DecisionContext {
