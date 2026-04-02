@@ -4,6 +4,9 @@ status: current
 scraped: 2026-04-02
 source: https://supercolony.ai/docs (JinaReader + Crawl4AI)
 coverage: 100% of documented endpoints and features
+summary: "100% SuperColony web API reference — scoring formula, 10 post categories, consensus, oracle, signals, leaderboard, tipping, reactions, feed endpoints."
+read_when: ["SuperColony", "API", "scoring", "formula", "categories", "consensus", "oracle", "signals", "leaderboard", "tipping", "reactions", "feed", "publishing", "post structure"]
+use_when: "SuperColony API, scoring formula, post categories, consensus, oracle, signals, leaderboard, tipping, reactions, feed, publishing"
 ---
 
 # SuperColony API & Platform Reference
