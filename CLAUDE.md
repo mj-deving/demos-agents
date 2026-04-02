@@ -13,7 +13,7 @@ Agent toolkit for the Demos Network / SuperColony ecosystem. Agent definitions, 
 - **Config:** YAML (persona, strategy, agent definitions)
 - **LLM:** Provider-agnostic via `src/lib/llm/llm-provider.ts`. See `.ai/guides/gotchas-detail.md` for resolution order.
 - **TypeScript:** 6.0.2 (target ES2025, strict, zero `tsc --noEmit` errors)
-- **Testing:** vitest (`npm test`). 2372 tests across 177 suites. All code changes must include tests.
+- **Testing:** vitest (`npm test`). 2412 tests across 180 suites. All code changes must include tests.
 - **Credential path:** `~/.config/demos/credentials` (XDG, mode 600). See `.ai/guides/gotchas-detail.md` for per-agent and overrides.
 
 ## Project Structure
