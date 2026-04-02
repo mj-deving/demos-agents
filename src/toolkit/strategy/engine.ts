@@ -237,12 +237,18 @@ export function decideActions(
 
   const publishRule = getRule(config, "publish_to_gaps");
   if (publishRule) {
+    // Calibration adjusts evidence richness threshold:
+    // Outperforming (offset > 0) → raise bar (more selective)
+    // Underperforming (offset < 0) → lower bar (publish more to build volume)
+    const calibrationOffset = context.calibration?.offset ?? 0;
+    const adjustedRichnessThreshold = Math.max(50, MIN_PUBLISH_EVIDENCE_RICHNESS + calibrationOffset * 5);
+
     for (const gap of colonyState.gaps.underservedTopics) {
       const matchingEvidence = (evidenceIndex.get(normalize(gap.topic)) ?? [])
         .filter((item) =>
           !item.stale
           && item.freshness < MAX_PUBLISH_EVIDENCE_FRESHNESS_SECONDS
-          && item.richness > MIN_PUBLISH_EVIDENCE_RICHNESS
+          && item.richness > adjustedRichnessThreshold
         );
 
       if (matchingEvidence.length === 0) {
@@ -284,13 +290,14 @@ export function decideActions(
         continue;
       }
 
-      // Defense-in-depth: clamp to absolute toolkit ceiling regardless of config
+      // Calibration adjusts tip generosity: outperforming → tip more, underperforming → tip less
+      const tipCalibration = (context.calibration?.offset ?? 0) > 0 ? 1 : 0;
       const amount = Math.max(
         1,
         Math.min(
           ABSOLUTE_TIP_CEILING_DEM,
           config.rateLimits.maxTipAmount,
-          Math.round(contributor.avgReactions - contributorMedian),
+          Math.round(contributor.avgReactions - contributorMedian) + tipCalibration,
         ),
       );
 

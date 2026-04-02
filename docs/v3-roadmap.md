@@ -159,7 +159,7 @@ tags: [v3, colony, strategy]
 - [ ] 6-defer-d — adapt_to_leaderboard meta-rule: design + implement priority adjustment
 - [x] 6-defer-e — Score pre-calculation guard in publish-executor (calculateOfficialScore on draft)
 - [x] 6-defer-f — Confidence optimization: always set, ≥40, scaled by evidence quality
-- [ ] 6-defer-g — Calibration offset consumed by publish evidence threshold + tip generosity
+- [x] 6-defer-g — Calibration offset consumed by publish evidence threshold + tip generosity
 
 ### Phase 6 Discoveries (new capabilities from research, not in original roadmap)
 
