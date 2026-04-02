@@ -25,7 +25,7 @@ export interface CachedPost {
   additionalFee?: number;
 }
 
-interface PostRow {
+export interface PostRow {
   tx_hash: string;
   author: string;
   block_number: number;
@@ -67,7 +67,7 @@ function mapPostRow(row: PostRow | undefined): CachedPost | null {
   };
 }
 
-function mapPostRows(rows: PostRow[]): CachedPost[] {
+export function mapPostRows(rows: PostRow[]): CachedPost[] {
   return rows.map((row) => mapPostRow(row)).filter((row): row is CachedPost => row !== null);
 }
 

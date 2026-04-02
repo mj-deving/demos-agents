@@ -2,7 +2,7 @@ import DatabaseConstructor from "better-sqlite3";
 
 export type ColonyDatabase = InstanceType<typeof DatabaseConstructor>;
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 const BASE_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS _meta (
@@ -165,6 +165,42 @@ const MIGRATIONS: Record<number, Migration> = {
       CREATE INDEX IF NOT EXISTS idx_hive_reactions_block ON hive_reactions(block_number);
     `);
   },
+  3: (db) => {
+    // FTS5 full-text search index on posts (text + tags).
+    // content=posts syncs via triggers; content_rowid=rowid for JOIN.
+    db.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
+        text, tags, content=posts, content_rowid=rowid
+      );
+    `);
+
+    // Sync triggers with COALESCE for NULL safety
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS posts_fts_ai AFTER INSERT ON posts BEGIN
+        INSERT INTO posts_fts(rowid, text, tags)
+        VALUES (NEW.rowid, COALESCE(NEW.text, ''), COALESCE(NEW.tags, '[]'));
+      END;
+    `);
+
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS posts_fts_ad AFTER DELETE ON posts BEGIN
+        INSERT INTO posts_fts(posts_fts, rowid, text, tags)
+        VALUES ('delete', OLD.rowid, COALESCE(OLD.text, ''), COALESCE(OLD.tags, '[]'));
+      END;
+    `);
+
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS posts_fts_au AFTER UPDATE ON posts BEGIN
+        INSERT INTO posts_fts(posts_fts, rowid, text, tags)
+        VALUES ('delete', OLD.rowid, COALESCE(OLD.text, ''), COALESCE(OLD.tags, '[]'));
+        INSERT INTO posts_fts(rowid, text, tags)
+        VALUES (NEW.rowid, COALESCE(NEW.text, ''), COALESCE(NEW.tags, '[]'));
+      END;
+    `);
+
+    // Rebuild index from existing data
+    db.exec(`INSERT INTO posts_fts(posts_fts) VALUES('rebuild');`);
+  },
 };
 
 function getMetaValue(db: ColonyDatabase, key: string): string | null {
@@ -231,7 +267,14 @@ export function initColonyCache(dbPath: string): ColonyDatabase {
     const storedVersion = getMetaValue(db, "schema_version");
     if (storedVersion === null) {
       ensureBaseSchema(db);
-      setMetaValue(db, "schema_version", String(CURRENT_SCHEMA_VERSION));
+      // BASE_SCHEMA_SQL covers migrations 1-2. Run any migration-only additions (3+).
+      const BASE_SCHEMA_COVERS = 2;
+      if (BASE_SCHEMA_COVERS < CURRENT_SCHEMA_VERSION) {
+        setMetaValue(db, "schema_version", String(BASE_SCHEMA_COVERS));
+        applyMigrations(db, BASE_SCHEMA_COVERS);
+      } else {
+        setMetaValue(db, "schema_version", String(CURRENT_SCHEMA_VERSION));
+      }
       return;
     }
 

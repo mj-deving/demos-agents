@@ -24,4 +24,7 @@ export type { DecodedHivePost, RawHivePost, ScanResult } from "./scanner.js";
 export { extractColonyState } from "./state-extraction.js";
 export type { ColonyState, StateExtractionOptions } from "./state-extraction.js";
 
+export { searchPosts } from "./search.js";
+export type { SearchOptions } from "./search.js";
+
 export { computePerformanceScores } from "./performance.js";

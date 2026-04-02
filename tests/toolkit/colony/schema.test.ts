@@ -63,6 +63,22 @@ describe("colony schema", () => {
     expect(getCursor(db)).toBe(1980084);
   });
 
+  it("schema v3 creates posts_fts virtual table and sync triggers", () => {
+    // Check for posts_fts in sqlite_master
+    const tables = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'posts_fts'",
+    ).all() as Array<{ name: string }>;
+    expect(tables).toHaveLength(1);
+    expect(tables[0].name).toBe("posts_fts");
+
+    // Check for 3 triggers: posts_fts_ai, posts_fts_ad, posts_fts_au
+    const triggers = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'posts_fts_%' ORDER BY name",
+    ).all() as Array<{ name: string }>;
+    expect(triggers).toHaveLength(3);
+    expect(triggers.map((t) => t.name)).toEqual(["posts_fts_ad", "posts_fts_ai", "posts_fts_au"]);
+  });
+
   it("requests WAL mode and leaves in-memory sqlite in its supported journal mode", () => {
     const journalMode = String(db.pragma("journal_mode", { simple: true })).toLowerCase();
 
