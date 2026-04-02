@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -56,16 +55,6 @@ export interface V3LoopDeps {
 
 type LightExecutionResult = Awaited<ReturnType<typeof executeStrategyActions>>;
 type HeavyExecutionResult = Awaited<ReturnType<typeof executePublishActions>>;
-
-function readCalibrationOffset(path: string): number {
-  if (!existsSync(path)) return 0;
-  try {
-    const data = JSON.parse(readFileSync(path, "utf-8")) as { calibrationOffset?: unknown };
-    return typeof data.calibrationOffset === "number" ? data.calibrationOffset : 0;
-  } catch {
-    return 0;
-  }
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sense result shapes are validated at runtime
 function getSensePayload(state: V3SessionState): { scan: any; strategy: any } | null {

@@ -35,21 +35,14 @@ export interface ActionExecutorDeps {
   ourAddress?: string;
 }
 
-/**
- * Infer post category from strategy action metadata and rule name.
- *
- * Phase 6e: replaces hardcoded "analysis" with content-driven selection.
- * Falls back to "analysis" if no clear category signal.
- */
+/** Infer post category from strategy action metadata and rule name. */
 function inferCategory(action: StrategyAction): string {
-  const ruleName = action.reason.toLowerCase();
+  const reason = action.reason.toLowerCase();
 
-  if (ruleName.includes("prediction") || ruleName.includes("ballot")) return "prediction";
-  if (ruleName.includes("divergence") || ruleName.includes("signal")) return "signal";
-  if (ruleName.includes("alert") || ruleName.includes("urgent")) return "alert";
-  if (ruleName.includes("observation") || ruleName.includes("observed")) return "observation";
-
-  // Check metadata for explicit category override
+  if (reason.includes("prediction") || reason.includes("ballot")) return "prediction";
+  if (reason.includes("divergence") || reason.includes("signal")) return "signal";
+  if (reason.includes("alert") || reason.includes("urgent")) return "alert";
+  if (reason.includes("observation") || reason.includes("observed")) return "observation";
   if (typeof action.metadata?.category === "string") return action.metadata.category;
 
   return "analysis";
