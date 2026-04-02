@@ -24,6 +24,16 @@ import type {
   Webhook,
   PostDetail,
   BettingPool,
+  OracleResult,
+  PriceData,
+  PriceHistoryEntry,
+  BallotState,
+  BallotAccuracy,
+  BallotLeaderboard,
+  NetworkStats,
+  HealthStatus,
+  TlsnVerification,
+  FeedResult,
 } from "./types.js";
 
 // ── Config ──────────────────────────────────────────
@@ -191,10 +201,74 @@ export class SuperColonyApiClient {
     return this.get(`/api/bets/pool${this.buildQs({ asset, horizon })}`);
   }
 
+  // ── Oracle ───────────────────────────────────
+
+  async getOracle(opts?: {
+    assets?: string[];
+  }): Promise<ApiResult<OracleResult>> {
+    return this.get(`/api/oracle${this.buildQs({ assets: opts?.assets?.join(",") })}`);
+  }
+
+  // ── Prices ───────────────────────────────────
+
+  async getPrices(assets: string[]): Promise<ApiResult<PriceData[]>> {
+    return this.get(`/api/prices${this.buildQs({ assets: assets.join(",") })}`);
+  }
+
+  async getPriceHistory(
+    asset: string,
+    minutes: number,
+  ): Promise<ApiResult<PriceHistoryEntry[]>> {
+    return this.get(`/api/prices${this.buildQs({ asset, minutes })}`);
+  }
+
+  // ── Ballot ───────────────────────────────────
+
+  async getBallot(assets?: string[]): Promise<ApiResult<BallotState>> {
+    return this.get(`/api/ballot${this.buildQs({ assets: assets?.join(",") })}`);
+  }
+
+  async getBallotAccuracy(address: string): Promise<ApiResult<BallotAccuracy>> {
+    return this.get(`/api/ballot/accuracy${this.buildQs({ address })}`);
+  }
+
+  async getBallotLeaderboard(): Promise<ApiResult<BallotLeaderboard>> {
+    return this.get("/api/ballot/leaderboard");
+  }
+
+  // ── Network ──────────────────────────────────
+
+  async getStats(): Promise<ApiResult<NetworkStats>> {
+    return this.getPublic("/api/stats");
+  }
+
+  async getHealth(): Promise<ApiResult<HealthStatus>> {
+    return this.getPublic("/api/health");
+  }
+
+  // ── TLSN Verification ───────────────────────
+
+  async verifyTlsn(txHash: string): Promise<ApiResult<TlsnVerification>> {
+    return this.get(`/api/verify-tlsn/${encodeURIComponent(txHash)}`);
+  }
+
+  // ── Feed (FEED category) ────────────────────
+
+  async getFeeds(opts?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResult<FeedResult>> {
+    return this.get(`/api/feed${this.buildQs({ category: "FEED", limit: opts?.limit, offset: opts?.offset })}`);
+  }
+
   // ── Internal Helpers ──────────────────────────
 
   private async get<T>(path: string): Promise<ApiResult<T>> {
     return this.request<T>(path, { method: "GET" });
+  }
+
+  private async getPublic<T>(path: string): Promise<ApiResult<T>> {
+    return this.request<T>(path, { method: "GET" }, { skipAuth: true });
   }
 
   private async post<T>(
@@ -220,14 +294,16 @@ export class SuperColonyApiClient {
   private async request<T>(
     path: string,
     init: RequestInit,
-    opts?: { raw?: boolean },
+    opts?: { raw?: boolean; skipAuth?: boolean },
   ): Promise<ApiResult<T>> {
     try {
       const url = `${this.baseUrl}${path}`;
-      const token = await this.getToken();
       const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+      if (!opts?.skipAuth) {
+        const token = await this.getToken();
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
       }
       // Only set Content-Type for methods with a body
       if (init.method !== "GET" && init.method !== "HEAD") {

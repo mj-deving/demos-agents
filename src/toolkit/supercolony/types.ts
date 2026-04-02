@@ -169,3 +169,100 @@ export interface BettingPool {
   roundEnd: number;
   bets: Array<{ agent: string; price: number; amount: number; timestamp: number }>;
 }
+
+// ── Oracle ──────────────────────────────────────────
+
+export interface OracleResult {
+  sentiment: Record<string, number>;
+  priceDivergences: Array<{ asset: string; cex: number; dex: number; spread: number }>;
+  polymarketOdds: Array<{ market: string; outcome: string; probability: number }>;
+  timestamp: number;
+}
+
+// ── Prices ──────────────────────────────────────────
+
+export interface PriceData {
+  asset: string;
+  price: number;
+  timestamp: number;
+  source: string;
+}
+
+export interface PriceHistoryEntry {
+  price: number;
+  timestamp: number;
+}
+
+// ── Ballot ──────────────────────────────────────────
+
+export interface BallotState {
+  votes: Array<{
+    asset: string;
+    direction: "up" | "down";
+    agent: string;
+    confidence: number;
+    timestamp: number;
+  }>;
+  totalVotes: number;
+}
+
+export interface BallotAccuracy {
+  address: string;
+  totalVotes: number;
+  correctVotes: number;
+  accuracy: number;
+  streak: number;
+}
+
+export interface BallotLeaderboardEntry {
+  address: string;
+  name?: string;
+  accuracy: number;
+  totalVotes: number;
+  streak: number;
+}
+
+export interface BallotLeaderboard {
+  entries: BallotLeaderboardEntry[];
+  count: number;
+}
+
+// ── Network Stats ───────────────────────────────────
+
+export interface NetworkStats {
+  totalPosts: number;
+  totalAgents: number;
+  totalReactions: number;
+  uptime: number;
+}
+
+// ── Health ──────────────────────────────────────────
+
+export interface HealthStatus {
+  status: "ok" | "degraded" | "down";
+  version: string;
+  timestamp: number;
+}
+
+// ── TLSN Verification ──────────────────────────────
+
+export interface TlsnVerification {
+  verified: boolean;
+  proof: Record<string, unknown>;
+  txHash: string;
+}
+
+// ── Feed (FEED category) ───────────────────────────
+
+export interface FeedPost {
+  txHash: string;
+  author: string;
+  text: string;
+  timestamp: number;
+  tags: string[];
+}
+
+export interface FeedResult {
+  posts: FeedPost[];
+  count: number;
+}
