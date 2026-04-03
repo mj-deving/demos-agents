@@ -121,6 +121,12 @@ Phase 1-4 (DONE) --> Phase 5 (DONE) --> Phase 6 (DONE)
 | External JSON.parse without safeParse in provider files (`generic.ts:93`, `declarative-engine.ts:1215`, `source-discovery.ts:80`, `sse-feed.ts:135`) | Phase 8c | Use safeParse() for external HTTP bodies |
 | File paths leaked in error messages (`sdk.ts:83,167`, `agent-config.ts:405`) | Phase 8c | Redact absolute paths |
 | No unified daily spending cap across tips + attestations + D402 + gas | Future | Theoretical daily max is unbounded due to TLSN + D402 |
+| Runtime guard for unrecognized targetType values in action-executor ENGAGE case | Phase 8b | TypeScript enforces at compile time, no runtime check |
+| LLM prompt injection via briefingContext (`.slice(500)` truncated but unsanitized) | Phase 8c | Consider delimiter/system instruction boundary |
+| Parallel RPC concurrency unbounded in ingestProofs beyond limit param | Phase 8b | Add p-limit or document safe threshold |
+| Raw error `.toString()` coercion in `eliza/event-service.ts:55` | Phase 8c | Use `.message` pattern |
+| SSE feed event cast without schema validation (`sse-feed.ts:135`) | Phase 8c | Add Zod schema for SSEPost |
+| Faithfulness gate has no chain verification dependency (by design, pre-publish) | N/A | Document that gate output is NOT chain-verified |
 
 ---
 
