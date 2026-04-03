@@ -64,10 +64,10 @@ const StrategyConfigSchema = z.object({
   briefingBoost: z.number().int().nonnegative().default(10).optional(),
   leaderboardAdjustment: z.object({
     enabled: z.boolean().default(false),
-    topBoostEngagement: z.number().default(15),
-    topAdjustPublish: z.number().default(-5),
-    bottomBoostPublish: z.number().default(15),
-    bottomAdjustEngagement: z.number().default(-5),
+    topBoostEngagement: z.number().min(-50).max(50).default(15),
+    topAdjustPublish: z.number().min(-50).max(50).default(-5),
+    bottomBoostPublish: z.number().min(-50).max(50).default(15),
+    bottomAdjustEngagement: z.number().min(-50).max(50).default(-5),
   }).optional(),
 });
 
