@@ -9,8 +9,36 @@
  */
 
 import type { ChainReaderRpc } from "../chain-reader.js";
+import type { AttestationMethod } from "../providers/types.js";
 
-export type ProofMethod = "DAHR" | "TLSN";
+// ── Verification status constants ──────────────────────
+export const CHAIN_UNRESOLVED = 0;
+export const CHAIN_VERIFIED = 1;
+export const CHAIN_FAILED = -1;
+
+// ── Comparison tuning ──────────────────────────────────
+/** Minimum fraction of snapshot values that must appear in TLSN response to count as "match" */
+const SNAPSHOT_MATCH_THRESHOLD = 0.6;
+/** Values shorter than this are skipped — avoids false positives from common short strings */
+const MIN_VALUE_LENGTH = 3;
+/** Max bytes of TLSN recv to store in chain_data (prevents unbounded memory from large responses) */
+const MAX_RECV_STORED_BYTES = 4096;
+
+// ── Failure reason union ───────────────────────────────
+export type FailureReason =
+  | "rpc_unavailable"
+  | "rpc_error"
+  | "tx_not_found"
+  | "tx_not_confirmed"
+  | "tx_no_content"
+  | "unknown_attestation_type";
+
+/** Permanent failures that should not be retried */
+export const PERMANENT_FAILURES: ReadonlySet<FailureReason> = new Set([
+  "tx_not_found",
+  "tx_no_content",
+  "unknown_attestation_type",
+]);
 
 export interface DahrProof {
   verified: true;
@@ -33,7 +61,7 @@ export interface TlsnProof {
 
 export interface ResolutionFailure {
   verified: false;
-  reason: string;
+  reason: FailureReason;
 }
 
 export type ResolutionResult = DahrProof | TlsnProof | ResolutionFailure;
@@ -51,7 +79,6 @@ function isTlsnProofData(data: unknown): data is Record<string, unknown> {
 function extractTlsnData(rawData: unknown): Record<string, unknown> | null {
   if (!rawData) return null;
 
-  // Storage transactions may wrap data as ["storage", payload] or directly
   if (Array.isArray(rawData) && rawData[0] === "storage" && rawData[1]) {
     return extractTlsnData(rawData[1]);
   }
@@ -72,11 +99,18 @@ function extractTlsnData(rawData: unknown): Record<string, unknown> | null {
   return null;
 }
 
+/** Truncate recv field to prevent storing massive TLSN response bodies */
+function truncateRecv(recv: unknown): string | null {
+  if (recv == null) return null;
+  const str = String(recv);
+  return str.length > MAX_RECV_STORED_BYTES ? str.slice(0, MAX_RECV_STORED_BYTES) : str;
+}
+
 /**
  * Resolve a single attestation txHash against the chain.
  *
  * Returns typed proof data for DAHR or TLSN attestations,
- * or a failure with reason if the transaction doesn't exist or isn't a known attestation type.
+ * or a failure with reason if the transaction doesn't exist or isn't a known type.
  */
 export async function resolveAttestation(
   rpc: ChainReaderRpc,
@@ -106,7 +140,6 @@ export async function resolveAttestation(
     return { verified: false, reason: "tx_no_content" };
   }
 
-  // DAHR: web2-type transaction from node proxy
   if (isDahrTransaction(content)) {
     const data = (content.data ?? {}) as Record<string, unknown>;
     return {
@@ -119,10 +152,11 @@ export async function resolveAttestation(
     };
   }
 
-  // TLSN: storage-type transaction with proof structure in data
   if (content.type === "storage") {
     const proofData = extractTlsnData(content.data);
     if (proofData) {
+      // Truncate recv to prevent storing multi-KB response bodies
+      const { recv, ...rest } = proofData;
       return {
         verified: true,
         method: "TLSN",
@@ -130,7 +164,7 @@ export async function resolveAttestation(
         responseData: proofData.recv != null ? String(proofData.recv) : null,
         notaryKey: proofData.notaryKey != null ? String(proofData.notaryKey) : null,
         timestamp: (proofData.time ?? content.timestamp ?? 0) as number,
-        chainData: proofData,
+        chainData: { ...rest, recv: truncateRecv(recv) },
       };
     }
   }
@@ -143,7 +177,7 @@ export type MatchStatus = "match" | "mismatch" | "partial" | "unverifiable";
 /**
  * Compare chain-resolved proof data against self-reported snapshot from the post.
  *
- * DAHR: existence on chain = match (hash-level trust; data not stored on-chain).
+ * DAHR: existence on chain is sufficient (hash-level trust — data not stored on-chain).
  * TLSN: compare responseData against snapshot values if both present.
  */
 export function compareProofToSnapshot(
@@ -155,17 +189,13 @@ export function compareProofToSnapshot(
   }
 
   if (resolved.method === "DAHR") {
-    // DAHR proofs store only the response hash, not the data itself.
-    // Existence on chain with matching URL = trust the node signed it.
     return { status: "match", details: "DAHR attestation confirmed on chain" };
   }
 
-  // TLSN: we can compare actual response data
   if (!resolved.responseData) {
     return { status: "partial", details: "TLSN proof on chain but no response data extractable" };
   }
 
-  // Check if key snapshot values appear in the TLSN response data
   const responseStr = resolved.responseData.toLowerCase();
   const snapshotValues = Object.values(snapshot)
     .filter((v) => v != null && typeof v !== "object")
@@ -175,14 +205,14 @@ export function compareProofToSnapshot(
     return { status: "unverifiable", details: "snapshot has no comparable scalar values" };
   }
 
-  const matchCount = snapshotValues.filter((v) => v.length > 2 && responseStr.includes(v)).length;
+  const matchCount = snapshotValues.filter((v) => v.length >= MIN_VALUE_LENGTH && responseStr.includes(v)).length;
   const matchRatio = matchCount / snapshotValues.length;
 
-  if (matchRatio >= 0.6) {
+  if (matchRatio >= SNAPSHOT_MATCH_THRESHOLD) {
     return { status: "match", details: `${matchCount}/${snapshotValues.length} snapshot values found in TLSN response` };
   }
   if (matchRatio > 0) {
-    return { status: "partial", details: `${matchCount}/${snapshotValues.length} snapshot values found (below 60% threshold)` };
+    return { status: "partial", details: `${matchCount}/${snapshotValues.length} snapshot values found (below ${SNAPSHOT_MATCH_THRESHOLD * 100}% threshold)` };
   }
   return { status: "mismatch", details: "no snapshot values found in TLSN response data" };
 }

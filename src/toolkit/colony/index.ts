@@ -32,8 +32,8 @@ export { computePerformanceScores } from "./performance.js";
 export { getAgentProfile, getInteractionHistory, recordInteraction, refreshAgentProfiles } from "./intelligence.js";
 export type { AgentProfileRecord, InteractionFilter, InteractionRecord } from "./intelligence.js";
 
-export { resolveAttestation, compareProofToSnapshot } from "./proof-resolver.js";
-export type { DahrProof, TlsnProof, ResolutionResult, ResolutionFailure, MatchStatus } from "./proof-resolver.js";
+export { resolveAttestation, compareProofToSnapshot, CHAIN_UNRESOLVED, CHAIN_VERIFIED, CHAIN_FAILED, PERMANENT_FAILURES } from "./proof-resolver.js";
+export type { DahrProof, TlsnProof, ResolutionResult, ResolutionFailure, MatchStatus, FailureReason } from "./proof-resolver.js";
 
 export { ingestProofs } from "./proof-ingestion.js";
 export type { IngestionResult, IngestionOptions } from "./proof-ingestion.js";

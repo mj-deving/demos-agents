@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compareProofToSnapshot, resolveAttestation, type DahrProof, type TlsnProof } from "../../../src/toolkit/colony/proof-resolver.js";
+import { compareProofToSnapshot, resolveAttestation, PERMANENT_FAILURES, type DahrProof, type TlsnProof, type FailureReason } from "../../../src/toolkit/colony/proof-resolver.js";
 import type { ChainReaderRpc } from "../../../src/toolkit/chain-reader.js";
 
 function makeRpc(txResult: unknown): ChainReaderRpc {
@@ -166,6 +166,18 @@ describe("resolveAttestation", () => {
     const rpc: ChainReaderRpc = {};
     const result = await resolveAttestation(rpc, "0xno-rpc");
     expect(result).toEqual({ verified: false, reason: "rpc_unavailable" });
+  });
+
+  it("returns tx_no_content as permanent failure", async () => {
+    const rpc = makeRpc({
+      hash: "0xnocontent",
+      blockNumber: 100,
+      status: "confirmed",
+      content: null,
+    });
+    const result = await resolveAttestation(rpc, "0xnocontent");
+    expect(result).toEqual({ verified: false, reason: "tx_no_content" });
+    expect(PERMANENT_FAILURES.has(result.verified === false ? result.reason as FailureReason : "" as FailureReason)).toBe(true);
   });
 });
 
