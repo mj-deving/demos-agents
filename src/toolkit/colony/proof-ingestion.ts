@@ -39,6 +39,35 @@ interface UnresolvedRow {
 const DEFAULT_LIMIT = 20;
 
 /**
+ * Compare chain-resolved URL against self-reported URL by hostname.
+ * Rejects empty URLs (attacker can't bypass with missing URL field).
+ * Rejects subdomain embedding (api.example.com.evil.com !== api.example.com).
+ */
+function compareUrls(chainUrl: string, claimedUrl: string): boolean {
+  if (!chainUrl || !claimedUrl) return false;
+
+  const chainHost = extractHostname(chainUrl);
+  const claimedHost = extractHostname(claimedUrl);
+
+  if (!chainHost || !claimedHost) return false;
+
+  return chainHost === claimedHost;
+}
+
+function extractHostname(urlOrHost: string): string | null {
+  try {
+    // If it looks like a full URL, parse it
+    if (urlOrHost.includes("://")) {
+      return new URL(urlOrHost).hostname.toLowerCase();
+    }
+    // If it's just a hostname (e.g., "api.coingecko.com" from TLSN serverName)
+    return urlOrHost.toLowerCase().split("/")[0].split(":")[0];
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Process unresolved attestations by resolving them against the chain in parallel.
  *
  * For each unresolved attestation:
@@ -110,13 +139,10 @@ export async function ingestProofs(
       continue;
     }
 
-    // Validate that chain-resolved data matches self-reported claims
-    // A post citing a real txHash for a different URL/method is spoofing
+    // Validate that chain-resolved data matches self-reported claims.
+    // A post citing a real txHash for a different URL/method is spoofing.
     const methodMatch = resolution.method === row.method;
-    const chainUrl = resolution.sourceUrl.toLowerCase();
-    const claimedUrl = row.source_url.toLowerCase();
-    const urlMatch = !chainUrl || !claimedUrl
-      || chainUrl.includes(claimedUrl) || claimedUrl.includes(chainUrl);
+    const urlMatch = compareUrls(resolution.sourceUrl, row.source_url);
 
     const comparison = compareProofToSnapshot(resolution, snapshots[i]);
     const chainDataPayload = JSON.stringify({

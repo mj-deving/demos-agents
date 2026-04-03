@@ -195,4 +195,87 @@ describe("ingestProofs", () => {
       .get("0xno-rpc") as { chain_verified: number };
     expect(row.chain_verified).toBe(0);  // Still unresolved
   });
+
+  it("rejects attestation when chain URL does not match claimed URL (spoofing)", async () => {
+    insertTestAttestation(db, {
+      attestation_tx_hash: "0xspoof",
+      source_url: "https://api.coingecko.com/data",
+    });
+
+    const rpc: ChainReaderRpc = {
+      getTxByHash: async () => ({
+        hash: "0xspoof",
+        blockNumber: 100,
+        status: "confirmed",
+        content: {
+          from: "0xnode",
+          to: "0xagent",
+          type: "web2",
+          data: { url: "https://api.evil.com/data", responseHash: "hash123" },
+          timestamp: 1700000000,
+        },
+      }),
+    };
+
+    const result = await ingestProofs(db, rpc);
+
+    expect(result.failed).toBe(1);
+    expect(result.verified).toBe(0);
+
+    const row = db.prepare("SELECT chain_verified FROM attestations WHERE attestation_tx_hash = ?")
+      .get("0xspoof") as { chain_verified: number };
+    expect(row.chain_verified).toBe(-1);
+  });
+
+  it("rejects attestation when chain URL embeds claimed hostname as subdomain", async () => {
+    insertTestAttestation(db, {
+      attestation_tx_hash: "0xsubdomain",
+      source_url: "https://api.coingecko.com/data",
+    });
+
+    const rpc: ChainReaderRpc = {
+      getTxByHash: async () => ({
+        hash: "0xsubdomain",
+        blockNumber: 100,
+        status: "confirmed",
+        content: {
+          from: "0xnode",
+          to: "0xagent",
+          type: "web2",
+          data: { url: "https://api.coingecko.com.evil.com/data", responseHash: "h" },
+          timestamp: 1700000000,
+        },
+      }),
+    };
+
+    const result = await ingestProofs(db, rpc);
+
+    expect(result.failed).toBe(1);
+  });
+
+  it("rejects attestation when claimed URL is empty (bypass attempt)", async () => {
+    insertTestAttestation(db, {
+      attestation_tx_hash: "0xempty-url",
+      source_url: "",
+    });
+
+    const rpc: ChainReaderRpc = {
+      getTxByHash: async () => ({
+        hash: "0xempty-url",
+        blockNumber: 100,
+        status: "confirmed",
+        content: {
+          from: "0xnode",
+          to: "0xagent",
+          type: "web2",
+          data: { url: "https://api.real.com", responseHash: "h" },
+          timestamp: 1700000000,
+        },
+      }),
+    };
+
+    const result = await ingestProofs(db, rpc);
+
+    expect(result.failed).toBe(1);
+  });
 });
