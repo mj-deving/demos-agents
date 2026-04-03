@@ -261,7 +261,8 @@ export async function plan(
     for (const address of new Set(profileAddresses)) {
       const profile = getAgentProfile(ctx.db, address);
       if (profile) {
-        agentProfiles[address] = {
+        // Key by lowercased address — engine reads with normalize() (trim+lowercase)
+        agentProfiles[address.trim().toLowerCase()] = {
           postCount: profile.postCount,
           avgAgrees: profile.avgAgrees,
           avgDisagrees: profile.avgDisagrees,
