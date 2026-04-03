@@ -31,6 +31,8 @@ export interface IngestionOptions {
 interface UnresolvedRow {
   id: number;
   attestation_tx_hash: string;
+  source_url: string;
+  method: string;
   data_snapshot: string | null;
 }
 
@@ -53,7 +55,7 @@ export async function ingestProofs(
   const result: IngestionResult = { resolved: 0, verified: 0, failed: 0, skipped: 0 };
 
   const rows = db.prepare(
-    `SELECT id, attestation_tx_hash, data_snapshot
+    `SELECT id, attestation_tx_hash, source_url, method, data_snapshot
      FROM attestations
      WHERE chain_verified = 0
      ORDER BY id DESC
@@ -108,13 +110,28 @@ export async function ingestProofs(
       continue;
     }
 
-    const comparison = compareProofToSnapshot(resolution, snapshots[i]);
+    // Validate that chain-resolved data matches self-reported claims
+    // A post citing a real txHash for a different URL/method is spoofing
+    const methodMatch = resolution.method === row.method;
+    const chainUrl = resolution.sourceUrl.toLowerCase();
+    const claimedUrl = row.source_url.toLowerCase();
+    const urlMatch = !chainUrl || !claimedUrl
+      || chainUrl.includes(claimedUrl) || claimedUrl.includes(chainUrl);
 
-    // Store chain data and comparison as separate keys (not merged into chainData)
+    const comparison = compareProofToSnapshot(resolution, snapshots[i]);
     const chainDataPayload = JSON.stringify({
       proof: resolution.chainData,
       comparison,
+      methodMatch,
+      urlMatch,
     });
+
+    if (!methodMatch || !urlMatch) {
+      // Chain tx exists but doesn't match what the post claims — mark as failed (spoofing)
+      updateStmt.run(CHAIN_FAILED, resolution.method, chainDataPayload, now, row.id);
+      result.failed += 1;
+      continue;
+    }
 
     updateStmt.run(CHAIN_VERIFIED, resolution.method, chainDataPayload, now, row.id);
     result.resolved += 1;
