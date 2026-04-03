@@ -13,6 +13,7 @@
 import { insertPost, getPost } from "../src/toolkit/colony/posts.js";
 import type { ColonyDatabase } from "../src/toolkit/colony/schema.js";
 import type { CachedPost } from "../src/toolkit/colony/posts.js";
+import { toErrorMessage } from "../src/toolkit/util/errors.js";
 
 export interface SSESenseOptions {
   /** Max time to read SSE stream (default: 5000ms) */
@@ -24,7 +25,7 @@ export interface SSESenseOptions {
 export interface SSESenseResult {
   postsReceived: number;
   postsIngested: number;
-  source: "sse" | "poll-fallback" | "skipped";
+  source: "poll-fallback" | "skipped";
   elapsedMs: number;
 }
 
@@ -114,7 +115,7 @@ export async function readSSESense(
       elapsedMs: Date.now() - start,
     };
   } catch (err: unknown) {
-    observe("warning", `SSE sense read failed: ${err instanceof Error ? err.message : String(err)}`, {
+    observe("warning", `SSE sense read failed: ${toErrorMessage(err)}`, {
       source: "sse-sense-adapter",
     });
     return { postsReceived: 0, postsIngested: 0, source: "skipped", elapsedMs: Date.now() - start };

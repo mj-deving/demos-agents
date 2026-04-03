@@ -1,3 +1,5 @@
+import { toErrorMessage } from "../util/errors.js";
+
 /**
  * NAPI Guard — tests whether xmcore native bindings load without crashing.
  *
@@ -41,7 +43,7 @@ export async function testNapiCapability(): Promise<NapiCapability> {
     cachedCapability = { available: true, testedAt };
     return cachedCapability;
   } catch (err: unknown) {
-    const error = err instanceof Error ? err.message : String(err);
+    const error = toErrorMessage(err);
     cachedCapability = { available: false, error, testedAt };
     return cachedCapability;
   }

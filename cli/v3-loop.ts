@@ -1,5 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { toErrorMessage } from "../src/toolkit/util/errors.js";
 
 
 import { beginPhase, completePhase, failPhase, type V3SessionState } from "../src/lib/state.js";
@@ -243,7 +244,7 @@ export async function runV3Loop(
           });
         }
       } catch (err: unknown) {
-        deps.observe("warning", `Proof ingestion failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`, {
+        deps.observe("warning", `Proof ingestion failed (non-fatal): ${toErrorMessage(err)}`, {
           source: "v3-loop:proofIngestion",
         });
       }
@@ -342,7 +343,7 @@ export async function runV3Loop(
             });
           }
         } catch (err: unknown) {
-          deps.observe("warning", `SSE sense failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`, {
+          deps.observe("warning", `SSE sense failed (non-fatal): ${toErrorMessage(err)}`, {
             source: "v3-loop:sseSense",
           });
         }

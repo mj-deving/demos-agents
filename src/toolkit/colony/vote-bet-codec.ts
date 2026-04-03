@@ -90,14 +90,7 @@ export function decodeBinaryPayload(rawData: Record<string, unknown>): HiveBinar
   return result.success ? result.data : null;
 }
 
-// ── Validate ──────────────────────────────────────
+// ── Validate (aliases for decode — same behavior, different call-site semantics) ──
 
-export function validateBetPayload(data: unknown): HiveBetPayload | null {
-  const result = HiveBetSchema.safeParse(data);
-  return result.success ? result.data : null;
-}
-
-export function validateBinaryPayload(data: unknown): HiveBinaryPayload | null {
-  const result = HiveBinarySchema.safeParse(data);
-  return result.success ? result.data : null;
-}
+export const validateBetPayload = decodeVotePayload as (data: unknown) => HiveBetPayload | null;
+export const validateBinaryPayload = decodeBinaryPayload as (data: unknown) => HiveBinaryPayload | null;

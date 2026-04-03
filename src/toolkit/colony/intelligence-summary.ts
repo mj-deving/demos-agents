@@ -109,6 +109,7 @@ export function buildColonyIntelligence(
       SELECT source_id, response_size, last_fetched_at, consecutive_failures
       FROM source_response_cache
       WHERE consecutive_failures < 3
+      LIMIT 200
     `).all() as Array<{ source_id: string; response_size: number; last_fetched_at: string; consecutive_failures: number }>;
     const now = Date.now();
     for (const row of rows) {
