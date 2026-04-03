@@ -90,10 +90,10 @@ export async function ingestProofs(
     const row = rows[i];
     const settledResult = settled[i];
 
-    // Promise rejected = unexpected error in resolveAttestation (shouldn't happen, it has its own try/catch)
+    // Promise rejected = unexpected bug in resolveAttestation (it has its own try/catch for RPC).
+    // Leave as retryable (0) so the row gets another chance after a bugfix deployment.
     if (settledResult.status === "rejected") {
-      updateStmt.run(CHAIN_FAILED, null, JSON.stringify({ error: "unexpected_rejection" }), now, row.id);
-      result.failed += 1;
+      result.skipped += 1;
       continue;
     }
 

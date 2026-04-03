@@ -76,11 +76,11 @@ function isTlsnProofData(data: unknown): data is Record<string, unknown> {
   return "serverName" in obj || "recv" in obj || "notaryKey" in obj;
 }
 
-function extractTlsnData(rawData: unknown): Record<string, unknown> | null {
-  if (!rawData) return null;
+function extractTlsnData(rawData: unknown, depth = 0): Record<string, unknown> | null {
+  if (!rawData || depth > 3) return null;
 
   if (Array.isArray(rawData) && rawData[0] === "storage" && rawData[1]) {
-    return extractTlsnData(rawData[1]);
+    return extractTlsnData(rawData[1], depth + 1);
   }
 
   if (typeof rawData === "string") {
@@ -147,7 +147,7 @@ export async function resolveAttestation(
       method: "DAHR",
       sourceUrl: String(data.url ?? ""),
       responseHash: String(data.responseHash ?? data.hash ?? ""),
-      timestamp: content.timestamp as number ?? 0,
+      timestamp: (content.timestamp as number | undefined) ?? 0,
       chainData: data,
     };
   }
