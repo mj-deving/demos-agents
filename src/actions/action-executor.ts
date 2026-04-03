@@ -264,7 +264,9 @@ export function createActionExecutor(
         break;
       }
       case "tip": {
-        const tipAmount = Number(action.params.amount || 1);
+        const rawAmount = Number(action.params.amount || 1);
+        // Defense-in-depth: clamp to absolute ceiling regardless of input source
+        const tipAmount = Math.min(10, Math.max(1, Number.isFinite(rawAmount) ? rawAmount : 1));
         const postTxHash = String(action.params.txHash || "");
         ctx.info(`[event] Tip ${tipAmount} DEM for post ${postTxHash}`);
         try {

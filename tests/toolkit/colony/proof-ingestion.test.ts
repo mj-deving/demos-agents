@@ -62,7 +62,7 @@ describe("ingestProofs", () => {
         blockNumber: 100,
         status: "confirmed",
         content: {
-          from: "0xnode",
+          from: "agent1",
           to: "0xagent",
           type: "web2",
           data: { url: "https://api.example.com", responseHash: "hash123" },
@@ -155,7 +155,7 @@ describe("ingestProofs", () => {
           blockNumber: 100,
           status: "confirmed",
           content: {
-            from: "0xnode",
+            from: "agent1",
             to: "0xagent",
             type: "web2",
             data: { url: "https://api.example.com", responseHash: "h" },
@@ -208,7 +208,7 @@ describe("ingestProofs", () => {
         blockNumber: 100,
         status: "confirmed",
         content: {
-          from: "0xnode",
+          from: "agent1",
           to: "0xagent",
           type: "web2",
           data: { url: "https://api.evil.com/data", responseHash: "hash123" },
@@ -239,7 +239,7 @@ describe("ingestProofs", () => {
         blockNumber: 100,
         status: "confirmed",
         content: {
-          from: "0xnode",
+          from: "agent1",
           to: "0xagent",
           type: "web2",
           data: { url: "https://api.coingecko.com.evil.com/data", responseHash: "h" },
@@ -265,7 +265,7 @@ describe("ingestProofs", () => {
         blockNumber: 100,
         status: "confirmed",
         content: {
-          from: "0xnode",
+          from: "agent1",
           to: "0xagent",
           type: "web2",
           data: { url: "https://api.real.com", responseHash: "h" },

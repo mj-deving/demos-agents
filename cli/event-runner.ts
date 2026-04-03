@@ -330,8 +330,10 @@ async function main(): Promise<void> {
     generatePost,
     attestAndPublish: (input, url, opts) => attestAndPublish(demos, input, url, opts),
     transfer: async (recipient, amount, _memo) => {
-      // SDK transfer() creates signed tx only (2 params) — must confirm+broadcast
-      const signedTx = await demos.transfer(recipient, amount);
+      // Defense-in-depth: absolute ceiling on any transfer through event-runner
+      const clampedAmount = Math.min(10, Math.max(0, Number.isFinite(amount) ? amount : 0));
+      if (clampedAmount <= 0) throw new Error("Transfer amount must be positive");
+      const signedTx = await demos.transfer(recipient, clampedAmount);
       const validity = await demos.confirm(signedTx);
       return await demos.broadcast(validity);
     },

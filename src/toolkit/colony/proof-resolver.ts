@@ -43,6 +43,8 @@ export const PERMANENT_FAILURES: ReadonlySet<FailureReason> = new Set([
 export interface DahrProof {
   verified: true;
   method: "DAHR";
+  /** Wallet address that created this attestation transaction. */
+  txSender: string;
   sourceUrl: string;
   responseHash: string;
   timestamp: number;
@@ -52,6 +54,8 @@ export interface DahrProof {
 export interface TlsnProof {
   verified: true;
   method: "TLSN";
+  /** Wallet address that created this attestation transaction. */
+  txSender: string;
   sourceUrl: string;
   responseData: string | null;
   notaryKey: string | null;
@@ -145,6 +149,7 @@ export async function resolveAttestation(
     return {
       verified: true,
       method: "DAHR",
+      txSender: String(content.from ?? ""),
       sourceUrl: String(data.url ?? ""),
       responseHash: String(data.responseHash ?? data.hash ?? ""),
       timestamp: (content.timestamp as number | undefined) ?? 0,
@@ -160,6 +165,7 @@ export async function resolveAttestation(
       return {
         verified: true,
         method: "TLSN",
+        txSender: String(content.from ?? ""),
         sourceUrl: String(proofData.serverName ?? proofData.url ?? ""),
         responseData: proofData.recv != null ? String(proofData.recv) : null,
         notaryKey: proofData.notaryKey != null ? String(proofData.notaryKey) : null,

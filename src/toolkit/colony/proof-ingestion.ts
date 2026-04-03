@@ -34,6 +34,7 @@ interface UnresolvedRow {
   source_url: string;
   method: string;
   data_snapshot: string | null;
+  post_author: string;
 }
 
 const DEFAULT_LIMIT = 20;
@@ -84,10 +85,11 @@ export async function ingestProofs(
   const result: IngestionResult = { resolved: 0, verified: 0, failed: 0, skipped: 0 };
 
   const rows = db.prepare(
-    `SELECT id, attestation_tx_hash, source_url, method, data_snapshot
-     FROM attestations
-     WHERE chain_verified = 0
-     ORDER BY id DESC
+    `SELECT a.id, a.attestation_tx_hash, a.source_url, a.method, a.data_snapshot, p.author as post_author
+     FROM attestations a
+     JOIN posts p ON a.post_tx_hash = p.tx_hash
+     WHERE a.chain_verified = 0
+     ORDER BY a.id DESC
      LIMIT ?`,
   ).all(limit) as UnresolvedRow[];
 
@@ -139,8 +141,12 @@ export async function ingestProofs(
       continue;
     }
 
-    // Validate that chain-resolved data matches self-reported claims.
-    // A post citing a real txHash for a different URL/method is spoofing.
+    // Validate chain-resolved data against self-reported claims.
+    // Three checks prevent attestation spoofing:
+    // 1. Ownership: tx sender must match post author (prevents claiming others' attestations)
+    // 2. Method: chain tx type must match claimed method (DAHR/TLSN)
+    // 3. URL: chain source must match claimed source URL (prevents URL substitution)
+    const ownerMatch = resolution.txSender.toLowerCase() === row.post_author.toLowerCase();
     const methodMatch = resolution.method === row.method;
     const urlMatch = compareUrls(resolution.sourceUrl, row.source_url);
 
@@ -148,12 +154,12 @@ export async function ingestProofs(
     const chainDataPayload = JSON.stringify({
       proof: resolution.chainData,
       comparison,
+      ownerMatch,
       methodMatch,
       urlMatch,
     });
 
-    if (!methodMatch || !urlMatch) {
-      // Chain tx exists but doesn't match what the post claims — mark as failed (spoofing)
+    if (!ownerMatch || !methodMatch || !urlMatch) {
       updateStmt.run(CHAIN_FAILED, resolution.method, chainDataPayload, now, row.id);
       result.failed += 1;
       continue;
