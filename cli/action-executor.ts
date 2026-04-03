@@ -231,15 +231,25 @@ export async function executeStrategyActions(
           const postTxHash = (action.metadata?.postTxHash as string) ?? action.target!;
 
           // Phase 8c: Verification gate — TIP requires positive verification (stricter than ENGAGE)
+          // Only check if we have an actual post txHash (not a wallet address).
+          // Engine-generated tips set target=address with no postTxHash in metadata,
+          // so resolve to a recent post first.
           if (deps.colonyDb) {
-            const gate = getPostVerificationGate(deps.colonyDb, postTxHash);
-            if (gate !== "verified") {
-              result.skipped.push({ action, reason: `TIP requires verified attestation, got ${gate}` });
-              deps.observe("insight", `TIP skipped: attestation ${gate} (requires verified)`, {
-                actionType: action.type, target: action.target, postTxHash, gate,
-              });
-              break;
+            let verifyTxHash = action.metadata?.postTxHash as string | undefined;
+            if (!verifyTxHash) {
+              verifyTxHash = resolveAgentToRecentPost(deps.colonyDb, action.target!) ?? undefined;
             }
+            if (verifyTxHash) {
+              const gate = getPostVerificationGate(deps.colonyDb, verifyTxHash);
+              if (gate !== "verified") {
+                result.skipped.push({ action, reason: `TIP requires verified attestation, got ${gate}` });
+                deps.observe("insight", `TIP skipped: attestation ${gate} (requires verified)`, {
+                  actionType: action.type, target: action.target, postTxHash: verifyTxHash, gate,
+                });
+                break;
+              }
+            }
+            // If no post found to verify, allow the tip — API validation is the primary guard
           }
 
           // 2-step tipping: API validates spam limits → SDK transfer.

@@ -33,6 +33,7 @@ import { match } from "../src/lib/sources/matcher.js";
 import { getPost } from "../src/toolkit/colony/posts.js";
 import { checkClaimDedup, checkSelfDedup } from "../src/toolkit/colony/dedup.js";
 import { encodeVotePost, encodeBinaryPost, validateBetPayload, validateBinaryPayload, MAX_BET_AMOUNT } from "../src/toolkit/colony/vote-bet-codec.js";
+import { createSdkBridge, AUTH_PENDING_TOKEN } from "../src/toolkit/sdk-bridge.js";
 
 const MAX_SUMMARY_LENGTH = 1000;
 import {
@@ -413,6 +414,12 @@ export async function executePublishActions(
         result.executed.push({ action, success: true });
         continue;
       }
+      // Write-rate guard (same as PUBLISH/REPLY — Codex review fix M6)
+      const betRateError = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, false);
+      if (betRateError) {
+        result.skipped.push({ action, reason: betRateError.message });
+        continue;
+      }
       try {
         const metadata = action.metadata ?? {};
         let encoded: { text: string; category: string; tags: string[] } | null = null;
@@ -427,7 +434,9 @@ export async function executePublishActions(
           encoded = encodeBinaryPost(payload);
         }
 
-        const publishResult = await publishPost(deps.demos, {
+        // Use SDK bridge directly — publishPost() requires attestations which VOTE/BET don't have
+        const sdkBridge = createSdkBridge(deps.demos, undefined, AUTH_PENDING_TOKEN);
+        const publishResult = await sdkBridge.publishHivePost({
           text: encoded.text,
           category: encoded.category,
           tags: encoded.tags,

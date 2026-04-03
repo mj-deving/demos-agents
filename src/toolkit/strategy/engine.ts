@@ -501,11 +501,15 @@ export function decideActions(
         `Contradiction on ${contradiction.subject}/${contradiction.metric}: ${contradiction.claims.length} conflicting claims`,
         {
           target: contradiction.targetPostTxHash,
+          evidence: contradiction.supportedValue !== null
+            ? (evidenceIndex.get(normalize(contradiction.subject)) ?? []).map((e) => e.sourceId)
+            : [],
           metadata: {
             subject: contradiction.subject,
             metric: contradiction.metric,
             supportedValue: contradiction.supportedValue,
             claimCount: contradiction.claims.length,
+            topics: [contradiction.subject],
           },
         },
       );
@@ -561,10 +565,14 @@ export function decideActions(
       continue;
     }
 
-    // Phase 8: VOTE/BET rate limiting — shares daily post budget + dedicated bet cap
+    // Phase 8: VOTE/BET rate limiting — shares daily+hourly post budget + dedicated bet cap
     if (candidate.action.type === "VOTE" || candidate.action.type === "BET") {
       if (remaining.dailyRemaining <= 0) {
         reject(rejected, findRule(config, candidate.rule), candidate.action, "Daily post limit exhausted");
+        continue;
+      }
+      if (remaining.hourlyRemaining <= 0) {
+        reject(rejected, findRule(config, candidate.rule), candidate.action, "Hourly post limit exhausted");
         continue;
       }
       const betsPerDay = config.rateLimits.betsPerDay ?? 3;

@@ -18,7 +18,7 @@ function addPost(db: ColonyDatabase, txHash: string, author: string) {
 
 function addClaim(
   db: ColonyDatabase,
-  opts: { subject: string; metric: string; value: number | null; author: string; postTxHash: string; claimedAt?: string },
+  opts: { subject: string; metric: string; value: number | null; author: string; postTxHash: string; claimedAt?: string; verified?: boolean },
 ) {
   insertClaim(db, {
     subject: opts.subject,
@@ -35,7 +35,7 @@ function addClaim(
     author: opts.author,
     claimedAt: opts.claimedAt ?? new Date().toISOString(),
     attestationTxHash: null,
-    verified: false,
+    verified: opts.verified ?? false,
     verificationResult: null,
     stale: false,
   });
@@ -123,10 +123,10 @@ describe("scanForContradictions", () => {
     expect(result[0].targetPostTxHash).toBe("0xNew");
   });
 
-  it("includes our supported value when we have a claim", () => {
+  it("includes our supported value when we have a verified claim", () => {
     addPost(db, "0xP1", OUR_ADDRESS);
     addPost(db, "0xP2", "0xAgent2");
-    addClaim(db, { subject: "bitcoin", metric: "price", value: 100, author: OUR_ADDRESS, postTxHash: "0xP1" });
+    addClaim(db, { subject: "bitcoin", metric: "price", value: 100, author: OUR_ADDRESS, postTxHash: "0xP1", verified: true });
     addClaim(db, { subject: "bitcoin", metric: "price", value: 200, author: "0xAgent2", postTxHash: "0xP2" });
 
     const result = scanForContradictions(db, { since: SINCE, ourAddress: OUR_ADDRESS });

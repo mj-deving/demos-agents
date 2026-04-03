@@ -103,7 +103,8 @@ export function scanForContradictions(
         verified: c.verified,
       })),
       targetPostTxHash: targetClaim.postTxHash,
-      supportedValue: ourClaim?.value ?? null,
+      // Only set supportedValue if our claim was verified — don't rebut with unverified data
+      supportedValue: ourClaim?.verified ? ourClaim.value : null,
     });
   }
 
