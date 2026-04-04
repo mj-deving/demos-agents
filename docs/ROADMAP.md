@@ -118,23 +118,24 @@ Phase 1-4 (DONE) --> Phase 5 (DONE) --> Phase 6 (DONE) --> Phase 7 (DONE) --> Ph
 
 | Item | Target | Metric |
 |------|--------|--------|
-| Double-fetch in V3 loop (scan-feed + colony ingestion both call getHivePosts) | 2026-04-14 | 14 sessions with >0 actions |
+| ~~Double-fetch in V3 loop (scan-feed + colony ingestion both call getHivePosts)~~ | ~~2026-04-14~~ | **DONE 2026-04-04** — pre-fetched posts passed to ingestChainPostsIntoColonyDb. scan-feed subprocess still fetches independently (process isolation). |
 | Cursor not functional (SDK has no sinceBlock param) | When SDK adds pagination | Track SDK releases |
-| Add composite index `(author, timestamp)` on posts for `resolveAgentToRecentPost` perf | When engagement volume grows | Query plan analysis |
-| TLSN comparison: structural key-value matching instead of substring | Future | Substring injection risk on short values |
-| DAHR/TLSN detection: require both url+responseHash for DAHR, serverName+recv for TLSN | Future | Reduce false positives on malformed tx |
-| Concurrency guard: prevent double-processing in `ingestProofs` when scans overlap | Future | BEGIN IMMEDIATE or exclusion list |
-| Edge case tests: DAHR empty data, TLSN empty recv, boolean snapshot values | Future | Test coverage gap |
-| Integration tests for strategy bridge (briefingContext, identityLookup, targetType) | Future | Unit tests exist, integration tests missing |
-| Identity API shape: v3-loop `identityLookup` may always produce `platform: "unknown"` | Next session | Verify against live API response shape |
-| socialHandles in agent profiles unused by engine rules | Future | Infrastructure ready, no consumer yet |
-| claim_ledger.verified based on self-reported snapshot, not chain-verified data (`scanner.ts`) | Future | Reconcile after ingestProofs runs |
+| ~~Add composite index `(author, timestamp)` on posts for `resolveAgentToRecentPost` perf~~ | ~~When engagement volume grows~~ | **DONE 2026-04-04** — schema v8 migration |
+| ~~TLSN comparison: structural key-value matching instead of substring~~ | ~~Future~~ | **DONE 2026-04-04** — structural JSON matching with deep value + substring fallback |
+| ~~DAHR/TLSN detection: require both url+responseHash for DAHR, serverName+recv for TLSN~~ | ~~Future~~ | **DONE 2026-04-04** — AND validation in isDahrTransaction + isTlsnProofData |
+| ~~Concurrency guard: prevent double-processing in `ingestProofs` when scans overlap~~ | ~~Future~~ | **DONE 2026-04-04** — claimed_at timestamp with 5-min expiry + releaseExpiredClaims |
+| ~~Edge case tests: DAHR empty data, TLSN empty recv, boolean snapshot values~~ | ~~Future~~ | **DONE 2026-04-04** — 8 new tests in proof-resolver.test.ts |
+| Integration tests for strategy bridge (briefingContext, identityLookup, targetType) | Future | Unit tests exist, integration tests require full LLM+bridge mock |
+| Identity API shape: v3-loop `identityLookup` may always produce `platform: "unknown"` | Future | Documented — live API not accessible for verification |
+| socialHandles in agent profiles unused by engine rules | Future | Infrastructure ready, awaiting consumer rule |
+| ~~claim_ledger.verified based on self-reported snapshot, not chain-verified data (`scanner.ts`)~~ | ~~Future~~ | **DONE 2026-04-04** — reconcileClaimVerification() downgrades on chain_verified=-1 |
 | ~~API responses cast to generic T without runtime validation~~ | ~~Future~~ | **DONE 2026-04-04** — Zod schemas for 5 critical enrichment types in api-schemas.ts |
 | ~~LLM prompt injection via briefingContext~~ | ~~Future~~ | **DONE 2026-04-04** — sanitized: strip control chars + injection tags, 500 char truncation |
-| Cache contradiction scan results with TTL (avoid recomputing 188K posts each iteration) | Future | Review finding 2026-04-03 |
+| ~~Cache contradiction scan results with TTL (avoid recomputing 188K posts each iteration)~~ | ~~Future~~ | **DONE 2026-04-04** — in-memory TTL cache with MAX_CACHE_SIZE + invalidation |
 | SSE endpoint configuration (URL, auth, reconnect backoff) — endpoint not yet stable | Future | Review finding 2026-04-03 |
-| Bet outcome tracking: reserve schema field for settlement status | Future | Review finding 2026-04-03 |
-| Colony DB periodic pruning at scale (293MB and growing) | Future | Review finding 2026-04-03 |
+| ~~Bet outcome tracking: reserve schema field for settlement status~~ | ~~Future~~ | **DONE 2026-04-04** — bet_tracking table in schema v8 |
+| ~~Colony DB periodic pruning at scale (293MB and growing)~~ | ~~Future~~ | **DONE 2026-04-04** — prunePosts() with temp table, transaction, FK preservation |
+| Wire AbortSignal through fetchSource for wall-clock budget enforcement | Future | Review finding 2026-04-04 — FetchSourceOptions interface change |
 | ~~publish-executor.ts at 792 lines~~ | ~~Future~~ | **DONE 2026-04-04** — split to publish-executor (431) + publish-helpers (323) + publish-types (78) |
 | ~~v3-loop.ts at 618 lines~~ | ~~Future~~ | **DONE 2026-04-04** — split to v3-loop (499) + v3-loop-helpers (126) |
 
