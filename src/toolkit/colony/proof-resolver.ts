@@ -230,13 +230,18 @@ function structuralMatch(
   }
   if (matchCount > 0) return { matchCount, total: entries.length };
 
-  // Deep value matching: snapshot keys may not align with JSON keys
+  // Deep value matching: snapshot keys may not align with JSON keys.
+  // Use separate total excluding short values to avoid inflating denominator.
   const jsonScalars = collectJsonScalars(parsed);
+  let deepTotal = 0;
   for (const [, value] of entries) {
     const target = String(value).toLowerCase();
-    if (target.length >= MIN_VALUE_LENGTH && jsonScalars.has(target)) matchCount++;
+    if (target.length >= MIN_VALUE_LENGTH) {
+      deepTotal++;
+      if (jsonScalars.has(target)) matchCount++;
+    }
   }
-  return { matchCount, total: entries.length };
+  return { matchCount, total: deepTotal || entries.length };
 }
 
 /**

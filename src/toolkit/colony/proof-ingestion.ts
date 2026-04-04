@@ -130,12 +130,12 @@ export async function ingestProofs(
   );
 
   const retryStmt = db.prepare(
-    `UPDATE attestations SET retry_count = retry_count + 1 WHERE id = ?`,
+    `UPDATE attestations SET retry_count = retry_count + 1, claimed_at = NULL WHERE id = ?`,
   );
 
   const retryExhaustStmt = db.prepare(
     `UPDATE attestations
-     SET chain_verified = ?, chain_data = ?, retry_count = retry_count + 1, resolved_at = ?
+     SET chain_verified = ?, chain_data = ?, retry_count = retry_count + 1, resolved_at = ?, claimed_at = NULL
      WHERE id = ?`,
   );
 
