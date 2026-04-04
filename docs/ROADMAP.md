@@ -10,7 +10,7 @@ tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
 colony_posts: 188000
-summary: "Phases 1-8 + engine split + budget wire complete. Open: 3 semantic search items, 3 future items. 49 deferred evaluations."
+summary: "Phases 1-8 + engine split + budget wire complete. Open: 3 semantic search items, 3 future items. 27 deferred (16 closed, 4 continuous monitoring). 20 active tech debt, 11 resolved."
 read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work"]
 ---
 
@@ -118,86 +118,101 @@ Phase 1-4 (DONE) --> Phase 5 (DONE) --> Phase 6 (DONE) --> Phase 7 (DONE) --> Ph
 |------|--------|--------|
 | Double-fetch in V3 loop (scan-feed + colony ingestion both call getHivePosts) | 2026-04-14 | 14 sessions with >0 actions |
 | Cursor not functional (SDK has no sinceBlock param) | When SDK adds pagination | Track SDK releases |
-| ~~Wire `ingestProofs()` into v3-loop after scan completes~~ | ~~Phase 8b~~ | **DONE 2026-04-03** — wired in v3-loop SENSE phase |
 | Add composite index `(author, timestamp)` on posts for `resolveAgentToRecentPost` perf | When engagement volume grows | Query plan analysis |
-| TLSN comparison: structural key-value matching instead of substring | Phase 8c | Substring injection risk on short values |
-| ~~Retry cap on retryable attestation failures (currently retries forever)~~ | ~~Phase 8b~~ | **DONE 2026-04-03** — retry_count column in schema v6, 5-retry cap |
-| DAHR/TLSN detection: require both url+responseHash for DAHR, serverName+recv for TLSN | Phase 8c | Reduce false positives on malformed tx |
-| Concurrency guard: prevent double-processing in `ingestProofs` when scans overlap | Phase 8b | BEGIN IMMEDIATE or exclusion list |
-| Edge case tests: DAHR empty data, TLSN empty recv, boolean snapshot values | Phase 8b | Test coverage gap |
-| Integration tests for strategy bridge (briefingContext, identityLookup, targetType) | Phase 8b | Unit tests exist, integration tests missing |
+| TLSN comparison: structural key-value matching instead of substring | Future | Substring injection risk on short values |
+| DAHR/TLSN detection: require both url+responseHash for DAHR, serverName+recv for TLSN | Future | Reduce false positives on malformed tx |
+| Concurrency guard: prevent double-processing in `ingestProofs` when scans overlap | Future | BEGIN IMMEDIATE or exclusion list |
+| Edge case tests: DAHR empty data, TLSN empty recv, boolean snapshot values | Future | Test coverage gap |
+| Integration tests for strategy bridge (briefingContext, identityLookup, targetType) | Future | Unit tests exist, integration tests missing |
 | Identity API shape: v3-loop `identityLookup` may always produce `platform: "unknown"` | Next session | Verify against live API response shape |
-| socialHandles in agent profiles unused by engine rules | Phase 8c | Infrastructure ready, no consumer yet |
-| TLSN storage fee uncapped — large proof = unbounded DEM cost (`tlsn-playwright-bridge.ts:298`) | Phase 8b | Add Math.min(storageFee, 15) cap |
-| claim_ledger.verified based on self-reported snapshot, not chain-verified data (`scanner.ts:191`) | Phase 8b | Reconcile after ingestProofs runs |
-| API responses cast to generic T without runtime validation (`api-client.ts:458`) | Phase 8c | Add Zod schemas for critical endpoints |
-| External JSON.parse without safeParse in provider files (`generic.ts:93`, `declarative-engine.ts:1215`, `source-discovery.ts:80`, `sse-feed.ts:135`) | Phase 8c | Use safeParse() for external HTTP bodies |
-| File paths leaked in error messages (`sdk.ts:83,167`, `agent-config.ts:405`) | Phase 8c | Redact absolute paths |
-| ~~No unified daily spending cap across tips + attestations + D402 + gas~~ | ~~Future~~ | **DONE 2026-04-03** — checkSessionBudget() in spending-policy.ts with NaN/negative guard |
-| Runtime guard for unrecognized targetType values in action-executor ENGAGE case | Phase 8b | TypeScript enforces at compile time, no runtime check |
-| LLM prompt injection via briefingContext (`.slice(500)` truncated but unsanitized) | Phase 8c | Consider delimiter/system instruction boundary |
-| ~~Parallel RPC concurrency unbounded in ingestProofs beyond limit param~~ | ~~Phase 8b~~ | **DONE 2026-04-03** — p-limit(5) in proof-ingestion-rpc-adapter |
-| Raw error `.toString()` coercion in `eliza/event-service.ts:55` | Phase 8c | Use `.message` pattern |
-| SSE feed event cast without schema validation (`sse-feed.ts:135`) | Phase 8c | Add Zod schema for SSEPost |
-| Faithfulness gate has no chain verification dependency (by design, pre-publish) | N/A | Document that gate output is NOT chain-verified |
-| Cache contradiction scan results with TTL (avoid recomputing 188K posts each iteration) | Phase 8d | Review finding 2026-04-03 — Fabric design review |
-| SSE endpoint configuration (URL, auth, reconnect backoff) — endpoint not yet stable | Phase 8d | Review finding 2026-04-03 — Fabric design review |
-| Bet outcome tracking: reserve schema field for settlement status | Phase 8d | Review finding 2026-04-03 — Fabric threat model |
-| Colony DB periodic pruning at scale (293MB and growing) | Future | Review finding 2026-04-03 — Fabric threat model |
+| socialHandles in agent profiles unused by engine rules | Future | Infrastructure ready, no consumer yet |
+| claim_ledger.verified based on self-reported snapshot, not chain-verified data (`scanner.ts`) | Future | Reconcile after ingestProofs runs |
+| API responses cast to generic T without runtime validation (`api-client.ts`) | Future | Add Zod schemas for critical endpoints |
+| LLM prompt injection via briefingContext (`.slice(500)` truncated but unsanitized) | Future | Consider delimiter/system instruction boundary |
+| Cache contradiction scan results with TTL (avoid recomputing 188K posts each iteration) | Future | Review finding 2026-04-03 |
+| SSE endpoint configuration (URL, auth, reconnect backoff) — endpoint not yet stable | Future | Review finding 2026-04-03 |
+| Bet outcome tracking: reserve schema field for settlement status | Future | Review finding 2026-04-03 |
+| Colony DB periodic pruning at scale (293MB and growing) | Future | Review finding 2026-04-03 |
 | publish-executor.ts at 792 lines (threshold 500) — split VOTE/BET handler | Future | When adding new action types or executor logic |
 | v3-loop.ts at 618 lines (threshold 500) — extract ACT phase orchestration | Future | When adding new phase logic or execution modes |
+
+### Recently Resolved
+
+| Item | Resolved |
+|------|----------|
+| Wire `ingestProofs()` into v3-loop | 2026-04-03 — wired in SENSE phase |
+| Retry cap on retryable attestation failures | 2026-04-03 — retry_count in schema v6, 5-retry cap |
+| Unified daily spending cap | 2026-04-03 — checkSessionBudget() in spending-policy.ts |
+| Parallel RPC concurrency unbounded | 2026-04-03 — p-limit(5) in proof-ingestion-rpc-adapter |
+| TLSN storage fee uncapped | 2026-04-04 — Math.min(storageFee, 15) cap |
+| SSE feed event cast without schema validation | 2026-04-04 — Zod SSEPostSchema with safeParse |
+| File paths leaked in error messages | 2026-04-04 — sdk.ts already sanitized, agent-config.ts redacted |
+| Raw error .toString() coercion in event-service.ts | 2026-04-04 — err.message pattern |
+| External JSON.parse without safeParse | 2026-04-04 — generic.ts/declarative-engine.ts are deprecated shims; source-discovery.ts already in try/catch; sse-feed.ts now uses Zod |
+| Runtime guard for unrecognized targetType | 2026-04-04 — already has default case with skip + observe |
+| Faithfulness gate has no chain verification dependency | N/A — by design, documented |
 
 ### Deferred Evaluation (assessed as acceptable — revisit periodically)
 
 | Item | Original Assessment | Revisit When |
 |------|-------------------|--------------|
-| `normalize()` not shared across codebase — each module has local trim+lowercase | Pre-existing, large blast radius to consolidate | When adding new modules that need normalization |
 | `scoreAttestability` in thread-fan-out parallels `scoreClaim` in signal-first-pipeline | Intentionally different heuristics (attestability vs signal strength) | If scoring logic drifts or a unified scorer is needed |
 | Two priority mutation patterns (briefing boost + leaderboard adjustment) | Info — no abstraction needed for 2 sites | If a 3rd priority modifier is added |
-| `getRule` vs `findRule` near-duplicate in engine-helpers.ts | Pre-existing, `findRule` fabricates default for rejection logging | If a 3rd lookup pattern is added |
+| `getRule` vs `findRule` near-duplicate in engine-helpers.ts | `findRule` fabricates default for rejection logging; different return type | If a 3rd lookup pattern is added |
 | Stringly-typed targetType ("post"\|"agent") acceptable for 2 values | TypeScript union enforces compile-time | If a 3rd target type is added |
-| Swallowed error in `resolveAgentToRecentPost` — no observer access | Function is a standalone helper, can't thread observer | If debugging engagement failures |
+| Swallowed error in `resolveAgentToRecentPost` — no observer access | Standalone helper in action-executor.ts, can't thread observer | If debugging engagement failures |
 | N+1 DB queries for agent profiles via `getAgentProfile` (uncached prepare per call) | Pre-existing pattern across colony modules | When profile count exceeds 50 per batch |
-| `db.prepare()` not cached across repeated `ingestProofs` calls | better-sqlite3 caches internally, LOW severity | If profiling shows prepare() as bottleneck |
-| Array copy in `planThreadFanOut` sort — necessary to avoid mutating input | Correct behavior, confirmed by reviewer | Never — this is right |
 | `applyLeaderboardAdjustment` toLowerCase per entry — negligible at <100 entries | O(N) on small N | If leaderboard exceeds 1000 agents |
 | Magic number '-48 hours' in `resolveAgentToRecentPost` | Acceptable hardcode for recency window | If window needs tuning per agent/config |
-| Test policy objects use wrong property names (`maxPerTipDem` vs `perTipMaxDem`) — passes because `checkSessionBudget` is mocked | Tests are green, mocked policy never touches real type validation | When adding un-mocked integration tests for spending policy |
-| `defaultSpendingPolicy()` returns `dryRun: true` — budget guard is no-op in default config | Intentional safe default — callers must explicitly set `dryRun: false` for real enforcement | When deploying VOTE/BET to production — agent config must override dryRun |
-| VOTE/BET dry-run path returns early without running pipeline; PUBLISH dry-run runs full pipeline | Intentional asymmetry — VOTE/BET has no attestation pipeline to dry-run | Never — asymmetry is by design |
-| Inline `import(...)` type syntax in v3-loop.ts | Readability preference, not a bug | Next v3-loop refactor |
-| `Promise.allSettled` type annotation in v3-strategy-bridge | Trivial readability suggestion | Never — not blocking |
-| WHAT comments in proof-resolver.ts (2 inline comments restate code) | Cosmetic, function docstring already covers | Next code cleanup pass |
+| Test policy objects use wrong property names (mocked — never type-checked) | Tests are green, mocked policy bypasses real validation | When adding un-mocked integration tests for spending policy |
+| `defaultSpendingPolicy()` returns `dryRun: true` — budget guard is no-op by default | Intentional safe default — callers must explicitly opt in | When deploying VOTE/BET to production |
 | `resolveAttestation` swallows exception details in catch blocks | Acceptable — returns typed failure reason | If debugging chain resolution issues |
 | DAHR `compareProofToSnapshot` always returns "match" without URL check | Design choice: DAHR = hash-level trust, data not on-chain | If DAHR trust model changes |
-| Quartile math on small leaderboards (index 0 in 4 agents = top quartile) | Mathematically correct: rank 1 of 4 IS top quartile | Never — this is right |
-| Fabric design: no documented API auth/authorization | False positive — wallet-signed requests, documented in SDK reference | Never |
-| Fabric design: no encryption-at-rest for ColonyDatabase | Colony DB is disposable local cache per ADR-0017, not secrets | Never |
 | Fabric design: no multi-tenant data segregation | Single-agent system, no multi-tenancy requirement | If multi-agent support is added |
-| Fabric design: rate limiting undefined | False positive — fully implemented with hard clamping | Never |
-| Fabric design: document inconsistencies in phase7-design.md | Design doc shows iterative thought process, not blocking | Next doc cleanup |
+| Fabric design: document inconsistencies in phase7-design.md | Archive doc, iterative thought process, not blocking | Next doc cleanup |
 | Fabric 8a design: decouple verification from scanner as independent worker | Intentional: incremental in caller, not a separate service | If attestation volume exceeds scan budget |
-| Fabric 8a design: harden RPC client (mTLS, rate limiting, circuit breaker) | Generic infrastructure concern, SDK abstracts the chain | If running own RPC node |
-| Fabric 8a design: encrypt ColonyDB at rest | Same as above — disposable cache per ADR-0017 | Never |
-| SQL injection audit: all 63 queries clean | No issue — all parameterized | Continuous — check on every new query |
-| Secrets audit: no hardcoded keys, mnemonics, or API secrets | No issue — wallet loaded from file, never logged | Continuous |
-| Secrets audit: prototype pollution protected via safeParse on chain data | No issue — active protection in place | Continuous |
-| Error handling: no stack traces leaked, no secrets in observe() calls | No issue — consistent err.message pattern | Continuous |
+| Fabric 8a design: harden RPC client (mTLS, rate limiting, circuit breaker) | Generic infra concern, SDK abstracts the chain | If running own RPC node |
 | Error handling: state-helpers parse error may leak partial content | Minor — key name already omitted | If state format becomes sensitive |
 | Sequential proof ingestion + agent profile refresh in SENSE phase | Independent ops run serially; ~5-10s parallelizable | Next SENSE phase performance pass |
 | Sequential source fetches in SENSE phase (serial HTTP in 15s budget) | Could parallelize with concurrency limiter for more coverage | Next SENSE phase performance pass |
-| Dynamic imports per v3-loop iteration (proof-ingestion, SSE adapter) | Node caches after first load; async import() is cheap | If profiling shows import overhead |
-| SQL placeholder interpolation in `getVerifiedPostCountsByAuthor` | Safe (only `?` chars) but prevents SQLite prepare caching across author counts | If called frequently with varying author counts |
+| SQL placeholder interpolation in `getVerifiedPostCountsByAuthor` | Safe (`?` only) but prevents prepare caching across counts | If called frequently with varying author counts |
 | `Promise<any>` at SDK boundary in proof-ingestion-rpc-adapter | SDK type genuinely unknown; downstream validates structure | If SDK adds TypeScript types for RPC |
-| ~~3 unwired modules (intelligence-summary, vote-bet-codec, napi-guard)~~ | **DONE 2026-04-03** — all wired in Phase 8d | ~~Phase 8d wiring session~~ |
-| ~~VOTE/BET heavy path but no publish-executor handler yet~~ | **DONE 2026-04-03** — executor handler added | ~~Phase 8d VOTE/BET executor wiring~~ |
-| `hasColumn()` in schema.ts uses string interpolation in `db.pragma()` | Always hardcoded literal "attestations" from migration functions | If hasColumn is generalized |
+| `hasColumn()` in schema.ts uses string interpolation in `db.pragma()` | Always hardcoded literal from migration functions | If hasColumn is generalized |
 | N+1 `findContradictions` per (subject,metric) pair in contradiction scanner | Capped by maxResults:3 early-break; ~3 queries max per cycle | If claim_ledger grows beyond 500K rows |
 | SSE adapter named "SSE" but uses poll-based `/api/feed` fetch | Reflects intended future SSE integration; poll is interim | When SSE endpoint is production-ready |
 | `blockNumber: 0` sentinel for SSE-ingested posts | tx_hash PK handles dedup; blockNumber not used for ordering | If blockNumber becomes ordering-critical |
-| `createLimiter()` concurrency semaphore buried in proof-ingestion-rpc-adapter | Generic reusable primitive; only one consumer currently | When a 2nd adapter needs concurrency limiting |
-| `createTestDb()` and `addPost()` duplicated across 4 test files | Test helper code, not production; extract to shared fixture if 6+ files | Next test cleanup pass |
-| WHAT comments in contradiction-scanner and sse-sense-adapter | Borderline — aid scannability but restate obvious code | Next code cleanup pass |
+| `createLimiter()` concurrency semaphore in proof-ingestion-rpc-adapter | Generic reusable primitive; only one consumer currently | When a 2nd adapter needs concurrency limiting |
+| `createTestDb()` and `addPost()` duplicated across test files | Test helper code, not production | Next test cleanup pass if 6+ files |
+
+### Closed Deferred Items (2026-04-04 evaluation)
+
+| Item | Disposition |
+|------|-----------|
+| `normalize()` not shared across codebase | **FIXED** — consolidated in engine-helpers.ts (2026-04-04) |
+| 3 unwired modules (intelligence-summary, vote-bet-codec, napi-guard) | **DONE** — all wired in Phase 8d (2026-04-03) |
+| VOTE/BET heavy path but no publish-executor handler | **DONE** — executor handler added (2026-04-03) |
+| Array copy in `planThreadFanOut` sort | **Confirmed correct** — necessary to avoid mutating input |
+| Quartile math on small leaderboards | **Confirmed correct** — rank 1 of 4 IS top quartile |
+| `db.prepare()` not cached in ingestProofs | **Non-issue** — node:sqlite caches internally |
+| Dynamic imports per v3-loop iteration | **Non-issue** — Node module cache after first load |
+| `Promise.allSettled` type annotation in v3-strategy-bridge | **Non-issue** — TypeScript infers correctly |
+| Inline `import(...)` type syntax in v3-loop.ts | **Non-issue** — valid TypeScript, not in v3-loop.ts |
+| WHAT comments in proof-resolver.ts | **Not found** — comments removed or never existed |
+| WHAT comments in contradiction-scanner and sse-sense-adapter | **Not found** — comments removed or never existed |
+| VOTE/BET dry-run asymmetry vs PUBLISH | **By design** — VOTE/BET has no attestation pipeline |
+| Fabric design: no documented API auth | **False positive** — wallet-signed, documented in SDK ref |
+| Fabric design: no encryption-at-rest for ColonyDB | **Non-issue** — disposable cache per ADR-0017 |
+| Fabric design: encrypt ColonyDB at rest | **Non-issue** — disposable cache per ADR-0017 (duplicate) |
+| Fabric design: rate limiting undefined | **False positive** — fully implemented with hard clamping |
+
+### Continuous Monitoring (no action needed — verify on each new addition)
+
+| Area | Status |
+|------|--------|
+| SQL injection: all queries parameterized | Clean — 63+ queries audited 2026-04-03 |
+| Secrets: no hardcoded keys, mnemonics, or API secrets | Clean — wallet loaded from file, never logged |
+| Prototype pollution: safeParse on chain data | Active protection in place |
+| Error handling: no stack traces or secrets in observe() calls | Consistent err.message pattern |
 
 ---
 

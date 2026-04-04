@@ -396,13 +396,13 @@ function validatePersonaConfig(rawYaml: unknown, filePath: string): ValidatedPer
 
 // ── Loop Extension Validation ─────────────────────
 
-function parseLoopExtensions(yaml: unknown, filePath: string): string[] {
+function parseLoopExtensions(yaml: unknown, _filePath: string): string[] {
   const root = isPlainObject(yaml) ? yaml : null;
   const loop = isPlainObject(root?.loop) ? root.loop : null;
   const raw = loop?.extensions;
   if (!raw) return [];
   if (!Array.isArray(raw)) {
-    console.warn(`Warning: loop.extensions in ${filePath} is not an array — ignored`);
+    console.warn("Warning: loop.extensions is not an array — ignored");
     return [];
   }
   const validated: string[] = [];
@@ -410,7 +410,7 @@ function parseLoopExtensions(yaml: unknown, filePath: string): string[] {
     const name = String(ext || "").trim();
     if (!name) continue;
     if (!KNOWN_LOOP_EXTENSIONS.has(name)) {
-      console.warn(`Warning: unknown loop extension "${name}" in ${filePath} — ignored`);
+      console.warn(`Warning: unknown loop extension "${name}" — ignored`);
       continue;
     }
     validated.push(name);

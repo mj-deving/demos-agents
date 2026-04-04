@@ -6,16 +6,19 @@
  * Falls back to HTTP feed fetch when SSE is unavailable.
  */
 
+import { z } from "zod";
 import type { AgentEvent, EventSource } from "../../types.js";
 import { extractLatestWatermark } from "./watermark-utils.js";
 
-export interface SSEPost {
-  txHash: string;
-  author: string;
-  timestamp: number;
-  text: string;
-  category: string;
-}
+const SSEPostSchema = z.object({
+  txHash: z.string(),
+  author: z.string(),
+  timestamp: z.number(),
+  text: z.string(),
+  category: z.string(),
+});
+
+export type SSEPost = z.infer<typeof SSEPostSchema>;
 
 export interface SSESnapshot {
   timestamp: number;
@@ -132,8 +135,8 @@ async function readSSEStream(
 
     if (evt.event === "post" && evt.data) {
       try {
-        const post = JSON.parse(evt.data) as SSEPost;
-        posts.push(post);
+        const parsed = SSEPostSchema.safeParse(JSON.parse(evt.data));
+        if (parsed.success) posts.push(parsed.data);
       } catch {
         // Skip malformed post data
       }

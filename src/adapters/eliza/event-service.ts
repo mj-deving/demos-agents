@@ -8,6 +8,7 @@
 
 import type { EventSource, EventHandler } from "../../types.js";
 import type { ElizaService, ElizaRuntime } from "./types.js";
+import { toErrorMessage } from "../../toolkit/util/errors.js";
 
 export class EventSourceService implements ElizaService {
   readonly serviceType = "demos-event-source";
@@ -52,7 +53,7 @@ export class EventSourceService implements ElizaService {
             }
           }
         } catch (err) {
-          this.runtime?.log?.(`EventSourceService poll error: ${err}`);
+          this.runtime?.log?.(`EventSourceService poll error: ${toErrorMessage(err)}`);
         } finally {
           polling = false;
         }
