@@ -20,8 +20,14 @@ import { createUsageTracker } from "../src/lib/attestation/attestation-planner.j
 import { loadDeclarativeProviderAdaptersSync } from "../src/lib/sources/providers/declarative-engine.js";
 import { AUTH_PENDING_TOKEN, createSdkBridge } from "../src/toolkit/sdk-bridge.js";
 import { defaultSpendingPolicy, loadSpendingLedger } from "../src/lib/spending-policy.js";
-import type { LeaderboardResult, OracleResult, PriceData, BallotAccuracy, SignalData } from "../src/toolkit/supercolony/types.js";
 import type { ApiEnrichmentData } from "../src/toolkit/strategy/types.js";
+import {
+  LeaderboardResultSchema,
+  OracleResultSchema,
+  PriceDataSchema,
+  BallotAccuracySchema,
+  SignalDataSchema,
+} from "../src/toolkit/supercolony/api-schemas.js";
 import { executeStrategyActions } from "./action-executor.js";
 import { executePublishActions } from "./publish-executor.js";
 import { initStrategyBridge, sense, plan, computePerformance, computeAutoCalibration, type StrategyBridge } from "./v3-strategy-bridge.js";
@@ -269,21 +275,16 @@ export async function runV3Loop(
               apiEnrichment.agentCount = agents.length;
             }
           }
-          if (leaderboardRaw?.ok && leaderboardRaw.data) {
-            apiEnrichment.leaderboard = leaderboardRaw.data as LeaderboardResult;
-          }
-          if (oracleRaw?.ok && oracleRaw.data) {
-            apiEnrichment.oracle = oracleRaw.data as OracleResult;
-          }
-          if (pricesRaw?.ok && pricesRaw.data) {
-            apiEnrichment.prices = pricesRaw.data as PriceData[];
-          }
-          if (ballotAccRaw?.ok && ballotAccRaw.data) {
-            apiEnrichment.ballotAccuracy = ballotAccRaw.data as BallotAccuracy;
-          }
-          if (signalsRaw?.ok && Array.isArray(signalsRaw.data)) {
-            apiEnrichment.signals = signalsRaw.data as SignalData[];
-          }
+          const lb = leaderboardRaw?.ok ? LeaderboardResultSchema.safeParse(leaderboardRaw.data) : null;
+          if (lb?.success) apiEnrichment.leaderboard = lb.data;
+          const or = oracleRaw?.ok ? OracleResultSchema.safeParse(oracleRaw.data) : null;
+          if (or?.success) apiEnrichment.oracle = or.data;
+          const pr = pricesRaw?.ok ? PriceDataSchema.array().safeParse(pricesRaw.data) : null;
+          if (pr?.success) apiEnrichment.prices = pr.data;
+          const ba = ballotAccRaw?.ok ? BallotAccuracySchema.safeParse(ballotAccRaw.data) : null;
+          if (ba?.success) apiEnrichment.ballotAccuracy = ba.data;
+          const sg = signalsRaw?.ok ? SignalDataSchema.array().safeParse(signalsRaw.data) : null;
+          if (sg?.success) apiEnrichment.signals = sg.data;
 
           const enrichmentKeys = Object.keys(apiEnrichment);
           if (enrichmentKeys.length > 0) {
