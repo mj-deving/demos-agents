@@ -37,8 +37,15 @@ class Statement {
 }
 
 class Database {
-  constructor(filename) {
-    this.db = new DatabaseSync(filename);
+  constructor(filename, options = {}) {
+    const dbOpts = {};
+    if (options.allowExtension) dbOpts.allowExtension = true;
+    this.db = new DatabaseSync(filename, dbOpts);
+  }
+
+  enableLoadExtension(enabled) {
+    this.db.enableLoadExtension(enabled);
+    return this;
   }
 
   pragma(source, options = {}) {
@@ -77,6 +84,11 @@ class Database {
         throw error;
       }
     };
+  }
+
+  loadExtension(path) {
+    this.db.loadExtension(path);
+    return this;
   }
 
   close() {

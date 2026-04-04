@@ -11,17 +11,23 @@ declare namespace BetterSqlite3 {
     all(...params: unknown[]): unknown[];
   }
 
+  interface DatabaseOptions {
+    allowExtension?: boolean;
+  }
+
   interface Database {
     pragma(source: string, options?: { simple?: boolean }): unknown;
     exec(sql: string): this;
     prepare(sql: string): Statement;
     transaction<T extends (...args: any[]) => any>(fn: T): T;
+    enableLoadExtension(enabled: boolean): this;
+    loadExtension(path: string): this;
     close(): void;
   }
 }
 
 declare const BetterSqlite3: {
-  new(filename: string): BetterSqlite3.Database;
+  new(filename: string, options?: BetterSqlite3.DatabaseOptions): BetterSqlite3.Database;
   prototype: BetterSqlite3.Database;
 };
 

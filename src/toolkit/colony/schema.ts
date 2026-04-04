@@ -2,7 +2,7 @@ import DatabaseConstructor from "better-sqlite3";
 
 export type ColonyDatabase = InstanceType<typeof DatabaseConstructor>;
 
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 const BASE_SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS _meta (
@@ -272,6 +272,23 @@ const MIGRATIONS: Record<number, Migration> = {
         ON attestations(post_tx_hash, chain_verified);
     `);
   },
+  7: (db) => {
+    // Phase 5.6: Vector embeddings for semantic search via sqlite-vec.
+    // vec0 virtual table stores 384-dim float32 embeddings keyed by post rowid.
+    // Requires sqlite-vec extension to be loaded before this migration runs.
+    db.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS vec_posts USING vec0(embedding float[384]);
+    `);
+    // Tracking table: maps post rowid to vec_posts rowid and records embedding state.
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS post_embeddings (
+        post_rowid INTEGER PRIMARY KEY,
+        vec_rowid INTEGER NOT NULL,
+        embedded_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_post_embeddings_vec ON post_embeddings(vec_rowid);
+    `);
+  },
 };
 
 function getMetaValue(db: ColonyDatabase, key: string): string | null {
@@ -326,11 +343,22 @@ function applyMigrations(db: ColonyDatabase, currentVersion: number): void {
 }
 
 export function initColonyCache(dbPath: string): ColonyDatabase {
-  const db = new DatabaseConstructor(dbPath);
+  const db = new DatabaseConstructor(dbPath, { allowExtension: true });
 
   db.pragma("foreign_keys = ON");
   db.pragma("journal_mode = WAL");
   runIntegrityCheck(db);
+
+  // Load sqlite-vec extension for vector search (Phase 5.6)
+  try {
+    db.enableLoadExtension(true);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sqliteVec = require("sqlite-vec");
+    sqliteVec.load(db);
+    db.enableLoadExtension(false);
+  } catch {
+    // sqlite-vec not available — vector search will be disabled
+  }
 
   const initialize = db.transaction(() => {
     db.exec("CREATE TABLE IF NOT EXISTS _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");

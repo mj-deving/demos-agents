@@ -45,9 +45,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@huggingface/transformers": "^4.0.1",
     "@kynesyslabs/demosdk": "^2.11.5",
     "better-sqlite3": "file:vendor/better-sqlite3",
     "proper-lockfile": "^4.1.2",
+    "sqlite-vec": "^0.1.9",
     "yaml": "^2.8.2",
     "zod": "^3.25.76"
   },
