@@ -275,16 +275,17 @@ export async function runV3Loop(
               apiEnrichment.agentCount = agents.length;
             }
           }
-          const lb = leaderboardRaw?.ok ? LeaderboardResultSchema.safeParse(leaderboardRaw.data) : null;
-          if (lb?.success) apiEnrichment.leaderboard = lb.data;
-          const or = oracleRaw?.ok ? OracleResultSchema.safeParse(oracleRaw.data) : null;
-          if (or?.success) apiEnrichment.oracle = or.data;
-          const pr = pricesRaw?.ok ? PriceDataSchema.array().safeParse(pricesRaw.data) : null;
-          if (pr?.success) apiEnrichment.prices = pr.data;
-          const ba = ballotAccRaw?.ok ? BallotAccuracySchema.safeParse(ballotAccRaw.data) : null;
-          if (ba?.success) apiEnrichment.ballotAccuracy = ba.data;
-          const sg = signalsRaw?.ok ? SignalDataSchema.array().safeParse(signalsRaw.data) : null;
-          if (sg?.success) apiEnrichment.signals = sg.data;
+          const validate = <T>(name: string, raw: { ok: boolean; data: unknown } | null, schema: { safeParse: (d: unknown) => { success: boolean; data?: T; error?: { message: string } } }): T | undefined => {
+            if (!raw?.ok) return undefined;
+            const r = schema.safeParse(raw.data);
+            if (r.success) return r.data as T;
+            deps.observe("warning", `API schema validation failed: ${name}`, { source: "v3-loop:enrichment", error: r.error?.message }); return undefined;
+          };
+          apiEnrichment.leaderboard = validate("leaderboard", leaderboardRaw, LeaderboardResultSchema);
+          apiEnrichment.oracle = validate("oracle", oracleRaw, OracleResultSchema);
+          apiEnrichment.prices = validate("prices", pricesRaw, PriceDataSchema.array());
+          apiEnrichment.ballotAccuracy = validate("ballot", ballotAccRaw, BallotAccuracySchema);
+          apiEnrichment.signals = validate("signals", signalsRaw, SignalDataSchema.array());
 
           const enrichmentKeys = Object.keys(apiEnrichment);
           if (enrichmentKeys.length > 0) {

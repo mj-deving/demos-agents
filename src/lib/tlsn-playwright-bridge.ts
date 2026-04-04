@@ -109,8 +109,8 @@ interface BrowserTlsnWindow extends Window {
 
 const require = createRequire(import.meta.url);
 const TLSN_MAX_BYTES = 16_384;
-/** Maximum DEM fee for storing a TLSN proof on-chain. Derived from TLSN_MAX_BYTES: 1 + ceil(16384/1024) = 17. */
-const TLSN_MAX_STORAGE_FEE_DEM = 1 + Math.ceil(TLSN_MAX_BYTES / 1024);
+/** Maximum DEM fee for storing a TLSN proof on-chain. Accounts for proof metadata beyond raw transcript (2x safety margin). */
+const TLSN_MAX_STORAGE_FEE_DEM = 2 * (1 + Math.ceil(TLSN_MAX_BYTES / 1024));
 const TLSN_TOKEN_POLL_ATTEMPTS = 30;
 const TLSN_TOKEN_POLL_INTERVAL_MS = 1000;
 
@@ -297,7 +297,10 @@ async function storeTlsnProof(
   proof: string
 ): Promise<{ txHash: string; storageFee: number }> {
   const proofSizeKB = Math.ceil(proof.length / 1024);
-  const storageFee = Math.min(1 + proofSizeKB, TLSN_MAX_STORAGE_FEE_DEM);
+  const storageFee = 1 + proofSizeKB;
+  if (storageFee > TLSN_MAX_STORAGE_FEE_DEM) {
+    throw new Error(`TLSN proof too large: ${proofSizeKB}KB would cost ${storageFee} DEM (cap: ${TLSN_MAX_STORAGE_FEE_DEM})`);
+  }
 
   const tx = await createTlsnStoreTransaction(demos, tokenId, proof, "onchain", storageFee);
   const confirmResult = await DemosTransactions.confirm(tx, demos);
