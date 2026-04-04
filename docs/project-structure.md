@@ -30,8 +30,9 @@ demos-agents/
 │   ├── math/                         # Ring buffer, MAD, z-score, winsorize
 │   ├── network/                      # fetch-with-timeout, storage-client
 │   ├── supercolony/                  # api-client, chain-identity, chain-utils, scoring, types
-│   ├── colony/                       # Colony DB: schema, posts, reactions, claims, scanner, dedup, intelligence
-│   ├── strategy/                     # Strategy engine: decideActions(), config-loader, types
+│   ├── colony/                       # Colony DB: schema, posts, reactions, claims, scanner, dedup, intelligence, embeddings, search
+│   ├── supercolony/                  # api-client, api-schemas (Zod), chain-identity, chain-utils, scoring, types
+│   ├── strategy/                     # Strategy engine: decideActions(), config-loader, types (split: engine, engine-helpers, engine-enrichment, engine-contradiction)
 │   └── util/                         # errors.ts
 │
 ├── src/                              # Core types + business logic
@@ -58,6 +59,10 @@ demos-agents/
 │   ├── event-runner.ts               # Long-lived reactive process
 │   ├── hive-query.ts                 # On-chain query CLI (5 subcommands)
 │   ├── backfill-colony.ts            # Full chain history backfill
+│   ├── backfill-embeddings.ts        # Vector embedding backfill for semantic search
+│   ├── publish-helpers.ts            # Source resolution + attestation helpers (extracted)
+│   ├── publish-types.ts              # Shared types for publish executor
+│   ├── v3-loop-helpers.ts            # V3 loop helper functions (extracted)
 │   └── ...                           # audit, scan-feed, engage, gate, verify, identity, etc.
 │
 ├── agents/                           # Agent definitions (YAML persona + strategy)
