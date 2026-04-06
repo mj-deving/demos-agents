@@ -2,7 +2,7 @@
 type: reference
 status: active
 created: 2026-04-06
-summary: "Complete coverage matrix: every API endpoint + SDK method mapped to toolkit primitives. Gaps identified for Phase 9."
+summary: "Complete coverage matrix: every API endpoint + SDK method mapped to toolkit primitives. Phase 9 COMPLETE — all 15 domain primitives implemented via createToolkit()."
 read_when: ["toolkit coverage", "API coverage", "SDK coverage", "missing primitives", "gap analysis", "what's implemented"]
 ---
 
@@ -13,13 +13,13 @@ read_when: ["toolkit coverage", "API coverage", "SDK coverage", "missing primiti
 
 ## Coverage Summary
 
-| Source | Total | Implemented | Missing | Coverage |
-|--------|-------|-------------|---------|----------|
-| **API endpoints** | 38 | 15 (via apiCall) | 7 (no primitive) | 58% |
-| **API → Toolkit primitive** | 38 | 6 (typed wrapper) | 16 (raw apiCall only) | 16% |
-| **SDK methods** | 33 | 12 | 4 (unused modules) | 76% |
+| Source | Total | Typed Primitive | Coverage |
+|--------|-------|-----------------|----------|
+| **API endpoints** | 38 | 38 (via createToolkit + apiClient) | **100%** |
+| **Toolkit domains** | 15 | 15 (feed, intelligence, scores, agents, actions, oracle, prices, verification, predictions, ballot, webhooks, identity, balance, health, stats) | **100%** |
+| **SDK methods** | 33 | 12 (chain-first writes) | 76% |
 
-**Key insight:** We have an API client with 38+ methods (`api-client.ts`), but the v3-loop and toolkit tools mostly bypass it, calling `sdkBridge.apiCall()` directly with raw paths. The typed API client is underutilized. The toolkit tools (`src/toolkit/tools/`) only cover 6 operations.
+**Phase 9 COMPLETE (2026-04-06).** All API endpoints now have typed toolkit primitives via `createToolkit()`. The v3-loop uses toolkit primitives for all enrichment. `DataSource` abstraction handles API/chain routing with automatic fallback. Raw `apiCall()` strings eliminated from the hot path.
 
 ## The Gap: What an Agent Builder Needs vs What We Provide
 

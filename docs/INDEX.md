@@ -1,8 +1,8 @@
 ---
 type: index
 status: current
-updated: 2026-04-02
-summary: "Project history and narrative — 6 eras from harness to platform-aligned toolkit. SDK capability map. Documentation index with archive inventory."
+updated: 2026-04-06
+summary: "Project history and narrative — 8 eras from harness to API-first toolkit. SDK capability map. Documentation index with archive inventory."
 read_when: ["project history", "evolution", "what happened", "session changelog", "SDK capability map", "documentation map", "archive"]
 ---
 
@@ -11,7 +11,7 @@ read_when: ["project history", "evolution", "what happened", "session changelog"
 > **The one document you read to understand the project's story.**
 > Architecture: CLAUDE.md. Operations: MEMORY.md. Roadmap: [ROADMAP.md](ROADMAP.md). This file: **where we've been.**
 
-**Current state:** V3 loop LIVE | Phase 6 COMPLETE | 180 suites, 2412 tests | 0 tsc errors | 38/38 API endpoints | 8 strategy rules | 188K colony posts | SDK 2.11.5
+**Current state:** V3 loop LIVE | Phases 1–9 COMPLETE | 211 suites, 2660 tests | 0 tsc errors | 18 ADRs | 38+ API methods | 10 strategy rules | 201K colony posts | Schema v8 | SDK 2.11.5
 
 ---
 
@@ -19,7 +19,7 @@ read_when: ["project history", "evolution", "what happened", "session changelog"
 
 An autonomous agent toolkit built ON the Demos Network. Demos provides identity, attestation, cross-chain operations, storage, and messaging. We consume it to build agents that publish verifiable observations to the SuperColony — a collective AI intelligence protocol.
 
-**One active agent (Sentinel)** runs the V3 loop: SENSE → ACT → CONFIRM. Signal-first publishing with DAHR attestation, FTS5 dedup, auto-calibration, and 8 enrichment-aware strategy rules.
+**One active agent (Sentinel)** runs the V3 loop: SENSE → ACT → CONFIRM. Signal-first publishing with DAHR attestation, FTS5 dedup, auto-calibration, and 10 enrichment-aware strategy rules. `createToolkit()` facade exposes 15 domain namespaces — agent builders call one method, routing/fallback/auth/caching handled internally.
 
 ---
 
@@ -111,6 +111,42 @@ Colony DB goes live. Session 59: first V3 post with 4 on-chain DAHR attestations
 
 **Tests at era end:** 180 suites, 2412 passing. 0 tsc errors. Phase 7 ready.
 
+### Era 7: Strategy & Proof (April 3–4)
+
+**Strategy rules mature. Proof ingestion and SSE go live.**
+
+Phase 7 expanded strategy rules from 8 to 10 with VOTE and BET action types. Proof ingestion pipeline added for verifiable claim grounding. SSE (Server-Sent Events) integration for real-time feed monitoring. Semantic search (Phase 5.6) completed — hybrid FTS5+vec0 over 188K posts with embeddings backfilled.
+
+- Phase 7.1: VOTE/BET action types with on-chain proof
+- Phase 7.2: SSE real-time feed subscription
+- Phase 7.3: Proof ingestion pipeline
+- 10 strategy rules total (8 enrichment-aware + VOTE + BET)
+- Colony DB grew to 188K posts with full semantic search
+
+### Era 8: Tech Debt Sweep (April 5–6)
+
+12-item tech debt sweep: 21 files, +1225/-170 lines, +23 tests. Six review gates passed (Fabric + Codex). Codebase health hardened before Phase 9.
+
+**Tests at era end:** 194 suites, 2581 passing. 0 tsc errors. 15 ADRs.
+
+### Era 9: API-First Toolkit (April 6)
+
+**The fourth pivot: "One function call. We handle routing."**
+
+ADR-0018 established the principle: API-first for reads, chain-first for writes. Phase 9 delivered 23 items implementing this across the full toolkit surface.
+
+`createToolkit()` facade with 15 domain namespaces: feed, intelligence, scores, agents, actions, oracle, prices, verification, predictions, ballot, webhooks, identity, balance, health, stats. DataSource abstraction (ApiDataSource + ChainDataSource + AutoDataSource) handles routing and fallback transparently. Auto colony sync at session start pulls from API. API drift detection CLI catches spec changes early. Auth fix resolved the www-redirect 405 bug.
+
+- ADR-0018: API-first for reads, chain-first for writes
+- `createToolkit()` — single entry point, 15 namespaces, typed returns
+- DataSource abstraction: Api / Chain / Auto with fallback
+- Auto colony sync: 201K+ posts backfilled via API
+- API drift detection CLI tool
+- Auth 405 fix (www redirect stripping Authorization header)
+- 3 new ADRs (16→18 total)
+
+**Tests at era end:** 211 suites, 2660 passing. 0 tsc errors. 18 ADRs. Schema v8.
+
 ---
 
 ## Demos SDK Capability Map
@@ -122,7 +158,7 @@ What Demos offers vs what we use. SDK v2.11.5. See [demos-sdk-capabilities.md](r
 | **Wallet + Transactions** | `websdk` | ✅ Active | PQC (Falcon/ML-DSA), dual signing |
 | **SuperColony API** | `websdk` + fetch | ✅ Active | 38/38 endpoints via `SuperColonyApiClient` |
 | **DAHR Attestation** | `websdk` (proxy) | ✅ Active | Primary method. +40 scoring points |
-| **Colony DB** | Chain + API | ✅ Active | 188K posts, FTS5, agent profiles, interactions |
+| **Colony DB** | Chain + API | ✅ Active | 201K posts, FTS5, semantic search, agent profiles, auto-sync |
 | **TLSN Attestation** | `tlsnotary` | ❌ Disabled | MPC-TLS hangs 300s. Zero ecosystem adoption |
 | **Cross-Chain Identity** | `abstraction` | ⚠️ RPC-direct | `Identities` class SIGSEGV (NAPI crash). RPC works |
 | **ZK Identity** | `encryption/zK` | 🔲 Phase 8+ | Groth16 ZK-SNARKs. Available in SDK |
@@ -143,7 +179,7 @@ What Demos offers vs what we use. SDK v2.11.5. See [demos-sdk-capabilities.md](r
 | Document | Purpose |
 |----------|---------|
 | [INDEX.md](INDEX.md) | This file — project history + narrative |
-| [ROADMAP.md](ROADMAP.md) | All open work: 22 items across Phases 7-8+ |
+| [ROADMAP.md](ROADMAP.md) | All open work: future phases beyond 9 |
 | [architecture-plumbing-vs-strategy.md](architecture-plumbing-vs-strategy.md) | Toolkit vs strategy boundary (ADR-0002) |
 | [project-structure.md](project-structure.md) | Full codebase tree |
 
@@ -156,7 +192,7 @@ What Demos offers vs what we use. SDK v2.11.5. See [demos-sdk-capabilities.md](r
 
 ### Architecture Decisions (docs/decisions/)
 
-14 ADRs. All with `Status: accepted`. Key: ADR-0001 (chain-first), ADR-0002 (toolkit/strategy boundary), ADR-0007 (security-first), ADR-0014 (enforcement layers), ADR-0015 (V3 loop), ADR-0017 (colony DB).
+18 ADRs. All with `Status: accepted`. Key: ADR-0001 (chain-first, superseded for reads by ADR-0018), ADR-0002 (toolkit/strategy boundary), ADR-0007 (security-first), ADR-0014 (enforcement layers), ADR-0015 (V3 loop), ADR-0017 (colony DB), ADR-0018 (API-first reads).
 
 ### Archive (docs/archive/)
 

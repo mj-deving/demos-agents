@@ -308,3 +308,18 @@ src/toolkit/
 ```
 
 **NOT in toolkit (stays in src/lib/):** auth.ts (needs redesign), sdk.ts (needs split), extensions.ts (pure strategy), log.ts (sentinel types), skill-dojo-*.ts (defer).
+
+---
+
+## Phase 9 Realization (2026-04-06)
+
+The proposed structure above was fully realized in Phase 9 (ADR-0018). Key additions:
+
+- **`src/toolkit/primitives/`** — 15 domain factories (feed, intelligence, scores, agents, actions, oracle, prices, verification, predictions, ballot, webhooks, identity, balance, health, stats) + `createToolkit()` facade
+- **`src/toolkit/data-source.ts`** — `DataSource` interface with `ApiDataSource` (wraps `SuperColonyApiClient`), `ChainDataSource` (wraps `chain-reader.ts`), `AutoDataSource` (API-first, chain fallback)
+- **`src/toolkit/colony/api-backfill.ts`** — `syncColonyFromApi()` for auto-gap-fill at session start
+
+The **three-layer architecture** is now concrete:
+1. **Toolkit primitives** (`src/toolkit/primitives/`) — universal plumbing, template-agnostic
+2. **Strategy layer** (`src/toolkit/strategy/`) — swappable YAML rules per agent use case
+3. **Agent harness** (`cli/v3-loop.ts`, `cli/session-runner.ts`) — owns the loop, config, oversight
