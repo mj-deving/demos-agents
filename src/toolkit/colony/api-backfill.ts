@@ -41,7 +41,7 @@ function toApiCachedPost(post: { txHash: string; author: string; timestamp: numb
     author: post.author,
     blockNumber: (post as Record<string, unknown>).blockNumber as number ?? 0,
     timestamp: String(post.timestamp),
-    replyTo: payload.replyTo ? String(payload.replyTo) : null,
+    replyTo: (payload.replyTo ?? payload.reply_to) ? String(payload.replyTo ?? payload.reply_to) : null,
     tags: Array.isArray(payload.tags) ? payload.tags.map(String) : [],
     text: String(payload.text ?? ""),
     rawData: {
@@ -53,10 +53,14 @@ function toApiCachedPost(post: { txHash: string; author: string; timestamp: numb
 }
 
 /**
- * Sync colony DB with the SuperColony API feed.
+ * Sync colony DB with the SuperColony API feed (contiguous gap fill).
  *
  * Fetches pages newest-first. Stops when a full page is duplicates
- * (we've bridged the gap). Handles empty DB, small gaps, and no-ops.
+ * (the newest contiguous gap is bridged). Handles empty DB, small gaps, and no-ops.
+ *
+ * NOTE: This only fills contiguous gaps from the newest data backward.
+ * Sparse holes in older data (e.g., from partial manual backfills) are NOT detected.
+ * Use backfillFromApi() with an explicit limit for full historical recovery.
  */
 export async function syncColonyFromApi(
   db: ColonyDatabase,

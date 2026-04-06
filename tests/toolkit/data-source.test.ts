@@ -106,6 +106,39 @@ describe("ApiDataSource", () => {
     expect(posts[0].tags).toEqual(["test"]);
   });
 
+  it("normalizes snake_case reply_to from payload", async () => {
+    const feedPost = makeFeedPost();
+    // Simulate API returning snake_case reply_to instead of camelCase
+    (feedPost.payload as Record<string, unknown>).reply_to = "0xparent1";
+    delete (feedPost.payload as Record<string, unknown>).replyTo;
+    const client = mockApiClient({
+      getFeed: vi.fn().mockResolvedValue({
+        ok: true,
+        data: { posts: [feedPost], hasMore: false },
+      } satisfies ApiResult<FeedResponse>),
+    });
+    const ds = new ApiDataSource(client);
+    const posts = await ds.getRecentPosts(10);
+
+    expect(posts[0].replyTo).toBe("0xparent1");
+  });
+
+  it("prefers camelCase replyTo over snake_case", async () => {
+    const feedPost = makeFeedPost();
+    (feedPost.payload as Record<string, unknown>).replyTo = "0xcamel";
+    (feedPost.payload as Record<string, unknown>).reply_to = "0xsnake";
+    const client = mockApiClient({
+      getFeed: vi.fn().mockResolvedValue({
+        ok: true,
+        data: { posts: [feedPost], hasMore: false },
+      } satisfies ApiResult<FeedResponse>),
+    });
+    const ds = new ApiDataSource(client);
+    const posts = await ds.getRecentPosts(10);
+
+    expect(posts[0].replyTo).toBe("0xcamel");
+  });
+
   it("passes category filter to getFeed", async () => {
     const client = mockApiClient({
       getFeed: vi.fn().mockResolvedValue({

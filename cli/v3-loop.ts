@@ -83,9 +83,16 @@ export async function runV3Loop(
     deps.observe("warning", "Auth failed — continuing in chain-only mode", { source: "v3-loop:auth" });
   }
 
-  const apiClient = new SuperColonyApiClient({
-    getToken: async () => authToken ?? loadAuthCache(address)?.token ?? null,
-  });
+  const getToken = async () => authToken ?? loadAuthCache(address)?.token ?? null;
+  const apiClient = new SuperColonyApiClient({ getToken });
+
+  // Authenticated apiCall for action executor (ENGAGE reactions, TIP validation).
+  // Uses sdk.ts apiCall with the auth token — has correct base URL, www-strip, retries.
+  const { apiCall: rawApiCall } = await import("../src/lib/network/sdk.js");
+  const authenticatedApiCall = async (path: string, options?: RequestInit) => {
+    const token = await getToken();
+    return rawApiCall(path, token, options);
+  };
   const apiDataSource = new ApiDataSource(apiClient);
   const chainDataSource = new ChainDataSource(sdkBridge as any);
   const dataSource = new AutoDataSource(apiDataSource, chainDataSource);
@@ -236,12 +243,12 @@ export async function runV3Loop(
       }
 
       // ── SSE Feed (optional, time-bounded) ── Feature 7
-      if (sdkBridge.apiAccess === "authenticated") {
+      if (authToken) {
         try {
           const { readSSESense } = await import("./sse-sense-adapter.js");
           const sseResult = await readSSESense(
             bridge.db,
-            sdkBridge.apiCall.bind(sdkBridge),
+            authenticatedApiCall,
             deps.observe,
             { timeoutMs: 5_000, maxEvents: 100 },
           );
@@ -388,7 +395,7 @@ export async function runV3Loop(
           light.length > 0
             ? await executeStrategyActions(light, {
                 bridge: {
-                  apiCall: sdkBridge.apiCall.bind(sdkBridge),
+                  apiCall: authenticatedApiCall,
                   publishHivePost: sdkBridge.publishHivePost.bind(sdkBridge),
                   transferDem: (to, amount) => sdkBridge.transferDem(to, amount, "Strategy action tip"),
                 },

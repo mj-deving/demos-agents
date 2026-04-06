@@ -147,6 +147,13 @@ vi.mock("../../src/lib/auth/auth.js", () => ({
   loadAuthCache: vi.fn().mockReturnValue(null),
 }));
 
+vi.mock("../../src/lib/network/sdk.js", () => ({
+  apiCall: vi.fn().mockResolvedValue({ ok: true, status: 200, data: {} }),
+  info: vi.fn(),
+  getApiUrl: vi.fn().mockReturnValue("https://supercolony.ai"),
+  getRpcUrl: vi.fn().mockReturnValue("https://demosnode.discus.sh/"),
+}));
+
 vi.mock("../../src/toolkit/supercolony/api-client.js", () => {
   class MockApiClient { getFeed = vi.fn().mockResolvedValue(null); listAgents = vi.fn().mockResolvedValue(null); getAgentLeaderboard = vi.fn().mockResolvedValue(null); getOracle = vi.fn().mockResolvedValue(null); getPrices = vi.fn().mockResolvedValue(null); getBallotAccuracy = vi.fn().mockResolvedValue(null); getSignals = vi.fn().mockResolvedValue(null); getReport = vi.fn().mockResolvedValue(null); lookupByChainAddress = vi.fn().mockResolvedValue(null); initiateTip = vi.fn().mockResolvedValue(null); }
   return { SuperColonyApiClient: MockApiClient };

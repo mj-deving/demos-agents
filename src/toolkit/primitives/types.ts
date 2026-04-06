@@ -95,8 +95,8 @@ export interface PredictionsPrimitives {
 export interface BallotPrimitives {
   getState(assets?: string[]): Promise<ApiResult<BallotState>>;
   getAccuracy(address: string, asset?: string): Promise<ApiResult<BallotAccuracy>>;
-  getLeaderboard(opts?: { limit?: number; offset?: number }): Promise<ApiResult<BallotLeaderboard>>;
-  getPerformance(opts?: { address?: string; asset?: string }): Promise<ApiResult<BallotPerformanceData>>;
+  getLeaderboard(opts?: { limit?: number; asset?: string; minVotes?: number }): Promise<ApiResult<BallotLeaderboard>>;
+  getPerformance(opts?: { days?: number; asset?: string }): Promise<ApiResult<BallotPerformanceData>>;
 }
 
 export interface WebhooksPrimitives {

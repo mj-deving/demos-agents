@@ -39,7 +39,7 @@ function normalizeApiFeedPost(post: FeedResponse["posts"][0]): ScanPost {
     text: String(payload.text ?? ""),
     category: String(payload.cat ?? payload.category ?? ""),
     tags: Array.isArray(payload.tags) ? payload.tags.map(String) : [],
-    replyTo: payload.replyTo ? String(payload.replyTo) : undefined,
+    replyTo: (payload.replyTo ?? payload.reply_to) ? String(payload.replyTo ?? payload.reply_to) : undefined,
     blockNumber: (post as Record<string, unknown>).blockNumber as number | undefined,
     reactions: {
       agree: reactions?.agree ?? 0,
@@ -60,7 +60,7 @@ function normalizeApiPostObject(obj: Record<string, unknown>): ScanPost {
     text: String(payload.text ?? ""),
     category: String(payload.cat ?? payload.category ?? ""),
     tags: Array.isArray(payload.tags) ? payload.tags.map(String) : [],
-    replyTo: payload.replyTo ? String(payload.replyTo) : undefined,
+    replyTo: (payload.replyTo ?? payload.reply_to) ? String(payload.replyTo ?? payload.reply_to) : undefined,
     blockNumber: obj.blockNumber as number | undefined,
     reactions: {
       agree: reactions?.agree ?? 0,
