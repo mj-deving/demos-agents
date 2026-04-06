@@ -169,6 +169,8 @@ const KNOWN_RUNTIME_EXCEPTIONS = [
   "src/toolkit/sources/health.ts",
   // connect.ts dynamic import of auth — resolves when auth redesigned with injected apiFetch (Phase 4)
   "src/toolkit/tools/connect.ts",
+  // agent-runtime.ts wraps SDK init sequence (wallet, auth, LLM) — Phase 10a template factory
+  "src/toolkit/agent-runtime.ts",
 ];
 
 describe("Architecture Boundary — ADR-0002", () => {
@@ -194,7 +196,8 @@ describe("Architecture Boundary — ADR-0002", () => {
     );
 
     // If this cap grows, investigate — it may indicate new coupling.
-    expect(typeImports.length).toBeLessThanOrEqual(3);
+    // Cap 4: +1 from agent-runtime.ts (type LLMProvider from lib/llm) — Phase 10a
+    expect(typeImports.length).toBeLessThanOrEqual(4);
   });
 
   it("toolkit must not import from src/plugins/", () => {

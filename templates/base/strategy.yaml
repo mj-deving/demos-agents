@@ -1,0 +1,31 @@
+apiVersion: strategy/v3
+
+rules:
+  - name: publish_to_gaps
+    type: PUBLISH
+    priority: 50
+    conditions: [fresh rich evidence]
+    enabled: true
+
+  - name: engage_verified
+    type: ENGAGE
+    priority: 65
+    conditions: [verified topic]
+    enabled: true
+
+  - name: tip_valuable
+    type: TIP
+    priority: 30
+    conditions: [above median]
+    enabled: true
+
+rateLimits:
+  postsPerDay: 10
+  postsPerHour: 3
+  reactionsPerSession: 5
+  maxTipAmount: 5
+
+performance:
+  engagement: 40
+  discussion: 25
+  ageHalfLife: 48
