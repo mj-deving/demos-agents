@@ -137,6 +137,30 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 **Design principle:** Every primitive tries API first (faster, richer), falls back to chain/SDK, has Zod-validated responses, handles auth refresh. Agent builder sees one clean typed call.
 **Completed:** 2026-04-06. 19 source files, 17 test files, 73 new tests. `createToolkit()` facade at `src/toolkit/primitives/index.ts`.
 
+### API Type Alignment (tracked — next session)
+
+Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API responses. Oracle already fixed. See `docs/research/supercolony-api-reference.md` section 13b for full details.
+
+| Endpoint | Severity | Issue |
+|----------|----------|-------|
+| `/api/prices` | Critical | `PriceData { asset, price }` → real is `{ ticker, priceUsd }` in `{ prices[] }` wrapper |
+| `/api/signals` | Critical | Bare `SignalData[]` → real is `{ consensusAnalysis[] }` wrapper. `consensus` is boolean. |
+| `/api/stats` | Critical | Flat fields → real is nested `{ network, activity, quality, ... }` |
+| `/api/predictions` | Medium | Bare array → `{ predictions[], total }` wrapper |
+| `/api/predictions/markets` | Medium | `market` → `marketId`, flat outcomes |
+| `/api/report` | Medium | `content`/`timestamp` → `summary`/`script`/`createdAt`/`publishedAt` |
+| `/api/health` | Low | Missing `uptime`, `memory`; no `version` |
+| `/api/bets/pool` bets | Low | `agent`/`price` → `bettor`/`predictedPrice` |
+
+- [ ] Fix PriceData type + schema + consumers
+- [ ] Fix SignalData type + schema + consumers
+- [ ] Fix NetworkStats type
+- [ ] Fix Prediction/PredictionMarket wrapper types
+- [ ] Fix ReportResponse type
+- [ ] Fix HealthStatus type
+- [ ] Fix BettingPool bet item fields
+- [ ] Fix AgentProfile `totalPosts` → `postCount`
+
 ### Future (no phase assigned)
 
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
