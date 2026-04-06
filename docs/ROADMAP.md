@@ -2,7 +2,7 @@
 type: roadmap
 status: active
 updated: 2026-04-04
-open_items: 11
+open_items: 26
 completed_phases: 8
 tests: 2558
 suites: 193
@@ -95,16 +95,45 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 ---
 
-### Phase 9: API-First Architecture (ADR-0018)
+### Phase 9: API-First Toolkit Primitives (ADR-0018)
 
-- [ ] 9a -- DataSource abstraction: `ApiDataSource` + `ChainDataSource` implementing shared interface, config flag to select primary, automatic fallback on failure
-- [ ] 9b -- API-based colony backfill: paginate `/api/feed?limit=100&offset=N` to fill sync gaps, verify against docs/research/supercolony-api-reference.md for endpoint shape
-- [ ] 9c -- API drift detection tool: `cli/api-health-check.ts` — for each documented endpoint, call it, compare response shape against reference, report MATCH/DRIFT/GONE/NEW
-- [ ] 9d -- Wire ApiDataSource into v3-loop SENSE phase as primary read path (chain as fallback)
-- [ ] 9e -- Remove dead `publishHiveReaction` on-chain code (reactions are API-only per platform design)
+> The toolkit's value proposition: agent builders call one typed method, we handle API/chain routing, fallback, auth, caching, error handling. All 38 API endpoints + SDK methods wrapped as clean primitives.
 
-**Spec:** ADR-0018 (`docs/decisions/0018-api-first-chain-fallback.md`), API ref (`docs/research/supercolony-api-reference.md`), SDK ref (`docs/research/demos-sdk-capabilities.md`)
-**Key constraint:** Both API and chain routes must return the same `ScanPost` shape. Verify all API endpoints against live responses before implementation — Demos iterates fast.
+**9.1 — Foundation**
+- [ ] 9a -- DataSource abstraction: `ApiDataSource` + `ChainDataSource` implementing shared interface, config flag `"api" | "chain" | "auto"`, automatic fallback on failure
+- [ ] 9b -- API-based colony backfill: paginate `/api/feed?limit=100&offset=N` to fill sync gaps
+- [ ] 9c -- API drift detection tool: `cli/api-health-check.ts` — call each documented endpoint, compare response shape, report MATCH/DRIFT/GONE/NEW
+- [ ] 9d -- Wire ApiDataSource into v3-loop SENSE phase as primary read path
+- [ ] 9e -- Remove dead `publishHiveReaction` on-chain code
+
+**9.2 — P0 Toolkit Primitives (core SENSE + strategy)**
+- [ ] 9f -- `toolkit.feed.getRecent()` — API-first paginated feed with chain fallback, returns enriched ScanPost (scores, reactions)
+- [ ] 9g -- `toolkit.feed.search()` — wraps `/api/feed/search` (text, category, author, date filters)
+- [ ] 9h -- `toolkit.feed.getPost()` — wraps `/api/post/{tx}` with chain `getTxByHash` fallback
+- [ ] 9i -- `toolkit.feed.getThread()` — wraps `/api/feed/thread/{tx}` with chain `getRepliesTo` fallback
+- [ ] 9j -- `toolkit.intelligence.getSignals()` — wraps `/api/signals`, typed response
+- [ ] 9k -- `toolkit.intelligence.getReport()` — wraps `/api/report`, typed response
+
+**9.3 — P1 Toolkit Primitives (engagement + context)**
+- [ ] 9l -- `toolkit.scores.getLeaderboard()` — wraps `/api/scores/agents`
+- [ ] 9m -- `toolkit.agents.list()` / `toolkit.agents.getProfile()` — wraps `/api/agents`, `/api/agent/{addr}`
+- [ ] 9n -- `toolkit.actions.tip()` — unified: API validation (`POST /api/tip`) + chain transfer, one call
+- [ ] 9o -- `toolkit.oracle.get()` / `toolkit.prices.get()` — wraps `/api/oracle`, `/api/prices`
+- [ ] 9p -- `toolkit.agents.getIdentities()` — wraps `/api/agent/{addr}/identities`
+
+**9.4 — P2 Toolkit Primitives (verification + predictions)**
+- [ ] 9q -- `toolkit.verification.verifyDahr()` / `toolkit.verification.verifyTlsn()` — API-first, chain fallback
+- [ ] 9r -- `toolkit.predictions.*` — query, resolve, markets
+- [ ] 9s -- `toolkit.ballot.*` — state, accuracy, leaderboard, performance
+
+**9.5 — P3 Toolkit Primitives (infrastructure)**
+- [ ] 9t -- `toolkit.webhooks.*` — CRUD for push notifications
+- [ ] 9u -- `toolkit.identity.lookup()` — wraps `/api/identity`
+- [ ] 9v -- `toolkit.balance.get()` — API-first with SDK `getAddressInfo` fallback
+- [ ] 9w -- `toolkit.health.check()` + `toolkit.stats.get()` — system monitoring
+
+**Spec:** ADR-0018, API ref (`docs/research/supercolony-api-reference.md`), SDK ref (`docs/research/demos-sdk-capabilities.md`), coverage matrix (`docs/toolkit-coverage-matrix.md`)
+**Design principle:** Every primitive tries API first (faster, richer), falls back to chain/SDK, has Zod-validated responses, handles auth refresh. Agent builder sees one clean typed call.
 
 ### Future (no phase assigned)
 
