@@ -2,7 +2,7 @@
 type: roadmap
 status: active
 updated: 2026-04-04
-open_items: 6
+open_items: 11
 completed_phases: 8
 tests: 2558
 suites: 193
@@ -10,7 +10,7 @@ tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
 colony_posts: 188000
-summary: "Phases 1-8 + engine split + budget wire complete. Open: 3 semantic search items, 3 future items. 27 deferred (16 closed, 4 continuous monitoring). 20 active tech debt, 11 resolved."
+summary: "Phases 1-8 complete. Tech debt sweep done (12 items). Phase 9 planned: API-first architecture (ADR-0018). Open: 5 Phase 9 items, 3 future items. 7 active tech debt, 23 resolved."
 read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work"]
 ---
 
@@ -23,11 +23,12 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 - **V3 loop:** LIVE with full data + intelligence pipeline + proof ingestion + SSE feed
 - **Phase 8:** COMPLETE (proof ingestion, contradiction detection, verified engagement, colony intelligence, VOTE/BET codec, XMCore napi-guard, SSE adapter)
-- **Tests:** 2558 passing, 193 suites, **0 tsc errors**
+- **Tests:** 2581 passing, 194 suites, **0 tsc errors**
 - **API Client:** 38/38 endpoints (35 in client, 3 in dedicated modules). 100% coverage.
 - **Strategy Engine:** 10 rules in 3 modules (5 core + 4 enrichment + 1 contradiction). Auto-calibration. Leaderboard meta-rule. FTS5 dedup. VOTE/BET rate limiting + session budget guard.
-- **Colony DB:** 188K posts. Schema v6 (retry_count + composite indexes). 293MB.
-- **Next:** Backfill 188K post embeddings, wire hybrid search into strategy
+- **Colony DB:** 188K posts. Schema v8. 605MB. Semantic search wired. Pruning available.
+- **ADRs:** 18 (ADR-0018 supersedes ADR-0001 for reads — API-first, chain fallback)
+- **Next:** Phase 9 — DataSource abstraction, API backfill, drift detection
 
 ---
 
@@ -94,6 +95,17 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 ---
 
+### Phase 9: API-First Architecture (ADR-0018)
+
+- [ ] 9a -- DataSource abstraction: `ApiDataSource` + `ChainDataSource` implementing shared interface, config flag to select primary, automatic fallback on failure
+- [ ] 9b -- API-based colony backfill: paginate `/api/feed?limit=100&offset=N` to fill sync gaps, verify against docs/research/supercolony-api-reference.md for endpoint shape
+- [ ] 9c -- API drift detection tool: `cli/api-health-check.ts` — for each documented endpoint, call it, compare response shape against reference, report MATCH/DRIFT/GONE/NEW
+- [ ] 9d -- Wire ApiDataSource into v3-loop SENSE phase as primary read path (chain as fallback)
+- [ ] 9e -- Remove dead `publishHiveReaction` on-chain code (reactions are API-only per platform design)
+
+**Spec:** ADR-0018 (`docs/decisions/0018-api-first-chain-fallback.md`), API ref (`docs/research/supercolony-api-reference.md`), SDK ref (`docs/research/demos-sdk-capabilities.md`)
+**Key constraint:** Both API and chain routes must return the same `ScanPost` shape. Verify all API endpoints against live responses before implementation — Demos iterates fast.
+
 ### Future (no phase assigned)
 
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
@@ -106,10 +118,15 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 ```
 Phase 1-4 (DONE) --> Phase 5 (DONE) --> Phase 6 (DONE) --> Phase 7 (DONE) --> Phase 8 (DONE)
-                       |
-                       +-> 5.6 semantic search (DONE)
-                       |
-                       +-> Future (independent, no blockers)
+                       |                                                          |
+                       +-> 5.6 semantic search (DONE)                             +-> Tech debt sweep (DONE)
+                       |                                                          |
+                       +-> Future (independent, no blockers)                      +-> Phase 9: API-first (ADR-0018)
+                                                                                      9a DataSource abstraction
+                                                                                      9b API backfill
+                                                                                      9c Drift detection
+                                                                                      9d Wire into v3-loop
+                                                                                      9e Remove dead reaction code
 ```
 
 ---
@@ -241,6 +258,9 @@ Phase 1-4 (DONE) --> Phase 5 (DONE) --> Phase 6 (DONE) --> Phase 7 (DONE) --> Ph
 | 2026-04-02 | Dedup module wired into publish-executor | checkClaimDedup + checkSelfDedup guard PUBLISH actions before LLM call |
 | 2026-04-02 | SDK capabilities doc is informational only | XMCore/StoragePrograms/ZK are Phase 8+ -- no Phase 6 rules use them |
 | 2026-04-02 | Engine stays pure-function: pre-compute in bridge | Engine's testability + agent-agnosticism is its strongest property. Bridge extracts intelligence data into DecisionContext fields. |
+| 2026-04-06 | API-first for reads, chain-first for writes (ADR-0018) | API is 10x faster, enriched (scores/reactions), paginated. Chain remains fallback. Both routes always maintained. Supersedes ADR-0001 for reads. |
+| 2026-04-06 | Reactions are API-only — on-chain reactions are dead code | Platform tracks reactions via API backend. Our publishHiveReaction was unused by anyone. |
+| 2026-04-06 | DataSource abstraction required before API integration | ApiDataSource + ChainDataSource must share ScanPost interface. Config flag selects primary. |
 
 ---
 

@@ -5,7 +5,7 @@ read_when: ["chain-first", "API dependency", "SuperColony API", "RPC", "offline"
 
 # ADR-0001: Chain-First, Zero API Dependency
 
-**Status:** accepted (updated 2026-04-01)
+**Status:** superseded for reads by ADR-0018 (2026-04-06). Still active for writes (publish, transfer, attest).
 **Date:** 2026-03-26 (principle), 2026-03-28 (fully implemented), 2026-04-01 (updated for V3)
 **Decided by:** Marius
 
