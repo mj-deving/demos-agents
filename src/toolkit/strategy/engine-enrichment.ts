@@ -31,10 +31,14 @@ export function evaluateEnrichmentRules(
         .map((c) => normalize(c.action.target ?? "")),
     );
 
+    const recencyThresholdMs = 48 * 60 * 60 * 1000; // 48h — matches resolveAgentToRecentPost
+    const recencyCutoff = (context.now ?? new Date()).getTime() - recencyThresholdMs;
+
     for (const agent of enrichment.leaderboard.agents.slice(0, 10)) {
       if (recentTargets.has(normalize(agent.address))) continue;
       if (agent.bayesianScore < (enrichment.leaderboard.globalAvg ?? 0)) continue;
       if ((context.intelligence?.recentInteractions?.[normalize(agent.address)] ?? 0) > 0) continue;
+      if (agent.lastActiveAt < recencyCutoff) continue; // Skip agents inactive >48h
 
       const action = createAction(
         engageNovelRule,

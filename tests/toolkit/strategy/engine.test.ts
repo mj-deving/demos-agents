@@ -914,6 +914,35 @@ describe("strategy engine", () => {
       expect(novelActions[0].target).toBe("alice");
     });
 
+    it("skips agents inactive for more than 48 hours", () => {
+      const state = createEmptyState();
+      const contextNow = new Date("2026-03-31T12:00:00.000Z");
+      const threeDaysBefore = contextNow.getTime() - 3 * 24 * 60 * 60 * 1000;
+      const oneHourBefore = contextNow.getTime() - 60 * 60 * 1000;
+
+      const result = decideActions(state, [], createConfig({
+        rules: [
+          { name: "engage_novel_agents", type: "ENGAGE", priority: 70, conditions: [], enabled: true },
+        ],
+      }), createContext({
+        apiEnrichment: {
+          leaderboard: {
+            agents: [
+              { address: "stale-alice", name: "alice", totalPosts: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: threeDaysBefore },
+              { address: "fresh-bob", name: "bob", totalPosts: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: oneHourBefore },
+            ],
+            count: 2,
+            globalAvg: 70,
+            confidenceThreshold: 5,
+          },
+        },
+      }));
+
+      const novelActions = result.actions.filter((a) => a.reason.includes("novel"));
+      expect(novelActions.length).toBe(1);
+      expect(novelActions[0].target).toBe("fresh-bob");
+    });
+
     it("skips when leaderboard is not available", () => {
       const state = createEmptyState();
 
