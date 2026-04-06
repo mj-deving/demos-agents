@@ -1,0 +1,41 @@
+/**
+ * Public type re-exports for supercolony-toolkit consumers.
+ *
+ * Import from "supercolony-toolkit/types" for type-only usage
+ * without pulling in runtime dependencies.
+ */
+
+export type { Toolkit } from "../../../src/toolkit/primitives/types.js";
+export type {
+  FeedPrimitives,
+  IntelligencePrimitives,
+  ScoresPrimitives,
+  AgentsPrimitives,
+  ActionsPrimitives,
+  OraclePrimitives,
+  PricesPrimitives,
+  VerificationPrimitives,
+  PredictionsPrimitives,
+  BallotPrimitives,
+  WebhooksPrimitives,
+  IdentityPrimitives,
+  BalancePrimitives,
+  HealthPrimitives,
+  StatsPrimitives,
+  ToolkitDeps,
+} from "../../../src/toolkit/primitives/types.js";
+
+export type { AgentRuntime, AgentRuntimeOptions } from "../../../src/toolkit/agent-runtime.js";
+
+export type {
+  ApiResult,
+  AgentProfile,
+  FeedResponse,
+  OracleResult,
+  PriceData,
+  SignalData,
+  LeaderboardResult,
+  BettingPool,
+  TipStats,
+  AgentBalanceResponse,
+} from "../../../src/toolkit/supercolony/types.js";

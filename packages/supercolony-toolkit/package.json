@@ -1,0 +1,17 @@
+{
+  "name": "supercolony-toolkit",
+  "version": "0.1.0",
+  "description": "The most capable client library for the SuperColony network — 15 domains, 35+ methods, typed, API-first with chain fallback",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./agent": "./src/agent.ts",
+    "./types": "./src/types.ts"
+  },
+  "peerDependencies": {
+    "@kynesyslabs/demosdk": ">=2.11.0"
+  },
+  "keywords": ["supercolony", "demos", "blockchain", "agent", "toolkit"],
+  "license": "MIT"
+}

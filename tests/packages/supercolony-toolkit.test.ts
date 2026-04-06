@@ -1,0 +1,244 @@
+/**
+ * TDD tests for packages/supercolony-toolkit.
+ *
+ * Tests the public API surface: connect(), Colony, hive.*, toolkit.*,
+ * and agent re-exports.
+ *
+ * Strategy: Test createHiveAPI directly with injected mock runtime
+ * (no vi.mock path resolution issues). Test connect() structure via
+ * a module-level mock of the colony's dependency.
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Toolkit } from "../../src/toolkit/primitives/types.js";
+
+// ── Mock helpers ─────────────────────────────────
+
+/** Build a stub Toolkit where every domain method returns a tagged ApiResult. */
+function stubToolkit(): Toolkit {
+  const tag = (domain: string, method: string) =>
+    vi.fn().mockResolvedValue({ ok: true, data: { _stub: `${domain}.${method}` } });
+
+  return {
+    feed: { getRecent: tag("feed", "getRecent"), search: tag("feed", "search"), getPost: tag("feed", "getPost"), getThread: tag("feed", "getThread") },
+    intelligence: { getSignals: tag("intelligence", "getSignals"), getReport: tag("intelligence", "getReport") },
+    scores: { getLeaderboard: tag("scores", "getLeaderboard") },
+    agents: { list: tag("agents", "list"), getProfile: tag("agents", "getProfile"), getIdentities: tag("agents", "getIdentities") },
+    actions: {
+      tip: tag("actions", "tip"), react: tag("actions", "react"),
+      getReactions: tag("actions", "getReactions"), getTipStats: tag("actions", "getTipStats"),
+      getAgentTipStats: tag("actions", "getAgentTipStats"), placeBet: tag("actions", "placeBet"),
+    },
+    oracle: { get: tag("oracle", "get") },
+    prices: { get: tag("prices", "get") },
+    verification: { verifyDahr: tag("verification", "verifyDahr"), verifyTlsn: tag("verification", "verifyTlsn") },
+    predictions: { query: tag("predictions", "query"), resolve: tag("predictions", "resolve"), markets: tag("predictions", "markets") },
+    ballot: { getState: tag("ballot", "getState"), getAccuracy: tag("ballot", "getAccuracy"), getLeaderboard: tag("ballot", "getLeaderboard"), getPerformance: tag("ballot", "getPerformance"), getPool: tag("ballot", "getPool") },
+    webhooks: { list: tag("webhooks", "list"), create: tag("webhooks", "create"), delete: tag("webhooks", "delete") },
+    identity: { lookup: tag("identity", "lookup") },
+    balance: { get: tag("balance", "get") },
+    health: { check: tag("health", "check") },
+    stats: { get: tag("stats", "get") },
+  } as unknown as Toolkit;
+}
+
+function stubRuntime(toolkit: Toolkit) {
+  return {
+    toolkit,
+    sdkBridge: {} as any,
+    address: "0xTEST_ADDRESS",
+    getToken: vi.fn().mockResolvedValue("mock-token"),
+    demos: {} as any,
+    authenticatedApiCall: vi.fn(),
+    llmProvider: null,
+  };
+}
+
+// ── Mock the entire colony module's createAgentRuntime dependency ─────
+
+const mockToolkit = stubToolkit();
+const mockRuntime = stubRuntime(mockToolkit);
+
+// Mock at paths resolved from this test file (tests/packages/).
+// vi.mock resolves relative to the test file, then intercepts by absolute module ID.
+// From tests/packages/, ../../src/ reaches the project's src/.
+
+vi.mock("../../src/toolkit/agent-runtime.js", () => ({
+  createAgentRuntime: vi.fn().mockResolvedValue({
+    toolkit: mockToolkit,
+    sdkBridge: {},
+    address: "0xTEST_ADDRESS",
+    getToken: vi.fn().mockResolvedValue("mock-token"),
+    demos: {},
+    authenticatedApiCall: vi.fn(),
+    llmProvider: null,
+  }),
+}));
+
+vi.mock("../../src/toolkit/agent-loop.js", () => ({
+  runAgentLoop: vi.fn(),
+  defaultObserve: vi.fn(),
+  buildColonyStateFromFeed: vi.fn(),
+}));
+
+vi.mock("../../src/toolkit/supercolony/types.js", () => ({}));
+
+// ── Tests ────────────────────────────────────────
+
+describe("supercolony-toolkit package", () => {
+  describe("connect()", () => {
+    it("creates a Colony instance with toolkit, hive, runtime, and address", async () => {
+      const { connect } = await import("../../packages/supercolony-toolkit/src/index.js");
+      const colony = await connect();
+
+      expect(colony).toBeDefined();
+      expect(colony.toolkit).toBeDefined();
+      expect(colony.hive).toBeDefined();
+      expect(colony.runtime).toBeDefined();
+      expect(colony.address).toBe("0xTEST_ADDRESS");
+    });
+
+    it("passes options through to createAgentRuntime", async () => {
+      const { connect } = await import("../../packages/supercolony-toolkit/src/index.js");
+      // Access the mock via the colony module's internal import (same module identity)
+      const { createAgentRuntime } = await import("../../packages/supercolony-toolkit/src/colony.js") as any;
+      // colony.ts re-exports nothing, so we verify via the mocked module.
+      // We use the vi.mocked approach: the mock is registered at ../../../src/toolkit/agent-runtime.js
+      // which is the path colony.ts uses. Verify connect() calls it with our options.
+      const mod = await vi.importMock<any>("../../src/toolkit/agent-runtime.js");
+      mod.createAgentRuntime.mockClear();
+      await connect({ envPath: "/custom/.env", agentName: "test-agent" });
+
+      expect(mod.createAgentRuntime).toHaveBeenCalledWith(
+        expect.objectContaining({ envPath: "/custom/.env", agentName: "test-agent" }),
+      );
+    });
+  });
+
+  describe("Colony.toolkit — 15 domains", () => {
+    it("exposes all 15 toolkit domains", async () => {
+      const { connect } = await import("../../packages/supercolony-toolkit/src/index.js");
+      const colony = await connect();
+      const domains = [
+        "feed", "intelligence", "scores", "agents", "actions",
+        "oracle", "prices", "verification", "predictions", "ballot",
+        "webhooks", "identity", "balance", "health", "stats",
+      ];
+      for (const domain of domains) {
+        expect((colony.toolkit as Record<string, unknown>)[domain]).toBeDefined();
+      }
+    });
+  });
+
+  describe("Colony.hive — convenience API (via createHiveAPI)", () => {
+    // Test hive methods directly by importing createHiveAPI with injected runtime
+    let hive: any;
+
+    beforeEach(async () => {
+      // Reset call history only — keep mock implementations
+      for (const domain of Object.values(mockToolkit)) {
+        for (const fn of Object.values(domain as Record<string, any>)) {
+          if (typeof fn === "function" && "mockClear" in fn) {
+            (fn as ReturnType<typeof vi.fn>).mockClear();
+          }
+        }
+      }
+      const { createHiveAPI } = await import("../../packages/supercolony-toolkit/src/hive.js");
+      hive = createHiveAPI(mockRuntime as any);
+    });
+
+    it("getFeed() delegates to toolkit.feed.getRecent()", async () => {
+      await hive.getFeed({ limit: 10, category: "market" });
+      expect(mockToolkit.feed.getRecent).toHaveBeenCalledWith({ limit: 10, category: "market" });
+    });
+
+    it("search() delegates to toolkit.feed.search()", async () => {
+      await hive.search({ text: "bitcoin", category: "market" });
+      expect(mockToolkit.feed.search).toHaveBeenCalledWith({ text: "bitcoin", category: "market" });
+    });
+
+    it("tip() delegates to toolkit.actions.tip()", async () => {
+      await hive.tip("0xabc", 100);
+      expect(mockToolkit.actions.tip).toHaveBeenCalledWith("0xabc", 100);
+    });
+
+    it("react() delegates to toolkit.actions.react()", async () => {
+      await hive.react("0xabc", "agree");
+      expect(mockToolkit.actions.react).toHaveBeenCalledWith("0xabc", "agree");
+    });
+
+    it("getOracle() delegates to toolkit.oracle.get()", async () => {
+      await hive.getOracle({ assets: ["BTC"] });
+      expect(mockToolkit.oracle.get).toHaveBeenCalledWith({ assets: ["BTC"] });
+    });
+
+    it("getPrices() delegates to toolkit.prices.get()", async () => {
+      await hive.getPrices(["BTC", "ETH"]);
+      expect(mockToolkit.prices.get).toHaveBeenCalledWith(["BTC", "ETH"]);
+    });
+
+    it("getBalance() delegates to toolkit.balance.get() with runtime address", async () => {
+      await hive.getBalance();
+      expect(mockToolkit.balance.get).toHaveBeenCalledWith("0xTEST_ADDRESS");
+    });
+
+    it("getPool() delegates to toolkit.ballot.getPool()", async () => {
+      await hive.getPool({ asset: "BTC", horizon: "24h" });
+      expect(mockToolkit.ballot.getPool).toHaveBeenCalledWith({ asset: "BTC", horizon: "24h" });
+    });
+
+    it("getSignals() delegates to toolkit.intelligence.getSignals()", async () => {
+      await hive.getSignals();
+      expect(mockToolkit.intelligence.getSignals).toHaveBeenCalled();
+    });
+
+    it("getLeaderboard() delegates to toolkit.scores.getLeaderboard()", async () => {
+      await hive.getLeaderboard({ limit: 5 });
+      expect(mockToolkit.scores.getLeaderboard).toHaveBeenCalledWith({ limit: 5 });
+    });
+
+    it("getAgents() delegates to toolkit.agents.list()", async () => {
+      await hive.getAgents();
+      expect(mockToolkit.agents.list).toHaveBeenCalled();
+    });
+
+    it("placeBet() delegates to toolkit.actions.placeBet()", async () => {
+      await hive.placeBet("BTC", 50000, { horizon: "24h" });
+      expect(mockToolkit.actions.placeBet).toHaveBeenCalledWith("BTC", 50000, { horizon: "24h" });
+    });
+
+    it("getReactions() delegates to toolkit.actions.getReactions()", async () => {
+      await hive.getReactions("0xabc");
+      expect(mockToolkit.actions.getReactions).toHaveBeenCalledWith("0xabc");
+    });
+
+    it("getTipStats() delegates to toolkit.actions.getTipStats()", async () => {
+      await hive.getTipStats("0xabc");
+      expect(mockToolkit.actions.getTipStats).toHaveBeenCalledWith("0xabc");
+    });
+  });
+
+  describe("agent subpath re-exports", () => {
+    it("exports runAgentLoop", async () => {
+      const agent = await import("../../packages/supercolony-toolkit/src/agent.js");
+      expect(typeof agent.runAgentLoop).toBe("function");
+    });
+
+    it("exports defaultObserve", async () => {
+      const agent = await import("../../packages/supercolony-toolkit/src/agent.js");
+      expect(typeof agent.defaultObserve).toBe("function");
+    });
+
+    it("exports buildColonyStateFromFeed", async () => {
+      const agent = await import("../../packages/supercolony-toolkit/src/agent.js");
+      expect(typeof agent.buildColonyStateFromFeed).toBe("function");
+    });
+  });
+
+  describe("types subpath", () => {
+    it("exports are importable (type re-exports compile)", async () => {
+      const types = await import("../../packages/supercolony-toolkit/src/types.js");
+      expect(types).toBeDefined();
+    });
+  });
+});

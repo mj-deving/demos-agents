@@ -15,6 +15,6 @@
       "@demos-agents/core/*": ["./packages/core/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "cli/**/*.ts", "platform/**/*.ts", "connectors/**/*.ts", "packages/core/src/**/*.ts"],
+  "include": ["src/**/*.ts", "cli/**/*.ts", "platform/**/*.ts", "connectors/**/*.ts", "packages/core/src/**/*.ts", "packages/supercolony-toolkit/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
