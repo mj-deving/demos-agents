@@ -239,7 +239,8 @@ export async function apiCall<TData = Record<string, unknown>>(
   token: string | null,
   options: RequestInit = {}
 ): Promise<ApiCallResult<TData>> {
-  const url = path.startsWith("http") ? path : `${getApiUrl()}${path}`;
+  const raw = path.startsWith("http") ? path : `${getApiUrl()}${path}`;
+  const url = raw.replace("://www.", "://");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -255,7 +256,7 @@ export async function apiCall<TData = Record<string, unknown>>(
     if (!isSuperColony) {
       try {
         const origin = new URL(url).origin;
-        isSuperColony = origin === "https://www.supercolony.ai" || origin === "https://supercolony.ai";
+        isSuperColony = origin === "https://supercolony.ai";
       } catch { /* malformed URL — don't attach token */ }
     }
     if (isSuperColony) {

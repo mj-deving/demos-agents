@@ -65,7 +65,7 @@ describe("config getters", () => {
   });
 
   it("getApiUrl returns the default SuperColony URL", () => {
-    expect(getApiUrl()).toBe("https://www.supercolony.ai");
+    expect(getApiUrl()).toBe("https://supercolony.ai");
   });
 });
 
@@ -276,7 +276,7 @@ describe("apiCall", () => {
     expect(result.status).toBe(200);
     expect(result.data).toEqual({ success: true });
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://www.supercolony.ai/api/feed",
+      "https://supercolony.ai/api/feed",
       expect.objectContaining({
         headers: expect.objectContaining({
           "Content-Type": "application/json",
@@ -311,11 +311,16 @@ describe("apiCall", () => {
     );
   });
 
-  it("attaches bearer token for absolute SuperColony URL", async () => {
+  it("strips www and attaches bearer token for absolute SuperColony URL", async () => {
     mockFetchResponse(200, {});
 
     await apiCall("https://www.supercolony.ai/api/feed", "my-token");
 
+    // www. should be stripped before fetch
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://supercolony.ai/api/feed",
+      expect.any(Object)
+    );
     const headers = mockFetch.mock.calls[0][1].headers;
     expect(headers.Authorization).toBe("Bearer my-token");
   });
