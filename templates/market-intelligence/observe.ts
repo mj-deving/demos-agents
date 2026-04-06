@@ -38,20 +38,24 @@ export async function marketObserve(toolkit: Toolkit, ourAddress: string): Promi
   // Build evidence array
   const evidence: AvailableEvidence[] = [];
 
-  // Divergence detection: check priceDivergences for spreads > threshold
+  // Divergence detection: real oracle API has divergences[] at top level
+  // Shape: { type, asset, description, severity, details }
   if (oracleResult?.ok) {
-    const oracle = oracleResult.data;
-    for (const div of oracle.priceDivergences) {
-      if (div.spread > DEFAULT_DIVERGENCE_THRESHOLD) {
-        evidence.push({
-          sourceId: "oracle-divergence",
-          subject: `${div.asset} CEX/DEX divergence ${div.spread.toFixed(1)}%`,
-          metrics: ["cex-price", "dex-price", "spread"],
-          richness: div.spread, // higher spread = richer signal
-          freshness: 0,
-          stale: false,
-        });
-      }
+    const oracle = oracleResult.data as any;
+    const divergences = oracle.divergences ?? oracle.priceDivergences ?? [];
+    for (const div of divergences) {
+      evidence.push({
+        sourceId: `oracle-divergence-${div.asset ?? "unknown"}`,
+        subject: `${div.asset ?? "unknown"} ${div.type ?? "divergence"}: ${div.description ?? ""}`.slice(0, 120),
+        metrics: [
+          `severity=${div.severity ?? "unknown"}`,
+          `type=${div.type ?? "unknown"}`,
+          ...(div.details?.agentConfidence ? [`confidence=${div.details.agentConfidence}`] : []),
+        ],
+        richness: div.severity === "high" ? 1.0 : div.severity === "medium" ? 0.7 : 0.4,
+        freshness: 0,
+        stale: false,
+      });
     }
   }
 
