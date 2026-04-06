@@ -6,7 +6,7 @@
  * - Graceful degradation: returns null on 502/network errors, never throws
  * - Auth token injection via async getToken callback
  * - Uses native fetch() -- no added dependencies
- * - API base URL configurable (default: https://www.supercolony.ai)
+ * - API base URL configurable (default: https://supercolony.ai)
  */
 
 import type {
@@ -62,7 +62,7 @@ export class SuperColonyApiClient {
 
   constructor(config: SuperColonyApiClientConfig) {
     this.getToken = config.getToken;
-    this.baseUrl = config.baseUrl ?? "https://www.supercolony.ai";
+    this.baseUrl = config.baseUrl ?? "https://supercolony.ai";
     this.timeout = config.timeout ?? 10_000;
   }
 

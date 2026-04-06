@@ -26,7 +26,7 @@ interface RuntimeConfig {
 
 let runtimeConfig: RuntimeConfig = {
   rpcUrl: "https://demosnode.discus.sh/",
-  apiUrl: "https://www.supercolony.ai",
+  apiUrl: "https://supercolony.ai",
 };
 let cryptoInitialized = false;
 let logAgentName: string | undefined;
@@ -124,7 +124,7 @@ function readConfigOverrides(content: string): Partial<RuntimeConfig> {
 function applyConfigOverrides(content: string): void {
   runtimeConfig = {
     rpcUrl: "https://demosnode.discus.sh/",
-    apiUrl: "https://www.supercolony.ai",
+    apiUrl: "https://supercolony.ai",
     ...readConfigOverrides(content),
   };
 }

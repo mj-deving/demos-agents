@@ -27,7 +27,7 @@ export interface SSESnapshot {
 }
 
 export interface SSEFeedSourceConfig {
-  /** SSE stream URL (e.g., https://www.supercolony.ai/api/feed/stream) */
+  /** SSE stream URL (e.g., https://supercolony.ai/api/feed/stream) */
   streamUrl: string;
   /** Auth token provider (called on connect and on auth_expired) */
   getToken: () => Promise<string>;
