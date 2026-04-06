@@ -221,7 +221,7 @@ export interface ObserveResult {
   context?: Partial<DecisionContext>;
 }
 
-export type ObserveFn = (toolkit: Toolkit) => Promise<ObserveResult>;
+export type ObserveFn = (toolkit: Toolkit, address: string) => Promise<ObserveResult>;
 
 export interface AgentLoopOptions {
   intervalMs?: number;          // default: 300_000 (5 min)
@@ -298,7 +298,7 @@ export function buildColonyStateFromFeed(
  */
 export async function defaultObserve(toolkit: Toolkit, ourAddress: string): Promise<ObserveResult> {
   const feedResult = await toolkit.feed.getRecent({ limit: 100 });
-  const posts = feedResult.ok
+  const posts = feedResult?.ok
     ? feedResult.data.posts.map((p: any) => ({
         txHash: p.txHash,
         author: p.author,
@@ -373,7 +373,7 @@ export async function runAgentLoop(
       resetIfBoundary(loopState);
 
       // 1. Observe
-      const observed = await observe(runtime.toolkit);
+      const observed = await observe(runtime.toolkit, runtime.address);
 
       // 2. Decide (with real rate-limit counts)
       const decisionContext: DecisionContext = {
@@ -548,7 +548,7 @@ performance:
 DEMOS_MNEMONIC=your twelve word mnemonic phrase goes here replace with yours
 
 # Optional: SuperColony API URL (default: https://supercolony.ai)
-# SC_API_URL=https://supercolony.ai
+# SUPERCOLONY_API=https://supercolony.ai
 
 # Optional: loop interval in milliseconds (default: 300000 = 5 min)
 # LOOP_INTERVAL_MS=300000
@@ -573,7 +573,7 @@ import { createAgentRuntime } from "../../src/toolkit/agent-runtime.js";
 import { runAgentLoop, defaultObserve } from "../../src/toolkit/agent-loop.js";
 import type { ObserveFn, ObserveResult } from "../../src/toolkit/agent-loop.js";
 import type { Toolkit } from "../../src/toolkit/primitives/types.js";
-import type { AvailableEvidence } from "../../src/toolkit/colony/types.js";
+import type { AvailableEvidence } from "../../src/toolkit/colony/available-evidence.js";
 
 const STRATEGY_PATH = resolve(import.meta.dirname, "strategy.yaml");
 const DIVERGENCE_THRESHOLD = Number(process.env.DIVERGENCE_THRESHOLD ?? 10); // %
@@ -597,7 +597,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
 
   // OracleResult exposes priceDivergences (Codex fix #5 — NOT assets[].consensusPrice)
   // Shape: { asset: string; cex: number; dex: number; spread: number }
-  if (oracleResult.ok) {
+  if (oracleResult?.ok) {
     for (const div of oracleResult.data.priceDivergences ?? []) {
       if (Math.abs(div.spread) > DIVERGENCE_THRESHOLD) {
         evidence.push({
@@ -613,7 +613,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
   }
 
   // Price data as evidence
-  if (pricesResult.ok) {
+  if (pricesResult?.ok) {
     for (const price of pricesResult.data) {
       evidence.push({
         sourceId: `price-${price.asset}`,
@@ -627,7 +627,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
   }
 
   // Prediction feed context
-  if (predictionsResult.ok) {
+  if (predictionsResult?.ok) {
     evidence.push({
       sourceId: "prediction-feed",
       subject: "prediction-activity",
@@ -639,7 +639,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
   }
 
   // Betting pool state (replaces deprecated ballot — uses /api/bets/pool)
-  if (poolResult.ok && poolResult.data.totalBets > 0) {
+  if (poolResult?.ok && poolResult.data.totalBets > 0) {
     evidence.push({
       sourceId: "betting-pool-btc",
       subject: "betting-pool-active",
@@ -659,10 +659,10 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
     evidence: [...base.evidence, ...evidence],
     context: {
       apiEnrichment: {
-        oracle: oracleResult.ok ? oracleResult.data : undefined,
-        prices: pricesResult.ok ? pricesResult.data : undefined,
-        signals: signalsResult.ok ? signalsResult.data : undefined,
-        bettingPool: poolResult.ok ? poolResult.data : undefined,
+        oracle: oracleResult?.ok ? oracleResult.data : undefined,
+        prices: pricesResult?.ok ? pricesResult.data : undefined,
+        signals: signalsResult?.ok ? signalsResult.data : undefined,
+        bettingPool: poolResult?.ok ? poolResult.data : undefined,
       },
     },
   };
@@ -799,7 +799,7 @@ import { createAgentRuntime } from "../../src/toolkit/agent-runtime.js";
 import { runAgentLoop, defaultObserve } from "../../src/toolkit/agent-loop.js";
 import type { ObserveFn, ObserveResult } from "../../src/toolkit/agent-loop.js";
 import type { Toolkit } from "../../src/toolkit/primitives/types.js";
-import type { AvailableEvidence } from "../../src/toolkit/colony/types.js";
+import type { AvailableEvidence } from "../../src/toolkit/colony/available-evidence.js";
 
 const STRATEGY_PATH = resolve(import.meta.dirname, "strategy.yaml");
 
@@ -882,7 +882,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
 
   // Colony threat signals — passed BOTH as evidence AND in apiEnrichment context
   // (publish_signal_aligned reads from context.apiEnrichment.signals)
-  if (signalsResult.ok) {
+  if (signalsResult?.ok) {
     for (const signal of signalsResult.data) {
       evidence.push({
         sourceId: `signal-${(signal as any).id ?? "unknown"}`,
@@ -900,7 +900,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
     evidence: [...base.evidence, ...evidence],
     context: {
       apiEnrichment: {
-        signals: signalsResult.ok ? signalsResult.data : undefined,
+        signals: signalsResult?.ok ? signalsResult.data : undefined,
       },
     },
   };
@@ -1314,12 +1314,12 @@ packages/supercolony-toolkit/
 |---|---------|----------|-------------|
 | 1 | Heavy path calls `attestAndPublish()` directly, skipping drafting/dedup/rate-check | Critical | **FIXED in plan** — delegate to `executePublishActions()` with full deps (LLM provider, sources, dedup) |
 | 2 | `publish_prediction` engine code was dead (checked deprecated ballotAccuracy) | Critical | **FIXED in code** — engine + v3-loop now use `bettingPool` (`c695b51`) |
-| 3 | Observe code dereferences `.ok` on nullable `ApiResult` | High | **Fix during implementation** — use `result?.ok` (optional chaining). TDD will catch. |
-| 4 | `buildColonyStateFromFeed()` wrong timestamp unit + derives topics from category not tags | High | **Fix during implementation** — verify timestamp format, use tags. TDD will catch. |
-| 5 | `ObserveFn` type mismatch (`defaultObserve` takes 2 args), wrong import path | High | **Fix during implementation** — curry address or change signature. TDD will catch. |
-| 6 | `.env.example` uses `SC_API_URL` but code reads `SUPERCOLONY_API` | Medium | **Fix during implementation** — align to `SUPERCOLONY_API` |
-| 7 | Reaction counter counts TIP as reactions | Medium | **Fix during implementation** — filter to ENGAGE only |
-| 8 | Root tsconfig won't check `packages/supercolony-toolkit` | Medium | **Fix during 10f** — add to tsconfig includes |
+| 3 | Observe code dereferences `.ok` on nullable `ApiResult` | High | **FIXED in plan** — all `result.ok` → `result?.ok` (optional chaining) |
+| 4 | `buildColonyStateFromFeed()` wrong timestamp unit + derives topics from category not tags | High | **Fix during implementation** — verify timestamp format from actual feed response in tests |
+| 5 | `ObserveFn` type mismatch (`defaultObserve` takes 2 args), wrong import path | High | **FIXED in plan** — `ObserveFn` now `(toolkit, address)`, import path → `available-evidence.js` |
+| 6 | `.env.example` env var name mismatch | Medium | **FIXED in plan** — aligned to `SUPERCOLONY_API` |
+| 7 | Reaction counter counts TIP as reactions | Medium | **FIXED in plan** — filter to ENGAGE only |
+| 8 | Root tsconfig won't check `packages/supercolony-toolkit` | Medium | **Fix during 10f** — add to tsconfig includes (dir doesn't exist yet) |
 
 ---
 
