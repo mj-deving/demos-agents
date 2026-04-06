@@ -322,7 +322,7 @@ export interface SignalData {
   totalAgents: number;
   confidence: number;
   text: string;
-  trending: boolean;
+  trending?: boolean;
 }
 
 // ── TLSN Proof ──────────────────────────────────────

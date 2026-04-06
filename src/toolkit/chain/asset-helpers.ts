@@ -27,6 +27,11 @@ export const ASSET_MAP: Array<[RegExp, string, string]> = [
   [/\bfilecoin\b|\bFIL\b/, "filecoin", "FIL"],
   [/\bSUI\b|\bsui\b(?=\s+(?:network|protocol|token|chain|price|trading))/, "sui", "SUI"],
   [/\baptos\b|\bAPT\b/, "aptos", "APT"],
+  [/\bimmutable\b|\bimx\b/i, "immutable-x", "IMX"],
+  [/\brender\b|\bRNDR\b/, "render-token", "RNDR"],
+  [/\bthe\ssandbox\b|\bsand\b/i, "the-sandbox", "SAND"],
+  [/\bcurve\b|\bcrv\b/i, "curve-dao-token", "CRV"],
+  [/\bmana\b|\bdecentraland\b/i, "decentraland", "MANA"],
 ];
 
 export const MACRO_ENTITY_MAP: Array<[RegExp, Record<string, string>]> = [

@@ -13,6 +13,7 @@ import { attestDahr, attestTlsn } from "../src/actions/publish-pipeline.js";
 import { resolveAttestationPlan } from "../src/lib/attestation/attestation-policy.js";
 import { selectSourceForTopicV2 } from "../src/lib/sources/policy.js";
 import { preflight } from "../src/lib/sources/policy.js";
+import { inferAssetAlias } from "../src/toolkit/chain/asset-helpers.js";
 import { fetchSource } from "../src/lib/sources/fetch.js";
 import { getPost } from "../src/toolkit/colony/posts.js";
 import type { generatePost } from "../src/actions/llm.js";
@@ -151,6 +152,16 @@ export function resolveSourceForAction(
       sourceName: selection.source.name,
       adapterCandidates: selection.adapterCandidates,
     };
+  }
+
+  // Fallback: if topic is a crypto asset, use coingecko-simple as a generic price source
+  const alias = inferAssetAlias(topic);
+  if (alias) {
+    const cgSource = sourceView.index.byId.get("coingecko-2a7ea372");
+    if (cgSource) {
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(alias.asset)}&vs_currencies=usd`;
+      return { source: cgSource, url, method: "DAHR", sourceName: cgSource.name };
+    }
   }
 
   return null;

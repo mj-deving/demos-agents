@@ -77,7 +77,7 @@ export const SignalDataSchema = z.object({
   totalAgents: z.number(),
   confidence: z.number(),
   text: z.string(),
-  trending: z.boolean(),
+  trending: z.boolean().optional(),
 }).passthrough();
 
 export const NetworkStatsSchema = z.object({

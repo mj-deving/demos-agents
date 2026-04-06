@@ -62,7 +62,7 @@ export function evaluateEnrichmentRules(
   const signalAlignedRule = getRule(config, "publish_signal_aligned");
   if (signalAlignedRule && enrichment?.signals) {
     for (const signal of enrichment.signals) {
-      if (!signal.trending || signal.agentCount < (config.enrichment?.minSignalAgents ?? 2)) continue;
+      if (signal.trending === false || signal.agentCount < (config.enrichment?.minSignalAgents ?? 2)) continue;
 
       const matchingEvidence = (evidenceIndex.get(normalize(signal.topic)) ?? [])
         .filter((item) => !item.stale);
