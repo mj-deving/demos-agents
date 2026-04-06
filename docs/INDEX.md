@@ -11,7 +11,7 @@ read_when: ["project history", "evolution", "what happened", "session changelog"
 > **The one document you read to understand the project's story.**
 > Architecture: CLAUDE.md. Operations: MEMORY.md. Roadmap: [ROADMAP.md](ROADMAP.md). This file: **where we've been.**
 
-**Current state:** V3 loop LIVE | Phases 1–9 COMPLETE | 211 suites, 2660 tests | 0 tsc errors | 18 ADRs | 38+ API methods | 10 strategy rules | 201K colony posts | Schema v8 | SDK 2.11.5
+**Current state:** V3 loop LIVE | Phases 1–9 COMPLETE | 211 suites, 2671 tests | 0 tsc errors | 18 ADRs | 38+ API methods | 10 strategy rules | 201K colony posts | Schema v8 | SDK 2.11.5
 
 ---
 
@@ -145,7 +145,7 @@ ADR-0018 established the principle: API-first for reads, chain-first for writes.
 - Auth 405 fix (www redirect stripping Authorization header)
 - 3 new ADRs (16→18 total)
 
-**Tests at era end:** 211 suites, 2660 passing. 0 tsc errors. 18 ADRs. Schema v8.
+**Tests at era end:** 211 suites, 2671 passing. 0 tsc errors. 18 ADRs. Schema v8.
 
 ---
 

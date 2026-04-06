@@ -78,8 +78,8 @@ demos-agents/
 │   └── strategies/base-loop.yaml     # Base loop strategy
 │
 ├── docs/                             # All docs have read_when frontmatter
-│   ├── INDEX.md                      # Project history (6 eras)
-│   ├── ROADMAP.md                    # Open work (23 items)
+│   ├── INDEX.md                      # Project history (9 eras)
+│   ├── ROADMAP.md                    # Open work + Phase 10 plan
 │   ├── architecture-plumbing-vs-strategy.md  # Toolkit/strategy boundary
 │   ├── project-structure.md          # This file
 │   ├── research/                     # Authoritative SDK + API references
