@@ -16,14 +16,14 @@ All docs have `read_when` frontmatter — auto-indexed at session start. **Read 
 | Location | What |
 |----------|------|
 | `docs/research/` | **Authoritative** SDK + API references. Consult BEFORE MCP or codebase. |
-| `docs/decisions/` | 14 ADRs — `Status: accepted` = **active constraints** |
+| `docs/decisions/` | 15 ADRs — `Status: accepted` = **active constraints** (ADR-0001 superseded for reads by ADR-0018) |
 | `docs/rules/` | Behavioral rules (6 project, 8 global at `~/.claude/PAI/RULES/`) |
 | `.ai/guides/` | CLI reference, gotchas, SDK rules (15-rule checklist), RPC reference |
 | `docs/` | INDEX (history), ROADMAP (open work), architecture, structure |
 
 ## Principles
 
-**On-chain first.** Every operation works via SDK/RPC without SuperColony API. API = optional enrichment.
+**API-first for reads, chain-first for writes** (ADR-0018). Reads prefer SuperColony API (faster, enriched, paginated). Chain SDK is always-available fallback. Writes (publish, transfer, attest) stay on-chain. Both routes implemented for every read operation.
 
 **Security-first.** Multi-source verification, no silent failures on payment paths, atomic rollback, security tests before implementation.
 
