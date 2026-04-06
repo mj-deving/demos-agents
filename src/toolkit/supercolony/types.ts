@@ -49,8 +49,13 @@ export interface AgentProfile {
   name: string;
   description: string;
   specialties: string[];
-  totalPosts: number;
+  postCount: number;
   lastActiveAt: number;
+  displayName?: string;
+  registeredAt?: number;
+  lastSeen?: number;
+  categoryBreakdown?: Record<string, number>;
+  web2Identities?: Array<{ platform: string; username: string }>;
 }
 
 export interface AgentIdentities {
@@ -76,11 +81,14 @@ export interface IdentitySearchResult {
 export interface Prediction {
   txHash: string;
   author: string;
-  text: string;
-  confidence: number;
-  assets: string[];
-  deadline: string;
-  status: "pending" | "correct" | "incorrect" | "expired";
+  asset: string;
+  predictedPrice: number;
+  actualPrice?: number;
+  accuracy?: number;
+  status: "pending" | "correct" | "incorrect" | "expired" | "resolved";
+  evidence?: string;
+  resolvedAt?: number;
+  resolvedBy?: string;
 }
 
 // ── Tipping ─────────────────────────────────────────
@@ -103,7 +111,7 @@ export interface LeaderboardResult {
   agents: Array<{
     address: string;
     name: string;
-    totalPosts: number;
+    postCount: number;
     avgScore: number;
     bayesianScore: number;
     topScore: number;
@@ -167,7 +175,7 @@ export interface BettingPool {
   totalDem: number;
   poolAddress: string;
   roundEnd: number;
-  bets: Array<{ agent: string; price: number; amount: number; timestamp: number }>;
+  bets: Array<{ txHash: string; bettor: string; predictedPrice: number; amount: number; roundEnd: number; horizon: string }>;
 }
 
 // ── Oracle ──────────────────────────────────────────
@@ -208,9 +216,16 @@ export interface OracleResult {
 // ── Prices ──────────────────────────────────────────
 
 export interface PriceData {
-  asset: string;
-  price: number;
-  timestamp: number;
+  ticker: string;
+  symbol?: string;
+  priceUsd: number;
+  change24h?: number;
+  high24h?: number;
+  low24h?: number;
+  volume24h?: number;
+  marketCap?: number;
+  fetchedAt: number;
+  dahrTxHash?: string | null;
   source: string;
 }
 
@@ -256,18 +271,23 @@ export interface BallotLeaderboard {
 // ── Network Stats ───────────────────────────────────
 
 export interface NetworkStats {
-  totalPosts: number;
-  totalAgents: number;
-  totalReactions: number;
-  uptime: number;
+  network: { totalPosts: number; totalAgents: number; totalTransactions: number };
+  activity: { postsLast24h: number; activeAgentsLast24h: number; reactionsLast24h: number };
+  quality: { avgScore: number; attestationRate: number };
+  predictions: { total: number; accuracy: number };
+  tips: { totalDem: number; uniqueTippers: number };
+  consensus: { activeTopics: number; avgAgentsPerTopic: number };
+  content: { categoryBreakdown: Record<string, number> };
+  computedAt: string;
 }
 
 // ── Health ──────────────────────────────────────────
 
 export interface HealthStatus {
   status: "ok" | "degraded" | "down";
-  version: string;
+  uptime: number;
   timestamp: number;
+  memory?: { heapUsed: number; rss: number };
 }
 
 // ── TLSN Verification ──────────────────────────────
@@ -296,11 +316,13 @@ export interface ThreadResponse {
 
 export interface SignalData {
   topic: string;
-  consensus: number;
-  agents: number;
+  consensus: boolean;
+  direction: string;
+  agentCount: number;
+  totalAgents: number;
+  confidence: number;
+  text: string;
   trending: boolean;
-  summary: string;
-  timestamp: number;
 }
 
 // ── TLSN Proof ──────────────────────────────────────
@@ -330,18 +352,29 @@ export interface AgentBalanceResponse {
 export interface ReportResponse {
   id: string;
   title: string;
-  content: string;
-  timestamp: number;
+  summary: string;
+  script: string;
+  audioUrl?: string;
+  signalCount?: number;
+  postCount?: number;
+  agentCount?: number;
+  sources?: string[];
+  status: string;
+  createdAt: string;
+  publishedAt?: string;
 }
 
 // ── Prediction Markets ──────────────────────────────
 
 export interface PredictionMarket {
-  market: string;
+  marketId: string;
   question: string;
-  outcomes: Array<{ name: string; probability: number }>;
   category: string;
-  volume: number;
+  outcomeYes: number;
+  outcomeNo: number;
+  volume: string;
+  liquidity?: string;
+  endDate?: string;
 }
 
 // ── Ballot Performance ──────────────────────────────

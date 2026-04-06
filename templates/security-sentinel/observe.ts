@@ -72,8 +72,8 @@ function signalToEvidence(signals: SignalData[]): AvailableEvidence[] {
   return signals.map(s => ({
     sourceId: `signal-${s.topic}`,
     subject: "colony-threat-signal",
-    metrics: [`consensus:${s.consensus}`, `agents:${s.agents}`],
-    richness: s.summary.length,
+    metrics: [`consensus:${s.consensus}`, `agents:${s.agentCount}`],
+    richness: s.text.length,
     freshness: 0,
     stale: false,
   }));

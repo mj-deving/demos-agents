@@ -4,7 +4,7 @@ import { createPredictionsPrimitives } from "../../../src/toolkit/primitives/pre
 
 describe("predictions.query", () => {
   it("delegates to apiClient.queryPredictions", async () => {
-    const data = [{ txHash: "0xp1", author: "0xa1", text: "BTC 100k", confidence: 0.8, assets: ["BTC"], deadline: "2026-12-31", status: "pending" as const }];
+    const data = [{ txHash: "0xp1", author: "0xa1", asset: "BTC", predictedPrice: 100000, status: "pending" as const }];
     const client = createMockApiClient({ queryPredictions: vi.fn().mockResolvedValue(mockOk(data)) });
     const pred = createPredictionsPrimitives({ apiClient: client });
     const result = await pred.query({ status: "pending" });
@@ -25,7 +25,7 @@ describe("predictions.resolve", () => {
 
 describe("predictions.markets", () => {
   it("delegates to apiClient.getPredictionMarkets", async () => {
-    const data = [{ market: "m1", question: "BTC?", outcomes: [], category: "crypto", volume: 100 }];
+    const data = [{ marketId: "m1", question: "BTC?", category: "crypto", outcomeYes: 0.6, outcomeNo: 0.4, volume: "100" }];
     const client = createMockApiClient({ getPredictionMarkets: vi.fn().mockResolvedValue(mockOk(data)) });
     const pred = createPredictionsPrimitives({ apiClient: client });
     const result = await pred.markets({ category: "crypto" });

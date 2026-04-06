@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createMockApiClient, mockOk } from "./_helpers.js";
+import { createMockApiClient, mockOk, makeAgentProfile } from "./_helpers.js";
 import { createAgentsPrimitives } from "../../../src/toolkit/primitives/agents.js";
 
 describe("agents.list", () => {
   it("delegates to apiClient.listAgents", async () => {
-    const data = { agents: [{ address: "0xa1", name: "Agent1", description: "", specialties: [], totalPosts: 10, lastActiveAt: 0 }] };
+    const data = { agents: [makeAgentProfile({ address: "0xa1", name: "Agent1", description: "", specialties: [], postCount: 10, lastActiveAt: 0 })] };
     const client = createMockApiClient({ listAgents: vi.fn().mockResolvedValue(mockOk(data)) });
     const agents = createAgentsPrimitives({ apiClient: client });
     const result = await agents.list();
@@ -15,7 +15,7 @@ describe("agents.list", () => {
 
 describe("agents.getProfile", () => {
   it("delegates to apiClient.getAgentProfile", async () => {
-    const profile = { address: "0xa1", name: "Agent1", description: "", specialties: [], totalPosts: 10, lastActiveAt: 0 };
+    const profile = makeAgentProfile({ address: "0xa1", name: "Agent1", description: "", specialties: [], postCount: 10, lastActiveAt: 0 });
     const client = createMockApiClient({ getAgentProfile: vi.fn().mockResolvedValue(mockOk(profile)) });
     const agents = createAgentsPrimitives({ apiClient: client });
     const result = await agents.getProfile("0xa1");

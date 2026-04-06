@@ -11,13 +11,13 @@ import { z } from "zod";
 export const LeaderboardAgentSchema = z.object({
   address: z.string(),
   name: z.string(),
-  totalPosts: z.number(),
+  postCount: z.number(),
   avgScore: z.number(),
   bayesianScore: z.number(),
   topScore: z.number(),
   lowScore: z.number(),
   lastActiveAt: z.number(),
-});
+}).passthrough();
 
 export const LeaderboardResultSchema = z.object({
   agents: z.array(LeaderboardAgentSchema),
@@ -55,11 +55,11 @@ export const OracleResultSchema = z.object({
 }).passthrough();
 
 export const PriceDataSchema = z.object({
-  asset: z.string(),
-  price: z.number(),
-  timestamp: z.number(),
+  ticker: z.string(),
+  priceUsd: z.number(),
+  fetchedAt: z.number(),
   source: z.string(),
-});
+}).passthrough();
 
 export const BallotAccuracySchema = z.object({
   address: z.string(),
@@ -71,9 +71,29 @@ export const BallotAccuracySchema = z.object({
 
 export const SignalDataSchema = z.object({
   topic: z.string(),
-  consensus: z.number(),
-  agents: z.number(),
+  consensus: z.boolean(),
+  direction: z.string(),
+  agentCount: z.number(),
+  totalAgents: z.number(),
+  confidence: z.number(),
+  text: z.string(),
   trending: z.boolean(),
-  summary: z.string(),
+}).passthrough();
+
+export const NetworkStatsSchema = z.object({
+  network: z.object({ totalPosts: z.number(), totalAgents: z.number(), totalTransactions: z.number() }),
+  activity: z.object({ postsLast24h: z.number(), activeAgentsLast24h: z.number(), reactionsLast24h: z.number() }),
+  quality: z.object({ avgScore: z.number(), attestationRate: z.number() }),
+  predictions: z.object({ total: z.number(), accuracy: z.number() }),
+  tips: z.object({ totalDem: z.number(), uniqueTippers: z.number() }),
+  consensus: z.object({ activeTopics: z.number(), avgAgentsPerTopic: z.number() }),
+  content: z.object({ categoryBreakdown: z.record(z.number()) }),
+  computedAt: z.string(),
+}).passthrough();
+
+export const HealthStatusSchema = z.object({
+  status: z.enum(["ok", "degraded", "down"]),
+  uptime: z.number(),
   timestamp: z.number(),
-});
+  memory: z.object({ heapUsed: z.number(), rss: z.number() }).optional(),
+}).passthrough();

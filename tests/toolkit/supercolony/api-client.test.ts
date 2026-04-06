@@ -161,7 +161,7 @@ describe("SuperColonyApiClient", () => {
             name: "sentinel",
             description: "test",
             specialties: ["crypto"],
-            totalPosts: 42,
+            postCount: 42,
             lastActiveAt: Date.now(),
           },
         ],
@@ -182,7 +182,7 @@ describe("SuperColonyApiClient", () => {
         name: "sentinel",
         description: "test",
         specialties: ["crypto"],
-        totalPosts: 10,
+        postCount: 10,
         lastActiveAt: Date.now(),
       };
       mockFetchResponse(profile);
@@ -263,15 +263,13 @@ describe("SuperColonyApiClient", () => {
 
   describe("predictions", () => {
     it("queryPredictions returns typed predictions", async () => {
-      const payload = [{
+      const payload = { predictions: [{
         txHash: "0xabc",
         author: "0x123",
-        text: "BTC to 100k",
-        confidence: 0.85,
-        assets: ["BTC"],
-        deadline: "2026-12-31",
+        asset: "BTC",
+        predictedPrice: 100000,
         status: "pending",
-      }];
+      }], total: 1, pendingExpired: 0 };
       mockFetchResponse(payload);
       const client = createClient();
       const result = await client.queryPredictions({ asset: "BTC" });
@@ -338,7 +336,7 @@ describe("SuperColonyApiClient", () => {
         agents: [{
           address: "0xabc",
           name: "sentinel",
-          totalPosts: 100,
+          postCount: 100,
           avgScore: 72.5,
           bayesianScore: 68.3,
           topScore: 95,
@@ -583,21 +581,37 @@ describe("SuperColonyApiClient", () => {
 
   describe("prices endpoints", () => {
     it("getPrices builds correct assets query param", async () => {
-      const payload = [
-        { asset: "BTC", price: 100000, timestamp: Date.now(), source: "binance" },
-        { asset: "ETH", price: 3500, timestamp: Date.now(), source: "binance" },
-      ];
+      const payload = {
+        prices: [
+          { ticker: "BTC", priceUsd: 100000, fetchedAt: Date.now(), source: "binance" },
+          { ticker: "ETH", priceUsd: 3500, fetchedAt: Date.now(), source: "binance" },
+        ],
+        fetchedAt: Date.now(),
+        stale: false,
+      };
       mockFetchResponse(payload);
       const client = createClient();
       const result = await client.getPrices(["BTC", "ETH"]);
       expect(result?.ok).toBe(true);
       if (result?.ok) {
         expect(result.data).toHaveLength(2);
-        expect(result.data[0].asset).toBe("BTC");
+        expect(result.data[0].ticker).toBe("BTC");
       }
 
       const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
       expect(fetchUrl).toContain("assets=BTC%2CETH");
+    });
+
+    it("getPrices returns error when wrapper field is missing", async () => {
+      // API returns unexpected shape without "prices" field
+      mockFetchResponse({ data: [], stale: false });
+      const client = createClient();
+      const result = await client.getPrices(["BTC"]);
+      expect(result?.ok).toBe(false);
+      if (result && !result.ok) {
+        expect(result.error).toContain("missing expected field");
+        expect(result.status).toBe(200);
+      }
     });
 
     it("getPriceHistory builds asset and history params", async () => {
@@ -701,10 +715,14 @@ describe("SuperColonyApiClient", () => {
         ok: true,
         status: 200,
         text: () => Promise.resolve(JSON.stringify({
-          totalPosts: 100,
-          totalAgents: 50,
-          totalReactions: 200,
-          uptime: 99.9,
+          network: { totalPosts: 100, totalAgents: 50, totalTransactions: 500 },
+          activity: { postsLast24h: 24, activeAgentsLast24h: 10, reactionsLast24h: 200 },
+          quality: { avgScore: 55, attestationRate: 0.8 },
+          predictions: { total: 10, accuracy: 0.65 },
+          tips: { totalDem: 500, uniqueTippers: 5 },
+          consensus: { activeTopics: 3, avgAgentsPerTopic: 4 },
+          content: { categoryBreakdown: {} },
+          computedAt: "2026-04-06T00:00:00Z",
         })),
       });
       vi.stubGlobal("fetch", mockFn);
@@ -716,7 +734,7 @@ describe("SuperColonyApiClient", () => {
       const result = await client.getStats();
       expect(result?.ok).toBe(true);
       if (result?.ok) {
-        expect(result.data.totalPosts).toBe(100);
+        expect(result.data.network.totalPosts).toBe(100);
       }
 
       const headers = mockFn.mock.calls[0][1]?.headers as Record<string, string>;
@@ -729,7 +747,7 @@ describe("SuperColonyApiClient", () => {
         status: 200,
         text: () => Promise.resolve(JSON.stringify({
           status: "ok",
-          version: "1.0.0",
+          uptime: 1234567,
           timestamp: Date.now(),
         })),
       });
@@ -870,14 +888,16 @@ describe("SuperColonyApiClient", () => {
 
   describe("signals", () => {
     it("getSignals fetches from /api/signals", async () => {
-      const payload = [{
+      const payload = { consensusAnalysis: [{
         topic: "BTC bullish",
-        consensus: 0.85,
-        agents: 12,
+        consensus: true,
+        direction: "bullish",
+        agentCount: 12,
+        totalAgents: 42,
+        confidence: 85,
+        text: "Strong bullish consensus",
         trending: true,
-        summary: "Strong bullish consensus",
-        timestamp: Date.now(),
-      }];
+      }] };
       mockFetchResponse(payload);
       const client = createClient();
       const result = await client.getSignals();
@@ -995,21 +1015,22 @@ describe("SuperColonyApiClient", () => {
 
   describe("prediction markets", () => {
     it("getPredictionMarkets includes category param", async () => {
-      const payload = [{
-        market: "m1",
+      const payload = { predictions: [{
+        marketId: "553828",
         question: "Will BTC hit 100k?",
-        outcomes: [{ name: "Yes", probability: 0.7 }, { name: "No", probability: 0.3 }],
         category: "crypto",
-        volume: 5000,
-      }];
+        outcomeYes: 0.62,
+        outcomeNo: 0.38,
+        volume: "5000",
+      }], count: 1, categories: ["crypto"] };
       mockFetchResponse(payload);
       const client = createClient();
       const result = await client.getPredictionMarkets({ category: "crypto" });
       expect(result?.ok).toBe(true);
       if (result?.ok) {
         expect(result.data).toHaveLength(1);
-        expect(result.data[0].market).toBe("m1");
-        expect(result.data[0].outcomes).toHaveLength(2);
+        expect(result.data[0].marketId).toBe("553828");
+        expect(result.data[0].outcomeYes).toBe(0.62);
       }
 
       const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;

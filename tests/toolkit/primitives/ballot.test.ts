@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createMockApiClient, mockOk } from "./_helpers.js";
+import { createMockApiClient, mockOk, makeBettingPool } from "./_helpers.js";
 import { createBallotPrimitives } from "../../../src/toolkit/primitives/ballot.js";
 
 describe("ballot.getState", () => {
@@ -50,15 +50,11 @@ describe("ballot.getPerformance", () => {
 
 describe("ballot.getPool", () => {
   it("delegates to apiClient.getBettingPool with asset and horizon", async () => {
-    const data = {
-      asset: "BTC",
-      horizon: "1h",
+    const data = makeBettingPool({
       totalBets: 5,
       totalDem: 25,
-      poolAddress: "0xpool",
-      roundEnd: 1712444400,
-      bets: [{ agent: "0xa1", price: 70000, amount: 5, timestamp: 1712440800 }],
-    };
+      bets: [{ txHash: "0xtx1", bettor: "0xa1", predictedPrice: 70000, amount: 5, roundEnd: 1712444400, horizon: "1h" }],
+    });
     const client = createMockApiClient({ getBettingPool: vi.fn().mockResolvedValue(mockOk(data)) });
     const ballot = createBallotPrimitives({ apiClient: client });
     const result = await ballot.getPool({ asset: "BTC", horizon: "1h" });
@@ -68,7 +64,7 @@ describe("ballot.getPool", () => {
   });
 
   it("passes undefined when no opts provided", async () => {
-    const data = { asset: "BTC", horizon: "1h", totalBets: 0, totalDem: 0, poolAddress: "0x", roundEnd: 0, bets: [] };
+    const data = makeBettingPool({ totalBets: 0, totalDem: 0, poolAddress: "0x", roundEnd: 0 });
     const client = createMockApiClient({ getBettingPool: vi.fn().mockResolvedValue(mockOk(data)) });
     const ballot = createBallotPrimitives({ apiClient: client });
     await ballot.getPool();

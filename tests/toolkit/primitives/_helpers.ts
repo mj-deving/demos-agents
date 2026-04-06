@@ -5,7 +5,7 @@
 
 import { vi } from "vitest";
 import type { SuperColonyApiClient } from "../../../src/toolkit/supercolony/api-client.js";
-import type { ApiResult } from "../../../src/toolkit/supercolony/types.js";
+import type { ApiResult, PriceData, SignalData, BettingPool, AgentProfile } from "../../../src/toolkit/supercolony/types.js";
 import type { DataSource } from "../../../src/toolkit/data-source.js";
 import type { ScanPost } from "../../../src/toolkit/types.js";
 
@@ -45,6 +45,8 @@ export function createMockApiClient(overrides: Partial<SuperColonyApiClient> = {
     searchFeed: vi.fn().mockResolvedValue(null),
     getThread: vi.fn().mockResolvedValue(null),
     getSignals: vi.fn().mockResolvedValue(null),
+    react: vi.fn().mockResolvedValue(null),
+    getReactionCounts: vi.fn().mockResolvedValue(null),
     getTlsnProof: vi.fn().mockResolvedValue(null),
     initiateTip: vi.fn().mockResolvedValue(null),
     getAgentBalance: vi.fn().mockResolvedValue(null),
@@ -90,6 +92,79 @@ export function makeScanPost(overrides: Partial<ScanPost> = {}): ScanPost {
     reactionsKnown: true,
     tags: ["test"],
     blockNumber: 100,
+    ...overrides,
+  };
+}
+
+// ── API Type Mock Factories ──────────────────
+
+/** Create a PriceData mock matching live /api/prices shape. */
+export function makePriceData(overrides: Partial<PriceData> = {}): PriceData {
+  return {
+    ticker: "BTC",
+    priceUsd: 65000,
+    fetchedAt: 1700000000000,
+    source: "coingecko",
+    ...overrides,
+  };
+}
+
+/** Create a SignalData mock matching live /api/signals consensusAnalysis shape. */
+export function makeSignalData(overrides: Partial<SignalData> = {}): SignalData {
+  return {
+    topic: "btc",
+    consensus: true,
+    direction: "bullish",
+    agentCount: 10,
+    totalAgents: 42,
+    confidence: 75,
+    text: "Bullish consensus",
+    trending: true,
+    ...overrides,
+  };
+}
+
+/** Create a BettingPool mock matching live /api/bets/pool shape. */
+export function makeBettingPool(overrides: Partial<BettingPool> = {}): BettingPool {
+  return {
+    asset: "BTC",
+    horizon: "1h",
+    totalBets: 3,
+    totalDem: 15,
+    poolAddress: "0xpool",
+    roundEnd: 1700000000000 + 3600_000,
+    bets: [],
+    ...overrides,
+  };
+}
+
+/** Create a leaderboard agent entry matching live /api/scores/agents shape. */
+export function makeLeaderboardAgent(overrides: Partial<{
+  address: string; name: string; postCount: number; avgScore: number;
+  bayesianScore: number; topScore: number; lowScore: number; lastActiveAt: number;
+}> = {}) {
+  return {
+    address: "0xagent1",
+    name: "agent",
+    postCount: 50,
+    avgScore: 70,
+    bayesianScore: 68,
+    topScore: 90,
+    lowScore: 40,
+    lastActiveAt: Date.now(),
+    ...overrides,
+  };
+}
+
+/** Create an AgentProfile mock matching live /api/agent/:address shape. */
+export function makeAgentProfile(overrides: Partial<AgentProfile> = {}): AgentProfile {
+  return {
+    address: "0xagent1",
+    name: "agent",
+    description: "Test agent",
+    specialties: ["crypto"],
+    postCount: 50,
+    lastActiveAt: Date.now(),
     ...overrides,
   };
 }

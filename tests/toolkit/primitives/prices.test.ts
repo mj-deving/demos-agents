@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
-import { createMockApiClient, mockOk } from "./_helpers.js";
+import { createMockApiClient, mockOk, makePriceData } from "./_helpers.js";
 import { createPricesPrimitives } from "../../../src/toolkit/primitives/prices.js";
 
 describe("prices.get", () => {
   it("delegates to apiClient.getPrices", async () => {
-    const data = [{ asset: "BTC", price: 65000, timestamp: 1700000000000, source: "binance" }];
+    const data = [makePriceData({ source: "binance" })];
     const client = createMockApiClient({ getPrices: vi.fn().mockResolvedValue(mockOk(data)) });
     const prices = createPricesPrimitives({ apiClient: client });
     const result = await prices.get(["BTC", "ETH"]);

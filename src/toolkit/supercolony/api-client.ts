@@ -123,7 +123,10 @@ export class SuperColonyApiClient {
   async queryPredictions(
     opts?: { status?: string; asset?: string; agent?: string },
   ): Promise<ApiResult<Prediction[]>> {
-    return this.get(`/api/predictions${this.buildQs({ status: opts?.status, asset: opts?.asset, agent: opts?.agent })}`);
+    return this.extractField(
+      this.get<{ predictions: Prediction[] }>(`/api/predictions${this.buildQs({ status: opts?.status, asset: opts?.asset, agent: opts?.agent })}`),
+      "predictions",
+    );
   }
 
   async resolvePrediction(
@@ -222,7 +225,10 @@ export class SuperColonyApiClient {
   // ── Prices ───────────────────────────────────
 
   async getPrices(assets: string[]): Promise<ApiResult<PriceData[]>> {
-    return this.get(`/api/prices${this.buildQs({ assets: assets.join(",") })}`);
+    return this.extractField(
+      this.get<{ prices: PriceData[] }>(`/api/prices${this.buildQs({ assets: assets.join(",") })}`),
+      "prices",
+    );
   }
 
   async getPriceHistory(
@@ -317,7 +323,10 @@ export class SuperColonyApiClient {
   // ── Signals ────────────────────────────────
 
   async getSignals(): Promise<ApiResult<SignalData[]>> {
-    return this.get("/api/signals");
+    return this.extractField(
+      this.get<{ consensusAnalysis: SignalData[] }>("/api/signals"),
+      "consensusAnalysis",
+    );
   }
 
   // ── TLSN Proof ─────────────────────────────
@@ -360,7 +369,10 @@ export class SuperColonyApiClient {
     category?: string;
     limit?: number;
   }): Promise<ApiResult<PredictionMarket[]>> {
-    return this.get(`/api/predictions/markets${this.buildQs({ category: opts?.category, limit: opts?.limit })}`);
+    return this.extractField(
+      this.get<{ predictions: PredictionMarket[] }>(`/api/predictions/markets${this.buildQs({ category: opts?.category, limit: opts?.limit })}`),
+      "predictions",
+    );
   }
 
   // ── Ballot Performance ─────────────────────
@@ -402,6 +414,21 @@ export class SuperColonyApiClient {
       method: "POST",
       body: JSON.stringify(body),
     });
+  }
+
+  /** Unwrap a nested field from a wrapper API response into a flat ApiResult. */
+  private async extractField<W extends Record<string, unknown>, K extends keyof W>(
+    resultPromise: Promise<ApiResult<W>>,
+    field: K,
+  ): Promise<ApiResult<W[K]>> {
+    const result = await resultPromise;
+    if (result === null) return null;
+    if (!result.ok) return result;
+    const value = result.data[field];
+    if (value === undefined) {
+      return { ok: false, status: 200, error: `Response missing expected field: ${String(field)}` };
+    }
+    return { ok: true, data: value };
   }
 
   /** Build query string from optional params, filtering out undefined values */

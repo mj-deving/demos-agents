@@ -4,8 +4,8 @@ status: active
 updated: 2026-04-06
 open_items: 3
 completed_phases: 9
-tests: 2671
-suites: 211
+tests: 2815
+suites: 219
 tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
@@ -23,7 +23,7 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 - **V3 loop:** LIVE with toolkit primitives replacing raw apiCall enrichment
 - **Phase 9:** COMPLETE (DataSource abstraction, 15 domain primitives, v3-loop wiring, API backfill, drift detection)
-- **Tests:** 2671 passing, 211 suites, **0 tsc errors**
+- **Tests:** 2815 passing, 219 suites, **0 tsc errors**
 - **Toolkit:** `createToolkit()` facade with 15 namespaces (feed, intelligence, scores, agents, actions, oracle, prices, verification, predictions, ballot, webhooks, identity, balance, health, stats)
 - **API Client:** 38/38 endpoints (35 in client, 3 in dedicated modules). 100% coverage.
 - **Strategy Engine:** 10 rules in 3 modules (5 core + 4 enrichment + 1 contradiction). Auto-calibration. Leaderboard meta-rule. FTS5 dedup. VOTE/BET rate limiting + session budget guard.
@@ -152,14 +152,14 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 | `/api/health` | Low | Missing `uptime`, `memory`; no `version` |
 | `/api/bets/pool` bets | Low | `agent`/`price` → `bettor`/`predictedPrice` |
 
-- [ ] Fix PriceData type + schema + consumers
-- [ ] Fix SignalData type + schema + consumers
-- [ ] Fix NetworkStats type
-- [ ] Fix Prediction/PredictionMarket wrapper types
-- [ ] Fix ReportResponse type
-- [ ] Fix HealthStatus type
-- [ ] Fix BettingPool bet item fields
-- [ ] Fix AgentProfile `totalPosts` → `postCount`
+- [x] Fix PriceData type + schema + consumers
+- [x] Fix SignalData type + schema + consumers
+- [x] Fix NetworkStats type
+- [x] Fix Prediction/PredictionMarket wrapper types
+- [x] Fix ReportResponse type
+- [x] Fix HealthStatus type
+- [x] Fix BettingPool bet item fields
+- [x] Fix AgentProfile `totalPosts` → `postCount`
 
 ### Future (no phase assigned)
 

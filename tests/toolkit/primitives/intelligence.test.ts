@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createMockApiClient, mockOk } from "./_helpers.js";
+import { createMockApiClient, mockOk, makeSignalData } from "./_helpers.js";
 
 let createIntelligencePrimitives: typeof import("../../../src/toolkit/primitives/intelligence.js").createIntelligencePrimitives;
 
@@ -16,7 +16,7 @@ beforeEach(async () => {
 
 describe("intelligence.getSignals", () => {
   it("delegates to apiClient.getSignals", async () => {
-    const signals = [{ topic: "BTC", consensus: 0.75, agents: 10, trending: true, summary: "bullish", timestamp: 1700000000000 }];
+    const signals = [makeSignalData({ topic: "BTC" })];
     const client = createMockApiClient({
       getSignals: vi.fn().mockResolvedValue(mockOk(signals)),
     });
@@ -36,7 +36,7 @@ describe("intelligence.getSignals", () => {
 
 describe("intelligence.getReport", () => {
   it("delegates to apiClient.getReport", async () => {
-    const report = { id: "r1", title: "Daily Brief", content: "Summary...", timestamp: 1700000000000 };
+    const report = { id: "r1", title: "Daily Brief", summary: "Summary...", script: "Full text...", status: "published", createdAt: "2026-04-06T00:00:00Z" };
     const client = createMockApiClient({
       getReport: vi.fn().mockResolvedValue(mockOk(report)),
     });

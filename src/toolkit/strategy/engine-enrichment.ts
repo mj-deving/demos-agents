@@ -48,7 +48,7 @@ export function evaluateEnrichmentRules(
           targetType: "agent",
           metadata: {
             bayesianScore: agent.bayesianScore,
-            totalPosts: agent.totalPosts,
+            postCount: agent.postCount,
           },
         },
       );
@@ -62,7 +62,7 @@ export function evaluateEnrichmentRules(
   const signalAlignedRule = getRule(config, "publish_signal_aligned");
   if (signalAlignedRule && enrichment?.signals) {
     for (const signal of enrichment.signals) {
-      if (!signal.trending || signal.agents < (config.enrichment?.minSignalAgents ?? 2)) continue;
+      if (!signal.trending || signal.agentCount < (config.enrichment?.minSignalAgents ?? 2)) continue;
 
       const matchingEvidence = (evidenceIndex.get(normalize(signal.topic)) ?? [])
         .filter((item) => !item.stale);
@@ -71,14 +71,14 @@ export function evaluateEnrichmentRules(
 
       const action = createAction(
         signalAlignedRule,
-        `Publish signal-aligned content on trending topic ${signal.topic} (${signal.agents} agents)`,
+        `Publish signal-aligned content on trending topic ${signal.topic} (${signal.agentCount} agents)`,
         {
           target: signal.topic,
           evidence: matchingEvidence.map((item) => item.sourceId),
           metadata: {
             signalConsensus: signal.consensus,
-            signalAgents: signal.agents,
-            signalSummary: signal.summary,
+            signalAgents: signal.agentCount,
+            signalText: signal.text,
           },
         },
       );
@@ -137,7 +137,7 @@ export function evaluateEnrichmentRules(
           totalBets: enrichment.bettingPool.totalBets,
           totalDem: enrichment.bettingPool.totalDem,
           roundEnd: enrichment.bettingPool.roundEnd,
-          availableAssets: enrichment.prices.map((p) => p.asset),
+          availableAssets: enrichment.prices.map((p) => p.ticker),
         },
       },
     );

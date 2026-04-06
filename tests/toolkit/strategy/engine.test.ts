@@ -524,7 +524,7 @@ describe("strategy engine", () => {
       apiEnrichment: {
         agentCount: 200,
         oracle: { divergences: [] },
-        prices: [{ asset: "BTC", price: 95000, timestamp: Date.now(), source: "binance" }],
+        prices: [{ ticker: "BTC", priceUsd: 95000, fetchedAt: Date.now(), source: "binance" }],
       },
     }));
     expect(resultWithEnrichment.actions.length).toBeGreaterThanOrEqual(0);
@@ -549,7 +549,7 @@ describe("strategy engine", () => {
       }), createContext({
         apiEnrichment: {
           signals: [
-            { topic: "defi", consensus: 72, agents: 4, trending: true, summary: "DeFi analysis", timestamp: Date.now() },
+            { topic: "defi", consensus: true, direction: "bullish", agentCount: 4, totalAgents: 10, confidence: 72, text: "DeFi analysis", trending: true },
           ],
         },
       }));
@@ -591,7 +591,7 @@ describe("strategy engine", () => {
       }), createContext({
         apiEnrichment: {
           signals: [
-            { topic: "defi", consensus: 72, agents: 4, trending: true, summary: "DeFi analysis", timestamp: Date.now() },
+            { topic: "defi", consensus: true, direction: "bullish", agentCount: 4, totalAgents: 10, confidence: 72, text: "DeFi analysis", trending: true },
           ],
         },
       }));
@@ -617,7 +617,7 @@ describe("strategy engine", () => {
           oracle: {
             divergences: [{ type: "agents_vs_market", asset: "BTC", description: "Agents bearish, market bullish", severity: "high" as const, details: { agentConfidence: 80 } }],
           },
-          prices: [{ asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" }],
+          prices: [{ ticker: "BTC", priceUsd: 66000, fetchedAt: Date.now(), source: "binance" }],
         },
       }));
 
@@ -650,7 +650,7 @@ describe("strategy engine", () => {
     const activePool = {
       asset: "BTC", horizon: "1h", totalBets: 5, totalDem: 25,
       poolAddress: "0xpool", roundEnd: Date.now() + 3600_000,
-      bets: [{ agent: "0xa", price: 70000, amount: 5, timestamp: Date.now() }],
+      bets: [{ txHash: "0xtx1", bettor: "0xa", predictedPrice: 70000, amount: 5, roundEnd: Date.now() + 3600_000, horizon: "1h" }],
     };
 
     it("creates PUBLISH action when betting pool is active (3+ bets) and prices available", () => {
@@ -665,8 +665,8 @@ describe("strategy engine", () => {
         apiEnrichment: {
           bettingPool: activePool,
           prices: [
-            { asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" },
-            { asset: "ETH", price: 3200, timestamp: Date.now(), source: "binance" },
+            { ticker: "BTC", priceUsd: 66000, fetchedAt: Date.now(), source: "binance" },
+            { ticker: "ETH", priceUsd: 3200, fetchedAt: Date.now(), source: "binance" },
           ],
         },
       }));
@@ -689,7 +689,7 @@ describe("strategy engine", () => {
       }), createContext({
         apiEnrichment: {
           bettingPool: { ...activePool, totalBets: 1 },
-          prices: [{ asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" }],
+          prices: [{ ticker: "BTC", priceUsd: 66000, fetchedAt: Date.now(), source: "binance" }],
         },
       }));
 
@@ -729,7 +729,7 @@ describe("strategy engine", () => {
         ],
       }), createContext({
         apiEnrichment: {
-          prices: [{ asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" }],
+          prices: [{ ticker: "BTC", priceUsd: 66000, fetchedAt: Date.now(), source: "binance" }],
         },
       }));
 
@@ -786,8 +786,8 @@ describe("strategy engine", () => {
         apiEnrichment: {
           leaderboard: {
             agents: [
-              { address: "alice", name: "alice", totalPosts: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: Date.now() },
-              { address: "bob", name: "bob", totalPosts: 50, avgScore: 60, bayesianScore: 62, topScore: 75, lowScore: 45, lastActiveAt: Date.now() },
+              { address: "alice", name: "alice", postCount: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: Date.now() },
+              { address: "bob", name: "bob", postCount: 50, avgScore: 60, bayesianScore: 62, topScore: 75, lowScore: 45, lastActiveAt: Date.now() },
             ],
             count: 2,
             globalAvg: 70,
@@ -918,8 +918,8 @@ describe("strategy engine", () => {
         apiEnrichment: {
           leaderboard: {
             agents: [
-              { address: "alice", name: "alice", totalPosts: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: Date.now() },
-              { address: "bob", name: "bob", totalPosts: 10, avgScore: 40, bayesianScore: 45, topScore: 55, lowScore: 30, lastActiveAt: Date.now() },
+              { address: "alice", name: "alice", postCount: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: Date.now() },
+              { address: "bob", name: "bob", postCount: 10, avgScore: 40, bayesianScore: 45, topScore: 55, lowScore: 30, lastActiveAt: Date.now() },
             ],
             count: 2,
             globalAvg: 70,
@@ -948,8 +948,8 @@ describe("strategy engine", () => {
         apiEnrichment: {
           leaderboard: {
             agents: [
-              { address: "stale-alice", name: "alice", totalPosts: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: threeDaysBefore },
-              { address: "fresh-bob", name: "bob", totalPosts: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: oneHourBefore },
+              { address: "stale-alice", name: "alice", postCount: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: threeDaysBefore },
+              { address: "fresh-bob", name: "bob", postCount: 50, avgScore: 85, bayesianScore: 88, topScore: 95, lowScore: 70, lastActiveAt: oneHourBefore },
             ],
             count: 2,
             globalAvg: 70,
@@ -1066,7 +1066,7 @@ describe("strategy engine", () => {
       }), createContext({
         apiEnrichment: {
           signals: [
-            { topic: "defi", consensus: 40, agents: 1, trending: false, summary: "Needs more agents", timestamp: Date.now() },
+            { topic: "defi", consensus: false, direction: "neutral", agentCount: 1, totalAgents: 10, confidence: 40, text: "Needs more agents", trending: false },
           ],
         },
       }));
@@ -1203,14 +1203,14 @@ describe("strategy engine", () => {
 
       const leaderboard = {
         agents: [
-          { address: "OUR_ADDR", bayesianScore: 90, totalPosts: 100, name: "us" },
-          { address: "agent2", bayesianScore: 80, totalPosts: 50, name: "two" },
-          { address: "agent3", bayesianScore: 70, totalPosts: 30, name: "three" },
-          { address: "agent4", bayesianScore: 60, totalPosts: 20, name: "four" },
-          { address: "agent5", bayesianScore: 50, totalPosts: 10, name: "five" },
-          { address: "agent6", bayesianScore: 40, totalPosts: 5, name: "six" },
-          { address: "agent7", bayesianScore: 30, totalPosts: 3, name: "seven" },
-          { address: "agent8", bayesianScore: 20, totalPosts: 1, name: "eight" },
+          { address: "OUR_ADDR", bayesianScore: 90, postCount: 100, name: "us" },
+          { address: "agent2", bayesianScore: 80, postCount: 50, name: "two" },
+          { address: "agent3", bayesianScore: 70, postCount: 30, name: "three" },
+          { address: "agent4", bayesianScore: 60, postCount: 20, name: "four" },
+          { address: "agent5", bayesianScore: 50, postCount: 10, name: "five" },
+          { address: "agent6", bayesianScore: 40, postCount: 5, name: "six" },
+          { address: "agent7", bayesianScore: 30, postCount: 3, name: "seven" },
+          { address: "agent8", bayesianScore: 20, postCount: 1, name: "eight" },
         ],
         globalAvg: 55,
       };
@@ -1231,14 +1231,14 @@ describe("strategy engine", () => {
 
       const leaderboard = {
         agents: [
-          { address: "top1", bayesianScore: 90, totalPosts: 100, name: "top" },
-          { address: "top2", bayesianScore: 80, totalPosts: 50, name: "two" },
-          { address: "mid1", bayesianScore: 70, totalPosts: 30, name: "three" },
-          { address: "mid2", bayesianScore: 60, totalPosts: 20, name: "four" },
-          { address: "mid3", bayesianScore: 50, totalPosts: 10, name: "five" },
-          { address: "mid4", bayesianScore: 40, totalPosts: 5, name: "six" },
-          { address: "OUR_ADDR", bayesianScore: 30, totalPosts: 3, name: "us" },
-          { address: "bottom", bayesianScore: 20, totalPosts: 1, name: "eight" },
+          { address: "top1", bayesianScore: 90, postCount: 100, name: "top" },
+          { address: "top2", bayesianScore: 80, postCount: 50, name: "two" },
+          { address: "mid1", bayesianScore: 70, postCount: 30, name: "three" },
+          { address: "mid2", bayesianScore: 60, postCount: 20, name: "four" },
+          { address: "mid3", bayesianScore: 50, postCount: 10, name: "five" },
+          { address: "mid4", bayesianScore: 40, postCount: 5, name: "six" },
+          { address: "OUR_ADDR", bayesianScore: 30, postCount: 3, name: "us" },
+          { address: "bottom", bayesianScore: 20, postCount: 1, name: "eight" },
         ],
         globalAvg: 55,
       };
@@ -1259,14 +1259,14 @@ describe("strategy engine", () => {
       // 8 agents, our rank at index 3 → percentile 3/8 = 0.375 (middle)
       const leaderboard = {
         agents: [
-          { address: "top1", bayesianScore: 95, totalPosts: 200, name: "top1" },
-          { address: "top2", bayesianScore: 90, totalPosts: 150, name: "top2" },
-          { address: "mid1", bayesianScore: 80, totalPosts: 100, name: "mid1" },
-          { address: "OUR_ADDR", bayesianScore: 70, totalPosts: 50, name: "us" },
-          { address: "mid2", bayesianScore: 60, totalPosts: 30, name: "mid2" },
-          { address: "mid3", bayesianScore: 50, totalPosts: 20, name: "mid3" },
-          { address: "low1", bayesianScore: 40, totalPosts: 10, name: "low1" },
-          { address: "low2", bayesianScore: 30, totalPosts: 5, name: "low2" },
+          { address: "top1", bayesianScore: 95, postCount: 200, name: "top1" },
+          { address: "top2", bayesianScore: 90, postCount: 150, name: "top2" },
+          { address: "mid1", bayesianScore: 80, postCount: 100, name: "mid1" },
+          { address: "OUR_ADDR", bayesianScore: 70, postCount: 50, name: "us" },
+          { address: "mid2", bayesianScore: 60, postCount: 30, name: "mid2" },
+          { address: "mid3", bayesianScore: 50, postCount: 20, name: "mid3" },
+          { address: "low1", bayesianScore: 40, postCount: 10, name: "low1" },
+          { address: "low2", bayesianScore: 30, postCount: 5, name: "low2" },
         ],
         globalAvg: 64,
       };
@@ -1296,7 +1296,7 @@ describe("strategy engine", () => {
 
       const leaderboard = {
         agents: [
-          { address: "other", bayesianScore: 90, totalPosts: 100, name: "other" },
+          { address: "other", bayesianScore: 90, postCount: 100, name: "other" },
         ],
         globalAvg: 90,
       };
@@ -1312,10 +1312,10 @@ describe("strategy engine", () => {
 
       const leaderboard = {
         agents: [
-          { address: "0xOUR_addr", bayesianScore: 90, totalPosts: 100, name: "us" },
-          { address: "other1", bayesianScore: 80, totalPosts: 50, name: "a" },
-          { address: "other2", bayesianScore: 70, totalPosts: 30, name: "b" },
-          { address: "other3", bayesianScore: 60, totalPosts: 20, name: "c" },
+          { address: "0xOUR_addr", bayesianScore: 90, postCount: 100, name: "us" },
+          { address: "other1", bayesianScore: 80, postCount: 50, name: "a" },
+          { address: "other2", bayesianScore: 70, postCount: 30, name: "b" },
+          { address: "other3", bayesianScore: 60, postCount: 20, name: "c" },
         ],
         globalAvg: 75,
       };
@@ -1350,10 +1350,10 @@ describe("strategy engine", () => {
 
       const leaderboard = {
         agents: [
-          { address: "demos1loop", bayesianScore: 95, totalPosts: 200, name: "us" },
-          { address: "a2", bayesianScore: 80, totalPosts: 50, name: "a2" },
-          { address: "a3", bayesianScore: 70, totalPosts: 30, name: "a3" },
-          { address: "a4", bayesianScore: 60, totalPosts: 20, name: "a4" },
+          { address: "demos1loop", bayesianScore: 95, postCount: 200, name: "us" },
+          { address: "a2", bayesianScore: 80, postCount: 50, name: "a2" },
+          { address: "a3", bayesianScore: 70, postCount: 30, name: "a3" },
+          { address: "a4", bayesianScore: 60, postCount: 20, name: "a4" },
         ],
         globalAvg: 76,
       };

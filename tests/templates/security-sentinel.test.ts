@@ -13,6 +13,7 @@ import { loadStrategyConfig } from "../../src/toolkit/strategy/config-loader.js"
 import type { Toolkit } from "../../src/toolkit/primitives/types.js";
 import type { ObserveResult } from "../../src/toolkit/agent-loop.js";
 import { createMockToolkit } from "./_mock-toolkit.js";
+import { makeSignalData } from "../toolkit/primitives/_helpers.js";
 
 const TEMPLATE_DIR = resolve(import.meta.dirname, "../../templates/security-sentinel");
 
@@ -178,8 +179,8 @@ describe("templates/security-sentinel", () => {
     it("produces signal evidence with correct shape", async () => {
       globalThis.fetch = mockFetchEmpty();
       const signals = [
-        { topic: "defi-exploit", consensus: 0.8, agents: 5, trending: true, summary: "DeFi exploit", timestamp: Date.now() },
-        { topic: "bridge-hack", consensus: 0.6, agents: 3, trending: false, summary: "Bridge vuln", timestamp: Date.now() },
+        makeSignalData({ topic: "defi-exploit", direction: "bearish", agentCount: 5, confidence: 80, text: "DeFi exploit" }),
+        makeSignalData({ topic: "bridge-hack", direction: "neutral", agentCount: 3, confidence: 60, text: "Bridge vuln", trending: false }),
       ];
       const result = await securityObserve(createMockToolkit({ signalsResult: { ok: true, data: signals } }), "0xTEST");
       const sigs = result.evidence.filter(e => e.sourceId.startsWith("signal-"));
@@ -189,7 +190,7 @@ describe("templates/security-sentinel", () => {
 
     it("passes signals in BOTH evidence AND apiEnrichment.signals", async () => {
       globalThis.fetch = mockFetchEmpty();
-      const signals = [{ topic: "exploit", consensus: 0.9, agents: 4, trending: true, summary: "Active", timestamp: Date.now() }];
+      const signals = [makeSignalData({ topic: "exploit", direction: "bearish", agentCount: 4, confidence: 90, text: "Active" })];
       const result = await securityObserve(createMockToolkit({ signalsResult: { ok: true, data: signals } }), "0xTEST");
       expect(result.evidence.filter(e => e.sourceId.startsWith("signal-"))).toHaveLength(1);
       expect(result.context?.apiEnrichment?.signals).toHaveLength(1);

@@ -19,7 +19,7 @@ import { loadStrategyConfig } from "../../src/toolkit/strategy/config-loader.js"
 import type { Toolkit } from "../../src/toolkit/primitives/types.js";
 import type { ObserveResult } from "../../src/toolkit/agent-loop.js";
 import type { OracleResult, PriceData, SignalData, BettingPool, FeedResponse } from "../../src/toolkit/supercolony/types.js";
-import { mockOk, mockErr } from "../toolkit/primitives/_helpers.js";
+import { mockOk, mockErr, makePriceData, makeSignalData, makeBettingPool } from "../toolkit/primitives/_helpers.js";
 
 const TEMPLATE_DIR = resolve(import.meta.dirname, "../../templates/market-intelligence");
 
@@ -92,40 +92,34 @@ const MOCK_ORACLE: OracleResult = {
 };
 
 const MOCK_PRICES: PriceData[] = [
-  { asset: "BTC", price: 60000, timestamp: Date.now(), source: "coingecko" },
-  { asset: "ETH", price: 3000, timestamp: Date.now(), source: "coingecko" },
+  makePriceData({ ticker: "BTC", priceUsd: 60000 }),
+  makePriceData({ ticker: "ETH", priceUsd: 3000 }),
 ];
 
 const MOCK_SIGNALS: SignalData[] = [
-  { topic: "defi", consensus: 0.75, agents: 5, trending: true, summary: "DeFi bullish", timestamp: Date.now() },
+  makeSignalData({ topic: "defi", agentCount: 5, totalAgents: 10, text: "DeFi bullish" }),
 ];
 
-const MOCK_POOL: BettingPool = {
-  asset: "BTC",
+const MOCK_POOL: BettingPool = makeBettingPool({
   horizon: "24h",
   totalBets: 5,
   totalDem: 100,
-  poolAddress: "0xpool",
-  roundEnd: Date.now() + 86400000,
   bets: [
-    { agent: "0xa1", price: 61000, amount: 20, timestamp: Date.now() },
-    { agent: "0xa2", price: 59000, amount: 30, timestamp: Date.now() },
-    { agent: "0xa3", price: 60500, amount: 50, timestamp: Date.now() },
+    { txHash: "0xtx1", bettor: "0xa1", predictedPrice: 61000, amount: 20, roundEnd: Date.now() + 86400000, horizon: "24h" },
+    { txHash: "0xtx2", bettor: "0xa2", predictedPrice: 59000, amount: 30, roundEnd: Date.now() + 86400000, horizon: "24h" },
+    { txHash: "0xtx3", bettor: "0xa3", predictedPrice: 60500, amount: 50, roundEnd: Date.now() + 86400000, horizon: "24h" },
   ],
-};
+});
 
-const MOCK_POOL_SMALL: BettingPool = {
-  asset: "BTC",
+const MOCK_POOL_SMALL: BettingPool = makeBettingPool({
   horizon: "24h",
   totalBets: 2,
   totalDem: 30,
-  poolAddress: "0xpool",
-  roundEnd: Date.now() + 86400000,
   bets: [
-    { agent: "0xa1", price: 61000, amount: 10, timestamp: Date.now() },
-    { agent: "0xa2", price: 59000, amount: 20, timestamp: Date.now() },
+    { txHash: "0xtx1", bettor: "0xa1", predictedPrice: 61000, amount: 10, roundEnd: Date.now() + 86400000, horizon: "24h" },
+    { txHash: "0xtx2", bettor: "0xa2", predictedPrice: 59000, amount: 20, roundEnd: Date.now() + 86400000, horizon: "24h" },
   ],
-};
+});
 
 const OUR_ADDRESS = "0xmarket-agent";
 
