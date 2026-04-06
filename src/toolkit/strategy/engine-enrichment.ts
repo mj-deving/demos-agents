@@ -117,22 +117,26 @@ export function evaluateEnrichmentRules(
   }
 
   // ── publish_prediction ──────────────────────────
+  // Fires when a betting pool is active with sufficient participation AND price data is available.
+  // Replaces the deprecated ballotAccuracy check (/api/ballot returns 410 — now /api/bets/pool).
   const predictionRule = getRule(config, "publish_prediction");
+  const minPoolBets = 3; // Minimum bets in pool to indicate meaningful market signal
   if (
     predictionRule
-    && enrichment?.ballotAccuracy
-    && enrichment.ballotAccuracy.accuracy > (config.enrichment?.minBallotAccuracy ?? 0.5)
+    && enrichment?.bettingPool
+    && enrichment.bettingPool.totalBets >= minPoolBets
     && enrichment.prices
     && enrichment.prices.length > 0
   ) {
     const action = createAction(
       predictionRule,
-      `Publish prediction — ballot accuracy ${(enrichment.ballotAccuracy.accuracy * 100).toFixed(0)}%, streak ${enrichment.ballotAccuracy.streak}`,
+      `Publish prediction — ${enrichment.bettingPool.asset} pool active (${enrichment.bettingPool.totalBets} bets, ${enrichment.bettingPool.totalDem} DEM)`,
       {
         metadata: {
-          accuracy: enrichment.ballotAccuracy.accuracy,
-          streak: enrichment.ballotAccuracy.streak,
-          totalVotes: enrichment.ballotAccuracy.totalVotes,
+          poolAsset: enrichment.bettingPool.asset,
+          totalBets: enrichment.bettingPool.totalBets,
+          totalDem: enrichment.bettingPool.totalDem,
+          roundEnd: enrichment.bettingPool.roundEnd,
           availableAssets: enrichment.prices.map((p) => p.asset),
         },
       },

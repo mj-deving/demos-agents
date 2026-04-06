@@ -650,7 +650,13 @@ describe("strategy engine", () => {
   });
 
   describe("publish_prediction", () => {
-    it("creates PUBLISH action when ballot accuracy is above 0.5 and prices available", () => {
+    const activePool = {
+      asset: "BTC", horizon: "1h", totalBets: 5, totalDem: 25,
+      poolAddress: "0xpool", roundEnd: Date.now() + 3600_000,
+      bets: [{ agent: "0xa", price: 70000, amount: 5, timestamp: Date.now() }],
+    };
+
+    it("creates PUBLISH action when betting pool is active (3+ bets) and prices available", () => {
       const state = createEmptyState();
 
       const result = decideActions(state, [], createConfig({
@@ -660,7 +666,7 @@ describe("strategy engine", () => {
         ],
       }), createContext({
         apiEnrichment: {
-          ballotAccuracy: { address: "demos1loop", totalVotes: 20, correctVotes: 14, accuracy: 0.7, streak: 3 },
+          bettingPool: activePool,
           prices: [
             { asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" },
             { asset: "ETH", price: 3200, timestamp: Date.now(), source: "binance" },
@@ -669,13 +675,13 @@ describe("strategy engine", () => {
       }));
 
       const predActions = result.actions.filter(
-        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction"),
+        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction") || a.reason.includes("pool"),
       );
       expect(predActions.length).toBeGreaterThanOrEqual(1);
       expect(predActions[0]).toMatchObject({ type: "PUBLISH", priority: 80 });
     });
 
-    it("skips when ballot accuracy is below 0.5", () => {
+    it("skips when betting pool has fewer than 3 bets", () => {
       const state = createEmptyState();
 
       const result = decideActions(state, [], createConfig({
@@ -685,13 +691,13 @@ describe("strategy engine", () => {
         ],
       }), createContext({
         apiEnrichment: {
-          ballotAccuracy: { address: "demos1loop", totalVotes: 20, correctVotes: 8, accuracy: 0.4, streak: 0 },
+          bettingPool: { ...activePool, totalBets: 1 },
           prices: [{ asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" }],
         },
       }));
 
       const predActions = result.actions.filter(
-        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction"),
+        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction") || a.reason.includes("pool"),
       );
       expect(predActions).toEqual([]);
     });
@@ -706,12 +712,32 @@ describe("strategy engine", () => {
         ],
       }), createContext({
         apiEnrichment: {
-          ballotAccuracy: { address: "demos1loop", totalVotes: 20, correctVotes: 14, accuracy: 0.7, streak: 3 },
+          bettingPool: activePool,
         },
       }));
 
       const predActions = result.actions.filter(
-        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction"),
+        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction") || a.reason.includes("pool"),
+      );
+      expect(predActions).toEqual([]);
+    });
+
+    it("skips when no betting pool data", () => {
+      const state = createEmptyState();
+
+      const result = decideActions(state, [], createConfig({
+        rules: [
+          ...createConfig().rules,
+          { name: "publish_prediction", type: "PUBLISH", priority: 80, conditions: [], enabled: true },
+        ],
+      }), createContext({
+        apiEnrichment: {
+          prices: [{ asset: "BTC", price: 66000, timestamp: Date.now(), source: "binance" }],
+        },
+      }));
+
+      const predActions = result.actions.filter(
+        (a) => a.reason.includes("prediction") || a.reason.includes("Prediction") || a.reason.includes("pool"),
       );
       expect(predActions).toEqual([]);
     });

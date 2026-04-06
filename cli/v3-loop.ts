@@ -26,7 +26,6 @@ import {
   LeaderboardResultSchema,
   OracleResultSchema,
   PriceDataSchema,
-  BallotAccuracySchema,
   SignalDataSchema,
 } from "../src/toolkit/supercolony/api-schemas.js";
 import { SuperColonyApiClient } from "../src/toolkit/supercolony/api-client.js";
@@ -273,15 +272,14 @@ export async function runV3Loop(
       // ── API Enrichment via Toolkit Primitives (optional, graceful degradation) ──
       let apiEnrichment: ApiEnrichmentData | undefined;
       try {
-        // Note: ballot.getAccuracy removed — /api/ballot returned 410 (ballot system replaced by /api/bets/pool)
-        const [agentsResult, leaderboardResult, oracleResult, pricesResult, signalsResult] = await Promise.all([
+        const [agentsResult, leaderboardResult, oracleResult, pricesResult, signalsResult, bettingPoolResult] = await Promise.all([
           toolkit.agents.list(),
           toolkit.scores.getLeaderboard({ limit: 20 }),
           toolkit.oracle.get(),
           toolkit.prices.get(["BTC", "ETH", "DEM"]),
           toolkit.intelligence.getSignals(),
+          toolkit.ballot.getPool({ asset: "BTC" }),
         ]);
-        const ballotAccResult = null; // Ballot system deprecated — enrichment gracefully skips
 
         apiEnrichment = {};
 
@@ -298,7 +296,7 @@ export async function runV3Loop(
         apiEnrichment.leaderboard = validate("leaderboard", leaderboardResult, LeaderboardResultSchema);
         apiEnrichment.oracle = validate("oracle", oracleResult, OracleResultSchema);
         apiEnrichment.prices = validate("prices", pricesResult, PriceDataSchema.array());
-        apiEnrichment.ballotAccuracy = validate("ballot", ballotAccResult, BallotAccuracySchema);
+        if (bettingPoolResult?.ok) apiEnrichment.bettingPool = bettingPoolResult.data;
         apiEnrichment.signals = validate("signals", signalsResult, SignalDataSchema.array());
 
         const enrichmentKeys = Object.keys(apiEnrichment);
