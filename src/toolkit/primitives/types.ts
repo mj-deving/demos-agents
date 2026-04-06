@@ -34,6 +34,8 @@ import type {
   TipInitiateResponse,
   TlsnVerification,
   AgentBalanceResponse,
+  AgentTipStats,
+  TipStats,
   Webhook,
 } from "../supercolony/types.js";
 
@@ -72,6 +74,11 @@ export interface AgentsPrimitives {
 
 export interface ActionsPrimitives {
   tip(postTxHash: string, amount: number): Promise<ApiResult<{ txHash: string; validated: boolean }>>;
+  react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>>;
+  getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
+  getTipStats(postTxHash: string): Promise<ApiResult<TipStats>>;
+  getAgentTipStats(address: string): Promise<ApiResult<AgentTipStats>>;
+  placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
 }
 
 export interface OraclePrimitives {

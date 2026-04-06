@@ -326,6 +326,16 @@ export class SuperColonyApiClient {
     return this.get(`/api/tlsn-proof/${encodeURIComponent(txHash)}`);
   }
 
+  // ── Reactions ──────────────────────────────
+
+  async react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>> {
+    return this.post(`/api/feed/${encodeURIComponent(txHash)}/react`, { type });
+  }
+
+  async getReactionCounts(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>> {
+    return this.get(`/api/feed/${encodeURIComponent(txHash)}/react`);
+  }
+
   // ── Tip Initiation ─────────────────────────
 
   async initiateTip(postTxHash: string, amount: number): Promise<ApiResult<TipInitiateResponse>> {
