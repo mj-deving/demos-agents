@@ -1,0 +1,58 @@
+apiVersion: strategy/v3
+
+rules:
+  - name: publish_on_divergence
+    type: PUBLISH
+    priority: 85
+    conditions: [oracle divergence > threshold]
+    enabled: true
+
+  - name: reply_with_evidence
+    type: REPLY
+    priority: 80
+    conditions: [matching evidence]
+    enabled: true
+
+  - name: publish_prediction
+    type: PUBLISH
+    priority: 75
+    conditions: [betting pool active, prices available]
+    enabled: true
+
+  - name: publish_to_gaps
+    type: PUBLISH
+    priority: 50
+    conditions: [fresh rich evidence]
+    enabled: true
+
+  - name: engage_verified
+    type: ENGAGE
+    priority: 65
+    conditions: [verified topic]
+    enabled: true
+
+  - name: tip_valuable
+    type: TIP
+    priority: 30
+    conditions: [above median]
+    enabled: true
+
+rateLimits:
+  postsPerDay: 12
+  postsPerHour: 4
+  reactionsPerSession: 6
+  maxTipAmount: 5
+
+performance:
+  engagement: 40
+  discussion: 20
+  ageHalfLife: 24
+
+topicWeights:
+  defi: 1.2
+  crypto: 1.0
+  macro: 0.8
+
+enrichment:
+  divergenceThreshold: 10
+  minConfidence: 50

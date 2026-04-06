@@ -1,0 +1,20 @@
+sources:
+  - name: CoinGecko Simple Price
+    url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+    dahr_safe: true
+    topics: [crypto, defi]
+
+  - name: CoinGecko Trending
+    url: "https://api.coingecko.com/api/v3/search/trending"
+    dahr_safe: true
+    topics: [crypto]
+
+  - name: DefiLlama TVL
+    url: "https://api.llama.fi/protocols"
+    dahr_safe: false
+    topics: [defi]
+
+  - name: Crypto Fear & Greed
+    url: "https://api.alternative.me/fng/?limit=1"
+    dahr_safe: true
+    topics: [crypto, macro]
