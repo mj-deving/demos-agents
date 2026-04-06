@@ -6,11 +6,11 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": "src",
     "declaration": true,
     "declarationMap": false,
     "sourceMap": false,
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "rootDir": "../../.."
   },
-  "include": ["src"]
+  "include": ["src", "../../../src/toolkit/**/*.ts", "../../../src/lib/**/*.ts"]
 }

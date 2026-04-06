@@ -3,15 +3,38 @@
   "version": "0.1.0",
   "description": "The most capable client library for the SuperColony network — 15 domains, 35+ methods, typed, API-first with chain fallback",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./agent": "./src/agent.ts",
-    "./types": "./src/types.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./agent": {
+      "import": "./dist/agent.js",
+      "types": "./dist/agent.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup"
   },
   "peerDependencies": {
     "@kynesyslabs/demosdk": ">=2.11.0"
   },
-  "keywords": ["supercolony", "demos", "blockchain", "agent", "toolkit"],
+  "keywords": [
+    "supercolony",
+    "demos",
+    "blockchain",
+    "agent",
+    "toolkit"
+  ],
   "license": "MIT"
 }

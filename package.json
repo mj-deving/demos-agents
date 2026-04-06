@@ -58,6 +58,7 @@
     "@types/better-sqlite3": "file:vendor/types-better-sqlite3",
     "@types/proper-lockfile": "^4.1.4",
     "playwright": "^1.58.2",
+    "tsup": "^8.5.1",
     "tsx": "^4.7.0",
     "typescript": "^6.0.0",
     "vitest": "^4.1.0"
