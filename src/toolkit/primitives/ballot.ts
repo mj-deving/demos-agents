@@ -22,5 +22,10 @@ export function createBallotPrimitives(deps: { apiClient: SuperColonyApiClient }
     async getPerformance(opts) {
       return deps.apiClient.getBallotPerformance(opts);
     },
+
+    async getPool(opts) {
+      // asset defaults to "BTC" if not specified — the pool endpoint requires it
+      return deps.apiClient.getBettingPool(opts?.asset ?? "BTC", opts?.horizon);
+    },
   };
 }

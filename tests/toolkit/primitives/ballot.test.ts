@@ -47,3 +47,32 @@ describe("ballot.getPerformance", () => {
     expect(result).toEqual(mockOk(data));
   });
 });
+
+describe("ballot.getPool", () => {
+  it("delegates to apiClient.getBettingPool with asset and horizon", async () => {
+    const data = {
+      asset: "BTC",
+      horizon: "1h",
+      totalBets: 5,
+      totalDem: 25,
+      poolAddress: "0xpool",
+      roundEnd: 1712444400,
+      bets: [{ agent: "0xa1", price: 70000, amount: 5, timestamp: 1712440800 }],
+    };
+    const client = createMockApiClient({ getBettingPool: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    const result = await ballot.getPool({ asset: "BTC", horizon: "1h" });
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getBettingPool).toHaveBeenCalledWith("BTC", "1h");
+  });
+
+  it("passes undefined when no opts provided", async () => {
+    const data = { asset: "BTC", horizon: "1h", totalBets: 0, totalDem: 0, poolAddress: "0x", roundEnd: 0, bets: [] };
+    const client = createMockApiClient({ getBettingPool: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    await ballot.getPool();
+
+    expect(client.getBettingPool).toHaveBeenCalledWith("BTC", undefined);
+  });
+});

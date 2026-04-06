@@ -67,10 +67,11 @@ read_when: ["toolkit coverage", "API coverage", "SDK coverage", "missing primiti
 | **Query predictions** | None | `/api/predictions` | N/A | **Not implemented** |
 | **Resolve prediction** | None | `POST /api/predictions/{tx}/resolve` | N/A | **Not implemented** |
 | **Prediction markets** | None | `/api/predictions/markets` | N/A | **Not implemented** |
-| **Ballot state** | None (raw apiCall) | `/api/ballot` | N/A | **No toolkit primitive** |
-| **Ballot accuracy** | None (raw apiCall) | `/api/ballot/accuracy` | N/A | **No toolkit primitive** |
-| **Ballot leaderboard** | None | `/api/ballot/leaderboard` | N/A | **Not implemented** |
-| **Ballot performance** | None | `/api/ballot/performance` | N/A | **Not implemented** |
+| **Betting pool** | `ballot.getPool()` | `/api/bets/pool` | N/A | **Complete** |
+| ~~Ballot state~~ | ~~`ballot.getState()`~~ | ~~`/api/ballot`~~ | N/A | **DEPRECATED 410** — replaced by `ballot.getPool()` |
+| ~~Ballot accuracy~~ | ~~`ballot.getAccuracy()`~~ | ~~`/api/ballot/accuracy`~~ | N/A | **DEPRECATED 410** |
+| ~~Ballot leaderboard~~ | ~~`ballot.getLeaderboard()`~~ | ~~`/api/ballot/leaderboard`~~ | N/A | **DEPRECATED 410** |
+| ~~Ballot performance~~ | ~~`ballot.getPerformance()`~~ | ~~`/api/ballot/performance`~~ | N/A | **DEPRECATED 410** |
 
 ### Tier 5: Infrastructure (setup & monitoring)
 

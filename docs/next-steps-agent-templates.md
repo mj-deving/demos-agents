@@ -581,12 +581,13 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
   // Get base colony state (pass address from closure — set in main())
   const base = await defaultObserve(toolkit, address);
 
-  // Fetch market data in parallel
-  const [oracleResult, pricesResult, predictionsResult, signalsResult] = await Promise.all([
+  // Fetch market data in parallel — use all available SuperColony API capabilities
+  const [oracleResult, pricesResult, predictionsResult, signalsResult, poolResult] = await Promise.all([
     toolkit.oracle.get({ assets: ["BTC", "ETH", "DEM"], window: "1h" }),
     toolkit.prices.get(["BTC", "ETH", "DEM"]),
     toolkit.feed.search({ category: "PREDICTION", limit: 20 }),
     toolkit.intelligence.getSignals(),
+    toolkit.ballot.getPool({ asset: "BTC", horizon: "1h" }),
   ]);
 
   // Build evidence using REAL AvailableEvidence shape:
@@ -636,6 +637,22 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
     });
   }
 
+  // Betting pool state (replaces deprecated ballot — uses /api/bets/pool)
+  if (poolResult.ok && poolResult.data.totalBets > 0) {
+    evidence.push({
+      sourceId: "betting-pool-btc",
+      subject: "betting-pool-active",
+      metrics: [
+        `totalBets=${poolResult.data.totalBets}`,
+        `totalDem=${poolResult.data.totalDem}`,
+        `roundEnd=${poolResult.data.roundEnd}`,
+      ],
+      richness: poolResult.data.totalBets >= 3 ? 0.8 : 0.5,
+      freshness: Date.now(),
+      stale: false,
+    });
+  }
+
   return {
     ...base,
     evidence: [...base.evidence, ...evidence],
@@ -644,6 +661,7 @@ const observe: ObserveFn = async (toolkit: Toolkit): Promise<ObserveResult> => {
         oracle: oracleResult.ok ? oracleResult.data : undefined,
         prices: pricesResult.ok ? pricesResult.data : undefined,
         signals: signalsResult.ok ? signalsResult.data : undefined,
+        bettingPool: poolResult.ok ? poolResult.data : undefined,
       },
     },
   };
@@ -708,8 +726,11 @@ rules:
     conditions: [above median]
     enabled: true
 
-  # NOTE: publish_prediction omitted — requires ballotAccuracy enrichment
-  # which needs a separate fetch not yet wired. Add when ballot is un-deprecated.
+  - name: publish_prediction
+    type: PUBLISH
+    priority: 75
+    conditions: [betting pool active, prices available]
+    enabled: true
 
 rateLimits:
   postsPerDay: 12
@@ -1125,7 +1146,7 @@ GPT-5.4 reviewed the plan via CodexBridge and found 6 issues. All fixed:
 | 2 | Loop called non-existent `sdkBridge.publishPost()`, missed REPLY, no attestation | Critical | Delegate to existing `executeStrategyActions()` (light) + `attestAndPublish()` (heavy) |
 | 3 | Bridge auth token captured as AUTH_PENDING_TOKEN, never updates | Critical | Added `authenticatedApiCall` wrapper to AgentRuntime (same as v3-loop:89-95) |
 | 4 | Rate limits reset to 0 each iteration — agents over-post | High | Added mutable `LoopState` with day/hour boundary resets |
-| 5 | Market template used `assets[].consensusPrice` — OracleResult has `priceDivergences[].spread` | High | Fixed to use real field names. Dropped `publish_prediction` (no ballot). |
+| 5 | Market template used `assets[].consensusPrice` — OracleResult has `priceDivergences[].spread` | High | Fixed to use real field names. `publish_prediction` restored via `ballot.getPool()` (replaces deprecated ballot endpoints). |
 | 6 | Test plan missed auth propagation, REPLY routing, rate-limit carryover, contract conformance | High | Added 5 integration test cases + new `colony-state-from-feed.test.ts` |
 
 ---

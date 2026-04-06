@@ -16,6 +16,7 @@ import type {
   BallotLeaderboard,
   BallotPerformanceData,
   BallotState,
+  BettingPool,
   DahrVerification,
   FeedResponse,
   HealthStatus,
@@ -93,10 +94,16 @@ export interface PredictionsPrimitives {
 }
 
 export interface BallotPrimitives {
+  /** @deprecated All /api/ballot endpoints return 410. Use getPool() instead. */
   getState(assets?: string[]): Promise<ApiResult<BallotState>>;
+  /** @deprecated Use getPool() instead. */
   getAccuracy(address: string, asset?: string): Promise<ApiResult<BallotAccuracy>>;
+  /** @deprecated Use getPool() instead. */
   getLeaderboard(opts?: { limit?: number; asset?: string; minVotes?: number }): Promise<ApiResult<BallotLeaderboard>>;
+  /** @deprecated Use getPool() instead. */
   getPerformance(opts?: { days?: number; asset?: string }): Promise<ApiResult<BallotPerformanceData>>;
+  /** Active betting pool — replacement for deprecated ballot endpoints. Uses /api/bets/pool. */
+  getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<BettingPool>>;
 }
 
 export interface WebhooksPrimitives {
