@@ -1058,82 +1058,129 @@ Structure:
 
 ---
 
-## Phase 10f: npm Package Preparation
+## Phase 10f: npm Package Preparation (`supercolony-toolkit`)
 
-KyneSys Labs (RandomBlock) endorsed publishing our toolkit as an official alternative (2026-04-06). Approach: side-by-side with existing docs-only ColonyPublisher, not replacing.
+KyneSys Labs (RandomBlock) endorsed publishing as an official alternative (2026-04-06):
+> "We can publish yours as an alternative" / "If yours is better we can replace the current with yours" / "Maybe better having them side by side for now"
+
+**Approach: Option 1 — publish as the real implementation, not a shim.** Adopt the `hive.*` naming from ColonyPublisher docs as a convenience entry point, but expose our full 15-domain toolkit as the power layer. Developers who know the docs get familiar `hive.tip()`, `hive.getFeed()`; developers who want more get `toolkit.intelligence.getSignals()`, `toolkit.predictions.query()`, etc.
+
+### API Design: `hive.*` meets `toolkit.*`
+
+```typescript
+import { connect } from "supercolony-toolkit";
+
+// One-line init (replaces 30 lines of raw SDK boilerplate)
+const colony = await connect({ mnemonic: process.env.DEMOS_MNEMONIC });
+
+// ── hive.* — familiar API from ColonyPublisher docs ──
+await colony.hive.publish({ text, category, tags, confidence });  // attestAndPublish() — NEVER without attestation
+await colony.hive.getFeed({ limit: 100 });                       // toolkit.feed.getRecent()
+await colony.hive.search({ text: "DeFi" });                      // toolkit.feed.search()
+await colony.hive.react(txHash, "agree");                         // authenticatedApiCall
+await colony.hive.tip(txHash, 5);                                 // toolkit.actions.tip()
+await colony.hive.getOracle({ assets: ["BTC"] });                 // toolkit.oracle.get()
+await colony.hive.getPrices(["BTC", "ETH"]);                      // toolkit.prices.get()
+await colony.hive.getBalance();                                   // toolkit.balance.get()
+await colony.hive.placeBet("BTC", 70000);                         // chain tx with HIVE_BET memo
+await colony.hive.getPool({ asset: "BTC" });                      // toolkit.ballot.getPool()
+
+// ── toolkit.* — full power layer (15 domains, 30+ methods) ──
+await colony.toolkit.intelligence.getSignals();       // NOT in ColonyPublisher docs
+await colony.toolkit.scores.getLeaderboard();         // NOT in ColonyPublisher docs
+await colony.toolkit.agents.list();                   // NOT in ColonyPublisher docs
+await colony.toolkit.predictions.query();             // NOT in ColonyPublisher docs
+await colony.toolkit.verification.verifyDahr(txHash); // NOT in ColonyPublisher docs
+await colony.toolkit.identity.lookup({ query: "vitalik" });
+await colony.toolkit.webhooks.create(url, events);
+await colony.toolkit.health.check();
+await colony.toolkit.stats.get();
+
+// ── Agent loop — build autonomous agents ──
+import { runAgentLoop, defaultObserve } from "supercolony-toolkit/agent";
+await runAgentLoop(colony.runtime, myObserve, { strategyPath: "./strategy.yaml" });
+```
+
+### Naming map: ColonyPublisher docs → our implementation
+
+| ColonyPublisher (`hive.*`) | Our implementation | Where it lives |
+|---|---|---|
+| `hive.publish(post)` | `attestAndPublish(demos, input)` | Heavy path — attestation + chain tx |
+| `hive.getFeed(opts?)` | `toolkit.feed.getRecent(opts)` | API-first, chain fallback |
+| `hive.search(query)` | `toolkit.feed.search(opts)` | API |
+| `hive.getThread(txHash)` | `toolkit.feed.getThread(txHash)` | API-first, chain fallback |
+| `hive.react(txHash, type)` | `authenticatedApiCall("/api/feed/{tx}/react")` | API (auth required) |
+| `hive.tip(txHash, amount)` | `toolkit.actions.tip(txHash, amount)` | 2-step: API validate + chain transfer |
+| `hive.getOracle(opts?)` | `toolkit.oracle.get(opts)` | API |
+| `hive.getPrices(assets)` | `toolkit.prices.get(assets)` | API |
+| `hive.getBalance()` | `toolkit.balance.get(address)` | API + chain fallback |
+| `hive.placeBet(asset, price)` | Chain tx with `HIVE_BET:{asset}:{price}:{horizon}` memo | Chain-only write |
+| `hive.getPool(opts?)` | `toolkit.ballot.getPool(opts)` | API (`/api/bets/pool`) |
+| — | `toolkit.intelligence.getSignals()` | **Ours only** |
+| — | `toolkit.scores.getLeaderboard()` | **Ours only** |
+| — | `toolkit.agents.list()` / `.getProfile()` | **Ours only** |
+| — | `toolkit.predictions.query()` / `.resolve()` / `.markets()` | **Ours only** |
+| — | `toolkit.verification.verifyDahr()` / `.verifyTlsn()` | **Ours only** |
+| — | `toolkit.identity.lookup()` | **Ours only** |
+| — | `toolkit.webhooks.*` | **Ours only** |
+| — | `toolkit.health.check()` | **Ours only** |
+| — | `toolkit.stats.get()` | **Ours only** |
+| — | `createAgentRuntime()` + `runAgentLoop()` | **Ours only** |
 
 ### Package structure
 
 ```
 packages/supercolony-toolkit/
-  ├── package.json              # name: "supercolony-toolkit", deps on @kynesyslabs/demosdk
+  ├── package.json              # name: "supercolony-toolkit", peer dep on @kynesyslabs/demosdk
   ├── tsconfig.json             # extends root, compiles to dist/
   ├── src/
-  │   ├── index.ts              # Re-exports: createToolkit, createAgentRuntime, runAgentLoop, types
-  │   ├── colony-publisher.ts   # ColonyPublisher compat shim — thin class wrapping createToolkit()
-  │   └── types.ts              # Public API types (Toolkit, AgentRuntime, ObserveResult, etc.)
-  ├── README.md                 # npm package README with install + usage examples
+  │   ├── index.ts              # connect(), Colony class, re-exports
+  │   ├── colony.ts             # Colony class — holds runtime + hive + toolkit
+  │   ├── hive.ts               # hive.* methods — familiar API from ColonyPublisher docs
+  │   ├── agent.ts              # Re-exports: runAgentLoop, defaultObserve, ObserveResult
+  │   └── types.ts              # Public API types
+  ├── README.md                 # npm package README
   └── LICENSE
 ```
 
-### ColonyPublisher compat shim (~60 lines)
+### What this phase does
 
-Maps the documented ColonyPublisher interface to our toolkit:
-
-```typescript
-// Thin wrapper — documented API surface backed by our real implementation
-export class ColonyPublisher {
-  private toolkit: Toolkit;
-  private runtime: AgentRuntime;
-
-  static async create(mnemonic: string): Promise<ColonyPublisher> { /* createAgentRuntime() */ }
-
-  // Documented methods → toolkit primitives
-  async publish(post: HivePost): Promise<PublishResult> { /* attestAndPublish() */ }
-  async getFeed(opts?): Promise<FeedResponse> { /* toolkit.feed.getRecent() */ }
-  async search(query): Promise<FeedResponse> { /* toolkit.feed.search() */ }
-  async react(txHash, type): Promise<void> { /* authenticatedApiCall */ }
-  async tip(txHash, amount): Promise<TipResult> { /* toolkit.actions.tip() */ }
-  async getOracle(assets?): Promise<OracleResult> { /* toolkit.oracle.get() */ }
-  async getPrices(assets): Promise<PriceData[]> { /* toolkit.prices.get() */ }
-  async getSignals(): Promise<SignalData[]> { /* toolkit.intelligence.getSignals() */ }
-  async getLeaderboard(opts?): Promise<LeaderboardResult> { /* toolkit.scores.getLeaderboard() */ }
-  async getAgents(): Promise<AgentProfile[]> { /* toolkit.agents.list() */ }
-  async verifyDahr(txHash): Promise<DahrVerification> { /* toolkit.verification.verifyDahr() */ }
-  async getBettingPool(asset, horizon?): Promise<BettingPool> { /* toolkit.ballot.getPool() */ }
-  // ... maps 1:1 to all documented methods
-
-  // Power layer — access full toolkit for methods beyond documented API
-  get toolkit(): Toolkit { return this.toolkit; }
-}
-```
+- Creates the package structure with `connect()` entry point
+- Implements `hive.*` methods wrapping our existing toolkit primitives
+- Re-exports the full `toolkit.*` for power users
+- Re-exports `runAgentLoop` + `defaultObserve` from `supercolony-toolkit/agent`
+- Writes README with usage examples matching the ColonyPublisher docs style
 
 ### What this phase does NOT do
 
-- Does NOT actually publish to npm (that's a `npm publish` command after review)
-- Does NOT modify existing `src/toolkit/` — the package re-exports from it
-- Does NOT add new runtime dependencies
+- Does NOT actually `npm publish` (that's a manual step after review)
+- Does NOT duplicate code — `colony.ts` and `hive.ts` call into `src/toolkit/`
+- Does NOT add new runtime dependencies (just re-packages existing code)
 
 ### Files
 
 | File | Lines (est.) | Phase |
 |------|-------------|-------|
-| `packages/supercolony-toolkit/package.json` | ~25 | 10f |
+| `packages/supercolony-toolkit/package.json` | ~30 | 10f |
 | `packages/supercolony-toolkit/tsconfig.json` | ~15 | 10f |
-| `packages/supercolony-toolkit/src/index.ts` | ~20 | 10f |
-| `packages/supercolony-toolkit/src/colony-publisher.ts` | ~80 | 10f |
-| `packages/supercolony-toolkit/src/types.ts` | ~30 | 10f |
-| `packages/supercolony-toolkit/README.md` | ~80 | 10f |
-| `tests/packages/supercolony-toolkit.test.ts` | ~60 | 10f |
+| `packages/supercolony-toolkit/src/index.ts` | ~15 | 10f |
+| `packages/supercolony-toolkit/src/colony.ts` | ~60 | 10f |
+| `packages/supercolony-toolkit/src/hive.ts` | ~100 | 10f |
+| `packages/supercolony-toolkit/src/agent.ts` | ~10 | 10f |
+| `packages/supercolony-toolkit/src/types.ts` | ~40 | 10f |
+| `packages/supercolony-toolkit/README.md` | ~120 | 10f |
+| `tests/packages/supercolony-toolkit.test.ts` | ~100 | 10f |
 
 ### Checklist
 
 - [ ] Create `packages/supercolony-toolkit/` directory structure
-- [ ] Write `package.json` with correct name, version, deps, exports
-- [ ] Write `src/index.ts` re-exporting createToolkit, createAgentRuntime, runAgentLoop
-- [ ] Write `src/colony-publisher.ts` compat shim mapping documented API to toolkit
-- [ ] Write `src/types.ts` public API types
-- [ ] Write `README.md` with install, quick start, ColonyPublisher compat examples
+- [ ] Write `package.json` with correct name, version, peer deps, exports map
+- [ ] Write `src/colony.ts` — Colony class holding runtime + hive + toolkit
+- [ ] Write `src/hive.ts` — all `hive.*` methods wrapping toolkit primitives
+- [ ] Write `src/index.ts` — `connect()` factory + re-exports
+- [ ] Write `src/agent.ts` — re-export runAgentLoop, defaultObserve
+- [ ] Write `src/types.ts` — public API types
+- [ ] Write `README.md` with install, connect(), hive.* examples, toolkit.* examples, agent loop
 - [ ] Write `tests/packages/supercolony-toolkit.test.ts`
 - [ ] Verify: `npm test` passes, `npx tsc --noEmit` passes
 
@@ -1184,14 +1231,16 @@ export class ColonyPublisher {
 | `tests/templates/base-template.test.ts` | ~60 | 10a-3 |
 | `tests/templates/market-intelligence.test.ts` | ~100 | 10b |
 | `tests/templates/security-sentinel.test.ts` | ~100 | 10c |
-| `packages/supercolony-toolkit/package.json` | ~25 | 10f |
+| `packages/supercolony-toolkit/package.json` | ~30 | 10f |
 | `packages/supercolony-toolkit/tsconfig.json` | ~15 | 10f |
-| `packages/supercolony-toolkit/src/index.ts` | ~20 | 10f |
-| `packages/supercolony-toolkit/src/colony-publisher.ts` | ~80 | 10f |
-| `packages/supercolony-toolkit/src/types.ts` | ~30 | 10f |
-| `packages/supercolony-toolkit/README.md` | ~80 | 10f |
-| `tests/packages/supercolony-toolkit.test.ts` | ~60 | 10f |
-| **Total** | **~1,753** | |
+| `packages/supercolony-toolkit/src/index.ts` | ~15 | 10f |
+| `packages/supercolony-toolkit/src/colony.ts` | ~60 | 10f |
+| `packages/supercolony-toolkit/src/hive.ts` | ~100 | 10f |
+| `packages/supercolony-toolkit/src/agent.ts` | ~10 | 10f |
+| `packages/supercolony-toolkit/src/types.ts` | ~40 | 10f |
+| `packages/supercolony-toolkit/README.md` | ~120 | 10f |
+| `tests/packages/supercolony-toolkit.test.ts` | ~100 | 10f |
+| **Total** | **~1,933** | |
 
 ---
 
@@ -1224,11 +1273,15 @@ export class ColonyPublisher {
 - [ ] Update this file's status checkboxes
 - [ ] Verify: `npm test` + `npx tsc --noEmit` both pass
 
-### Phase 10f: npm Package Preparation
+### Phase 10f: npm Package (`supercolony-toolkit`)
 - [ ] Create `packages/supercolony-toolkit/` directory structure
-- [ ] Write package.json, tsconfig.json, src/index.ts, src/types.ts
-- [ ] Write `src/colony-publisher.ts` ColonyPublisher compat shim
-- [ ] Write package README.md with install + usage examples
+- [ ] Write package.json with exports map, peer dep on @kynesyslabs/demosdk
+- [ ] Write `src/colony.ts` — Colony class (runtime + hive + toolkit)
+- [ ] Write `src/hive.ts` — `hive.*` methods wrapping toolkit primitives
+- [ ] Write `src/index.ts` — `connect()` factory + re-exports
+- [ ] Write `src/agent.ts` — re-export runAgentLoop, defaultObserve
+- [ ] Write `src/types.ts` — public API types
+- [ ] Write README.md with connect(), hive.*, toolkit.*, agent loop examples
 - [ ] Write `tests/packages/supercolony-toolkit.test.ts`
 - [ ] Final: `npm test` + `npx tsc --noEmit` both pass
 
@@ -1262,4 +1315,4 @@ GPT-5.4 reviewed the plan via CodexBridge and found 6 issues. All fixed:
 - [ ] Phase 10c: Security Sentinel template
 - [ ] Phase 10d: OpenClaw research doc
 - [ ] Phase 10e: Documentation + README
-- [ ] Phase 10f: npm package prep (supercolony-toolkit + ColonyPublisher compat shim)
+- [ ] Phase 10f: npm package prep (supercolony-toolkit — real implementation with hive.* + toolkit.*)
