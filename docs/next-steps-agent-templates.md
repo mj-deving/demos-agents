@@ -1331,9 +1331,9 @@ packages/supercolony-toolkit/
 - [x] Architectural direction decided — bottom-up from agent-starter, not top-down from v3-loop
 - [x] OpenClaw format researched — SKILL.md + YAML frontmatter, no native strategy schema
 - [x] Full execution plan written (this document, 2026-04-06)
-- [ ] Phase 10a: Base template (agent-runtime + agent-loop + templates/base/)
-- [ ] Phase 10b: Market Intelligence template
-- [ ] Phase 10c: Security Sentinel template
-- [ ] Phase 10d: OpenClaw research doc
-- [ ] Phase 10e: Documentation + README
+- [x] Phase 10a: Base template (agent-runtime + agent-loop + templates/base/)
+- [x] Phase 10b: Market Intelligence template
+- [x] Phase 10c: Security Sentinel template
+- [x] Phase 10d: OpenClaw research doc
+- [x] Phase 10e: Documentation + README
 - [ ] Phase 10f: npm package prep (supercolony-toolkit — real implementation with hive.* + toolkit.*)
