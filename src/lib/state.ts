@@ -25,6 +25,7 @@ import {
 import { constants as fsConstants } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
+import { isV2, type V2SessionState } from "./state-v2.js";
 
 // ── Constants ──────────────────────────────────────
 
@@ -85,24 +86,10 @@ const PHASE_ORDER: PhaseName[] = [
   "harden",
 ];
 
-// ── V2 Types ─────────────────────────────────────
-
 export type CorePhase = "sense" | "act" | "confirm";
 export type LoopVersion = 1 | 2 | 3;
 export const CORE_PHASE_ORDER: CorePhase[] = ["sense", "act", "confirm"];
 export const KNOWN_EXTENSIONS = ["calibrate", "sources", "observe", "signals", "predictions", "tips", "lifecycle", "sc-oracle", "sc-prices"] as const;
-
-export type SubstageStatus = "pending" | "running" | "completed" | "failed" | "skipped";
-
-export interface ActSubstageState {
-  substage: "engage" | "gate" | "publish";
-  status: SubstageStatus;
-  startedAt?: string;
-  completedAt?: string;
-  durationMs?: number;
-  failureCode?: string;
-  result?: unknown;
-}
 
 /** Full context for a published post — persisted in session state for afterConfirm hooks. */
 export interface PublishedPostRecord {
@@ -127,32 +114,6 @@ export interface PendingMentionRecord {
   timestamp: number;
   textPreview: string;
   mentions: string[];
-}
-
-export interface V2SessionState {
-  loopVersion: 2;
-  sessionNumber: number;
-  agentName: string;
-  startedAt: string;
-  pid: number;
-  phases: Record<CorePhase, PhaseState>;
-  substages: ActSubstageState[];
-  posts: Array<string | SessionPostRecord>;
-  engagements: Record<string, unknown>[];
-  /** Set when --shadow suppresses publish */
-  publishSuppressed?: boolean;
-  /** Full context for published posts — consumed by afterConfirm hooks (PR1) */
-  publishedPosts?: PublishedPostRecord[];
-  /** Consensus signal snapshot from /api/signals — consumed by gate/LLM (PR1) */
-  signalSnapshot?: unknown;
-  /** SuperColony price snapshot injected by sc-prices beforeSense hook. */
-  priceSnapshot?: unknown;
-  /** SuperColony oracle snapshot injected by sc-oracle beforeSense hook. */
-  oracleSnapshot?: unknown;
-  /** Colony briefing summary from /api/report — consumed by LLM prompt assembly (PR2) */
-  briefingContext?: string;
-  /** Mention candidates discovered during beforeSense polling (PR3). */
-  pendingMentions?: PendingMentionRecord[];
 }
 
 export interface V3SessionState {
@@ -184,13 +145,12 @@ export interface V3SessionState {
 
 export type AnySessionState = SessionState | V2SessionState | V3SessionState;
 
-export function isV2(state: AnySessionState): state is V2SessionState {
-  return "loopVersion" in state && state.loopVersion === 2;
-}
-
 export function isV3(state: AnySessionState): state is V3SessionState {
   return "loopVersion" in state && state.loopVersion === 3;
 }
+
+export { isV2 } from "./state-v2.js";
+export type { ActSubstageState, SubstageStatus, V2SessionState } from "./state-v2.js";
 
 // ── Path Helpers ───────────────────────────────────
 
