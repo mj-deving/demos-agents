@@ -18,8 +18,8 @@ import { createSdkBridge, AUTH_PENDING_TOKEN } from "../src/toolkit/sdk-bridge.j
 import { checkSessionBudget, recordSpend, saveSpendingLedger } from "../src/lib/spending-policy.js";
 import {
   checkAndRecordWrite,
-  getWriteRateRemaining,
   rollbackWriteRecord,
+  getWriteRateRemaining,
 } from "../src/toolkit/guards/write-rate-limit.js";
 
 // Re-export shared types so existing consumers don't break
@@ -72,9 +72,9 @@ export async function executePublishActions(
         continue;
       }
       // Write-rate guard (same as PUBLISH/REPLY — Codex review fix M6)
-      const betRateError = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, false);
-      if (betRateError) {
-        result.skipped.push({ action, reason: betRateError.message });
+      const betRateCheck = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, false);
+      if (betRateCheck.error) {
+        result.skipped.push({ action, reason: betRateCheck.error.message });
         continue;
       }
       // Session budget guard — reject if DEM spend would exceed daily/session cap
@@ -147,13 +147,12 @@ export async function executePublishActions(
       continue;
     }
 
-    // Codex fix: optimistic rate-limit recording — check AND record atomically
-    // before publish. If publish fails later, we rollback the record.
-    const rateError = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, true);
-    if (rateError) {
+    // H1: Optimistic reservation — reserve rate-limit slot upfront, rollback on failure
+    const reservation = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, true);
+    if (reservation.error) {
       const remaining = await getWriteRateRemaining(deps.stateStore, deps.walletAddress);
       const reason =
-        `${rateError.message} (dailyRemaining=${remaining.dailyRemaining}, hourlyRemaining=${remaining.hourlyRemaining})`;
+        `${reservation.error.message} (dailyRemaining=${remaining.dailyRemaining}, hourlyRemaining=${remaining.hourlyRemaining})`;
       deps.observe("insight", `Publish action skipped: ${reason}`, {
         actionType: action.type,
         target: action.target,
@@ -161,6 +160,10 @@ export async function executePublishActions(
       result.skipped.push({ action, reason });
       continue;
     }
+
+    let publishSucceeded = false;
+    const reservedTimestamp = reservation.recordedTimestamp!;
+    try {
 
     if (!deps.provider) {
       deps.observe("insight", `Publish action skipped: ${action.type} has no LLM provider`, {
@@ -404,60 +407,50 @@ export async function executePublishActions(
       const attestationType = toPublishAttestationType(primaryAttestation);
       appendState(deps.state, publishResult.txHash, topic, draft, publishResult.textLength, attestationType);
 
-      // Codex fix: Wrap bookkeeping in try-catch so publish success is never
-      // rolled back due to a session-log or quality-log write failure.
-      try {
-        deps.logSession({
-          timestamp: new Date().toISOString(),
-          txHash: publishResult.txHash,
-          category: draft.category,
-          attestation_type: attestationType,
-          attestation_url: primaryAttestation?.url,
-          attestation_requested_url: primaryAttestation?.requestedUrl,
-          hypothesis: draft.hypothesis || "",
-          predicted_reactions: draft.predicted_reactions,
-          agents_referenced: [],
-          topic,
-          confidence: draft.confidence,
-          text_preview: draft.text.slice(0, 100),
-          text_length: draft.text.length,
-          tags: draft.tags,
-        });
+      deps.logSession({
+        timestamp: new Date().toISOString(),
+        txHash: publishResult.txHash,
+        category: draft.category,
+        attestation_type: attestationType,
+        attestation_url: primaryAttestation?.url,
+        attestation_requested_url: primaryAttestation?.requestedUrl,
+        hypothesis: draft.hypothesis || "",
+        predicted_reactions: draft.predicted_reactions,
+        agents_referenced: [],
+        topic,
+        confidence: draft.confidence,
+        text_preview: draft.text.slice(0, 100),
+        text_length: draft.text.length,
+        tags: draft.tags,
+      });
 
-        const quality = calculateStrategyScore({
-          text: draft.text,
-          isReply: !!draft.replyTo,
-          hasAttestation: attestationResults.length > 0,
-        });
-        // Official SuperColony score — used for platform compatibility assessment
-        const officialScore = calculateOfficialScore({
-          text: draft.text,
-          hasSourceAttestations: attestationResults.length > 0,
-          confidence: draft.confidence,
-          reactionCount: 0, // pre-publish, no reactions yet
-        });
-        deps.logQuality({
-          timestamp: new Date().toISOString(),
-          agent: deps.agentConfig.name,
-          topic,
-          category: draft.category,
-          quality_score: quality.score,
-          quality_max: quality.maxScore,
-          quality_breakdown: { ...quality.breakdown, officialScore: officialScore.score },
-          predicted_reactions: draft.predicted_reactions,
-          confidence: draft.confidence,
-          text_length: draft.text.length,
-          isReply: !!draft.replyTo,
-          hasAttestation: attestationResults.length > 0,
-          txHash: publishResult.txHash,
-        });
-      } catch (bookkeepingError: unknown) {
-        // Bookkeeping failure must NOT propagate — publish already succeeded on-chain
-        const msg = bookkeepingError instanceof Error ? bookkeepingError.message : String(bookkeepingError);
-        deps.observe("warning", `Post-publish bookkeeping failed (non-fatal): ${msg}`, {
-          actionType: action.type, topic, txHash: publishResult.txHash, error: msg,
-        });
-      }
+      const quality = calculateStrategyScore({
+        text: draft.text,
+        isReply: !!draft.replyTo,
+        hasAttestation: attestationResults.length > 0,
+      });
+      // Official SuperColony score — used for platform compatibility assessment
+      const officialScore = calculateOfficialScore({
+        text: draft.text,
+        hasSourceAttestations: attestationResults.length > 0,
+        confidence: draft.confidence,
+        reactionCount: 0, // pre-publish, no reactions yet
+      });
+      deps.logQuality({
+        timestamp: new Date().toISOString(),
+        agent: deps.agentConfig.name,
+        topic,
+        category: draft.category,
+        quality_score: quality.score,
+        quality_max: quality.maxScore,
+        quality_breakdown: { ...quality.breakdown, officialScore: officialScore.score },
+        predicted_reactions: draft.predicted_reactions,
+        confidence: draft.confidence,
+        text_length: draft.text.length,
+        isReply: !!draft.replyTo,
+        hasAttestation: attestationResults.length > 0,
+        txHash: publishResult.txHash,
+      });
 
       result.executed.push({
         action,
@@ -469,29 +462,24 @@ export async function executePublishActions(
       });
 
       // H5: Increment successful publish counter
+      publishSucceeded = true;
       successfulPublishes++;
 
       // Persist state after each successful action for crash-safe resume
       saveState(deps.state, deps.sessionsDir);
     } catch (publishError: unknown) {
-      // Codex fix: rollback the optimistic rate-limit record on publish failure
-      try {
-        await rollbackWriteRecord(deps.stateStore, deps.walletAddress);
-        deps.observe("insight", `Rate-limit record rollback after publish failure`, {
-          actionType: action.type, topic,
-        });
-      } catch (rollbackError: unknown) {
-        const rbMsg = rollbackError instanceof Error ? rollbackError.message : String(rollbackError);
-        deps.observe("warning", `Rate-limit rollback failed: ${rbMsg}`, {
-          actionType: action.type, topic,
-        });
-      }
-
       const msg = publishError instanceof Error ? publishError.message : String(publishError);
       deps.observe("error", `Chain publish failed, skipping action: ${msg}`, {
         actionType: action.type, topic, error: msg,
       });
       result.executed.push({ action, success: false, error: `Publish failed: ${msg}` });
+    }
+
+    // H1: end of try block for optimistic reservation
+    } finally {
+      if (!publishSucceeded) {
+        await rollbackWriteRecord(deps.stateStore, deps.walletAddress, reservedTimestamp);
+      }
     }
   }
 

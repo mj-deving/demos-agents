@@ -71,9 +71,9 @@ describe("Barrel export", () => {
     try {
       const store = new toolkit.FileStateStore(tempDir);
 
-      // Write rate limit check returns null (allowed) on empty state
+      // Write rate limit check returns no error (allowed) on empty state
       const rateResult = await toolkit.checkAndRecordWrite(store, "demos1test", false);
-      expect(rateResult).toBeNull();
+      expect(rateResult.error).toBeNull();
 
       // Dedup check returns null (not duplicate) on empty state
       const dedupResult = await toolkit.checkAndRecordDedup(store, "demos1test", "unique text", false);

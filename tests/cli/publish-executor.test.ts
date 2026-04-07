@@ -23,7 +23,6 @@ const {
   getPostMock,
   checkAndRecordWriteMock,
   getWriteRateRemainingMock,
-  rollbackWriteRecordMock,
   createSdkBridgeMock,
   checkSessionBudgetMock,
   recordSpendMock,
@@ -45,7 +44,6 @@ const {
   getPostMock: vi.fn(),
   checkAndRecordWriteMock: vi.fn(),
   getWriteRateRemainingMock: vi.fn(),
-  rollbackWriteRecordMock: vi.fn(),
   createSdkBridgeMock: vi.fn(),
   checkSessionBudgetMock: vi.fn(),
   recordSpendMock: vi.fn(),
@@ -99,7 +97,7 @@ vi.mock("../../src/toolkit/colony/posts.js", () => ({
 vi.mock("../../src/toolkit/guards/write-rate-limit.js", () => ({
   checkAndRecordWrite: checkAndRecordWriteMock,
   getWriteRateRemaining: getWriteRateRemainingMock,
-  rollbackWriteRecord: rollbackWriteRecordMock,
+  rollbackWriteRecord: vi.fn(),
 }));
 
 vi.mock("../../src/toolkit/sdk-bridge.js", () => ({
@@ -408,7 +406,7 @@ function createDeps(overrides: Partial<PublishExecutorDeps> = {}): PublishExecut
 describe("executePublishActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    checkAndRecordWriteMock.mockResolvedValue(null);
+    checkAndRecordWriteMock.mockResolvedValue({ error: null, recordedTimestamp: Date.now() });
     getWriteRateRemainingMock.mockResolvedValue({ dailyRemaining: 14, hourlyRemaining: 5 });
     getPostMock.mockReturnValue(null);
     createSdkBridgeMock.mockReturnValue({
@@ -516,8 +514,11 @@ describe("executePublishActions", () => {
     const deps = createDeps();
     const action = makeAction();
     checkAndRecordWriteMock.mockResolvedValue({
-      code: "RATE_LIMITED",
-      message: "Hourly write limit reached (5/hour)",
+      error: {
+        code: "RATE_LIMITED",
+        message: "Hourly write limit reached (5/hour)",
+      },
+      recordedTimestamp: null,
     });
     getWriteRateRemainingMock.mockResolvedValue({ dailyRemaining: 9, hourlyRemaining: 0 });
 

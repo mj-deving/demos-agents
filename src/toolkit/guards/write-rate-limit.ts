@@ -21,13 +21,21 @@ interface WriteRateState {
 
 const DEFAULT_STATE: WriteRateState = { entries: [] };
 
+/** Result of a write-rate check, including the recorded timestamp for rollback */
+export interface WriteRateResult {
+  error: DemosError | null;
+  /** The timestamp that was recorded, or null if record=false or rate-limited */
+  recordedTimestamp: number | null;
+}
+
 /** Check and optionally record a write in a single lock acquisition */
 export async function checkAndRecordWrite(
   store: StateStore,
   walletAddress: string,
   record: boolean = false,
-): Promise<DemosError | null> {
+): Promise<WriteRateResult> {
   const key = stateKey("write-rate", walletAddress);
+  const recordedTimestamp = record ? Date.now() : null;
   const { error } = await checkAndAppend<WriteRateState, { timestamp: number }>(
     store,
     key,
@@ -46,23 +54,28 @@ export async function checkAndRecordWrite(
       }
       return null;
     },
-    record ? { timestamp: Date.now() } : undefined,
+    recordedTimestamp !== null ? { timestamp: recordedTimestamp } : undefined,
   );
 
-  return error ? demosError("RATE_LIMITED", error, true) : null;
+  return {
+    error: error ? demosError("RATE_LIMITED", error, true) : null,
+    recordedTimestamp: error ? null : recordedTimestamp,
+  };
 }
 
-/** Rollback the most recent write-rate entry (optimistic record undo on publish failure) */
+/** Remove a specific reservation by timestamp (ID-based, safe for concurrent publishers) */
 export async function rollbackWriteRecord(
   store: StateStore,
   walletAddress: string,
+  timestamp: number,
 ): Promise<void> {
   const key = stateKey("write-rate", walletAddress);
   const unlock = await store.lock(key, GUARD_LOCK_TTL_MS);
   try {
     const state = await loadState(store, key, DEFAULT_STATE);
-    if (state.entries.length > 0) {
-      state.entries.pop();
+    const idx = state.entries.findIndex((e) => e.timestamp === timestamp);
+    if (idx !== -1) {
+      state.entries.splice(idx, 1);
       await store.set(key, JSON.stringify(state));
     }
   } finally {

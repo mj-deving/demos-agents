@@ -27,8 +27,8 @@ describe("Write Rate Limiter", () => {
   });
 
   it("allows first write", async () => {
-    const error = await checkAndRecordWrite(store, WALLET, false);
-    expect(error).toBeNull();
+    const result = await checkAndRecordWrite(store, WALLET, false);
+    expect(result.error).toBeNull();
   });
 
   it("enforces 14 posts/day per wallet", async () => {
@@ -45,10 +45,10 @@ describe("Write Rate Limiter", () => {
         vi.advanceTimersByTime(HOUR_MS + 1);
       }
 
-      const error = await checkAndRecordWrite(store, WALLET, false);
-      expect(error).not.toBeNull();
-      expect(error!.code).toBe("RATE_LIMITED");
-      expect(error!.message).toContain("Daily");
+      const result = await checkAndRecordWrite(store, WALLET, false);
+      expect(result.error).not.toBeNull();
+      expect(result.error!.code).toBe("RATE_LIMITED");
+      expect(result.error!.message).toContain("Daily");
     } finally {
       vi.useRealTimers();
     }
@@ -59,10 +59,10 @@ describe("Write Rate Limiter", () => {
       await checkAndRecordWrite(store, WALLET, true);
     }
 
-    const error = await checkAndRecordWrite(store, WALLET, false);
-    expect(error).not.toBeNull();
-    expect(error!.code).toBe("RATE_LIMITED");
-    expect(error!.message).toContain("Hourly");
+    const result = await checkAndRecordWrite(store, WALLET, false);
+    expect(result.error).not.toBeNull();
+    expect(result.error!.code).toBe("RATE_LIMITED");
+    expect(result.error!.message).toContain("Hourly");
   });
 
   it("uses StateStore with exclusive locking", async () => {
@@ -82,8 +82,8 @@ describe("Write Rate Limiter", () => {
     }
 
     // Different wallet should still be allowed
-    const error = await checkAndRecordWrite(store, "demos1other", false);
-    expect(error).toBeNull();
+    const result = await checkAndRecordWrite(store, "demos1other", false);
+    expect(result.error).toBeNull();
   });
 
   it("reports remaining capacity", async () => {

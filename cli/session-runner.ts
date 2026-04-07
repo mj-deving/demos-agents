@@ -2160,16 +2160,16 @@ async function runPublishAutonomous(
   for (const gp of gatePosts) {
     try {
       // Step -1: Write rate limit check (PR1 — before any work for this topic)
-      const rateError = await checkAndRecordWrite(writeRateStore, walletAddress, false);
-      if (rateError) {
+      const rateResult = await checkAndRecordWrite(writeRateStore, walletAddress, false);
+      if (rateResult.error) {
         const remaining = await getWriteRateRemaining(writeRateStore, walletAddress);
-        observe("insight", `Write rate limit reached for "${gp.topic}": ${rateError.message}`, {
+        observe("insight", `Write rate limit reached for "${gp.topic}": ${rateResult.error.message}`, {
           phase: "publish", substage: "publish",
           source: "session-runner.ts:runPublishAutonomous",
           data: { topic: gp.topic, dailyRemaining: remaining.dailyRemaining, hourlyRemaining: remaining.hourlyRemaining },
         });
-        info(`Rate limit SKIP: ${gp.topic} — ${rateError.message} (daily: ${remaining.dailyRemaining}, hourly: ${remaining.hourlyRemaining})`);
-        topicLedger.push({ topic: gp.topic, category: gp.category, status: "skipped", error: rateError.message });
+        info(`Rate limit SKIP: ${gp.topic} — ${rateResult.error.message} (daily: ${remaining.dailyRemaining}, hourly: ${remaining.hourlyRemaining})`);
+        topicLedger.push({ topic: gp.topic, category: gp.category, status: "skipped", error: rateResult.error.message });
         continue;
       }
 
@@ -2602,9 +2602,9 @@ async function runPublishAutonomous(
       });
 
       // Record publish in write-rate ledger (PR1 — persistent tracking)
-      const recordError = await checkAndRecordWrite(writeRateStore, walletAddress, true);
-      if (recordError) {
-        info(`Warning: failed to record publish in rate limiter: ${recordError.message}`);
+      const recordResult = await checkAndRecordWrite(writeRateStore, walletAddress, true);
+      if (recordResult.error) {
+        info(`Warning: failed to record publish in rate limiter: ${recordResult.error.message}`);
       }
 
       publishedHashes.push(pubResult.txHash);

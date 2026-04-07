@@ -351,9 +351,9 @@ async function main(): Promise<void> {
         return { allowed: false, reason: `Reactive hourly limit reached (2/hour)` };
       }
       // Also check global shared limit (both cron + reactive together)
-      const globalError = await checkAndRecordWrite(store, addr, false);
-      if (globalError) {
-        return { allowed: false, reason: globalError.message };
+      const globalResult = await checkAndRecordWrite(store, addr, false);
+      if (globalResult.error) {
+        return { allowed: false, reason: globalResult.error.message };
       }
       return { allowed: true, reason: "Within reactive limits" };
     },

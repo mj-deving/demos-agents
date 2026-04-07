@@ -40,12 +40,12 @@ async function guardAndPublish(
   start: number,
 ): Promise<ToolResult<PublishResult>> {
   // Check guards first (no mutation — safe to reject without side effects)
-  const [rateLimitError, dedupError] = await Promise.all([
+  const [rateLimitCheck, dedupError] = await Promise.all([
     checkAndRecordWrite(session.stateStore, session.walletAddress, false),
     checkAndRecordDedup(session.stateStore, session.walletAddress, draft.text, false),
   ]);
 
-  if (rateLimitError) return err(rateLimitError, localProvenance(start));
+  if (rateLimitCheck.error) return err(rateLimitCheck.error, localProvenance(start));
   if (dedupError) return err(dedupError, localProvenance(start));
 
   const { txHash, responseHash } = await executePublishPipeline(session, draft);

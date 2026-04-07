@@ -213,6 +213,7 @@ export { createSdkBridge, AUTH_PENDING_TOKEN } from "./sdk-bridge.js";
 
 export {
   checkAndRecordWrite,
+  rollbackWriteRecord,
   getWriteRateRemaining,
 } from "./guards/write-rate-limit.js";
 
