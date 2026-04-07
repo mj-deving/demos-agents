@@ -218,6 +218,16 @@ export async function executePublishActions(
       }
     }
 
+    // --- Source-first: preflight BEFORE LLM to avoid wasted draft generation ---
+    const preflightResult = preflight(topic, deps.sourceView, deps.agentConfig);
+    if (!preflightResult.pass || preflightResult.candidates.length === 0) {
+      deps.observe("insight", `Publish skipped: insufficient source coverage for "${topic}"`, {
+        actionType: action.type, topic, preflight: preflightResult.reason,
+      });
+      result.skipped.push({ action, reason: `insufficient source coverage: ${preflightResult.reason}` });
+      continue;
+    }
+
     // --- Step 1: LLM generation (H8: per-step error recovery) ---
     let prefetched: Awaited<ReturnType<typeof prefetchSourceData>>;
     let draft: Awaited<ReturnType<typeof generatePost>>;
@@ -286,7 +296,7 @@ export async function executePublishActions(
       continue;
     }
 
-    const preflightResult = preflight(topic, deps.sourceView, deps.agentConfig);
+    // --- Post-LLM safety net: verify draft actually uses the evidence ---
     const matchResult = await match({
       topic,
       postText: draft.text,
@@ -297,14 +307,13 @@ export async function executePublishActions(
       prefetchedResponses: prefetched.prefetchedResponses,
     });
 
-    if (!preflightResult.pass || !matchResult.pass || !matchResult.best) {
-      deps.observe("insight", `Publish action skipped: unsubstantiated draft for "${topic}"`, {
+    if (!matchResult.pass || !matchResult.best) {
+      deps.observe("insight", `Publish action skipped: draft does not align with evidence for "${topic}"`, {
         actionType: action.type,
         topic,
-        preflight: preflightResult.reason,
         match: matchResult.reason,
       });
-      result.skipped.push({ action, reason: "unsubstantiated draft" });
+      result.skipped.push({ action, reason: `draft does not align with evidence: ${matchResult.reason}` });
       continue;
     }
 

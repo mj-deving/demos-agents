@@ -630,7 +630,7 @@ describe("executePublishActions", () => {
     const result = await executePublishActions([action], deps);
 
     expect(result.executed).toEqual([]);
-    expect(result.skipped).toEqual([{ action, reason: "unsubstantiated draft" }]);
+    expect(result.skipped).toEqual([{ action, reason: "draft does not align with evidence: threshold not met" }]);
     expect(attestDahrMock).not.toHaveBeenCalled();
     expect(publishPostMock).not.toHaveBeenCalled();
   });
