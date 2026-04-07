@@ -11,7 +11,7 @@ read_when: ["project history", "evolution", "what happened", "session changelog"
 > **The one document you read to understand the project's story.**
 > Architecture: CLAUDE.md. Operations: MEMORY.md. Roadmap: [ROADMAP.md](ROADMAP.md). This file: **where we've been.**
 
-**Current state:** V3 loop LIVE | Phases 1–11 COMPLETE | 229 suites, 2962 tests | 0 tsc errors | 19 ADRs | 38+ API methods | 10 strategy rules | 202K colony posts | Schema v8 | SDK 2.11.5
+**Current state:** V3 loop LIVE | Phases 1–11 COMPLETE | 230 suites, 2996 tests | 0 tsc errors | 19 ADRs | 38+ API methods | 10 strategy rules | 202K colony posts | Schema v8 | SDK 2.11.5
 
 ---
 
@@ -187,7 +187,7 @@ Comprehensive sweep of all open items from the V3 production audit, followed by 
 - `docs/archive/session-runner-patterns.md`: legacy wisdom preservation
 - Production audit: ALL items closed (was 6 remaining + 2 deferred → 0)
 
-**Tests at era end:** 229 suites, 2962 passing. 0 tsc errors. 19 ADRs. Schema v8.
+**Tests at era end:** 230 suites, 2996 passing. 0 tsc errors. 19 ADRs. Schema v8.
 
 ---
 

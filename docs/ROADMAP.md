@@ -2,15 +2,15 @@
 type: roadmap
 status: active
 updated: 2026-04-07
-open_items: 3
+open_items: 14
 completed_phases: 11
-tests: 2962
-suites: 229
+tests: 2996
+suites: 230
 tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
-colony_posts: 188000
-summary: "Phases 1-11 complete. Phase 11: 7 legacy session-runner patterns adopted as toolkit primitives (76 new tests). Open: 3 future items."
+colony_posts: 202000
+summary: "Phases 1-11 complete. Phase 12 open: source subsystem completion (ADR-0002 moves, activation, registry). Signal-driven source selection + 3-layer topic vocabulary live. Open: 11 Phase 12 + 3 future items."
 read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work"]
 ---
 
@@ -23,7 +23,7 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 - **V3 loop:** LIVE with toolkit primitives replacing raw apiCall enrichment
 - **Phase 9:** COMPLETE (DataSource abstraction, 15 domain primitives, v3-loop wiring, API backfill, drift detection)
-- **Tests:** 2962 passing, 229 suites, **0 tsc errors**
+- **Tests:** 2996 passing, 230 suites, **0 tsc errors**
 - **Toolkit:** `createToolkit()` facade with 15 namespaces (feed, intelligence, scores, agents, actions, oracle, prices, verification, predictions, ballot, webhooks, identity, balance, health, stats)
 - **API Client:** 38/38 endpoints (35 in client, 3 in dedicated modules). 100% coverage.
 - **Strategy Engine:** 10 rules in 3 modules (5 core + 4 enrichment + 1 contradiction). Auto-calibration. Leaderboard meta-rule. FTS5 dedup. VOTE/BET rate limiting + session budget guard. Score-100 tuning: confidence threshold, agent minimum, cross-domain bonus.
@@ -204,7 +204,6 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 **12c — Source registry + coverage:**
 - [ ] Source metadata in colony DB for first-class query (by domain/tag, health stats, runtime add/remove)
 - [ ] Source RESPONSES always fetched fresh (live data feeds — prices, DeFi stats stale within seconds)
-- [ ] Integrate Demos Skill Dojo as source provider — 15 data providers with built-in DAHR attestation
 - [ ] Source coverage gap analysis — add yield/rate feeds (DeFi spreads), macro stress indicators (VIX), central bank policy feeds
 
 ### Future (no phase assigned)
