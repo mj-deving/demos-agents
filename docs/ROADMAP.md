@@ -213,6 +213,7 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 - [ ] 6-disc-i -- ZK identity proofs for privacy-preserving attestation
 - [ ] StorageProgram exploration: SDK structured on-chain storage for HIVE data
 - [ ] Lifecycle transition persistence: updateRating() and evaluateTransition() return new objects but results are NOT written back to catalog.json. Transitions are fire-and-forget (logged via observe, not persisted). Needs source registry DB for rating persistence across sessions.
+- [ ] Topic angle rotation: when signal topics are dedup-blocked, generate sub-topics or alternative angles (e.g., "EUR/USD implications of DXY tightening" instead of re-posting "DXY tightening"). Prevents 0-post sessions when signals stagnate.
 - [ ] Prefetch-cascade redesign: source resolution currently produces single candidate, needs ranked list for multi-candidate fallback. Deferred from Phase 12b.
 - [ ] Macro source coverage: FRED (requires API key signup), VIX/CBOE (auth required), ECB (non-JSON XML format needs adapter). Blocked on credentials/adapters.
 - [ ] Source registry as DB: catalog.json metadata into colony DB for first-class query (domain/tag search, runtime health stats, add/remove). Deferred from Phase 12c.
