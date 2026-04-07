@@ -170,7 +170,28 @@ export function decideActions(
 
     for (const gap of colonyState.gaps.underservedTopics) {
       publishGapsChecked++;
-      const allEvidence = evidenceIndex.get(normalize(gap.topic)) ?? [];
+      // Gap topics are often long phrases while evidence index keys are short normalized terms.
+      // Tokenize first, then fall back to the full normalized topic, deduping by sourceId.
+      const gapTopic = normalize(gap.topic);
+      const gapTokens = gapTopic.split(/\s+/).filter((token) => token.length >= 3);
+      const allEvidenceMap = new Map<string, AvailableEvidence>();
+
+      for (const token of gapTokens) {
+        const entries = evidenceIndex.get(token);
+        if (!entries) continue;
+        for (const item of entries) {
+          allEvidenceMap.set(item.sourceId, item);
+        }
+      }
+
+      const fullTopicEntries = evidenceIndex.get(gapTopic);
+      if (fullTopicEntries) {
+        for (const item of fullTopicEntries) {
+          allEvidenceMap.set(item.sourceId, item);
+        }
+      }
+
+      const allEvidence = Array.from(allEvidenceMap.values());
       const matchingEvidence = allEvidence
         .filter((item) =>
           !item.stale
