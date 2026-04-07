@@ -183,9 +183,32 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 - Version-gated resume: enforce when V3 resume is added (session-runner.ts:4109-4119)
 - Fresh-cache TTL: SENSE result caching for 5 min on restart (session-runner.ts:3410-3427)
 
+### Phase 12: Source Subsystem — Deferred ADR-0002 Moves + Activation + Registry
+
+> Identified in `docs/architecture-plumbing-vs-strategy.md` as "SHIP" since 2026-03-29.
+> Deferred repeatedly, came up during signal-driven source matching (sessions 82-83).
+> 3122 lines of source infrastructure exist but only partially wired into v3-loop.
+
+**12a — Move mechanism code to toolkit (ADR-0002 boundary):**
+- [ ] `src/lib/sources/matcher.ts` (826 lines) → `src/toolkit/sources/` — claim extraction + evidence scoring is mechanism
+- [ ] `src/lib/sources/policy.ts` (314 lines) → `src/toolkit/sources/` — preflight + source selection is mechanism
+- [ ] `src/lib/sources/lifecycle.ts` (356 lines) → `src/toolkit/sources/` — rating/status transitions is mechanism
+- [ ] Leave 2-line re-export shims at old paths (same pattern as catalog/fetch/health/rate-limit)
+
+**12b — Activate unused source infrastructure in v3-loop:**
+- [ ] `health.ts` — auto-skip degraded/stale sources in SENSE phase
+- [ ] `rate-limit.ts` — per-source rate limiting (prevent hammering failing sources)
+- [ ] `lifecycle.ts` — auto-degrade sources after consecutive failures
+- [ ] `prefetch-cascade.ts` — multi-candidate source fallback (needs source resolution redesign)
+
+**12c — Source registry + coverage:**
+- [ ] Source metadata in colony DB for first-class query (by domain/tag, health stats, runtime add/remove)
+- [ ] Source RESPONSES always fetched fresh (live data feeds — prices, DeFi stats stale within seconds)
+- [ ] Integrate Demos Skill Dojo as source provider — 15 data providers with built-in DAHR attestation
+- [ ] Source coverage gap analysis — add yield/rate feeds (DeFi spreads), macro stress indicators (VIX), central bank policy feeds
+
 ### Future (no phase assigned)
 
-- [ ] Source registry as DB — migrate catalog.json metadata into colony DB for first-class query (query by domain/tag for signal topic matching, health stats, runtime add/remove). Source RESPONSES are always fetched fresh (live data feeds — prices, news, DeFi stats are stale within seconds). Investigate Demos Skill Dojo as a native source registry with built-in DAHR attestation (15 providers, attested data)
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
 - [ ] 6-disc-i -- ZK identity proofs for privacy-preserving attestation
 - [ ] StorageProgram exploration: SDK structured on-chain storage for HIVE data
