@@ -36,3 +36,5 @@ export {
 export type { FaithfulnessGateOptions } from "./faithfulness-gate.js";
 export { runSignalFirstPipeline } from "./signal-first-pipeline.js";
 export type { SignalFirstPipelineOptions } from "./signal-first-pipeline.js";
+export { checkPublishQuality } from "./quality-gate.js";
+export type { QualityGateConfig, QualityGateResult } from "./quality-gate.js";
