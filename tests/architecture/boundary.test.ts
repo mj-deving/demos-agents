@@ -171,6 +171,10 @@ const KNOWN_RUNTIME_EXCEPTIONS = [
   "src/toolkit/tools/connect.ts",
   // agent-runtime.ts wraps SDK init sequence (wallet, auth, LLM) — Phase 10a template factory
   "src/toolkit/agent-runtime.ts",
+  // Phase 12a: matcher.ts imports transcript, llm-claim-config, providers — resolves when providers move to toolkit
+  "src/toolkit/sources/matcher.ts",
+  // Phase 12a: policy.ts imports resolveAttestationPlan, providers — resolves when attestation/providers move to toolkit
+  "src/toolkit/sources/policy.ts",
 ];
 
 describe("Architecture Boundary — ADR-0002", () => {
@@ -197,7 +201,9 @@ describe("Architecture Boundary — ADR-0002", () => {
 
     // If this cap grows, investigate — it may indicate new coupling.
     // Cap 4: +1 from agent-runtime.ts (type LLMProvider from lib/llm) — Phase 10a
-    expect(typeImports.length).toBeLessThanOrEqual(4);
+    // Cap 11: +4 from matcher.ts (AttestationType, LLMProvider, transcript types, providers/types)
+    //         +3 from policy.ts (AttestationType, AttestationMethodPlan, AgentConfig)
+    expect(typeImports.length).toBeLessThanOrEqual(11);
   });
 
   it("toolkit must not import from src/plugins/", () => {

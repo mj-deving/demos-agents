@@ -114,6 +114,20 @@ export {
   isRateLimited,
   resetRateLimits,
 } from "./sources/rate-limit.js";
+
+// Phase 12a: source matching, policy, lifecycle — moved from src/lib/sources/
+export type { MatchInput, MatchResult } from "./sources/matcher.js";
+export { match, extractClaims, scoreMatch } from "./sources/matcher.js";
+export type { PreflightCandidate, PreflightResult, SourceSelectionResult } from "./sources/policy.js";
+export { preflight, selectSourceForTopicV2 } from "./sources/policy.js";
+export type { TransitionResult, LifecycleReport, SourceHealthSummary } from "./sources/lifecycle.js";
+export {
+  sampleSources,
+  updateRating,
+  evaluateTransition,
+  applyTransitions,
+  getSourceHealthSummary,
+} from "./sources/lifecycle.js";
 export { adapter as genericProviderAdapter } from "./providers/generic.js";
 export type {
   AttestationMethod as ProviderAttestationMethod,

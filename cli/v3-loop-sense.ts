@@ -186,6 +186,19 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
     return true;
   });
 
+  // Health filtering: skip degraded/stale/deprecated/archived sources (Phase 12b)
+  const UNHEALTHY_STATUSES = new Set(["degraded", "stale", "deprecated", "archived"]);
+  const healthySources = dedupedSources.filter(s => !UNHEALTHY_STATUSES.has(s.status));
+  const skippedCount = dedupedSources.length - healthySources.length;
+  if (skippedCount > 0) {
+    observe("insight", `Source health filter: skipped ${skippedCount} unhealthy source(s)`, {
+      source: "v3-loop:sourceHealth",
+      skipped: skippedCount,
+      total: dedupedSources.length,
+      healthy: healthySources.length,
+    });
+  }
+
   // Bump concurrency to 10 when signal-driven sources are included — sources are
   // live data feeds (prices, news) that must be fetched fresh every cycle.
   // The 15s wall-clock budget already caps total time.
@@ -193,14 +206,20 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
     ? Math.max(limits?.sourceFetchConcurrency ?? 3, 10)
     : limits?.sourceFetchConcurrency ?? 3;
 
-  const { fetched: sourcesFetched, cached: sourcesCached } =
-    await fetchSourcesParallel(dedupedSources, bridge.db, observe, limits?.sourceFetchBudgetMs ?? 15_000, effectiveConcurrency);
+  const { fetched: sourcesFetched, cached: sourcesCached, lifecycleTransitions } =
+    await fetchSourcesParallel(healthySources, bridge.db, observe, limits?.sourceFetchBudgetMs ?? 15_000, effectiveConcurrency);
   if (sourcesFetched > 0) {
-    observe("insight", `Source fetch: ${sourcesFetched} fetched, ${sourcesCached} stored (${dedupedSources.length} selected)`, {
+    observe("insight", `Source fetch: ${sourcesFetched} fetched, ${sourcesCached} stored (${healthySources.length} selected)`, {
       source: "v3-loop:sourceFetch",
       sourcesFetched,
       sourcesCached,
-      totalSelected: dedupedSources.length,
+      totalSelected: healthySources.length,
+    });
+  }
+  if (lifecycleTransitions > 0) {
+    observe("insight", `Source lifecycle: ${lifecycleTransitions} status transition(s) applied`, {
+      source: "v3-loop:sourceLifecycle",
+      transitions: lifecycleTransitions,
     });
   }
 

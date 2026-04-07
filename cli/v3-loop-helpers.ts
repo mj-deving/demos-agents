@@ -12,6 +12,9 @@ import { createLimiter } from "../src/toolkit/util/limiter.js";
 import { upsertSourceResponse, getSourceResponse } from "../src/toolkit/colony/source-cache.js";
 import { fetchSource } from "../src/toolkit/sources/fetch.js";
 import type { SourceRecordV2 } from "../src/toolkit/sources/catalog.js";
+import { acquireRateLimitToken, isRateLimited } from "../src/toolkit/sources/rate-limit.js";
+import { updateRating, evaluateTransition } from "../src/toolkit/sources/lifecycle.js";
+import type { SourceTestResult } from "../src/toolkit/sources/health.js";
 
 import type { V3LoopDeps } from "./v3-loop.js";
 import type { executeStrategyActions } from "./action-executor.js";
@@ -168,6 +171,9 @@ export function getStrategySpecDir(): string {
 /**
  * Fetch sources in parallel (concurrency 3) with a wall-clock budget.
  * Results are cached to the colony DB source_response_cache.
+ *
+ * Phase 12b: Integrates rate limiting (per-source throttle) and lifecycle
+ * management (update ratings + evaluate transitions after each fetch).
  */
 export async function fetchSourcesParallel(
   sources: SourceRecordV2[],
@@ -175,9 +181,11 @@ export async function fetchSourcesParallel(
   observe: (type: string, msg: string, meta?: Record<string, unknown>) => void,
   budgetMs = 15_000,
   concurrency = 3,
-): Promise<{ fetched: number; cached: number }> {
+): Promise<{ fetched: number; cached: number; lifecycleTransitions: number }> {
   let fetched = 0;
   let cached = 0;
+  let rateLimited = 0;
+  const fetchOutcomes: Array<{ source: SourceRecordV2; success: boolean }> = [];
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), budgetMs);
   try {
@@ -186,6 +194,19 @@ export async function fetchSourcesParallel(
       sources.map((source) =>
         limit(async () => {
           if (ctrl.signal.aborted) return;
+
+          // Phase 12b: Per-source rate limiting
+          if (isRateLimited(source.provider)) {
+            rateLimited++;
+            observe("insight", `Rate-limited: skipping ${source.id} (${source.provider})`, {
+              source: "v3-loop:rateLimit",
+              sourceId: source.id,
+              provider: source.provider,
+            });
+            return;
+          }
+          acquireRateLimitToken(source.provider);
+
           try {
             const result = await fetchSource(source.url, source);
             fetched++;
@@ -201,6 +222,9 @@ export async function fetchSourcesParallel(
                 consecutiveFailures: 0,
               });
               cached++;
+              fetchOutcomes.push({ source, success: true });
+            } else {
+              fetchOutcomes.push({ source, success: false });
             }
           } catch (err: unknown) {
             observe("warning", `Source fetch failed for ${source.id}`, {
@@ -218,6 +242,7 @@ export async function fetchSourcesParallel(
               ttlSeconds: 900,
               consecutiveFailures: (getSourceResponse(db, source.id)?.consecutiveFailures ?? 0) + 1,
             });
+            fetchOutcomes.push({ source, success: false });
           }
         }),
       ),
@@ -225,5 +250,39 @@ export async function fetchSourcesParallel(
   } finally {
     clearTimeout(timer);
   }
-  return { fetched, cached };
+
+  if (rateLimited > 0) {
+    observe("insight", `Rate limiting: ${rateLimited} source(s) throttled this cycle`, {
+      source: "v3-loop:rateLimit",
+      rateLimited,
+    });
+  }
+
+  // Phase 12b: Lifecycle — update ratings and evaluate transitions after fetch
+  let lifecycleTransitions = 0;
+  for (const { source, success } of fetchOutcomes) {
+    const testResult: SourceTestResult = {
+      sourceId: source.id,
+      provider: source.provider,
+      status: success ? "OK" : "FETCH_FAILED",
+      latencyMs: 0,
+      entryCount: 0,
+      sampleTitles: [],
+      error: null,
+    };
+    const updated = updateRating(source, testResult);
+    const transition = evaluateTransition(updated, testResult);
+    if (transition.newStatus !== null) {
+      lifecycleTransitions++;
+      observe("insight", `Source lifecycle: ${source.id} ${transition.currentStatus}→${transition.newStatus} (${transition.reason})`, {
+        source: "v3-loop:sourceLifecycle",
+        sourceId: source.id,
+        from: transition.currentStatus,
+        to: transition.newStatus,
+        reason: transition.reason,
+      });
+    }
+  }
+
+  return { fetched, cached, lifecycleTransitions };
 }

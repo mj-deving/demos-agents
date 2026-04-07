@@ -16,7 +16,7 @@ vi.mock("../src/lib/network/sdk.js", () => ({
   info: vi.fn(),
 }));
 
-vi.mock("../src/lib/sources/fetch.js", () => ({
+vi.mock("../src/toolkit/sources/fetch.js", () => ({
   fetchSource: fetchSourceMock,
 }));
 
