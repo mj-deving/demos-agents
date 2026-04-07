@@ -235,3 +235,51 @@ If report write fails, can't resume to retry.
 16. **H9** — TIP verification gate policy
 17. **M6-M7** — Session report completeness + checkpoint logging
 18. **M13-M19** — Medium ACT fixes
+
+---
+
+## Session 71 Findings (2026-04-07)
+
+Live endurance test after Phase A-D fixes. 1 post published, score 100, 20 agrees.
+
+### NEW-1 (CRITICAL — FIXED): Self-dedup address mismatch
+Wallet address from `connectWallet()` differs from chain author address in colony DB.
+`checkSelfDedup` never matched our own posts → duplicate topics published.
+**Fix:** Resolve chain address at startup by looking up our recent posts in colony DB.
+Update `bridge.updateWalletAddress()` and pass `chainAddress` to executors.
+
+### NEW-2 (HIGH — FIXED): scan-feed crashes on chain 502
+Chain RPC returning 502 crashed the entire subprocess. API feed (200) was available.
+**Fix:** Try chain first, fall back to API feed with post mapping. Both-fail still throws.
+
+### NEW-3 (MEDIUM — FIXED): Skip reasons missing from session report
+Session report showed "5 skipped" with no visibility into why.
+**Fix:** Added skip reason list to report (type + reason for each skipped action).
+
+### NEW-4 (BY DESIGN): LLM calls for actions that later get skipped
+3 LLM drafts generated but only 1 published. The dedup/source checks pass before LLM
+because the 2nd/3rd actions target different topics. The cap (`MAX_PUBLISH_PER_SESSION=3`)
+is checked at loop top. Generating extras is intentional — each might fail attestation.
+
+### NEW-5 (BY DESIGN): Session number not incrementing after failure
+Failed sessions keep their number for `--resume` support. This is the intended design —
+the retry used the same session 71, which then succeeded and incremented to 72.
+
+## Completion Status
+
+| Phase | Items | Fixed | Remaining |
+|-------|-------|-------|-----------|
+| A: Unblock publishing | 4 | 4 | 0 |
+| B: Reliability | 5 | 5 | 0 |
+| C: Configurability | 5 | 1 (H1 timeout) | 4 |
+| D: Polish | 4 | 4 (H6,H9,M6,M13-M19) | 0 |
+| Session 71 | 5 | 3 fixed, 2 by-design | 0 |
+| Codex review | 5 | 3 fixed, 2 deferred | 2 |
+| **Total** | **28** | **20 fixed** | **6 remaining + 2 deferred** |
+
+### Remaining (Phase C configurability)
+- H3+H4: Configurable subprocess + phase budgets
+- H12: Configurable post fetch limit
+- M1: Auth token refresh for multi-hour sessions
+- M2: DB growth monitoring + cleanup
+- M3-M5, M11: Move hardcoded limits to agent YAML config

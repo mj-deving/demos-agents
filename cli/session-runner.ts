@@ -3900,6 +3900,16 @@ function writeV3SessionReport(state: V3SessionState, oversight: OversightLevel, 
   } else {
     lines.push("- No actions executed");
   }
+  // NEW-3: Include skip reasons for visibility
+  const skippedActions = Array.isArray(act.skipped) ? act.skipped : [];
+  if (skippedActions.length > 0) {
+    lines.push(`- Skipped: ${skippedActions.length}`);
+    for (const s of skippedActions.slice(0, 10)) {
+      const type = s?.action?.type ?? "?";
+      const reason = String(s?.reason ?? "unknown").slice(0, 100);
+      lines.push(`  - ${type}: ${reason}`);
+    }
+  }
   lines.push("");
 
   lines.push("## 3. CONFIRM");

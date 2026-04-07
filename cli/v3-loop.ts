@@ -123,6 +123,20 @@ export async function runV3Loop(
     address,
   );
 
+  // NEW-1: Resolve chain author address — wallet address may differ from how chain stores our pubkey.
+  // Look up our own recent posts to find the actual author address used in colony DB.
+  let chainAddress = address;
+  try {
+    const row = bridge.db.prepare(
+      `SELECT DISTINCT author FROM posts WHERE author LIKE ? ORDER BY rowid DESC LIMIT 1`,
+    ).get(`${address.slice(0, 18)}%`) as { author: string } | undefined;
+    if (row?.author && row.author !== address) {
+      chainAddress = row.author;
+      bridge.updateWalletAddress(chainAddress);
+      deps.observe("insight", `Chain address resolved: ${address.slice(0, 16)}→${chainAddress.slice(0, 16)}`, { source: "v3-loop:chainAddress" });
+    }
+  } catch { /* non-fatal — use wallet address as fallback */ }
+
   if (state.phases.sense.status !== "completed") {
     const beforeSenseCtx: BeforeSenseContext = {
       state,
@@ -406,7 +420,7 @@ export async function runV3Loop(
                 dryRun: flags.dryRun,
                 observe: deps.observe,
                 colonyDb: bridge.db,
-                ourAddress: address,
+                ourAddress: chainAddress,
               })
             : { executed: [], skipped: [] };
 
@@ -415,7 +429,7 @@ export async function runV3Loop(
           heavy.length > 0
             ? await executePublishActions(heavy, {
                 demos,
-                walletAddress: address,
+                walletAddress: chainAddress,
                 provider,
                 agentConfig: deps.agentConfig,
                 sourceView: deps.getSourceView(),

@@ -502,10 +502,36 @@ async function main(): Promise<void> {
   const { demos, address } = await connectWallet(envPath);
   const bridge = createSdkBridge(demos, undefined, AUTH_PENDING_TOKEN);
 
-  // Fetch feed from chain — single scan replaces multi-mode API pagination
+  // Fetch feed from chain — single scan replaces multi-mode API pagination.
+  // NEW-2: Fall back to API feed if chain RPC is down (502/timeout).
   info("Fetching feed from chain...");
-  const chainPosts = await bridge.getHivePosts(500);
-  info(`Chain: ${chainPosts.length} posts fetched`);
+  let chainPosts: Awaited<ReturnType<typeof bridge.getHivePosts>>;
+  try {
+    chainPosts = await bridge.getHivePosts(500);
+    info(`Chain: ${chainPosts.length} posts fetched`);
+  } catch (chainErr: unknown) {
+    const msg = chainErr instanceof Error ? chainErr.message : String(chainErr);
+    info(`Chain RPC failed (${msg}), falling back to API feed...`);
+    try {
+      const res = await fetch("https://supercolony.ai/api/feed?limit=100");
+      if (!res.ok) throw new Error(`API feed ${res.status}`);
+      const data = await res.json() as { posts: Array<{ txHash: string; author: string; timestamp: number; payload: any; reactions?: any; score?: number }> };
+      chainPosts = (data.posts ?? []).map(p => ({
+        txHash: p.txHash,
+        author: p.author,
+        timestamp: p.timestamp,
+        text: String(p.payload?.text ?? ""),
+        category: String(p.payload?.cat ?? ""),
+        tags: p.payload?.tags ?? [],
+        reactions: p.reactions ?? { agree: 0, disagree: 0 },
+        reactionsKnown: !!(p.reactions),
+        blockNumber: 0,
+      }));
+      info(`API fallback: ${chainPosts.length} posts fetched`);
+    } catch {
+      throw new Error(`Chain RPC failed and API fallback also failed: ${msg}`);
+    }
+  }
 
   // Map chain posts to API-compatible shape for filterPosts
   // Compute score locally — deterministic formula from strategy.yaml
