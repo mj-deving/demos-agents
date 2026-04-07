@@ -21,6 +21,7 @@ import {
   type BaselineStore,
 } from "./signal-detection.js";
 import { observe } from "./observe.js";
+import { expandTopicToDomains } from "../../toolkit/sources/topic-vocabulary.js";
 
 // ── Types ─────────────────────────────────────────────
 
@@ -136,10 +137,14 @@ export function deriveIntentsFromSignalTopics(
       .split(/[^a-z0-9]+/)
       .filter(t => t.length >= 3 && !STOP_WORDS.has(t));
 
+    // Expand tokens through the topic-domain vocabulary for semantic matching.
+    // "pboc" → ["macro", "forex", "currency", "economics"], etc.
+    const expandedDomains = expandTopicToDomains(tokens);
+
     return {
       description: `Signal: ${topic}`,
-      // Use tokens as both domains and topics for maximum source coverage
-      domains: tokens,
+      // Expanded domains bridge signal language to catalog domain tags
+      domains: expandedDomains,
       topics: [topic],
       signals: [{ type: "change" as const, metric: "*", threshold: 10 }],
       maxSources: 3,
