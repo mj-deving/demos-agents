@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-04-07T16:51:22.311Z",
+  "generatedAt": "2026-04-07T19:16:27.912Z",
   "aliasesVersion": 1,
   "sources": [
     {
@@ -1595,17 +1595,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 48,
+        "testCount": 49,
         "successCount": 0,
-        "consecutiveFailures": 45,
-        "lastTestedAt": "2026-04-07T16:50:43.845Z"
+        "consecutiveFailures": 46,
+        "lastTestedAt": "2026-04-07T19:15:48.072Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-31T18:38:15.887Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
-        "lastFailedAt": "2026-04-07T16:50:43.845Z"
+        "lastFailedAt": "2026-04-07T19:15:48.072Z"
       },
       "adapter": {
         "operation": "lookup"
@@ -1731,17 +1731,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 47,
+        "testCount": 48,
         "successCount": 0,
-        "consecutiveFailures": 44,
-        "lastTestedAt": "2026-04-07T16:50:44.761Z"
+        "consecutiveFailures": 45,
+        "lastTestedAt": "2026-04-07T19:15:48.983Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-31T18:38:15.887Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
-        "lastFailedAt": "2026-04-07T16:50:44.761Z"
+        "lastFailedAt": "2026-04-07T19:15:48.983Z"
       },
       "adapter": {
         "operation": "chart"
@@ -3139,17 +3139,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 34,
+        "testCount": 35,
         "successCount": 0,
-        "consecutiveFailures": 28,
-        "lastTestedAt": "2026-04-07T16:51:01.766Z"
+        "consecutiveFailures": 29,
+        "lastTestedAt": "2026-04-07T19:16:05.990Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
         "statusChangedAt": "2026-04-06T12:06:52.528Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
-        "lastFailedAt": "2026-04-07T16:51:01.766Z"
+        "lastFailedAt": "2026-04-07T19:16:05.990Z"
       },
       "adapter": {
         "operation": "fees"
@@ -11086,17 +11086,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 17,
+        "testCount": 18,
         "successCount": 0,
-        "consecutiveFailures": 14,
-        "lastTestedAt": "2026-04-07T16:51:18.772Z"
+        "consecutiveFailures": 15,
+        "lastTestedAt": "2026-04-07T19:16:22.996Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T15:24:25.305Z",
         "discoveredBy": "manual",
         "statusChangedAt": "2026-04-07T06:59:58.404Z",
         "promotedAt": "2026-03-21T15:42:39.860Z",
-        "lastFailedAt": "2026-04-07T16:51:18.772Z"
+        "lastFailedAt": "2026-04-07T19:16:22.996Z"
       },
       "id": "mempool-hashrate",
       "name": "mempool-hashrate-3d",
@@ -11430,17 +11430,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 16,
+        "testCount": 17,
         "successCount": 0,
-        "consecutiveFailures": 13,
-        "lastTestedAt": "2026-04-07T16:51:19.560Z"
+        "consecutiveFailures": 14,
+        "lastTestedAt": "2026-04-07T19:16:23.858Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T15:24:25.305Z",
         "discoveredBy": "manual",
         "statusChangedAt": "2026-04-07T07:04:34.183Z",
         "promotedAt": "2026-03-21T15:42:39.860Z",
-        "lastFailedAt": "2026-04-07T16:51:19.560Z"
+        "lastFailedAt": "2026-04-07T19:16:23.858Z"
       },
       "id": "deribit-perp-sol",
       "name": "deribit-sol-perpetual",
@@ -12989,17 +12989,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 6,
+        "testCount": 7,
         "successCount": 0,
-        "consecutiveFailures": 3,
-        "lastTestedAt": "2026-04-07T16:51:20.662Z"
+        "consecutiveFailures": 4,
+        "lastTestedAt": "2026-04-07T19:16:25.571Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:46:06.589Z",
         "discoveredBy": "manual",
         "statusChangedAt": "2026-04-07T16:51:22.311Z",
         "promotedAt": "2026-03-21T18:54:34.310Z",
-        "lastFailedAt": "2026-04-07T16:51:20.662Z"
+        "lastFailedAt": "2026-04-07T19:16:25.571Z"
       },
       "adapter": {
         "operation": "stats"
@@ -13462,10 +13462,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 3,
-        "successCount": 3,
+        "testCount": 4,
+        "successCount": 4,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-03-21T18:54:25.402Z"
+        "lastTestedAt": "2026-04-07T19:16:27.912Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:46:06.589Z",
@@ -14667,10 +14667,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 36,
+        "testCount": 37,
         "successCount": 1,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-04-07T16:51:18.773Z"
+        "lastTestedAt": "2026-04-07T19:16:23.859Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:32:19.644Z",
@@ -14722,10 +14722,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 36,
+        "testCount": 37,
         "successCount": 1,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-04-07T16:51:18.775Z"
+        "lastTestedAt": "2026-04-07T19:16:23.859Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:40:43.188Z",
@@ -14773,10 +14773,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 36,
+        "testCount": 37,
         "successCount": 1,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-04-07T16:51:18.776Z"
+        "lastTestedAt": "2026-04-07T19:16:23.860Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:57:39.167Z",
@@ -14835,69 +14835,6 @@
         "statusChangedAt": "2026-03-31T18:39:31.492Z",
         "promotedAt": "2026-03-31T18:39:31.492Z"
       }
-    },
-    {
-      "id": "generic-fng-macro-01",
-      "name": "crypto-fear-greed",
-      "provider": "generic",
-      "url": "https://api.alternative.me/fng/?limit=1&format=json",
-      "urlPattern": "api.alternative.me/fng",
-      "topics": ["crypto", "sentiment", "fear", "greed", "market"],
-      "tlsn_safe": true,
-      "dahr_safe": true,
-      "max_response_kb": 1,
-      "note": "Crypto Fear & Greed Index. Public API, no auth. Updated daily.",
-      "topicAliases": ["fear and greed", "market sentiment", "crypto sentiment"],
-      "domainTags": ["crypto", "sentiment", "macro", "market"],
-      "responseFormat": "json",
-      "scope": { "visibility": "scoped", "agents": ["sentinel", "crawler"], "importedFrom": ["phase12c"] },
-      "runtime": { "timeoutMs": 5000, "retry": { "maxAttempts": 2, "backoffMs": 1000, "retryOn": ["timeout", "5xx"] } },
-      "trustTier": "established",
-      "status": "quarantined",
-      "rating": { "overall": 50, "uptime": 50, "relevance": 50, "freshness": 50, "sizeStability": 50, "engagement": 50, "trust": 50, "testCount": 0, "successCount": 0, "consecutiveFailures": 0, "lastTestedAt": null },
-      "lifecycle": { "discoveredAt": "2026-04-07T19:30:00.000Z", "discoveredBy": "phase12c" }
-    },
-    {
-      "id": "generic-global-crypto-01",
-      "name": "coingecko-global-market",
-      "provider": "coingecko",
-      "url": "https://api.coingecko.com/api/v3/global",
-      "urlPattern": "api.coingecko.com/api/v3/global",
-      "topics": ["crypto", "market", "dominance", "capitalization"],
-      "tlsn_safe": true,
-      "dahr_safe": true,
-      "max_response_kb": 3,
-      "note": "Global crypto market data: total market cap, BTC dominance, active coins. No auth.",
-      "topicAliases": ["market cap", "btc dominance", "crypto market", "total market"],
-      "domainTags": ["crypto", "market", "macro", "dominance"],
-      "responseFormat": "json",
-      "scope": { "visibility": "scoped", "agents": ["sentinel", "crawler"], "importedFrom": ["phase12c"] },
-      "runtime": { "timeoutMs": 5000, "retry": { "maxAttempts": 2, "backoffMs": 1000, "retryOn": ["timeout", "5xx"] } },
-      "trustTier": "established",
-      "status": "quarantined",
-      "rating": { "overall": 50, "uptime": 50, "relevance": 50, "freshness": 50, "sizeStability": 50, "engagement": 50, "trust": 50, "testCount": 0, "successCount": 0, "consecutiveFailures": 0, "lastTestedAt": null },
-      "lifecycle": { "discoveredAt": "2026-04-07T19:30:00.000Z", "discoveredBy": "phase12c" }
-    },
-    {
-      "id": "generic-defi-global-01",
-      "name": "defillama-global-tvl",
-      "provider": "defillama",
-      "url": "https://api.llama.fi/v2/historicalChainTvl",
-      "urlPattern": "api.llama.fi/v2/historicalChainTvl",
-      "topics": ["defi", "tvl", "liquidity", "yield"],
-      "tlsn_safe": true,
-      "dahr_safe": true,
-      "max_response_kb": 50,
-      "note": "Historical chain TVL across all DeFi protocols. Public API, no auth. Large response.",
-      "topicAliases": ["total value locked", "defi liquidity", "defi tvl", "chain tvl"],
-      "domainTags": ["defi", "tvl", "macro", "liquidity"],
-      "responseFormat": "json",
-      "scope": { "visibility": "scoped", "agents": ["sentinel", "crawler"], "importedFrom": ["phase12c"] },
-      "runtime": { "timeoutMs": 10000, "retry": { "maxAttempts": 2, "backoffMs": 1000, "retryOn": ["timeout", "5xx"] } },
-      "trustTier": "established",
-      "status": "quarantined",
-      "rating": { "overall": 50, "uptime": 50, "relevance": 50, "freshness": 50, "sizeStability": 50, "engagement": 50, "trust": 50, "testCount": 0, "successCount": 0, "consecutiveFailures": 0, "lastTestedAt": null },
-      "lifecycle": { "discoveredAt": "2026-04-07T19:30:00.000Z", "discoveredBy": "phase12c" }
     }
   ]
 }
