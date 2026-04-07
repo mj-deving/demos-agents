@@ -15,6 +15,7 @@ import {
   type SourceScanOptions,
   type TopicSuggestion,
   deriveIntentsFromTopics,
+  deriveIntentsFromSignalTopics,
   selectSourcesByIntent,
   signalsToSuggestions,
   mergeAndDedup,
@@ -151,6 +152,101 @@ describe("deriveIntentsFromTopics", () => {
   it("handles empty topics gracefully", () => {
     const intents = deriveIntentsFromTopics({ primary: [], secondary: [] });
     expect(intents).toHaveLength(0);
+  });
+});
+
+// ── deriveIntentsFromSignalTopics ────────────────────
+
+describe("deriveIntentsFromSignalTopics", () => {
+  it("derives one intent per signal topic", () => {
+    const intents = deriveIntentsFromSignalTopics([
+      "BTC Macro Pressure from Geopolitics PBOC",
+      "ETH DeFi Yield Compression",
+    ]);
+    expect(intents).toHaveLength(2);
+    expect(intents[0].description).toContain("BTC Macro Pressure");
+    expect(intents[1].description).toContain("ETH DeFi Yield");
+  });
+
+  it("extracts domain keywords from signal topic strings", () => {
+    const intents = deriveIntentsFromSignalTopics([
+      "BTC Macro Pressure from Geopolitics PBOC and Derivatives Market",
+    ]);
+    expect(intents).toHaveLength(1);
+    const intent = intents[0];
+    // Should contain meaningful tokens as domains
+    expect(intent.domains).toContain("btc");
+    expect(intent.domains).toContain("macro");
+    expect(intent.domains).toContain("pressure");
+    expect(intent.domains).toContain("geopolitics");
+    expect(intent.domains).toContain("pboc");
+    expect(intent.domains).toContain("derivatives");
+    expect(intent.domains).toContain("market");
+    // Stop words should be filtered
+    expect(intent.domains).not.toContain("from");
+    expect(intent.domains).not.toContain("and");
+  });
+
+  it("preserves full topic string for topic token matching", () => {
+    const intents = deriveIntentsFromSignalTopics(["BTC Macro Pressure"]);
+    expect(intents[0].topics).toContain("BTC Macro Pressure");
+  });
+
+  it("filters short tokens and stop words", () => {
+    const intents = deriveIntentsFromSignalTopics(["A the BTC and ETH for DeFi"]);
+    const domains = intents[0].domains;
+    // "a" too short, "the" stop word, "and" stop word, "for" stop word
+    expect(domains).not.toContain("the");
+    expect(domains).not.toContain("and");
+    expect(domains).not.toContain("for");
+    expect(domains).toContain("btc");
+    expect(domains).toContain("eth");
+    expect(domains).toContain("defi");
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(deriveIntentsFromSignalTopics([])).toHaveLength(0);
+  });
+
+  it("each intent has wildcard change signal and maxSources=3", () => {
+    const intents = deriveIntentsFromSignalTopics(["BTC Derivatives"]);
+    expect(intents[0].signals).toHaveLength(1);
+    expect(intents[0].signals[0]).toEqual({ type: "change", metric: "*", threshold: 10 });
+    expect(intents[0].maxSources).toBe(3);
+  });
+
+  it("signal intents match sources via selectSourcesByIntent", () => {
+    const derivativesSource = makeSource({
+      id: "derivatives-tracker",
+      name: "Derivatives Tracker",
+      provider: "custom",
+      domainTags: ["derivatives", "futures"],
+      topics: ["btc derivatives", "options"],
+    });
+    const macroSource = makeSource({
+      id: "macro-monitor",
+      name: "Macro Monitor",
+      provider: "custom",
+      domainTags: ["macro", "geopolitics"],
+      topics: ["central bank", "pboc"],
+    });
+    const irrelevantSource = makeSource({
+      id: "weather-api",
+      name: "Weather API",
+      provider: "custom",
+      domainTags: ["weather"],
+      topics: ["forecast"],
+    });
+
+    const sourceView = makeSourceView([derivativesSource, macroSource, irrelevantSource]);
+    const intents = deriveIntentsFromSignalTopics([
+      "BTC Macro Pressure from Geopolitics PBOC and Derivatives Market",
+    ]);
+
+    const selected = selectSourcesByIntent(intents[0], sourceView);
+    expect(selected.some(s => s.id === "derivatives-tracker")).toBe(true);
+    expect(selected.some(s => s.id === "macro-monitor")).toBe(true);
+    expect(selected.some(s => s.id === "weather-api")).toBe(false);
   });
 });
 

@@ -32,6 +32,7 @@ const {
   upsertSourceResponseMock,
   getSourceResponseMock,
   deriveIntentsFromTopicsMock,
+  deriveIntentsFromSignalTopicsMock,
   selectSourcesByIntentMock,
   fetchSourceMock,
 } = vi.hoisted(() => ({
@@ -56,6 +57,7 @@ const {
   upsertSourceResponseMock: vi.fn(),
   getSourceResponseMock: vi.fn().mockReturnValue(null),
   deriveIntentsFromTopicsMock: vi.fn().mockReturnValue([]),
+  deriveIntentsFromSignalTopicsMock: vi.fn().mockReturnValue([]),
   selectSourcesByIntentMock: vi.fn().mockReturnValue([]),
   fetchSourceMock: vi.fn().mockResolvedValue({ ok: false }),
 }));
@@ -123,6 +125,7 @@ vi.mock("../../src/toolkit/colony/source-cache.js", () => ({
 
 vi.mock("../../src/lib/pipeline/source-scanner.js", () => ({
   deriveIntentsFromTopics: deriveIntentsFromTopicsMock,
+  deriveIntentsFromSignalTopics: deriveIntentsFromSignalTopicsMock,
   selectSourcesByIntent: selectSourcesByIntentMock,
 }));
 

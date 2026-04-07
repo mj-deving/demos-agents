@@ -27,7 +27,7 @@ import type { AutoDataSource } from "../src/toolkit/data-source.js";
 import type { Toolkit } from "../src/toolkit/primitives/index.js";
 import { sense, computeAutoCalibration, type StrategyBridge } from "./v3-strategy-bridge.js";
 import { refreshAgentProfiles } from "../src/toolkit/colony/intelligence.js";
-import { deriveIntentsFromTopics, selectSourcesByIntent } from "../src/lib/pipeline/source-scanner.js";
+import { deriveIntentsFromTopics, deriveIntentsFromSignalTopics, selectSourcesByIntent } from "../src/lib/pipeline/source-scanner.js";
 
 export interface SenseWorkDeps {
   demos: any;
@@ -146,20 +146,58 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
     }
   }
 
-  // Fetch sources in parallel with wall-clock budget
+  // API Enrichment via Toolkit Primitives — fetched BEFORE source selection
+  // so that colony signal topics can drive source fetch (signal-driven, not config-driven).
+  const apiEnrichment = await fetchApiEnrichment(toolkit, limits, observe);
+
+  // Fetch sources in parallel with wall-clock budget.
+  // Intents derived from BOTH agent config topics AND colony signal topics.
   const sourceView = deps.getSourceView();
-  const topics = deps.agentConfig.topics;
-  const intents = topics?.primary?.length ? deriveIntentsFromTopics(topics) : [];
-  const allSources = intents.flatMap((intent) =>
+  const configIntents = deps.agentConfig.topics?.primary?.length
+    ? deriveIntentsFromTopics(deps.agentConfig.topics)
+    : [];
+
+  // Extract signal topics from API enrichment and derive additional intents
+  const signalTopics = apiEnrichment?.signals
+    ?.filter(s => s.topic)
+    .map(s => s.topic) ?? [];
+  const signalIntents = deriveIntentsFromSignalTopics(signalTopics);
+
+  if (signalIntents.length > 0) {
+    observe("insight", `Signal-driven sources: ${signalIntents.length} signal topics added to source selection`, {
+      source: "v3-loop:sourceFetch",
+      signalTopics,
+    });
+  }
+
+  const allIntents = [...configIntents, ...signalIntents];
+  const selectedSources = allIntents.flatMap((intent) =>
     selectSourcesByIntent(intent, sourceView).slice(0, limits?.sourcesPerIntent ?? 5),
   );
+
+  // Deduplicate sources (config and signal intents may select overlapping sources)
+  const seenSourceIds = new Set<string>();
+  const dedupedSources = selectedSources.filter(s => {
+    if (seenSourceIds.has(s.id)) return false;
+    seenSourceIds.add(s.id);
+    return true;
+  });
+
+  // Bump concurrency to 10 when signal-driven sources are included — sources are
+  // live data feeds (prices, news) that must be fetched fresh every cycle.
+  // The 15s wall-clock budget already caps total time.
+  const effectiveConcurrency = signalIntents.length > 0
+    ? Math.max(limits?.sourceFetchConcurrency ?? 3, 10)
+    : limits?.sourceFetchConcurrency ?? 3;
+
   const { fetched: sourcesFetched, cached: sourcesCached } =
-    await fetchSourcesParallel(allSources, bridge.db, observe, limits?.sourceFetchBudgetMs ?? 15_000, limits?.sourceFetchConcurrency ?? 3);
+    await fetchSourcesParallel(dedupedSources, bridge.db, observe, limits?.sourceFetchBudgetMs ?? 15_000, effectiveConcurrency);
   if (sourcesFetched > 0) {
-    observe("insight", `Source fetch: ${sourcesCached}/${sourcesFetched} cached in colony DB`, {
+    observe("insight", `Source fetch: ${sourcesFetched} fetched, ${sourcesCached} stored (${dedupedSources.length} selected)`, {
       source: "v3-loop:sourceFetch",
       sourcesFetched,
       sourcesCached,
+      totalSelected: dedupedSources.length,
     });
   }
 
@@ -190,9 +228,6 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
   }
 
   const senseResult = sense(bridge, sourceView);
-
-  // API Enrichment via Toolkit Primitives (optional, graceful degradation)
-  const apiEnrichment = await fetchApiEnrichment(toolkit, limits, observe);
 
   // Calibration
   const calibration = computeAutoCalibration(bridge);

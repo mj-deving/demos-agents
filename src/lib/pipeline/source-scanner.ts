@@ -107,6 +107,46 @@ export function deriveIntentsFromTopics(
   }));
 }
 
+/**
+ * Derive intents from colony signal topic strings.
+ *
+ * Signal topics are natural-language phrases like "BTC Macro Pressure from
+ * Geopolitics PBOC and Derivatives Market". We extract domain-like keywords
+ * as both `topics` (matched via byTopicToken) and `domains` (matched via
+ * byDomainTag) so that selectSourcesByIntent can find relevant sources.
+ *
+ * Stop words and short tokens are filtered out to avoid false positives.
+ */
+export function deriveIntentsFromSignalTopics(
+  signalTopics: string[],
+): ScanIntent[] {
+  if (signalTopics.length === 0) return [];
+
+  // Common stop words that don't carry domain meaning
+  const STOP_WORDS = new Set([
+    "the", "and", "from", "for", "with", "into", "that", "this",
+    "are", "was", "will", "has", "have", "had", "not", "but",
+    "its", "all", "can", "may", "via", "per",
+  ]);
+
+  return signalTopics.map(topic => {
+    // Extract meaningful tokens (3+ chars, not stop words)
+    const tokens = topic
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(t => t.length >= 3 && !STOP_WORDS.has(t));
+
+    return {
+      description: `Signal: ${topic}`,
+      // Use tokens as both domains and topics for maximum source coverage
+      domains: tokens,
+      topics: [topic],
+      signals: [{ type: "change" as const, metric: "*", threshold: 10 }],
+      maxSources: 3,
+    };
+  });
+}
+
 // ── Source Selection ──────────────────────────────────
 
 /**
