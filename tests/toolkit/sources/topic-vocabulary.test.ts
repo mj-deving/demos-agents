@@ -132,4 +132,25 @@ describe("expandTopicToDomains", () => {
     const lower = expandTopicToDomains(["pboc"]);
     expect(upper.sort()).toEqual(lower.sort());
   });
+
+  it("layer 3: fuzzy matches unknown tokens against known domain tags", () => {
+    const knownTags = new Set(["geopolitics", "regulation", "economics", "derivatives"]);
+    // "geopolitical" should fuzzy-match "geopolitics"
+    const domains = expandTopicToDomains(["geopolitical"], knownTags);
+    expect(domains).toContain("geopolitics");
+  });
+
+  it("layer 3: regulatory fuzzy matches regulation", () => {
+    const knownTags = new Set(["regulation", "macro", "forex"]);
+    const domains = expandTopicToDomains(["regulatory"], knownTags);
+    // "regulatory" is in the curated vocabulary → maps to "regulation", "cross-domain"
+    expect(domains).toContain("regulation");
+  });
+
+  it("layer 3: unknown novel term with no fuzzy match passes through as-is", () => {
+    const knownTags = new Set(["macro", "forex"]);
+    const domains = expandTopicToDomains(["blockchain"], knownTags);
+    expect(domains).toContain("blockchain"); // passthrough
+    expect(domains).not.toContain("macro"); // no fuzzy match
+  });
 });

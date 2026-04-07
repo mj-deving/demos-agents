@@ -120,6 +120,7 @@ export function deriveIntentsFromTopics(
  */
 export function deriveIntentsFromSignalTopics(
   signalTopics: string[],
+  knownDomainTags?: Set<string>,
 ): ScanIntent[] {
   if (signalTopics.length === 0) return [];
 
@@ -139,7 +140,7 @@ export function deriveIntentsFromSignalTopics(
 
     // Expand tokens through the topic-domain vocabulary for semantic matching.
     // "pboc" → ["macro", "forex", "currency", "economics"], etc.
-    const expandedDomains = expandTopicToDomains(tokens);
+    const expandedDomains = expandTopicToDomains(tokens, knownDomainTags);
 
     return {
       description: `Signal: ${topic}`,

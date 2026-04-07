@@ -75,21 +75,64 @@ export const TOPIC_DOMAIN_VOCABULARY: Record<string, string[]> = {
   "basis": ["derivatives", "futures"],
 };
 
+/** Common suffixes to strip for fuzzy stem matching. */
+const STRIP_SUFFIXES = ["ing", "tion", "ation", "ment", "ive", "ity", "al", "ous", "ness", "ical", "ized"];
+
 /**
- * Expand a set of topic tokens into source domain tags using the vocabulary.
- * Returns the union of all matched domains. Unknown tokens are passed through
- * as potential domain tags (the source index may match them directly).
+ * Fuzzy-match a token against a set of known domain tags.
+ * Strips common suffixes and checks prefix overlap (min 4 chars).
+ * "geopolitical" matches "geopolitics", "regulatory" matches "regulation".
  */
-export function expandTopicToDomains(topicTokens: string[]): string[] {
+export function fuzzyMatchDomainTags(token: string, knownTags: Set<string>): string[] {
+  if (token.length < 4) return [];
+  const matches: string[] = [];
+
+  // Try stripping suffixes to get a stem
+  let stem = token;
+  for (const suffix of STRIP_SUFFIXES) {
+    if (token.endsWith(suffix) && token.length > suffix.length + 3) {
+      stem = token.slice(0, -suffix.length);
+      break;
+    }
+  }
+
+  for (const tag of knownTags) {
+    // Prefix match: stem matches start of tag or tag matches start of stem
+    if (stem.length >= 4 && (tag.startsWith(stem) || stem.startsWith(tag.slice(0, Math.max(4, stem.length))))) {
+      matches.push(tag);
+    }
+  }
+  return matches;
+}
+
+/**
+ * Expand topic tokens into source domain tags using 3 layers:
+ * 1. Direct match — token IS a domain tag
+ * 2. Curated vocabulary — known signal term → domain tags
+ * 3. Fuzzy fallback — stem/prefix matching against all known domain tags
+ *
+ * @param topicTokens - tokens extracted from a signal topic string
+ * @param knownDomainTags - optional set of all domain tags in the source index (enables layer 3)
+ */
+export function expandTopicToDomains(topicTokens: string[], knownDomainTags?: Set<string>): string[] {
   const domains = new Set<string>();
   for (const token of topicTokens) {
     const lower = token.toLowerCase();
+
+    // Layer 1: direct match — pass through as potential domain tag
+    domains.add(lower);
+
+    // Layer 2: curated vocabulary
     const mapped = TOPIC_DOMAIN_VOCABULARY[lower];
     if (mapped) {
       for (const d of mapped) domains.add(d);
     }
-    // Also pass through the token itself as a potential domain tag
-    domains.add(lower);
+
+    // Layer 3: fuzzy fallback — for tokens not directly matching a domain tag
+    if (knownDomainTags && !knownDomainTags.has(lower)) {
+      const fuzzy = fuzzyMatchDomainTags(lower, knownDomainTags);
+      for (const d of fuzzy) domains.add(d);
+    }
   }
   return [...domains];
 }

@@ -161,7 +161,10 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
   const signalTopics = apiEnrichment?.signals
     ?.filter(s => s.topic)
     .map(s => s.topic) ?? [];
-  const signalIntents = deriveIntentsFromSignalTopics(signalTopics);
+  const knownDomainTags = sourceView?.index?.byDomainTag
+    ? new Set(sourceView.index.byDomainTag.keys())
+    : undefined;
+  const signalIntents = deriveIntentsFromSignalTopics(signalTopics, knownDomainTags);
 
   if (signalIntents.length > 0) {
     observe("insight", `Signal-driven sources: ${signalIntents.length} signal topics added to source selection`, {
