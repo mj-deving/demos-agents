@@ -68,7 +68,26 @@ export async function runV3Loop(
     deps.observe("warning", "Auth failed — continuing in chain-only mode", { source: "v3-loop:auth" });
   }
 
-  const getToken = async () => authToken ?? loadAuthCache(address)?.token ?? null;
+  // M1: Track token age and refresh if stale (>30 min) for multi-hour sessions
+  let tokenObtainedAt = Date.now();
+  const TOKEN_MAX_AGE_MS = 30 * 60 * 1000;
+
+  const getToken = async () => {
+    const tokenAge = Date.now() - tokenObtainedAt;
+    if (tokenAge > TOKEN_MAX_AGE_MS) {
+      try {
+        const refreshed = await ensureAuth(demos, address);
+        if (refreshed) {
+          authToken = refreshed;
+          tokenObtainedAt = Date.now();
+          deps.observe("insight", "Auth token refreshed (stale >30 min)", { source: "v3-loop:auth" });
+        }
+      } catch {
+        deps.observe("warning", "Auth token refresh failed — using cached", { source: "v3-loop:auth" });
+      }
+    }
+    return authToken ?? loadAuthCache(address)?.token ?? null;
+  };
   const apiClient = new SuperColonyApiClient({ getToken });
 
   const { apiCall: rawApiCall } = await import("../src/lib/network/sdk.js");
@@ -132,6 +151,7 @@ export async function runV3Loop(
       });
     }
 
+    const senseStart = Date.now();
     beginPhase(state, "sense", sessionsDir);
     try {
       const senseWork = await runSenseWork({
@@ -149,6 +169,7 @@ export async function runV3Loop(
       };
 
       completePhase(state, "sense", { scan: senseWork.scanResult, strategy: senseWork.senseResult, apiEnrichment: senseWork.apiEnrichment }, sessionsDir);
+      deps.observe("checkpoint", "SENSE phase complete", { source: "v3-loop:sense", elapsedMs: Date.now() - senseStart });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       failPhase(state, "sense", message, sessionsDir);
@@ -160,6 +181,7 @@ export async function runV3Loop(
   let actResult: unknown = undefined;
 
   if (state.phases.act.status !== "completed") {
+    const actStart = Date.now();
     beginPhase(state, "act", sessionsDir);
     try {
       const sensePayload = getSensePayload(state);
@@ -242,6 +264,7 @@ export async function runV3Loop(
 
       state.strategyResults = { ...state.strategyResults, executionResult: actResult };
       completePhase(state, "act", actResult, sessionsDir);
+      deps.observe("checkpoint", "ACT phase complete", { source: "v3-loop:act", elapsedMs: Date.now() - actStart });
 
       try {
         await runAfterAct(extensionRegistry, deps.agentConfig.loopExtensions, {
@@ -262,6 +285,7 @@ export async function runV3Loop(
 
   // ── CONFIRM PHASE ──
   if (state.phases.confirm.status !== "completed") {
+    const confirmStart = Date.now();
     beginPhase(state, "confirm", sessionsDir);
     try {
       if (state.posts.length > 0) {
@@ -279,6 +303,8 @@ export async function runV3Loop(
       failPhase(state, "confirm", message, sessionsDir);
       throw error;
     }
+
+    deps.observe("checkpoint", "CONFIRM phase complete", { source: "v3-loop:confirm", elapsedMs: Date.now() - confirmStart });
 
     if (state.publishedPosts && state.publishedPosts.length > 0) {
       try {

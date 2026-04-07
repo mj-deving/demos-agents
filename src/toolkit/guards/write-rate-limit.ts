@@ -52,6 +52,24 @@ export async function checkAndRecordWrite(
   return error ? demosError("RATE_LIMITED", error, true) : null;
 }
 
+/** Rollback the most recent write-rate entry (optimistic record undo on publish failure) */
+export async function rollbackWriteRecord(
+  store: StateStore,
+  walletAddress: string,
+): Promise<void> {
+  const key = stateKey("write-rate", walletAddress);
+  const unlock = await store.lock(key, GUARD_LOCK_TTL_MS);
+  try {
+    const state = await loadState(store, key, DEFAULT_STATE);
+    if (state.entries.length > 0) {
+      state.entries.pop();
+      await store.set(key, JSON.stringify(state));
+    }
+  } finally {
+    await unlock();
+  }
+}
+
 /** Get remaining capacity */
 export async function getWriteRateRemaining(
   store: StateStore,

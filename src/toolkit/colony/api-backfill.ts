@@ -74,7 +74,7 @@ export async function syncColonyFromApi(
 
   while (stats.pages < maxPages) {
     const result = await apiClient.getFeed({ limit: batchSize, cursor });
-    if (!result || !result.ok || !result.data.posts.length) break;
+    if (!result || !result.ok || !result.data?.posts?.length) break;
 
     stats.pages++;
     let pageNewCount = 0;
@@ -125,7 +125,7 @@ export async function backfillFromApi(
     const limit = Math.min(batchSize, remaining);
 
     const result = await apiClient.getFeed({ limit, cursor });
-    if (!result || !result.ok || !result.data.posts.length) break;
+    if (!result || !result.ok || !result.data?.posts?.length) break;
 
     stats.pages++;
 

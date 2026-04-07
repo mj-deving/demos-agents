@@ -79,6 +79,20 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
     observe("warning", `Colony sync failed: ${err instanceof Error ? err.message : String(err)}`, { source: "v3-loop:colonySync" });
   }
 
+  // M2: DB growth monitoring — warn if colony DB exceeds 500MB
+  try {
+    const { statSync } = await import("node:fs");
+    const dbPath = (bridge.db as any).name;
+    if (typeof dbPath === "string") {
+      const dbSizeMB = Math.round(statSync(dbPath).size / (1024 * 1024));
+      if (dbSizeMB > 500) {
+        observe("warning", `Colony DB size: ${dbSizeMB}MB exceeds 500MB threshold`, {
+          source: "v3-loop:dbGrowth", dbSizeMB, dbPath,
+        });
+      }
+    }
+  } catch { /* non-fatal — skip size check if path unavailable */ }
+
   const scanResult = await deps.runSubprocess(
     "cli/scan-feed.ts",
     ["--agent", deps.flags.agent, "--json", "--env", deps.flags.env],

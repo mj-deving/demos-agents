@@ -306,9 +306,10 @@ export async function runSingleAttestationFallback(
     try {
       return await attestTlsn(deps.demos, resolvedSource.url);
     } catch (tlsnError: unknown) {
+      // M17: On TLSN failure, try DAHR as fallback
       const plan = resolveAttestationPlan(topic, deps.agentConfig);
       const fallbackCandidate = preflightResult.candidates.find((candidate) => candidate.method === "DAHR");
-      if (plan.fallback === "DAHR" && fallbackCandidate) {
+      if (fallbackCandidate) {
         deps.observe("insight", "TLSN attestation failed, falling back to DAHR", {
           topic,
           source: resolvedSource.sourceName,
@@ -330,5 +331,29 @@ export async function runSingleAttestationFallback(
     }
   }
 
-  return attestDahr(deps.demos, resolvedSource.url);
+  // M17: On DAHR failure, try TLSN as fallback (opposite method)
+  try {
+    return await attestDahr(deps.demos, resolvedSource.url);
+  } catch (dahrError: unknown) {
+    const fallbackCandidate = preflightResult.candidates.find((candidate) => candidate.method === "TLSN");
+    if (fallbackCandidate) {
+      deps.observe("insight", "DAHR attestation failed, falling back to TLSN", {
+        topic,
+        source: resolvedSource.sourceName,
+        dahrError: dahrError instanceof Error ? dahrError.message : String(dahrError),
+      });
+      try {
+        return await attestTlsn(deps.demos, fallbackCandidate.url);
+      } catch (tlsnError: unknown) {
+        deps.observe("error", "TLSN fallback attestation also failed", {
+          topic,
+          source: fallbackCandidate.sourceId,
+          dahrError: dahrError instanceof Error ? dahrError.message : String(dahrError),
+          tlsnError: tlsnError instanceof Error ? tlsnError.message : String(tlsnError),
+        });
+        throw tlsnError;
+      }
+    }
+    throw dahrError;
+  }
 }

@@ -23,6 +23,7 @@ const {
   getPostMock,
   checkAndRecordWriteMock,
   getWriteRateRemainingMock,
+  rollbackWriteRecordMock,
   createSdkBridgeMock,
   checkSessionBudgetMock,
   recordSpendMock,
@@ -44,6 +45,7 @@ const {
   getPostMock: vi.fn(),
   checkAndRecordWriteMock: vi.fn(),
   getWriteRateRemainingMock: vi.fn(),
+  rollbackWriteRecordMock: vi.fn(),
   createSdkBridgeMock: vi.fn(),
   checkSessionBudgetMock: vi.fn(),
   recordSpendMock: vi.fn(),
@@ -97,6 +99,7 @@ vi.mock("../../src/toolkit/colony/posts.js", () => ({
 vi.mock("../../src/toolkit/guards/write-rate-limit.js", () => ({
   checkAndRecordWrite: checkAndRecordWriteMock,
   getWriteRateRemaining: getWriteRateRemainingMock,
+  rollbackWriteRecord: rollbackWriteRecordMock,
 }));
 
 vi.mock("../../src/toolkit/sdk-bridge.js", () => ({
