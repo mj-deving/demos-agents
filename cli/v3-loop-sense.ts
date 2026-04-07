@@ -28,6 +28,7 @@ import type { Toolkit } from "../src/toolkit/primitives/index.js";
 import { sense, computeAutoCalibration, type StrategyBridge } from "./v3-strategy-bridge.js";
 import { refreshAgentProfiles } from "../src/toolkit/colony/intelligence.js";
 import { deriveIntentsFromTopics, deriveIntentsFromSignalTopics, selectSourcesByIntent } from "../src/lib/pipeline/source-scanner.js";
+import { filterHealthySources } from "../src/toolkit/sources/lifecycle.js";
 
 export interface SenseWorkDeps {
   demos: any;
@@ -186,9 +187,8 @@ export async function runSenseWork(deps: SenseWorkDeps): Promise<SenseWorkResult
     return true;
   });
 
-  // Health filtering: skip degraded/stale/deprecated/archived sources (Phase 12b)
-  const UNHEALTHY_STATUSES = new Set(["degraded", "stale", "deprecated", "archived"]);
-  const healthySources = dedupedSources.filter(s => !UNHEALTHY_STATUSES.has(s.status));
+  // Skip unhealthy sources — degraded/stale get auto-demoted by lifecycle after enough failures
+  const healthySources = filterHealthySources(dedupedSources);
   const skippedCount = dedupedSources.length - healthySources.length;
   if (skippedCount > 0) {
     observe("insight", `Source health filter: skipped ${skippedCount} unhealthy source(s)`, {

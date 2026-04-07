@@ -127,6 +127,7 @@ export {
   evaluateTransition,
   applyTransitions,
   getSourceHealthSummary,
+  filterHealthySources,
 } from "./sources/lifecycle.js";
 export { adapter as genericProviderAdapter } from "./providers/generic.js";
 export type {
@@ -334,6 +335,7 @@ export {
 
 // ── Chain Primitives ────────────────────────────────
 
+export { unresolvedPlaceholders, extractTopicVars, fillUrlTemplate } from "./chain/url-helpers.js";
 export type { ChainTxResult, ChainTxStages } from "./chain/tx-pipeline.js";
 export { executeChainTx } from "./chain/tx-pipeline.js";
 export type {

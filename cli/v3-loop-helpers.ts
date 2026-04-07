@@ -12,7 +12,7 @@ import { createLimiter } from "../src/toolkit/util/limiter.js";
 import { upsertSourceResponse, getSourceResponse } from "../src/toolkit/colony/source-cache.js";
 import { fetchSource } from "../src/toolkit/sources/fetch.js";
 import type { SourceRecordV2 } from "../src/toolkit/sources/catalog.js";
-import { acquireRateLimitToken, isRateLimited } from "../src/toolkit/sources/rate-limit.js";
+import { acquireRateLimitToken } from "../src/toolkit/sources/rate-limit.js";
 import { updateRating, evaluateTransition } from "../src/toolkit/sources/lifecycle.js";
 import type { SourceTestResult } from "../src/toolkit/sources/health.js";
 
@@ -195,8 +195,8 @@ export async function fetchSourcesParallel(
         limit(async () => {
           if (ctrl.signal.aborted) return;
 
-          // Phase 12b: Per-source rate limiting
-          if (isRateLimited(source.provider)) {
+          // Per-source rate limiting — different providers have different quota windows
+          if (!acquireRateLimitToken(source.provider)) {
             rateLimited++;
             observe("insight", `Rate-limited: skipping ${source.id} (${source.provider})`, {
               source: "v3-loop:rateLimit",
@@ -205,7 +205,6 @@ export async function fetchSourcesParallel(
             });
             return;
           }
-          acquireRateLimitToken(source.provider);
 
           try {
             const result = await fetchSource(source.url, source);
@@ -258,7 +257,7 @@ export async function fetchSourcesParallel(
     });
   }
 
-  // Phase 12b: Lifecycle — update ratings and evaluate transitions after fetch
+  // Lifecycle — update ratings and evaluate transitions so degraded sources get auto-demoted
   let lifecycleTransitions = 0;
   for (const { source, success } of fetchOutcomes) {
     const testResult: SourceTestResult = {

@@ -73,6 +73,17 @@ const VALID_TRANSITIONS: Record<SourceStatus, SourceStatus[]> = {
 /** Statuses excluded from sampling — cannot transition automatically */
 const EXCLUDED_STATUSES: Set<SourceStatus> = new Set(["archived", "deprecated"]);
 
+/** Statuses that indicate an unhealthy source — should be skipped during active fetch */
+const UNHEALTHY_STATUSES: Set<SourceStatus> = new Set(["degraded", "stale", "deprecated", "archived"]);
+
+/**
+ * Filter sources to only those healthy enough for active fetching.
+ * Skips degraded, stale, deprecated, and archived sources.
+ */
+export function filterHealthySources(sources: SourceRecordV2[]): SourceRecordV2[] {
+  return sources.filter(s => !UNHEALTHY_STATUSES.has(s.status));
+}
+
 /**
  * Sample sources for lifecycle testing, prioritized by urgency.
  *

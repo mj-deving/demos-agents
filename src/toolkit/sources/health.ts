@@ -19,6 +19,7 @@ import { tokenizeTopic } from "./catalog.js";
 import { fetchSource } from "./fetch.js";
 import type { ProviderAdapter } from "../providers/types.js";
 import { toErrorMessage } from "../util/errors.js";
+import { unresolvedPlaceholders } from "../chain/url-helpers.js";
 
 // ── Types ────────────────────────────────────────────
 
@@ -106,15 +107,6 @@ export function resolveTestUrl(
   return url.replace(/\{([^}]+)\}/g, (match, key) => {
     return vars[key] ?? match; // leave unresolved if no default
   });
-}
-
-/**
- * Check for unresolved template variables in a URL.
- * Returns the list of unresolved variable names.
- */
-function unresolvedVars(url: string): string[] {
-  const matches = url.match(/\{([^}]+)\}/g) || [];
-  return matches.map((m) => m.slice(1, -1));
 }
 
 // ── Source Filtering ─────────────────────────────────
@@ -256,7 +248,7 @@ export async function testSource(
   }
 
   // Step 3: Check for unresolved variables
-  const unresolved = unresolvedVars(testUrl);
+  const unresolved = unresolvedPlaceholders(testUrl);
   if (unresolved.length > 0) {
     return {
       ...base,
