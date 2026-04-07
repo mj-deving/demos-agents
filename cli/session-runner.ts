@@ -3913,6 +3913,16 @@ function writeV3SessionReport(state: V3SessionState, oversight: OversightLevel, 
   }
   lines.push("");
 
+  // M6: Include errors from failed phases for post-mortem
+  const failedPhases = Object.entries(state.phases)
+    .filter(([, p]) => p?.status === "failed" && p?.error)
+    .map(([name, p]) => `- **ERROR (${name}):** ${(p as any).error}`);
+  if (failedPhases.length > 0) {
+    lines.push("## Errors");
+    lines.push(...failedPhases);
+    lines.push("");
+  }
+
   writeFileSync(reportPath, lines.join("\n"));
   info(`V3 session report written to ${reportPath}`);
 }
@@ -4181,11 +4191,13 @@ async function main(): Promise<void> {
     console.log(`  Loop: v2 (SENSE → ACT → CONFIRM)${flags.shadow ? " [SHADOW]" : ""}`);
   }
 
-  // Session-level hard timeout — 180s (3 min) without TLSN, sessions should be <60s
-  const SESSION_TIMEOUT_MS = 180_000;
+  // H1: Configurable session timeout — default 300s for multi-publish sessions
+  const SESSION_TIMEOUT_MS = ((agentConfig as any).sessionTimeoutSec ?? 300) * 1000;
   const sessionTimer = setTimeout(() => {
     console.error(`\n  ⏰ SESSION TIMEOUT (${SESSION_TIMEOUT_MS / 1000}s) — saving state and exiting`);
     saveState(state, sessionsDir);
+    try { if (isV3(state)) writeV3SessionReport(state, flags.oversight, sessionsDir); } catch { /* best-effort */ }
+    try { releaseLock(sessionNumber, sessionsDir, flags.agent); } catch { /* best-effort */ }
     console.error(`  Resume with: npx tsx cli/session-runner.ts --agent ${flags.agent} --resume --pretty`);
     process.exit(2);
   }, SESSION_TIMEOUT_MS);
@@ -4485,9 +4497,18 @@ async function main(): Promise<void> {
     const message = e instanceof Error ? e.message : String(e);
     rl?.close();
     saveState(state, sessionsDir);
+    // C1: Write report even on failure so post-mortem is possible
+    try {
+      if (isV3(state)) writeV3SessionReport(state, flags.oversight, sessionsDir);
+      else if (isV2(state)) writeSessionReport(state as unknown as SessionState, flags.oversight, sessionsDir);
+    } catch { /* non-fatal — report is best-effort on error path */ }
     console.error(`\nFATAL: ${message}`);
     console.error(`Session state saved. Resume with: npx tsx tools/session-runner.ts --agent ${flags.agent} --resume${isV2(state) ? " --loop-version 2" : ""} --pretty`);
     process.exit(1);
+  } finally {
+    // H2: Always release lock — prevent stale locks blocking future sessions
+    clearTimeout(sessionTimer);
+    try { releaseLock(sessionNumber, sessionsDir, flags.agent); } catch { /* best-effort */ }
   }
 }
 

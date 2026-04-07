@@ -39,6 +39,9 @@ import {
   runSingleAttestationFallback,
 } from "./publish-helpers.js";
 
+const MAX_PUBLISH_PER_SESSION = 3;
+const ACT_PHASE_TIMEOUT_MS = 120_000;
+
 export async function executePublishActions(
   actions: StrategyAction[],
   deps: PublishExecutorDeps,
@@ -48,7 +51,18 @@ export async function executePublishActions(
     skipped: [],
   };
 
+  const startTime = Date.now();
+  let successfulPublishes = 0;
+
   for (const action of actions) {
+    // H5: Wallclock timeout + action cap guards
+    if (Date.now() - startTime > ACT_PHASE_TIMEOUT_MS || successfulPublishes >= MAX_PUBLISH_PER_SESSION) {
+      deps.observe("insight", "ACT phase budget exhausted", {
+        reason: successfulPublishes >= MAX_PUBLISH_PER_SESSION ? "action cap" : "wallclock timeout",
+        count: successfulPublishes, elapsed: Date.now() - startTime,
+      });
+      break;
+    }
     // Phase 8: VOTE/BET — lightweight publish via codec, no LLM needed
     if (action.type === "VOTE" || action.type === "BET") {
       if (deps.dryRun) {
@@ -145,6 +159,15 @@ export async function executePublishActions(
       continue;
     }
 
+    // H10: Record write slot immediately after check passes (before LLM call).
+    // If publish fails later the slot is "wasted" — safer than ledger desync.
+    const earlyRecordError = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, true);
+    if (earlyRecordError) {
+      deps.observe("warning", `Failed to eagerly record write slot: ${earlyRecordError.message}`, {
+        actionType: action.type,
+      });
+    }
+
     if (!deps.provider) {
       deps.observe("insight", `Publish action skipped: ${action.type} has no LLM provider`, {
         actionType: action.type,
@@ -198,10 +221,13 @@ export async function executePublishActions(
       }
     }
 
+    // --- Step 1: LLM generation (H8: per-step error recovery) ---
+    let prefetched: Awaited<ReturnType<typeof prefetchSourceData>>;
+    let draft: Awaited<ReturnType<typeof generatePost>>;
     try {
-      const prefetched = await prefetchSourceData(initialSource, deps);
+      prefetched = await prefetchSourceData(initialSource, deps);
 
-      const draft = await generatePost(
+      draft = await generatePost(
         {
           topic,
           category: getRequestedCategory(action),
@@ -218,105 +244,117 @@ export async function executePublishActions(
           agentName: deps.agentConfig.name,
         },
       );
-
-      if (draft.text.length < MIN_TEXT_LENGTH) {
-        result.skipped.push({
-          action,
-          reason: `draft too short (${draft.text.length} chars)`,
-        });
-        continue;
-      }
-
-      // Confidence optimization: always set (free +5 points), ≥40 for consensus entry.
-      // 40 matches strategy config enrichment.minConfidence default and SuperColony consensus
-      // entry threshold (2+ agents, confidence ≥40, 24h lookback).
-      if (draft.confidence === undefined || draft.confidence === null) {
-        draft.confidence = 70;
-      }
-      if (draft.confidence < 40) {
-        draft.confidence = 40;
-      }
-
-      // Score pre-calculation: assume DAHR attestation (+40) since it's the default mode.
-      // TLSN does NOT earn the +40 bonus per SuperColony spec — TLSN-only agents will
-      // have lower achievable scores. This is a platform constraint, not a bug.
-      const projectedScore = calculateOfficialScore({
-        text: draft.text,
-        hasSourceAttestations: true,
-        confidence: draft.confidence,
-        reactionCount: 0,
+    } catch (llmError: unknown) {
+      const msg = llmError instanceof Error ? llmError.message : String(llmError);
+      deps.observe("error", `LLM generation failed, skipping action: ${msg}`, {
+        actionType: action.type, topic, error: msg,
       });
-      if (projectedScore.score < 50) {
-        deps.observe("insight", `Publish skipped: projected score ${projectedScore.score} < 50`, {
-          actionType: action.type, topic,
-          breakdown: projectedScore.breakdown,
-        });
-        result.skipped.push({
-          action,
-          reason: `projected score ${projectedScore.score} below leaderboard threshold (50)`,
-        });
-        continue;
-      }
+      result.executed.push({ action, success: false, error: `LLM failed: ${msg}` });
+      continue;
+    }
 
-      if (draft.predicted_reactions < (deps.agentConfig.gate.predictedReactionsThreshold || 0)) {
-        result.skipped.push({
-          action,
-          reason: `predicted reactions below threshold (${draft.predicted_reactions} < ${deps.agentConfig.gate.predictedReactionsThreshold})`,
-        });
-        continue;
-      }
+    if (draft.text.length < MIN_TEXT_LENGTH) {
+      result.skipped.push({ action, reason: `draft too short (${draft.text.length} chars)` });
+      continue;
+    }
 
-      const preflightResult = preflight(topic, deps.sourceView, deps.agentConfig);
-      const matchResult = await match({
+    // Confidence: always set (free +5 points), >=40 for consensus entry threshold.
+    if (draft.confidence === undefined || draft.confidence === null) draft.confidence = 70;
+    if (draft.confidence < 40) draft.confidence = 40;
+
+    // Score pre-calculation: assume DAHR attestation (+40) since it's the default mode.
+    const projectedScore = calculateOfficialScore({
+      text: draft.text,
+      hasSourceAttestations: true,
+      confidence: draft.confidence,
+      reactionCount: 0,
+    });
+    if (projectedScore.score < 50) {
+      deps.observe("insight", `Publish skipped: projected score ${projectedScore.score} < 50`, {
+        actionType: action.type, topic,
+        breakdown: projectedScore.breakdown,
+      });
+      result.skipped.push({
+        action,
+        reason: `projected score ${projectedScore.score} below leaderboard threshold (50)`,
+      });
+      continue;
+    }
+
+    if (draft.predicted_reactions < (deps.agentConfig.gate.predictedReactionsThreshold || 0)) {
+      result.skipped.push({
+        action,
+        reason: `predicted reactions below threshold (${draft.predicted_reactions} < ${deps.agentConfig.gate.predictedReactionsThreshold})`,
+      });
+      continue;
+    }
+
+    const preflightResult = preflight(topic, deps.sourceView, deps.agentConfig);
+    const matchResult = await match({
+      topic,
+      postText: draft.text,
+      postTags: draft.tags,
+      candidates: preflightResult.candidates,
+      sourceView: deps.sourceView,
+      llm: deps.provider,
+      prefetchedResponses: prefetched.prefetchedResponses,
+    });
+
+    if (!preflightResult.pass || !matchResult.pass || !matchResult.best) {
+      deps.observe("insight", `Publish action skipped: unsubstantiated draft for "${topic}"`, {
+        actionType: action.type,
         topic,
-        postText: draft.text,
-        postTags: draft.tags,
-        candidates: preflightResult.candidates,
-        sourceView: deps.sourceView,
-        llm: deps.provider,
-        prefetchedResponses: prefetched.prefetchedResponses,
+        preflight: preflightResult.reason,
+        match: matchResult.reason,
       });
+      result.skipped.push({ action, reason: "unsubstantiated draft" });
+      continue;
+    }
 
-      if (!preflightResult.pass || !matchResult.pass || !matchResult.best) {
-        deps.observe("insight", `Publish action skipped: unsubstantiated draft for "${topic}"`, {
-          actionType: action.type,
-          topic,
-          preflight: preflightResult.reason,
-          match: matchResult.reason,
-        });
-        result.skipped.push({ action, reason: "unsubstantiated draft" });
-        continue;
-      }
+    const resolvedSource: ResolvedActionSource = {
+      source: preflightResult.candidates.find((candidate) => candidate.sourceId === matchResult.best!.sourceId)?.source
+        ?? initialSource.source,
+      url: matchResult.best.url,
+      method: matchResult.best.method,
+      sourceName: matchResult.best.sourceId,
+    };
 
-      const resolvedSource: ResolvedActionSource = {
-        source: preflightResult.candidates.find((candidate) => candidate.sourceId === matchResult.best!.sourceId)?.source
-          ?? initialSource.source,
-        url: matchResult.best.url,
-        method: matchResult.best.method,
-        sourceName: matchResult.best.sourceId,
-      };
+    // M18: Dry-run validation — run preflight/source checks (done above), report realistic results
+    if (deps.dryRun) {
+      deps.observe("insight", `Publish action dry-run: ${action.type}`, {
+        actionType: action.type,
+        topic,
+        source: resolvedSource.sourceName,
+        category: draft.category,
+        preflightPass: preflightResult.pass,
+        matchPass: matchResult.pass,
+      });
+      result.executed.push({
+        action,
+        success: true,
+        category: draft.category,
+        textLength: draft.text.length,
+        attestationType: "none",
+      });
+      continue;
+    }
 
-      if (deps.dryRun) {
-        deps.observe("insight", `Publish action dry-run: ${action.type}`, {
-          actionType: action.type,
-          topic,
-          source: resolvedSource.sourceName,
-          category: draft.category,
-        });
-        result.executed.push({
-          action,
-          success: true,
-          category: draft.category,
-          textLength: draft.text.length,
-          attestationType: "none",
-        });
-        continue;
-      }
+    // --- Step 2: Claim extraction (H8: per-step error recovery) ---
+    let claims: Awaited<ReturnType<typeof extractStructuredClaimsAuto>> = [];
+    try {
+      claims = await extractStructuredClaimsAuto(draft.text, deps.provider);
+    } catch (claimError: unknown) {
+      const msg = claimError instanceof Error ? claimError.message : String(claimError);
+      deps.observe("warning", `Claim extraction failed, proceeding without structured claims: ${msg}`, {
+        actionType: action.type, topic, error: msg,
+      });
+    }
 
-      let attestationResults: import("../src/actions/publish-pipeline.js").AttestResult[] = [];
-      let primaryAttestation: import("../src/actions/publish-pipeline.js").AttestResult | null = null;
+    // --- Step 3: Attestation (H7 + H8: graceful degradation + per-step recovery) ---
+    let attestationResults: import("../src/actions/publish-pipeline.js").AttestResult[] = [];
+    let primaryAttestation: import("../src/actions/publish-pipeline.js").AttestResult | null = null;
 
-      const claims = await extractStructuredClaimsAuto(draft.text, deps.provider);
+    try {
       const plan = buildAttestationPlan(
         claims,
         deps.sourceView,
@@ -347,7 +385,22 @@ export async function executePublishActions(
         attestationResults = [fallbackAttestation];
         primaryAttestation = fallbackAttestation;
       }
+    } catch (attestError: unknown) {
+      // H7: Graceful attestation degradation — publish without attestation
+      const msg = attestError instanceof Error ? attestError.message : String(attestError);
+      deps.observe("warning", `Attestation failed entirely, publishing with attestationType: none and reduced confidence: ${msg}`, {
+        actionType: action.type, topic, error: msg,
+      });
+      attestationResults = [];
+      primaryAttestation = null;
+      // Lower confidence since we have no attestation backing
+      if (draft.confidence > 50) {
+        draft.confidence = 50;
+      }
+    }
 
+    // --- Step 4: Publish (H8: per-step error recovery) ---
+    try {
       const publishResult = await publishPost(
         deps.demos,
         buildPublishInput(draft, attestationResults),
@@ -377,12 +430,12 @@ export async function executePublishActions(
       const quality = calculateStrategyScore({
         text: draft.text,
         isReply: !!draft.replyTo,
-        hasAttestation: true,
+        hasAttestation: attestationResults.length > 0,
       });
       // Official SuperColony score — used for platform compatibility assessment
       const officialScore = calculateOfficialScore({
         text: draft.text,
-        hasSourceAttestations: true, // DAHR attestation present
+        hasSourceAttestations: attestationResults.length > 0,
         confidence: draft.confidence,
         reactionCount: 0, // pre-publish, no reactions yet
       });
@@ -398,17 +451,22 @@ export async function executePublishActions(
         confidence: draft.confidence,
         text_length: draft.text.length,
         isReply: !!draft.replyTo,
-        hasAttestation: true,
+        hasAttestation: attestationResults.length > 0,
         txHash: publishResult.txHash,
       });
 
+      // M15: Rate-limit recording retry — retry once on failure
       const recordError = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, true);
       if (recordError) {
-        deps.observe("insight", `Failed to record publish in write-rate ledger: ${recordError.message}`, {
-          actionType: action.type,
-          topic,
-          txHash: publishResult.txHash,
+        deps.observe("warning", `Write-rate ledger record failed, retrying once: ${recordError.message}`, {
+          actionType: action.type, topic, txHash: publishResult.txHash,
         });
+        const retryError = await checkAndRecordWrite(deps.stateStore, deps.walletAddress, true);
+        if (retryError) {
+          deps.observe("warning", `Write-rate ledger record retry also failed: ${retryError.message}`, {
+            actionType: action.type, topic, txHash: publishResult.txHash,
+          });
+        }
       }
 
       result.executed.push({
@@ -420,21 +478,17 @@ export async function executePublishActions(
         attestationType,
       });
 
+      // H5: Increment successful publish counter
+      successfulPublishes++;
+
       // Persist state after each successful action for crash-safe resume
       saveState(deps.state, deps.sessionsDir);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      deps.observe("error", `Publish action failed: ${action.type}`, {
-        actionType: action.type,
-        target: action.target,
-        topic,
-        error: message,
+    } catch (publishError: unknown) {
+      const msg = publishError instanceof Error ? publishError.message : String(publishError);
+      deps.observe("error", `Chain publish failed, skipping action: ${msg}`, {
+        actionType: action.type, topic, error: msg,
       });
-      result.executed.push({
-        action,
-        success: false,
-        error: message,
-      });
+      result.executed.push({ action, success: false, error: `Publish failed: ${msg}` });
     }
   }
 

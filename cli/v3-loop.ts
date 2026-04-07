@@ -27,6 +27,8 @@ import {
   OracleResultSchema,
   PriceDataSchema,
   SignalDataSchema,
+  BettingPoolSchema,
+  AgentListSchema,
 } from "../src/toolkit/supercolony/api-schemas.js";
 import { SuperColonyApiClient } from "../src/toolkit/supercolony/api-client.js";
 import { ApiDataSource, ChainDataSource, AutoDataSource } from "../src/toolkit/data-source.js";
@@ -283,20 +285,22 @@ export async function runV3Loop(
 
         apiEnrichment = {};
 
-        if (agentsResult?.ok) {
-          apiEnrichment.agentCount = agentsResult.data.agents.length;
-        }
-
         const validate = <T>(name: string, raw: { ok: true; data: unknown } | { ok: false; [k: string]: unknown } | null, schema: { safeParse: (d: unknown) => { success: boolean; data?: T; error?: { message: string } } }): T | undefined => {
           if (!raw || !raw.ok) return undefined;
           const r = schema.safeParse(raw.data);
           if (r.success) return r.data as T;
           deps.observe("warning", `API schema validation failed: ${name}`, { source: "v3-loop:enrichment", error: r.error?.message }); return undefined;
         };
+
+        // C3: safe access with schema validation for agent count
+        const agentList = validate("agents", agentsResult, AgentListSchema);
+        if (agentList) apiEnrichment.agentCount = agentList.agents.length;
+
         apiEnrichment.leaderboard = validate("leaderboard", leaderboardResult, LeaderboardResultSchema);
         apiEnrichment.oracle = validate("oracle", oracleResult, OracleResultSchema);
         apiEnrichment.prices = validate("prices", pricesResult, PriceDataSchema.array());
-        if (bettingPoolResult?.ok) apiEnrichment.bettingPool = bettingPoolResult.data;
+        // C2: validate bettingPool through Zod like all other enrichment fields
+        apiEnrichment.bettingPool = validate("bettingPool", bettingPoolResult, BettingPoolSchema);
         apiEnrichment.signals = validate("signals", signalsResult, SignalDataSchema.array());
 
         const enrichmentKeys = Object.keys(apiEnrichment);
@@ -306,8 +310,10 @@ export async function runV3Loop(
             feeds: enrichmentKeys,
           });
         }
-      } catch {
+      } catch (err: unknown) {
         // API enrichment is optional — continue with colony DB data only.
+        const msg = err instanceof Error ? err.message : String(err);
+        deps.observe("warning", `API enrichment batch failed (non-fatal): ${msg}`, { source: "v3-loop:apiEnrichment" });
       }
 
       // Compute calibration once in sense phase — avoids hot-path DB query during act
@@ -425,7 +431,7 @@ export async function runV3Loop(
                 usageTracker: createUsageTracker(),
                 logSession: (entry) => appendSessionLog(entry as SessionLogEntry, flags.log),
                 logQuality: (data) => logQualityData(data as QualityDataEntry),
-                spending: { policy: defaultSpendingPolicy(), ledger: loadSpendingLedger(address, deps.agentConfig.name) },
+                spending: { policy: defaultSpendingPolicy({ autonomous: flags.oversight === "autonomous" }), ledger: loadSpendingLedger(address, deps.agentConfig.name) },
               })
             : { executed: [], skipped: [] };
 

@@ -73,15 +73,16 @@ export interface SpendDecision {
  *
  * Defaults to maximum safety: dryRun=true, requireConfirmation=true,
  * conservative caps. Callers opt into real spending explicitly.
+ * Pass autonomous=true for --oversight autonomous to auto-enable real spending.
  */
-export function defaultSpendingPolicy(): SpendingPolicyConfig {
+export function defaultSpendingPolicy(opts?: { autonomous?: boolean }): SpendingPolicyConfig {
   return {
     dailyCapDem: 10,
     sessionCapDem: 5,
     perTipMinDem: 1,
     perTipMaxDem: 10,
-    dryRun: true,
-    requireConfirmation: true,
+    dryRun: opts?.autonomous ? false : true,
+    requireConfirmation: opts?.autonomous ? false : true,
   };
 }
 

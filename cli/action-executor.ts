@@ -95,6 +95,10 @@ function clampTipAmount(amount: unknown): number {
   return Math.min(10, Math.max(1, amount));
 }
 
+/** Max tip API fallback (direct transfer) attempts per session to prevent unlimited unvalidated spending. */
+const MAX_TIP_FALLBACKS_PER_SESSION = 3;
+let tipFallbackCount = 0;
+
 export async function executeStrategyActions(
   actions: StrategyAction[],
   deps: ActionExecutorDeps,
@@ -155,10 +159,12 @@ export async function executeStrategyActions(
             }
             engageTxHash = resolved;
           }
-          // Phase 8c: Verification gate — skip ENGAGE if attestation failed
+          // Phase 8c: Verification gate — skip ENGAGE only if attestation explicitly failed.
+          // "no_attestation" is allowed (treated like "unresolved") — many valid posts
+          // simply haven't been attested yet. Only "failed" is a hard block.
           if (deps.colonyDb) {
             const gate = getPostVerificationGate(deps.colonyDb, engageTxHash);
-            if (gate === "failed" || gate === "no_attestation") {
+            if (gate === "failed") {
               result.skipped.push({ action, reason: `Attestation ${gate} for ${engageTxHash}` });
               deps.observe("insight", `ENGAGE skipped: attestation ${gate}`, {
                 actionType: action.type, target: engageTxHash, gate,
@@ -182,7 +188,7 @@ export async function executeStrategyActions(
                 interactionType: "agreed",
                 timestamp: new Date().toISOString(),
               });
-            } catch (err: unknown) { deps.observe("warning", `Interaction tracking failed: ${err instanceof Error ? err.message : String(err)}`, { source: "action-executor:interaction" }); }
+            } catch (err: unknown) { deps.observe("warning", `Interaction tracking failed: ${err instanceof Error ? err.message : String(err)}`, { source: "action-executor:engage-interaction" }); }
           }
           break;
         }
@@ -209,7 +215,7 @@ export async function executeStrategyActions(
                 interactionType: "we_replied",
                 timestamp: new Date().toISOString(),
               });
-            } catch (err: unknown) { deps.observe("warning", `Interaction tracking failed: ${err instanceof Error ? err.message : String(err)}`, { source: "action-executor:interaction" }); }
+            } catch (err: unknown) { deps.observe("warning", `Interaction tracking failed: ${err instanceof Error ? err.message : String(err)}`, { source: "action-executor:reply-interaction" }); }
           }
           break;
         }
@@ -229,10 +235,19 @@ export async function executeStrategyActions(
         }
 
         case "TIP": {
-          const amount = clampTipAmount(action.metadata?.amount);
+          const rawAmount = action.metadata?.amount;
+          const amount = clampTipAmount(rawAmount);
+          if (typeof rawAmount === "number" && Number.isFinite(rawAmount) && rawAmount !== amount) {
+            deps.observe("warning", `TIP amount clamped: ${rawAmount} -> ${amount} (range 1-10)`, {
+              source: "action-executor:tip-clamp", original: rawAmount, clamped: amount,
+            });
+          }
           const postTxHash = (action.metadata?.postTxHash as string) ?? action.target!;
 
-          // Phase 8c: Verification gate — TIP requires positive verification (stricter than ENGAGE)
+          // Phase 8c: Verification gate — TIP requires positive verification (stricter than ENGAGE).
+          // INTENTIONALLY STRICT (H9): TIP spends real DEM tokens, so we require "verified"
+          // attestation status. Unlike ENGAGE (which allows "no_attestation" and "unresolved"),
+          // TIP must not send funds to content that hasn't been positively verified.
           // Only check if we have an actual post txHash (not a wallet address).
           // Engine-generated tips set target=address with no postTxHash in metadata,
           // so resolve to a recent post first.
@@ -284,9 +299,18 @@ export async function executeStrategyActions(
               if (tipData.recipient) recipient = tipData.recipient;
             }
           } catch {
-            // Transport failure only (network timeout, DNS) — fall back to direct transfer
-            deps.observe("warning", "Tip API unreachable, using direct transfer fallback", {
-              source: "action-executor:tip", target: action.target,
+            // Transport failure only (network timeout, DNS) — fall back to direct transfer.
+            // Rate-limited to MAX_TIP_FALLBACKS_PER_SESSION to prevent unlimited unvalidated spending.
+            tipFallbackCount++;
+            if (tipFallbackCount > MAX_TIP_FALLBACKS_PER_SESSION) {
+              result.skipped.push({ action, reason: `Tip API fallback limit reached (${MAX_TIP_FALLBACKS_PER_SESSION} per session)` });
+              deps.observe("warning", `TIP skipped: fallback limit reached (${tipFallbackCount - 1}/${MAX_TIP_FALLBACKS_PER_SESSION})`, {
+                source: "action-executor:tip-fallback-limit", target: action.target,
+              });
+              continue;
+            }
+            deps.observe("warning", `Tip API unreachable, using direct transfer fallback (${tipFallbackCount}/${MAX_TIP_FALLBACKS_PER_SESSION})`, {
+              source: "action-executor:tip-fallback", target: action.target,
             });
           }
 
@@ -307,7 +331,7 @@ export async function executeStrategyActions(
                 interactionType: "we_tipped",
                 timestamp: new Date().toISOString(),
               });
-            } catch (err: unknown) { deps.observe("warning", `Interaction tracking failed: ${err instanceof Error ? err.message : String(err)}`, { source: "action-executor:interaction" }); }
+            } catch (err: unknown) { deps.observe("warning", `Interaction tracking failed: ${err instanceof Error ? err.message : String(err)}`, { source: "action-executor:tip-interaction" }); }
           }
           break;
         }

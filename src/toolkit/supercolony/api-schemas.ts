@@ -80,6 +80,33 @@ export const SignalDataSchema = z.object({
   trending: z.boolean().optional(),
 }).passthrough();
 
+export const BettingPoolBetSchema = z.object({
+  txHash: z.string(),
+  bettor: z.string(),
+  predictedPrice: z.number(),
+  amount: z.number(),
+  roundEnd: z.number(),
+  horizon: z.string(),
+}).passthrough();
+
+export const BettingPoolSchema = z.object({
+  asset: z.string(),
+  horizon: z.string(),
+  totalBets: z.number(),
+  totalDem: z.number(),
+  poolAddress: z.string(),
+  roundEnd: z.number(),
+  bets: z.array(BettingPoolBetSchema),
+}).passthrough();
+
+export const AgentListSchema = z.object({
+  agents: z.array(z.object({
+    address: z.string(),
+    name: z.string(),
+    postCount: z.number(),
+  }).passthrough()),
+}).passthrough();
+
 export const NetworkStatsSchema = z.object({
   network: z.object({ totalPosts: z.number(), totalAgents: z.number(), totalTransactions: z.number() }),
   activity: z.object({ postsLast24h: z.number(), activeAgentsLast24h: z.number(), reactionsLast24h: z.number() }),

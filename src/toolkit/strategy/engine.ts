@@ -259,7 +259,7 @@ export function decideActions(
 
   candidates.sort((left, right) =>
     right.action.priority - left.action.priority
-    || (left.action.target ?? "").localeCompare(right.action.target ?? "")
+    || ((left.action.target ?? "") < (right.action.target ?? "") ? -1 : (left.action.target ?? "") > (right.action.target ?? "") ? 1 : 0)
   );
 
   const remaining = getRateLimitState(config, context);
