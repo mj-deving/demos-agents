@@ -27,14 +27,16 @@ describe("templates/base", () => {
       expect(config.rules).toBeInstanceOf(Array);
     });
 
-    it("has 3 rules: publish_to_gaps, engage_verified, tip_valuable", () => {
+    it("has 5 Learn-first rules with engagement before publishing", () => {
       const yaml = readFileSync(resolve(TEMPLATE_DIR, "strategy.yaml"), "utf-8");
       const config = loadStrategyConfig(yaml);
 
-      expect(config.rules).toHaveLength(3);
+      expect(config.rules).toHaveLength(5);
       const ruleNames = config.rules.map(r => r.name);
-      expect(ruleNames).toContain("publish_to_gaps");
+      expect(ruleNames).toContain("reply_with_evidence");
       expect(ruleNames).toContain("engage_verified");
+      expect(ruleNames).toContain("publish_to_gaps");
+      expect(ruleNames).toContain("publish_signal_aligned");
       expect(ruleNames).toContain("tip_valuable");
     });
 
@@ -43,8 +45,10 @@ describe("templates/base", () => {
       const config = loadStrategyConfig(yaml);
 
       const ruleMap = new Map(config.rules.map(r => [r.name, r]));
-      expect(ruleMap.get("publish_to_gaps")!.type).toBe("PUBLISH");
+      expect(ruleMap.get("reply_with_evidence")!.type).toBe("REPLY");
       expect(ruleMap.get("engage_verified")!.type).toBe("ENGAGE");
+      expect(ruleMap.get("publish_to_gaps")!.type).toBe("PUBLISH");
+      expect(ruleMap.get("publish_signal_aligned")!.type).toBe("PUBLISH");
       expect(ruleMap.get("tip_valuable")!.type).toBe("TIP");
     });
 
@@ -57,9 +61,9 @@ describe("templates/base", () => {
     it("has rate limits configured", () => {
       const yaml = readFileSync(resolve(TEMPLATE_DIR, "strategy.yaml"), "utf-8");
       const config = loadStrategyConfig(yaml);
-      expect(config.rateLimits.postsPerDay).toBe(10);
+      expect(config.rateLimits.postsPerDay).toBe(8);
       expect(config.rateLimits.postsPerHour).toBe(3);
-      expect(config.rateLimits.reactionsPerSession).toBe(5);
+      expect(config.rateLimits.reactionsPerSession).toBe(6);
       expect(config.rateLimits.maxTipAmount).toBe(5);
     });
   });
@@ -80,11 +84,15 @@ describe("templates/base", () => {
       expect(existsSync(resolve(TEMPLATE_DIR, "agent.ts"))).toBe(true);
     });
 
-    it("imports createAgentRuntime, runAgentLoop, and enrichedObserve", () => {
+    it("imports createAgentRuntime, runAgentLoop, and learnFirstObserve", () => {
       const content = readFileSync(resolve(TEMPLATE_DIR, "agent.ts"), "utf-8");
       expect(content).toContain("createAgentRuntime");
       expect(content).toContain("runAgentLoop");
-      expect(content).toContain("enrichedObserve");
+      expect(content).toContain("learnFirstObserve");
+    });
+
+    it("has a separate observe.ts file (Learn-first pattern)", () => {
+      expect(existsSync(resolve(TEMPLATE_DIR, "observe.ts"))).toBe(true);
     });
 
     it("defaults to dry-run for safety (real DEM on mainnet)", () => {

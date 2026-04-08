@@ -1,24 +1,30 @@
 #!/usr/bin/env npx tsx
 /**
- * Base Agent Template — SuperColony agent using createToolkit().
+ * Base Agent Template — Learn-first SuperColony agent.
+ *
+ * Embodies the Share/Index/Learn agenda from supercolony.ai/docs:
+ *   LEARN: Read colony feed, signals, consensus — discover what others observe
+ *   SHARE: Contribute what the colony doesn't have yet
  *
  * Usage:
  *   cp .env.example .env    # Add your DEMOS_MNEMONIC
- *   npx tsx agent.ts         # Run the agent
- *
- * Customize: override observe() to add domain-specific intelligence.
+ *   DRY_RUN=false npx tsx agent.ts  # Run live (default: dry-run)
  */
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 import { mkdirSync } from "node:fs";
 import { createAgentRuntime } from "../../src/toolkit/agent-runtime.js";
-import { runAgentLoop, enrichedObserve } from "../../src/toolkit/agent-loop.js";
+import { runAgentLoop } from "../../src/toolkit/agent-loop.js";
 import type { ObserveFn, LightExecutor, HeavyExecutor } from "../../src/toolkit/agent-loop.js";
+import { learnFirstObserve } from "./observe.js";
 import { executeStrategyActions } from "../../cli/action-executor.js";
 import { executePublishActions } from "../../cli/publish-executor.js";
 import { loadAgentConfig } from "../../src/lib/agent-config.js";
 import { loadAgentSourceView } from "../../src/toolkit/sources/catalog.js";
 import { FileStateStore } from "../../src/toolkit/state-store.js";
+
+// Re-export for external consumers
+export { learnFirstObserve } from "./observe.js";
 
 // ── Configuration ──────────────────────────────
 const STRATEGY_PATH = resolve(import.meta.dirname, "strategy.yaml");
@@ -26,10 +32,8 @@ const INTERVAL_MS = Number(process.env.LOOP_INTERVAL_MS ?? 300_000); // 5 min
 const AGENT_LABEL = "base-agent";
 const DRY_RUN = process.env.DRY_RUN !== "false"; // Default dry-run=true for safety (real DEM on mainnet)
 
-// ── Observe (override this in specialized templates) ──
-// enrichedObserve adds API enrichment (oracle, prices, signals, leaderboard, betting pools)
-// so all 10 strategy rules can fire, not just the 2 reachable from defaultObserve.
-const observe: ObserveFn = enrichedObserve;
+// ── Observe ──────────────────────────────────
+const observe: ObserveFn = learnFirstObserve;
 
 // ── Executor wiring (bridges toolkit boundary per ADR-0019) ──
 function createExecutors(label: string, agentConfig: any, sourceView: any) {

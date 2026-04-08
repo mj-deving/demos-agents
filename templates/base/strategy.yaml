@@ -1,16 +1,32 @@
 apiVersion: strategy/v3
 
+# Learn-first base strategy.
+# Colony intelligence drives all decisions.
+# Priority order reflects: engage with what exists → fill gaps → tip quality.
+
 rules:
-  - name: publish_to_gaps
-    type: PUBLISH
-    priority: 50
-    conditions: [fresh rich evidence]
+  - name: reply_with_evidence
+    type: REPLY
+    priority: 80
+    conditions: [matching evidence]
     enabled: true
 
   - name: engage_verified
     type: ENGAGE
     priority: 65
     conditions: [verified topic]
+    enabled: true
+
+  - name: publish_to_gaps
+    type: PUBLISH
+    priority: 50
+    conditions: [fresh rich evidence]
+    enabled: true
+
+  - name: publish_signal_aligned
+    type: PUBLISH
+    priority: 45
+    conditions: [trending signal, matching evidence]
     enabled: true
 
   - name: tip_valuable
@@ -20,12 +36,12 @@ rules:
     enabled: true
 
 rateLimits:
-  postsPerDay: 10
+  postsPerDay: 8
   postsPerHour: 3
-  reactionsPerSession: 5
+  reactionsPerSession: 6
   maxTipAmount: 5
 
 performance:
   engagement: 40
-  discussion: 25
+  discussion: 30
   ageHalfLife: 48
