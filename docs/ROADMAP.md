@@ -2,7 +2,7 @@
 type: roadmap
 status: active
 updated: 2026-04-07
-open_items: 4
+open_items: 18
 completed_phases: 12
 tests: 3062
 suites: 248
@@ -10,7 +10,7 @@ tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
 colony_posts: 202000
-summary: "Phases 1-12 complete. Source subsystem fully wired: boundary moves, health filtering, rate limiting, lifecycle transitions. Open: 3 future items + prefetch-cascade redesign."
+summary: "Phases 1-12 complete. Phase 13 open: system tightening — fix all 4 publish paths (gaps, signal, divergence, prediction). 7 Codex-delegatable tasks. Sessions run 1.0-1.5 min but publish 0 posts due to evidence/source gaps."
 read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work"]
 ---
 
@@ -31,7 +31,7 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 - **ADRs:** 18 (ADR-0018 supersedes ADR-0001 for reads — API-first, chain fallback)
 - **Phase 11:** COMPLETE — 7 legacy session-runner patterns adopted as toolkit primitives (76 new tests)
 - **Phase 12:** COMPLETE — boundary moves (matcher/policy/lifecycle to toolkit), SENSE health filtering + rate limiting + lifecycle, 3 new macro sources, getSourceHealthSummary primitive
-- **Next:** Future items (escrow-to-social, ZK identity, StorageProgram exploration, prefetch-cascade redesign)
+- **Next:** Phase 13 system tightening — 7 Codex tasks to fix all publish paths. See `docs/phase13-system-tightening.md`
 
 ---
 
@@ -207,20 +207,38 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 - [x] Source freshness: fetchSourcesParallel always fetches fresh (no stale cache served). source_response_cache has TTL but is response cache for colony DB, not substitution for live fetches.
 - [x] Coverage gap documentation: yield curve feeds (FRED requires API key), VIX (CBOE requires auth), central bank policy (ECB API has non-JSON format). Tracked in Future Items.
 
+### Phase 13: System Tightening — Fix All Publish Paths
+
+> Goal: Every session publishes 1-2 posts. Currently 0 posts common (sessions 84-88).
+> All 7 tasks Codex-delegatable. Spec: `docs/phase13-system-tightening.md`
+> Visual lifecycle: `docs/v3-loop-capability-map.md`
+
+**Batch 1 (safe/diagnostic — run in parallel):**
+- [ ] 13a -- Debug publish_to_gaps evidence matching: log evidence index keys vs gap topic tokens, find why 0/63 match despite 80 evidence entries
+- [ ] 13b -- Add missing asset sources to catalog: ARB, XRP, SOL, LINK, DOT, AVAX, OP (CoinGecko simple/price). Unblocks divergence publishes.
+- [ ] 13c -- Test publish_prediction rule: never triggered in sessions 84-88. Check if enabled in strategy YAML. Write unit test.
+- [ ] 13g -- Strategy rule config audit: verify all 10 rules enabled/configured correctly in sentinel YAML. Flag unreachable conditions.
+
+**Batch 2 (fixes — after diagnostics):**
+- [ ] 13d -- Fix richness semantics: `richness = cached.responseSize` (bytes) but threshold designed for 0-100. Normalize or adjust constants.
+- [ ] 13e -- Catalog coverage matrix: cross-reference 225 sources against top 50 crypto assets + colony gap topics. Map coverage holes.
+- [ ] 13f -- E2E publish path integration test: strategy → LLM draft → match → attest → publish (mocked LLM/SDK, real engine/dedup)
+
+**Critical finding:** richness = byte count (256, 5000) but threshold = 50-95 (designed for 0-100). Filtering effectively disabled.
+
 ### Future (no phase assigned)
 
+- [ ] Topic angle rotation: when signal topics are dedup-blocked, generate sub-topics or alternative angles. Prevents 0-post sessions when signals stagnate. Needs strategy design (not Codex-delegatable).
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
 - [ ] 6-disc-i -- ZK identity proofs for privacy-preserving attestation
 - [ ] StorageProgram exploration: SDK structured on-chain storage for HIVE data
-- [ ] Lifecycle transition persistence: updateRating() and evaluateTransition() return new objects but results are NOT written back to catalog.json. Transitions are fire-and-forget (logged via observe, not persisted). Needs source registry DB for rating persistence across sessions.
-- [ ] Topic angle rotation: when signal topics are dedup-blocked, generate sub-topics or alternative angles (e.g., "EUR/USD implications of DXY tightening" instead of re-posting "DXY tightening"). Prevents 0-post sessions when signals stagnate.
-- [ ] Session-runner retirement: only 4 of 21 imports are truly dead/legacy (readline, review-findings, sources/index direct, strategy-text-generator). Other 17 are shared with v3. Retirement requires migrating remaining v2 test consumers — not a quick cleanup.
-- [ ] Prefetch-cascade redesign: source resolution currently produces single candidate, needs ranked list for multi-candidate fallback. Deferred from Phase 12b.
-- [ ] Macro source coverage: FRED (requires API key signup), VIX/CBOE (auth required), ECB (non-JSON XML format needs adapter). Blocked on credentials/adapters.
-- [ ] Source registry as DB: catalog.json metadata into colony DB for first-class query (domain/tag search, runtime health stats, add/remove). Deferred from Phase 12c.
-- [ ] ElizaOS adapter: deprecate or remove. 0 production consumers, 7 files, only test imports. Codex audit confirmed experimental-only.
-- [ ] Remove deprecated signals.ts/signals-plugin.ts: fetchSignals() has broken API shape (expects 'topics', API returns 'consensusAnalysis'). v3-loop uses toolkit.intelligence.getSignals(). Currently @deprecated, can delete when session-runner retires.
-- [ ] publish_to_gaps evidence mapping: rule evaluates 48-52 gap topics per session but finds 0 evidence matches. Evidence index uses short keys (bitcoin, defi) but gap topics are long phrases. Needs vocabulary bridging or evidence index expansion.
+- [ ] Lifecycle transition persistence: fire-and-forget ratings need source registry DB
+- [ ] Session-runner retirement: 4/21 imports dead/legacy, 17 shared with v3. Major migration.
+- [ ] Prefetch-cascade redesign: source resolution → ranked candidate list
+- [ ] Macro source coverage: FRED (API key), VIX (auth), ECB (non-JSON adapter)
+- [ ] Source registry as DB: catalog.json → colony DB for runtime query
+- [ ] ElizaOS adapter: deprecate or remove (0 production consumers)
+- [ ] Remove deprecated signals.ts/signals-plugin.ts (delete when session-runner retires)
 
 ---
 
