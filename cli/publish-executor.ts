@@ -13,6 +13,8 @@ import { calculateOfficialScore } from "../src/toolkit/supercolony/scoring.js";
 import { preflight } from "../src/lib/sources/policy.js";
 import { match } from "../src/lib/sources/matcher.js";
 import { checkClaimDedup, checkSelfDedup, checkSemanticDedup } from "../src/toolkit/colony/dedup.js";
+import { generateTopicAngle } from "../src/toolkit/strategy/topic-angle.js";
+import type { AngleContext } from "../src/toolkit/strategy/topic-angle.js";
 import { encodeVotePost, encodeBinaryPost, validateBetPayload, validateBinaryPayload, MAX_BET_AMOUNT } from "../src/toolkit/colony/vote-bet-codec.js";
 import { createSdkBridge, AUTH_PENDING_TOKEN } from "../src/toolkit/sdk-bridge.js";
 import { checkSessionBudget, recordSpend, saveSpendingLedger } from "../src/lib/spending-policy.js";
@@ -174,7 +176,8 @@ export async function executePublishActions(
       continue;
     }
 
-    const topic = getActionTopic(action);
+    const originalTopic = getActionTopic(action);
+    let topic = originalTopic;
     const replyContext = buildReplyContext(action, deps.colonyDb);
     const initialSource = resolveSourceForAction(action, deps.sourceView, deps.agentConfig);
 
@@ -188,31 +191,37 @@ export async function executePublishActions(
     }
 
     // Dedup guard — check BEFORE generating draft to save LLM call
+    // On self-dedup block, attempt topic angle rotation once before skipping
     if (deps.colonyDb && action.type === "PUBLISH") {
       const selfDedup = checkSelfDedup(deps.colonyDb, topic, deps.walletAddress);
       if (selfDedup.isDuplicate) {
-        deps.observe("insight", `Publish skipped: ${selfDedup.reason}`, {
-          actionType: action.type, topic,
-        });
-        result.skipped.push({ action, reason: selfDedup.reason ?? "self-dedup" });
-        continue;
+        const angleCtx: AngleContext = {
+          originalRule: action.metadata?.rule as string ?? "unknown",
+          divergence: action.metadata?.divergence as AngleContext["divergence"],
+        };
+        const angledTopic = generateTopicAngle(topic, angleCtx);
+        if (angledTopic && !checkSelfDedup(deps.colonyDb, angledTopic, deps.walletAddress).isDuplicate) {
+          deps.observe("insight", `Topic angle rotation: "${topic}" → "${angledTopic}"`, {
+            actionType: action.type, originalTopic: topic, angledTopic,
+          });
+          topic = angledTopic;
+        } else {
+          deps.observe("insight", `Publish skipped: ${selfDedup.reason} (angle rotation failed)`, {
+            actionType: action.type, topic, angledTopic,
+          });
+          result.skipped.push({ action, reason: selfDedup.reason ?? "self-dedup" });
+          continue;
+        }
       }
       const colonyDedup = checkClaimDedup(deps.colonyDb, topic);
       if (colonyDedup.isDuplicate) {
-        deps.observe("insight", `Publish skipped: ${colonyDedup.reason}`, {
-          actionType: action.type, topic,
-        });
+        deps.observe("insight", `Publish skipped: ${colonyDedup.reason}`, { actionType: action.type, topic });
         result.skipped.push({ action, reason: colonyDedup.reason ?? "colony-dedup" });
         continue;
       }
-      // Semantic dedup — catches paraphrases that keyword dedup misses
-      const semanticDedup = await checkSemanticDedup(deps.colonyDb, topic, {
-        ourAddress: deps.walletAddress,
-      });
+      const semanticDedup = await checkSemanticDedup(deps.colonyDb, topic, { ourAddress: deps.walletAddress });
       if (semanticDedup.isDuplicate) {
-        deps.observe("insight", `Publish skipped: ${semanticDedup.reason}`, {
-          actionType: action.type, topic,
-        });
+        deps.observe("insight", `Publish skipped: ${semanticDedup.reason}`, { actionType: action.type, topic });
         result.skipped.push({ action, reason: semanticDedup.reason ?? "semantic-dedup" });
         continue;
       }
