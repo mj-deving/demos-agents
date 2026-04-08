@@ -6,32 +6,39 @@
  */
 
 export const ASSET_MAP: Array<[RegExp, string, string]> = [
-  [/\bbitcoin|\bbtc\b/i, "bitcoin", "BTC"],
-  [/\bethereum|\beth\b/i, "ethereum", "ETH"],
-  [/\bsolana\b|\bSOL\b/, "solana", "SOL"],
-  [/\bripple|\bxrp\b/i, "ripple", "XRP"],
-  [/\bcardano|\bada\b/i, "cardano", "ADA"],
-  [/\bdogecoin|\bdoge\b/i, "dogecoin", "DOGE"],
-  [/\bpolkadot\b|\bDOT\b/, "polkadot", "DOT"],
-  [/\bavalanche|\bavax\b/i, "avalanche", "AVAX"],
-  [/\bchainlink\b|\bLINK\b/, "chainlink", "LINK"],
-  [/\bpolygon|\bmatic\b/i, "polygon", "MATIC"],
-  [/\buniswap\b|\bUNI\b/, "uniswap", "UNI"],
-  [/\blitecoin|\bltc\b/i, "litecoin", "LTC"],
-  [/\bcosmos\b|\bATOM\b/, "cosmos", "ATOM"],
-  [/\bnear\sprotocol\b|\bNEAR\b/, "near", "NEAR"],
-  [/\barbitrum\b|\bARB\b/, "arbitrum", "ARB"],
-  [/\boptimism\b|\bOP\b/, "optimism", "OP"],
+  [/\bbitcoin\b|\bbtc\b/i, "bitcoin", "BTC"],
+  [/\bethereum\b|\beth\b/i, "ethereum", "ETH"],
+  [/\bsolana\b|\bSOL\b/, "solana", "SOL"],               // "sol" collides with Spanish word
+  [/\bripple\b|\bxrp\b/i, "ripple", "XRP"],
+  [/\bcardano\b|\bada\b/i, "cardano", "ADA"],
+  [/\bdogecoin\b|\bdoge\b/i, "dogecoin", "DOGE"],
+  [/\bpolkadot\b|\bDOT\b/, "polkadot", "DOT"],            // "dot" is common English
+  [/\bavalanche\b|\bavax\b/i, "avalanche", "AVAX"],
+  [/\bchainlink\b|\bLINK\b/, "chainlink", "LINK"],        // "link" is common English
+  [/\bpolygon\b|\bmatic\b/i, "polygon", "MATIC"],
+  [/\buniswap\b|\bUNI\b/, "uniswap", "UNI"],              // "uni" is common English
+  [/\blitecoin\b|\bltc\b/i, "litecoin", "LTC"],
+  [/\bcosmos\b|\bATOM\b/, "cosmos", "ATOM"],               // "atom" is common English
+  [/\bnear\sprotocol\b|\bNEAR\b/, "near", "NEAR"],        // "near" is common English
+  [/\barbitrum\b|\barb\b/i, "arbitrum", "ARB"],            // "arb" is not common English
+  [/\boptimism\b|\bOP\b/, "optimism", "OP"],               // "op" is common English
   [/\baave\b/i, "aave", "AAVE"],
-  [/\bmonero|\bxmr\b/i, "monero", "XMR"],
-  [/\bfilecoin\b|\bFIL\b/, "filecoin", "FIL"],
-  [/\bSUI\b|\bsui\b(?=\s+(?:network|protocol|token|chain|price|trading))/, "sui", "SUI"],
-  [/\baptos\b|\bAPT\b/, "aptos", "APT"],
+  [/\bmonero\b|\bxmr\b/i, "monero", "XMR"],
+  [/\bfilecoin\b|\bfil\b/i, "filecoin", "FIL"],           // "fil" is uncommon enough
+  [/\bsui\b/i, "sui", "SUI"],                             // "sui" is uncommon enough
+  [/\baptos\b|\bapt\b/i, "aptos", "APT"],                 // "apt" could collide but rare in crypto context
   [/\bimmutable\b|\bimx\b/i, "immutable-x", "IMX"],
-  [/\brender\b|\bRNDR\b/, "render-token", "RNDR"],
+  [/\brender\b|\brndr\b/i, "render-token", "RNDR"],
   [/\bthe\ssandbox\b|\bsand\b/i, "the-sandbox", "SAND"],
   [/\bcurve\b|\bcrv\b/i, "curve-dao-token", "CRV"],
   [/\bmana\b|\bdecentraland\b/i, "decentraland", "MANA"],
+  [/\bbinance\b|\bbnb\b/i, "binancecoin", "BNB"],
+  [/\btron\b|\btrx\b/i, "tron", "TRX"],
+  [/\bshiba\b|\bshib\b/i, "shiba-inu", "SHIB"],
+  [/\btoncoin\b|\bton\b/i, "the-open-network", "TON"],
+  [/\bhedera\b|\bhbar\b/i, "hedera-hashgraph", "HBAR"],
+  [/\bbitcoin\scash\b|\bbch\b/i, "bitcoin-cash", "BCH"],
+  [/\binternet\scomputer\b|\bicp\b/i, "internet-computer", "ICP"],
 ];
 
 export const MACRO_ENTITY_MAP: Array<[RegExp, Record<string, string>]> = [
