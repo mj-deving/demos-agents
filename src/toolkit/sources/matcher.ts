@@ -27,13 +27,13 @@ import { emitTranscriptEvent } from "../../lib/transcript.js";
 
 // ── Constants ───────────────────────────────────────
 
-/** Match threshold — lowered from 50 → 30 → 10 through production testing.
+/** Match threshold — lowered from 50 → 30 → 10 → 9 through production testing.
  * 50: original pre-production theoretical value
  * 30: calibrated on HN text-heavy data (score 34 with exact-terms prompt)
  * 10: calibrated for financial/numeric sources — DAHR attestation proves
  *     source provenance, so the match is a secondary sanity check not a
  *     primary evidence gate. Score 10 requires basic topic token overlap. */
-const DEFAULT_MATCH_THRESHOLD = 10;
+const DEFAULT_MATCH_THRESHOLD = 9;
 
 /** Stopwords excluded from claim extraction */
 const STOPWORDS = new Set([
