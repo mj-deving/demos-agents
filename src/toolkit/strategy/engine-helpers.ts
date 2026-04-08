@@ -95,10 +95,13 @@ export function findTopicEvidenceMatches(
   }
 
   if (topicTokens.length > 0) {
+    const topicTokenSet = new Set(topicTokens);
     for (const [key, entries] of evidenceIndex.entries()) {
       if (seenKeys.has(key)) continue;
       const keyTokens = tokenizeTopic(key);
-      if (keyTokens.some((token) => topicTokens.includes(token))) {
+      const overlapCount = keyTokens.filter((token) => topicTokenSet.has(token)).length;
+      // Require 2+ shared tokens to avoid false positives from generic terms like "bitcoin" or "market"
+      if (overlapCount >= 2) {
         addEntries(key, entries);
       }
     }

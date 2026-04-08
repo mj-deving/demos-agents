@@ -35,7 +35,7 @@ function normalizeResponseSizeToRichness(responseSize: number): number {
       / (Math.log(upper.bytes) - Math.log(lowerBytes));
     const interpolatedScore = lower.score + ratio * (upper.score - lower.score);
 
-    return Math.min(100, Math.ceil(interpolatedScore / 5) * 5);
+    return Math.min(100, Math.round(interpolatedScore));
   }
 
   return RICHNESS_ANCHORS[RICHNESS_ANCHORS.length - 1].score;

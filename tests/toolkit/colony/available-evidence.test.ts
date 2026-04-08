@@ -67,9 +67,9 @@ describe("available evidence", () => {
     ], new Date("2026-03-31T12:00:00.000Z"))).toEqual([
       // Evidence now indexed by all topics + domain tags (Phase 12 fix)
       // Insertion order: topics first (bitcoin), then domainTags (hash_rate, difficulty)
-      { sourceId: "fresh-btc", subject: "bitcoin", metrics: ["hash_rate", "difficulty"], richness: 50, freshness: 300, stale: false },
-      { sourceId: "fresh-btc", subject: "hash_rate", metrics: ["hash_rate", "difficulty"], richness: 50, freshness: 300, stale: false },
-      { sourceId: "fresh-btc", subject: "difficulty", metrics: ["hash_rate", "difficulty"], richness: 50, freshness: 300, stale: false },
+      { sourceId: "fresh-btc", subject: "bitcoin", metrics: ["hash_rate", "difficulty"], richness: 48, freshness: 300, stale: false },
+      { sourceId: "fresh-btc", subject: "hash_rate", metrics: ["hash_rate", "difficulty"], richness: 48, freshness: 300, stale: false },
+      { sourceId: "fresh-btc", subject: "difficulty", metrics: ["hash_rate", "difficulty"], richness: 48, freshness: 300, stale: false },
     ]);
   });
 
@@ -141,7 +141,7 @@ describe("available evidence", () => {
     ], new Date("2026-03-31T12:00:00.000Z"));
 
     expect(evidence).toEqual([
-      { sourceId: "tiny", subject: "tiny", metrics: [], richness: 30, freshness: 300, stale: false },
+      { sourceId: "tiny", subject: "tiny", metrics: [], richness: 25, freshness: 300, stale: false },
       { sourceId: "empty", subject: "empty", metrics: [], richness: 0, freshness: 300, stale: false },
     ]);
     expect(evidence.every(({ richness }) => richness < MIN_PUBLISH_EVIDENCE_RICHNESS)).toBe(true);
