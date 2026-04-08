@@ -243,10 +243,10 @@ The strategy engine has 10 rules, but the agent-loop path (`defaultObserve()`) r
 
 **14a — Topic angle rotation (strategy design + implementation):**
 Post-dedup rotation in publish-executor.ts. When self-dedup blocks a signal-aligned publish, generate an alternative angle using existing vocabulary (expandTopic, expandTopicToDomains, oracle divergences, temporal framing). No LLM needed for angle generation — only for the draft step which already receives topic as input. Retry once with angled topic.
-- [ ] 14a-1: Angle generation function in toolkit/strategy/ (pure, no side effects)
-- [ ] 14a-2: Post-dedup retry logic in publish-executor.ts
-- [ ] 14a-3: Tests for angle generation + dedup retry flow
-- [ ] 14a-4: Integration with existing expandTopic() vocabulary
+- [x] 14a-1: Angle generation function in toolkit/strategy/topic-angle.ts (pure, deterministic)
+- [x] 14a-2: Post-dedup retry logic in publish-executor.ts (self-dedup → angle → re-check)
+- [x] 14a-3: 7 tests for angle generation (divergence, expansion, temporal, edge cases)
+- [x] 14a-4: Uses oracle divergence data + temporal/analytical framing (expansion map injectable)
 
 **14b — Expand catalog: 15 more top-50 assets (Codex-delegatable):**
 Add CoinGecko simple/price sources for: BNB, ADA, DOGE, TRX, SHIB, TON, SUI, NEAR, APT, HBAR, BCH, ICP, FIL, RENDER, UNI. Same format as existing entries. Status: quarantined. Unblocks divergence publishes for more assets.

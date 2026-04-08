@@ -12592,6 +12592,936 @@
       }
     },
     {
+      "id": "coingecko-price-bnb",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "binancecoin"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-ada",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "cardano"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-doge",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=dogecoin&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "dogecoin"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-trx",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=tron&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "tron"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-shib",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=shiba-inu&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "shiba-inu"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-ton",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "the-open-network"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-sui",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "sui"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-near",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "near"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-apt",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "aptos"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-hbar",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "hedera-hashgraph"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-bch",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin-cash&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "bitcoin-cash"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-icp",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "internet-computer"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-fil",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=filecoin&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "filecoin"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-render",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=render-token&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "render-token"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-uni",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=uniswap&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "uniswap"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
       "id": "cryptocompare-price-sol",
       "name": "cryptocompare-price",
       "provider": "cryptocompare",
