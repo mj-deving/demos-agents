@@ -191,17 +191,18 @@ export async function executePublishActions(
     }
 
     // Dedup guard — check BEFORE generating draft to save LLM call
-    // On self-dedup block, attempt topic angle rotation once before skipping
+    // On dedup block (self or colony), attempt topic angle rotation once before skipping
     if (deps.colonyDb && action.type === "PUBLISH") {
+      const angleCtx: AngleContext = {
+        originalRule: action.metadata?.rule as string ?? "unknown",
+        divergence: action.metadata?.divergence as AngleContext["divergence"],
+      };
+
       const selfDedup = checkSelfDedup(deps.colonyDb, topic, deps.walletAddress);
       if (selfDedup.isDuplicate) {
-        const angleCtx: AngleContext = {
-          originalRule: action.metadata?.rule as string ?? "unknown",
-          divergence: action.metadata?.divergence as AngleContext["divergence"],
-        };
         const angledTopic = generateTopicAngle(topic, angleCtx);
         if (angledTopic && !checkSelfDedup(deps.colonyDb, angledTopic, deps.walletAddress).isDuplicate) {
-          deps.observe("insight", `Topic angle rotation: "${topic}" → "${angledTopic}"`, {
+          deps.observe("insight", `Topic angle rotation (self-dedup): "${topic}" → "${angledTopic}"`, {
             actionType: action.type, originalTopic: topic, angledTopic,
           });
           topic = angledTopic;
@@ -215,9 +216,19 @@ export async function executePublishActions(
       }
       const colonyDedup = checkClaimDedup(deps.colonyDb, topic);
       if (colonyDedup.isDuplicate) {
-        deps.observe("insight", `Publish skipped: ${colonyDedup.reason}`, { actionType: action.type, topic });
-        result.skipped.push({ action, reason: colonyDedup.reason ?? "colony-dedup" });
-        continue;
+        const angledTopic = generateTopicAngle(topic, angleCtx);
+        if (angledTopic && !checkClaimDedup(deps.colonyDb, angledTopic).isDuplicate) {
+          deps.observe("insight", `Topic angle rotation (colony-dedup): "${topic}" → "${angledTopic}"`, {
+            actionType: action.type, originalTopic: topic, angledTopic,
+          });
+          topic = angledTopic;
+        } else {
+          deps.observe("insight", `Publish skipped: ${colonyDedup.reason} (angle rotation failed)`, {
+            actionType: action.type, topic, angledTopic,
+          });
+          result.skipped.push({ action, reason: colonyDedup.reason ?? "colony-dedup" });
+          continue;
+        }
       }
       const semanticDedup = await checkSemanticDedup(deps.colonyDb, topic, { ourAddress: deps.walletAddress });
       if (semanticDedup.isDuplicate) {
