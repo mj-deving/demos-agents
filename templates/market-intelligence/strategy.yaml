@@ -54,5 +54,4 @@ topicWeights:
   macro: 0.8
 
 enrichment:
-  divergenceThreshold: 10
   minConfidence: 50

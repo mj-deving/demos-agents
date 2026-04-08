@@ -60,7 +60,6 @@ const StrategyConfigSchema = z.object({
     reactionsPerSession: z.number().int().positive().optional(),
     maxTipAmount: z.number().positive().optional(),
     betsPerDay: z.number().int().nonnegative().optional(),
-    disagreesPerCycle: z.number().int().nonnegative().optional(),
   }).default({}),
   performance: z.object({
     engagement: z.number().nonnegative().optional(),
@@ -77,8 +76,6 @@ const StrategyConfigSchema = z.object({
   }).default({}),
   topicWeights: z.record(z.string(), z.number()).default({}),
   enrichment: z.object({
-    divergenceThreshold: z.number().nonnegative().optional(),
-    minBallotAccuracy: z.number().min(0).max(1).optional(),
     minSignalAgents: z.number().int().nonnegative().optional(),
     minConfidence: z.number().int().min(0).max(100).optional(),
   }).default({}),
@@ -135,7 +132,6 @@ export function loadStrategyConfig(yamlContent: string): StrategyConfig {
       reactionsPerSession: config.rateLimits.reactionsPerSession ?? DEFAULT_RATE_LIMITS.reactionsPerSession,
       maxTipAmount: Math.min(config.rateLimits.maxTipAmount ?? DEFAULT_RATE_LIMITS.maxTipAmount, 10),
       betsPerDay: Math.min(config.rateLimits.betsPerDay ?? 3, 5),
-      disagreesPerCycle: Math.min(config.rateLimits.disagreesPerCycle ?? 3, 10),
     },
     performance: {
       engagement: config.performance.engagement ?? DEFAULT_PERFORMANCE.engagement,
@@ -152,8 +148,6 @@ export function loadStrategyConfig(yamlContent: string): StrategyConfig {
     },
     topicWeights: config.topicWeights,
     enrichment: {
-      divergenceThreshold: config.enrichment.divergenceThreshold ?? 10,
-      minBallotAccuracy: config.enrichment.minBallotAccuracy ?? 0.5,
       minSignalAgents: config.enrichment.minSignalAgents ?? 5,
       minConfidence: config.enrichment.minConfidence ?? 70,
     },

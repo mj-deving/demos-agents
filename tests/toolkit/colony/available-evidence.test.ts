@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { computeAvailableEvidence } from "../../../src/toolkit/colony/available-evidence.js";
 import { initColonyCache } from "../../../src/toolkit/colony/schema.js";
 import { upsertSourceResponse } from "../../../src/toolkit/colony/source-cache.js";
+import { MIN_PUBLISH_EVIDENCE_RICHNESS } from "../../../src/toolkit/strategy/engine-helpers.js";
 
 describe("available evidence", () => {
   let db: ReturnType<typeof initColonyCache>;
@@ -66,9 +67,83 @@ describe("available evidence", () => {
     ], new Date("2026-03-31T12:00:00.000Z"))).toEqual([
       // Evidence now indexed by all topics + domain tags (Phase 12 fix)
       // Insertion order: topics first (bitcoin), then domainTags (hash_rate, difficulty)
-      { sourceId: "fresh-btc", subject: "bitcoin", metrics: ["hash_rate", "difficulty"], richness: 256, freshness: 300, stale: false },
-      { sourceId: "fresh-btc", subject: "hash_rate", metrics: ["hash_rate", "difficulty"], richness: 256, freshness: 300, stale: false },
-      { sourceId: "fresh-btc", subject: "difficulty", metrics: ["hash_rate", "difficulty"], richness: 256, freshness: 300, stale: false },
+      { sourceId: "fresh-btc", subject: "bitcoin", metrics: ["hash_rate", "difficulty"], richness: 50, freshness: 300, stale: false },
+      { sourceId: "fresh-btc", subject: "hash_rate", metrics: ["hash_rate", "difficulty"], richness: 50, freshness: 300, stale: false },
+      { sourceId: "fresh-btc", subject: "difficulty", metrics: ["hash_rate", "difficulty"], richness: 50, freshness: 300, stale: false },
     ]);
+  });
+
+  it("normalizes response size into the 0-100 richness range using the expected logarithmic anchors", () => {
+    const sizes = [
+      { sourceId: "empty", responseSize: 0, expected: 0 },
+      { sourceId: "minimal", responseSize: 100, expected: 30 },
+      { sourceId: "moderate", responseSize: 500, expected: 60 },
+      { sourceId: "good", responseSize: 2000, expected: 80 },
+      { sourceId: "excellent", responseSize: 5000, expected: 95 },
+      { sourceId: "capped", responseSize: 9000, expected: 95 },
+    ];
+
+    for (const { sourceId, responseSize } of sizes) {
+      upsertSourceResponse(db, {
+        sourceId,
+        url: `https://example.com/${sourceId}`,
+        lastFetchedAt: "2026-03-31T11:55:00.000Z",
+        responseStatus: 200,
+        responseSize,
+        responseBody: "x".repeat(responseSize),
+        ttlSeconds: 900,
+        consecutiveFailures: 0,
+      });
+    }
+
+    const evidence = computeAvailableEvidence(db, sizes.map(({ sourceId }) => ({
+      id: sourceId,
+      topics: [sourceId],
+      domainTags: [],
+    })), new Date("2026-03-31T12:00:00.000Z"));
+
+    expect(evidence.map(({ sourceId, richness }) => ({ sourceId, richness }))).toEqual([
+      { sourceId: "capped", richness: 95 },
+      { sourceId: "excellent", richness: 95 },
+      { sourceId: "good", richness: 80 },
+      { sourceId: "moderate", richness: 60 },
+      { sourceId: "minimal", richness: 30 },
+      { sourceId: "empty", richness: 0 },
+    ]);
+    expect(evidence.every(({ richness }) => richness >= 0 && richness <= 100)).toBe(true);
+  });
+
+  it("keeps empty and tiny responses below the publish richness minimum", () => {
+    upsertSourceResponse(db, {
+      sourceId: "empty",
+      url: "https://example.com/empty",
+      lastFetchedAt: "2026-03-31T11:55:00.000Z",
+      responseStatus: 200,
+      responseSize: 0,
+      responseBody: "",
+      ttlSeconds: 900,
+      consecutiveFailures: 0,
+    });
+    upsertSourceResponse(db, {
+      sourceId: "tiny",
+      url: "https://example.com/tiny",
+      lastFetchedAt: "2026-03-31T11:55:00.000Z",
+      responseStatus: 200,
+      responseSize: 49,
+      responseBody: "x".repeat(49),
+      ttlSeconds: 900,
+      consecutiveFailures: 0,
+    });
+
+    const evidence = computeAvailableEvidence(db, [
+      { id: "empty", topics: ["empty"], domainTags: [] },
+      { id: "tiny", topics: ["tiny"], domainTags: [] },
+    ], new Date("2026-03-31T12:00:00.000Z"));
+
+    expect(evidence).toEqual([
+      { sourceId: "tiny", subject: "tiny", metrics: [], richness: 30, freshness: 300, stale: false },
+      { sourceId: "empty", subject: "empty", metrics: [], richness: 0, freshness: 300, stale: false },
+    ]);
+    expect(evidence.every(({ richness }) => richness < MIN_PUBLISH_EVIDENCE_RICHNESS)).toBe(true);
   });
 });

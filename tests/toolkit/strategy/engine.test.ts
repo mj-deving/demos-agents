@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AvailableEvidence } from "../../../src/toolkit/colony/available-evidence.js";
 import type { ColonyState } from "../../../src/toolkit/colony/state-extraction.js";
 import { applyLeaderboardAdjustment, decideActions } from "../../../src/toolkit/strategy/engine.js";
+import { MIN_PUBLISH_EVIDENCE_RICHNESS } from "../../../src/toolkit/strategy/engine-helpers.js";
 import type { DecisionContext, StrategyConfig } from "../../../src/toolkit/strategy/types.js";
 
 function createEmptyState(): ColonyState {
@@ -87,8 +88,6 @@ function createConfig(overrides: Partial<StrategyConfig> = {}): StrategyConfig {
     },
     topicWeights: {},
     enrichment: {
-      divergenceThreshold: 10,
-      minBallotAccuracy: 0.5,
       minSignalAgents: 2,
       minConfidence: 40,
     },
@@ -218,6 +217,30 @@ describe("strategy engine", () => {
         evidence: ["security-source"],
       }),
     ]);
+  });
+
+  it("rejects publish_to_gaps evidence that falls below the minimum richness threshold", () => {
+    const state = createEmptyState();
+    state.gaps.underservedTopics = [
+      { topic: "security", lastPostAt: "2026-03-31T09:00:00.000Z" },
+    ];
+
+    const result = decideActions(state, [
+      createEvidence("security", { richness: MIN_PUBLISH_EVIDENCE_RICHNESS - 5 }),
+    ], createConfig({
+      rules: createConfig().rules.map((rule) => ({
+        ...rule,
+        enabled: rule.name === "publish_to_gaps",
+      })),
+    }), createContext());
+
+    expect(result.actions).toEqual([]);
+    expect(result.log.rejected).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        rule: "publish_to_gaps",
+        reason: expect.stringContaining(`threshold=${MIN_PUBLISH_EVIDENCE_RICHNESS}`),
+      }),
+    ]));
   });
 
   it("creates tip actions for contributors above the colony median", () => {
@@ -1005,14 +1028,14 @@ describe("strategy engine", () => {
         { topic: "security", lastPostAt: "2026-03-31T09:00:00.000Z" },
       ];
 
-      // Evidence with richness 96 — above capped threshold of 95
-      const resultAboveCap = decideActions(state, [createEvidence("security", { richness: 96 })], createConfig({
+      // Evidence with richness 95 — equal to capped threshold of 95 and should pass
+      const resultAboveCap = decideActions(state, [createEvidence("security", { richness: 95 })], createConfig({
         rules: createConfig().rules.map((r) => ({ ...r, enabled: r.name === "publish_to_gaps" })),
       }), createContext({
         calibration: { ourAvgScore: 50, colonyMedianScore: 40, offset: 10, postCount: 20, computedAt: new Date().toISOString() },
       }));
 
-      // High offset (10) → min(95, max(50, 100 + 50)) = 95. Richness 96 > 95 → publishes
+      // High offset (10) → min(95, max(50, 50 + 50)) = 95. Richness 95 >= 95 → publishes
       expect(resultAboveCap.actions).toHaveLength(1);
       expect(resultAboveCap.actions[0].type).toBe("PUBLISH");
 
@@ -1032,7 +1055,7 @@ describe("strategy engine", () => {
         { topic: "security", lastPostAt: "2026-03-31T09:00:00.000Z" },
       ];
 
-      // Evidence with richness 60 — below default 100 but above adjusted 50 (offset=-20 → threshold=max(50, 0)=50)
+      // Evidence with richness 60 — above adjusted 50 (offset=-20 → threshold=max(50, -50)=50)
       const resultLowCal = decideActions(state, [createEvidence("security", { richness: 60 })], createConfig({
         rules: createConfig().rules.map((r) => ({ ...r, enabled: r.name === "publish_to_gaps" })),
       }), createContext({
@@ -1050,13 +1073,13 @@ describe("strategy engine", () => {
         { topic: "security", lastPostAt: "2026-03-31T09:00:00.000Z" },
       ];
 
-      const result = decideActions(state, [createEvidence("security", { richness: 150 })], createConfig({
+      const result = decideActions(state, [createEvidence("security", { richness: MIN_PUBLISH_EVIDENCE_RICHNESS })], createConfig({
         rules: createConfig().rules.map((r) => ({ ...r, enabled: r.name === "publish_to_gaps" })),
       }), createContext({
         calibration: { ourAvgScore: 30, colonyMedianScore: 30, offset: 0, postCount: 20, computedAt: new Date().toISOString() },
       }));
 
-      // offset=0 → threshold = max(50, 100) = 100. Richness 150 > 100 → publishes
+      // offset=0 → threshold = max(50, 50) = 50. Richness 50 >= 50 → publishes
       expect(result.actions).toHaveLength(1);
     });
   });

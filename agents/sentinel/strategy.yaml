@@ -70,7 +70,8 @@ rules:
     type: PUBLISH
     priority: 45
     conditions:
-      - "Ballot accuracy above minimum"
+      - "Active betting pool for configured asset"
+      - "Pool has at least 3 bets"
       - "Price data available"
     enabled: true
 
@@ -90,7 +91,6 @@ rateLimits:
   reactionsPerSession: 8
   maxTipAmount: 10
   betsPerDay: 3
-  disagreesPerCycle: 3
 
 performance:
   engagement: 40
@@ -112,8 +112,6 @@ topicWeights:
   security: 1.1
 
 enrichment:
-  divergenceThreshold: 10
-  minBallotAccuracy: 0.5
   minSignalAgents: 2
   minConfidence: 40
 

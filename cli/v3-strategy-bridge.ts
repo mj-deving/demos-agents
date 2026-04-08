@@ -281,7 +281,7 @@ export async function plan(
       const contradictions = scanForContradictions(ctx.db, {
         since: since24h,
         ourAddress: ctx.walletAddress,
-        maxResults: ctx.config.rateLimits.disagreesPerCycle ?? 3,
+        maxResults: 3,
       });
       if (contradictions.length > 0) {
         context.intelligence.contradictions = contradictions;

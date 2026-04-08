@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-04-08T05:09:40.034Z",
+  "generatedAt": "2026-04-08T05:32:11.174Z",
   "aliasesVersion": 1,
   "sources": [
     {
@@ -1126,7 +1126,7 @@
         }
       },
       "trustTier": "established",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -1391,7 +1391,7 @@
         }
       },
       "trustTier": "established",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -1522,7 +1522,7 @@
         }
       },
       "trustTier": "established",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -1595,17 +1595,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 53,
+        "testCount": 54,
         "successCount": 0,
-        "consecutiveFailures": 50,
-        "lastTestedAt": "2026-04-08T05:09:23.378Z"
+        "consecutiveFailures": 51,
+        "lastTestedAt": "2026-04-08T05:31:54.526Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-31T18:38:15.887Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
-        "lastFailedAt": "2026-04-08T05:09:23.378Z"
+        "lastFailedAt": "2026-04-08T05:31:54.526Z"
       },
       "adapter": {
         "operation": "lookup"
@@ -1731,17 +1731,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 52,
+        "testCount": 53,
         "successCount": 0,
-        "consecutiveFailures": 49,
-        "lastTestedAt": "2026-04-08T05:09:23.329Z"
+        "consecutiveFailures": 50,
+        "lastTestedAt": "2026-04-08T05:31:54.489Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
         "statusChangedAt": "2026-03-31T18:38:15.887Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
-        "lastFailedAt": "2026-04-08T05:09:23.329Z"
+        "lastFailedAt": "2026-04-08T05:31:54.489Z"
       },
       "adapter": {
         "operation": "chart"
@@ -3139,17 +3139,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 39,
+        "testCount": 40,
         "successCount": 0,
-        "consecutiveFailures": 33,
-        "lastTestedAt": "2026-04-08T05:09:40.033Z"
+        "consecutiveFailures": 34,
+        "lastTestedAt": "2026-04-08T05:32:11.174Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-13T21:52:08.386Z",
         "discoveredBy": "import",
         "statusChangedAt": "2026-04-06T12:06:52.528Z",
         "promotedAt": "2026-03-14T20:01:37.679Z",
-        "lastFailedAt": "2026-04-08T05:09:40.033Z"
+        "lastFailedAt": "2026-04-08T05:32:11.174Z"
       },
       "adapter": {
         "operation": "fees"
@@ -9820,7 +9820,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -9887,7 +9887,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -11008,7 +11008,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -11086,17 +11086,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 22,
+        "testCount": 23,
         "successCount": 0,
-        "consecutiveFailures": 19,
-        "lastTestedAt": "2026-04-08T05:09:40.033Z"
+        "consecutiveFailures": 20,
+        "lastTestedAt": "2026-04-08T05:32:11.174Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T15:24:25.305Z",
         "discoveredBy": "manual",
         "statusChangedAt": "2026-04-07T06:59:58.404Z",
         "promotedAt": "2026-03-21T15:42:39.860Z",
-        "lastFailedAt": "2026-04-08T05:09:40.033Z"
+        "lastFailedAt": "2026-04-08T05:32:11.174Z"
       },
       "id": "mempool-hashrate",
       "name": "mempool-hashrate-3d",
@@ -11430,17 +11430,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 21,
+        "testCount": 22,
         "successCount": 0,
-        "consecutiveFailures": 18,
-        "lastTestedAt": "2026-04-08T05:09:23.362Z"
+        "consecutiveFailures": 19,
+        "lastTestedAt": "2026-04-08T05:31:54.593Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T15:24:25.305Z",
         "discoveredBy": "manual",
         "statusChangedAt": "2026-04-07T07:04:34.183Z",
         "promotedAt": "2026-03-21T15:42:39.860Z",
-        "lastFailedAt": "2026-04-08T05:09:23.362Z"
+        "lastFailedAt": "2026-04-08T05:31:54.593Z"
       },
       "id": "deribit-perp-sol",
       "name": "deribit-sol-perpetual",
@@ -12189,7 +12189,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -12254,7 +12254,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -12319,7 +12319,7 @@
         }
       },
       "trustTier": "experimental",
-      "status": "archived",
+      "status": "quarantined",
       "rating": {
         "overall": 50,
         "uptime": 50,
@@ -12338,6 +12338,254 @@
         "discoveredBy": "manual",
         "lastFailedAt": "2026-03-21T18:55:06.599Z",
         "statusChangedAt": "2026-03-21T18:55:10.187Z"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-arb",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "arbitrum"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-xrp",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "ripple"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-sol",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "solana"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
+      },
+      "adapter": {
+        "operation": "simple-price"
+      }
+    },
+    {
+      "id": "coingecko-price-op",
+      "name": "coingecko-simple-price",
+      "provider": "coingecko",
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=optimism&vs_currencies=usd",
+      "urlPattern": "api.coingecko.com/api/v3/simple/price",
+      "topics": [
+        "crypto",
+        "prices",
+        "optimism"
+      ],
+      "tlsn_safe": true,
+      "dahr_safe": true,
+      "max_response_kb": 16,
+      "topicAliases": [],
+      "domainTags": [
+        "crypto",
+        "prices"
+      ],
+      "responseFormat": "json",
+      "scope": {
+        "visibility": "scoped",
+        "agents": [
+          "sentinel"
+        ],
+        "importedFrom": [
+          "sentinel"
+        ]
+      },
+      "runtime": {
+        "timeoutMs": 8000,
+        "retry": {
+          "maxAttempts": 2,
+          "backoffMs": 1000,
+          "retryOn": [
+            "timeout",
+            "5xx"
+          ]
+        }
+      },
+      "trustTier": "experimental",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-08T05:32:11.174Z",
+        "discoveredBy": "manual"
       },
       "adapter": {
         "operation": "simple-price"
@@ -12989,17 +13237,17 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 11,
+        "testCount": 12,
         "successCount": 0,
-        "consecutiveFailures": 8,
-        "lastTestedAt": "2026-04-08T05:09:23.748Z"
+        "consecutiveFailures": 9,
+        "lastTestedAt": "2026-04-08T05:31:54.903Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:46:06.589Z",
         "discoveredBy": "manual",
         "statusChangedAt": "2026-04-07T16:51:22.311Z",
         "promotedAt": "2026-03-21T18:54:34.310Z",
-        "lastFailedAt": "2026-04-08T05:09:23.748Z"
+        "lastFailedAt": "2026-04-08T05:31:54.903Z"
       },
       "adapter": {
         "operation": "stats"
@@ -13797,10 +14045,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 3,
-        "successCount": 3,
+        "testCount": 4,
+        "successCount": 4,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-03-21T18:54:27.202Z"
+        "lastTestedAt": "2026-04-08T05:31:55.273Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-21T18:46:06.589Z",
@@ -14667,10 +14915,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 41,
+        "testCount": 42,
         "successCount": 1,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-04-08T05:09:23.330Z"
+        "lastTestedAt": "2026-04-08T05:31:54.490Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:32:19.644Z",
@@ -14722,10 +14970,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 41,
+        "testCount": 42,
         "successCount": 1,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-04-08T05:09:23.330Z"
+        "lastTestedAt": "2026-04-08T05:31:54.490Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:40:43.188Z",
@@ -14773,10 +15021,10 @@
         "sizeStability": 50,
         "engagement": 50,
         "trust": 50,
-        "testCount": 41,
+        "testCount": 42,
         "successCount": 1,
         "consecutiveFailures": 0,
-        "lastTestedAt": "2026-04-08T05:09:23.330Z"
+        "lastTestedAt": "2026-04-08T05:31:54.491Z"
       },
       "lifecycle": {
         "discoveredAt": "2026-03-23T20:57:39.167Z",

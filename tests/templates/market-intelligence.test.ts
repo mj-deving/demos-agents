@@ -413,10 +413,9 @@ describe("templates/market-intelligence", () => {
       expect(config.rateLimits.maxTipAmount).toBe(5);
     });
 
-    it("has enrichment settings with divergenceThreshold and minConfidence", () => {
+    it("has enrichment settings with minConfidence", () => {
       const yaml = readFileSync(resolve(TEMPLATE_DIR, "strategy.yaml"), "utf-8");
       const config = loadStrategyConfig(yaml);
-      expect(config.enrichment.divergenceThreshold).toBe(10);
       expect(config.enrichment.minConfidence).toBe(50);
     });
 

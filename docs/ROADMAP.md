@@ -1,16 +1,16 @@
 ---
 type: roadmap
 status: active
-updated: 2026-04-07
-open_items: 18
+updated: 2026-04-08
+open_items: 19
 completed_phases: 12
-tests: 3062
-suites: 248
+tests: 3071
+suites: 250
 tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
 colony_posts: 202000
-summary: "Phases 1-12 complete. Phase 13 open: system tightening — fix all 4 publish paths (gaps, signal, divergence, prediction). 7 Codex-delegatable tasks. Sessions run 1.0-1.5 min but publish 0 posts due to evidence/source gaps."
+summary: "Phases 1-12 complete. Phase 13 Batch 1 done (4/8 tasks): evidence matching fixed, 7 asset sources added, publish_prediction diagnosed, strategy audit found 8/10 rules unreachable in agent-loop (v3-loop wired). Batch 2 reframed for v3-loop: richness semantics, coverage matrix, E2E test, dead config cleanup."
 read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work"]
 ---
 
@@ -23,7 +23,7 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 
 - **V3 loop:** LIVE with toolkit primitives replacing raw apiCall enrichment
 - **Phase 9:** COMPLETE (DataSource abstraction, 15 domain primitives, v3-loop wiring, API backfill, drift detection)
-- **Tests:** 3062 passing, 248 suites, **0 tsc errors**
+- **Tests:** 3071 passing, 250 suites, **0 tsc errors**
 - **Toolkit:** `createToolkit()` facade with 15 namespaces (feed, intelligence, scores, agents, actions, oracle, prices, verification, predictions, ballot, webhooks, identity, balance, health, stats)
 - **API Client:** 38/38 endpoints (35 in client, 3 in dedicated modules). 100% coverage.
 - **Strategy Engine:** 10 rules in 3 modules (5 core + 4 enrichment + 1 contradiction). Auto-calibration. Leaderboard meta-rule. FTS5 dedup. VOTE/BET rate limiting + session budget guard. Score-100 tuning: confidence threshold, agent minimum, cross-domain bonus.
@@ -31,7 +31,7 @@ read_when: ["roadmap", "phase 7", "phase 8", "open items", "deferred", "tech deb
 - **ADRs:** 18 (ADR-0018 supersedes ADR-0001 for reads — API-first, chain fallback)
 - **Phase 11:** COMPLETE — 7 legacy session-runner patterns adopted as toolkit primitives (76 new tests)
 - **Phase 12:** COMPLETE — boundary moves (matcher/policy/lifecycle to toolkit), SENSE health filtering + rate limiting + lifecycle, 3 new macro sources, getSourceHealthSummary primitive
-- **Next:** Phase 13 system tightening — 7 Codex tasks to fix all publish paths. See `docs/phase13-system-tightening.md`
+- **Next:** Phase 13 Batch 2 — richness semantics fix, catalog coverage matrix, E2E publish test, dead config cleanup. See `docs/phase13-system-tightening.md`
 
 ---
 
@@ -214,15 +214,23 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 > Visual lifecycle: `docs/v3-loop-capability-map.md`
 
 **Batch 1 (safe/diagnostic — run in parallel):**
-- [ ] 13a -- Debug publish_to_gaps evidence matching: log evidence index keys vs gap topic tokens, find why 0/63 match despite 80 evidence entries
-- [ ] 13b -- Add missing asset sources to catalog: ARB, XRP, SOL, LINK, DOT, AVAX, OP (CoinGecko simple/price). Unblocks divergence publishes.
-- [ ] 13c -- Test publish_prediction rule: never triggered in sessions 84-88. Check if enabled in strategy YAML. Write unit test.
-- [ ] 13g -- Strategy rule config audit: verify all 10 rules enabled/configured correctly in sentinel YAML. Flag unreachable conditions.
+- [x] 13a -- Fix publish_to_gaps evidence matching: phrase-key tokenizer (`findTopicEvidenceMatches`) closes gap between multi-word evidence subjects and gap tokens. Debug logging via `DEMOS_DEBUG_PUBLISH_TO_GAPS=1`.
+- [x] 13b -- Add missing asset sources to catalog: ARB, XRP, SOL, OP (new CoinGecko simple/price); LINK, DOT, AVAX set to quarantined. 7 assets now attestable.
+- [x] 13c -- publish_prediction rule: enabled, not a code bug. Blocker is data availability — SENSE hardcodes `getPool({ asset: "BTC" })`. Fetch pools for multiple assets to increase firing rate (future improvement).
+- [x] 13g -- Strategy config audit: only 2/10 rules reachable (reply_to_mentions, tip_valuable). 8 rules blocked by missing apiEnrichment/evidence bridges in defaultObserve(). Dead config: divergenceThreshold, minBallotAccuracy, disagreesPerCycle, maxPublishPerSession.
 
-**Batch 2 (fixes — after diagnostics):**
-- [ ] 13d -- Fix richness semantics: `richness = cached.responseSize` (bytes) but threshold designed for 0-100. Normalize or adjust constants.
-- [ ] 13e -- Catalog coverage matrix: cross-reference 225 sources against top 50 crypto assets + colony gap topics. Map coverage holes.
-- [ ] 13f -- E2E publish path integration test: strategy → LLM draft → match → attest → publish (mocked LLM/SDK, real engine/dedup)
+**13c future improvement:** publish_prediction is the simplest publish path — just needs bettingPool + prices. Fetch pools for multiple assets (not just BTC) to dramatically increase firing rate.
+
+**13g critical finding — two data pipelines:**
+The strategy engine has 10 rules, but the agent-loop path (`defaultObserve()`) returns `evidence: []` and no `apiEnrichment` — only 2/10 rules reachable (reply_to_mentions, tip_valuable). The v3-loop path has its own SENSE phase (`fetchApiEnrichment()`) that populates leaderboard, oracle, prices, bettingPool, signals — so all 10 rules are *wired* in v3-loop, but some are blocked by data quality issues (evidence matching, richness semantics, source coverage).
+
+**Dead config values (loaded but never used):** `enrichment.divergenceThreshold`, `enrichment.minBallotAccuracy`, `rateLimits.disagreesPerCycle`. `limits.maxPublishPerSession` is loaded but v3-loop already injects it separately at `v3-loop.ts:219`.
+
+**Batch 2 (fixes — v3-loop focus, informed by Batch 1 diagnostics):**
+- [ ] 13d -- Fix richness semantics: `richness = cached.responseSize` (bytes) but threshold designed for 0-100. Normalize or adjust constants. Affects evidence filtering in v3-loop SENSE path.
+- [ ] 13e -- Catalog coverage matrix: cross-reference 232 sources against top 50 crypto assets + colony gap topics. Map coverage holes. Unblocks divergence + gap publish paths.
+- [ ] 13f -- E2E publish path integration test: exercise v3-loop pipeline (strategy → LLM draft → match → attest → publish). Mock LLM/SDK, real engine/dedup/evidence.
+- [ ] 13h -- Clean dead config: remove unused `divergenceThreshold`, `minBallotAccuracy`, `disagreesPerCycle` from config-loader + strategy.yaml. Reduces config confusion.
 
 **Critical finding:** richness = byte count (256, 5000) but threshold = 50-95 (designed for 0-100). Filtering effectively disabled.
 
@@ -235,8 +243,10 @@ Live API audit (2026-04-06) found 8 TypeScript type mismatches vs real API respo
 - [ ] Lifecycle transition persistence: fire-and-forget ratings need source registry DB
 - [ ] Session-runner retirement: 4/21 imports dead/legacy, 17 shared with v3. Major migration.
 - [ ] Prefetch-cascade redesign: source resolution → ranked candidate list
+- [ ] Multi-asset pool fetch: SENSE hardcodes `getPool({ asset: "BTC" })` — fetch pools for top assets to unblock publish_prediction for non-BTC pools
 - [ ] Macro source coverage: FRED (API key), VIX (auth), ECB (non-JSON adapter)
 - [ ] Source registry as DB: catalog.json → colony DB for runtime query
+- [ ] Agent-loop enrichment bridge: defaultObserve() returns empty evidence/apiEnrichment — templates limited to 2/10 rules. Wire toolkit.intelligence + toolkit.oracle into observe path so agent-loop templates can reach all strategy rules.
 - [ ] ElizaOS adapter: deprecate or remove (0 production consumers)
 - [ ] Remove deprecated signals.ts/signals-plugin.ts (delete when session-runner retires)
 

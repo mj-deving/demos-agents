@@ -12,7 +12,7 @@ import type { ApiEnrichmentData, DecisionLog, LeaderboardAdjustmentConfig, Strat
 
 export const MIN_TRUST_POSTS = 3;
 export const MAX_PUBLISH_EVIDENCE_FRESHNESS_SECONDS = 3600;
-export const MIN_PUBLISH_EVIDENCE_RICHNESS = 100;
+export const MIN_PUBLISH_EVIDENCE_RICHNESS = 50;
 /** Absolute toolkit ceiling — cannot be exceeded regardless of config. */
 export const ABSOLUTE_TIP_CEILING_DEM = 10;
 export const BAIT_PATTERNS = [
@@ -29,9 +29,26 @@ export const BAIT_PATTERNS = [
 
 export type RejectedAction = DecisionLog["rejected"][number];
 export type EngineCandidate = { action: StrategyAction; rule: string };
+export interface TopicEvidenceMatch {
+  normalizedTopic: string;
+  topicTokens: string[];
+  matchedKeys: string[];
+  evidence: AvailableEvidence[];
+}
 
 export function normalize(value: string): string {
   return value.trim().toLowerCase();
+}
+
+export function tokenizeTopic(value: string): string[] {
+  const normalized = normalize(value);
+  if (!normalized) return [];
+
+  return Array.from(new Set(
+    normalized
+      .split(/[^a-z0-9]+/)
+      .filter((token) => token.length >= 3),
+  ));
 }
 
 export function buildEvidenceIndex(availableEvidence: AvailableEvidence[]): Map<string, AvailableEvidence[]> {
@@ -48,6 +65,51 @@ export function buildEvidenceIndex(availableEvidence: AvailableEvidence[]): Map<
   }
 
   return index;
+}
+
+export function findTopicEvidenceMatches(
+  topic: string,
+  evidenceIndex: Map<string, AvailableEvidence[]>,
+): TopicEvidenceMatch {
+  const normalizedTopic = normalize(topic);
+  const topicTokens = tokenizeTopic(normalizedTopic);
+  const requestedKeys = new Set([normalizedTopic, ...topicTokens]);
+  const matchedKeys: string[] = [];
+  const seenKeys = new Set<string>();
+  const evidenceBySourceId = new Map<string, AvailableEvidence>();
+
+  const addEntries = (key: string, entries: AvailableEvidence[]): void => {
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      matchedKeys.push(key);
+    }
+
+    for (const item of entries) {
+      evidenceBySourceId.set(item.sourceId, item);
+    }
+  };
+
+  for (const key of requestedKeys) {
+    const entries = evidenceIndex.get(key);
+    if (entries) addEntries(key, entries);
+  }
+
+  if (topicTokens.length > 0) {
+    for (const [key, entries] of evidenceIndex.entries()) {
+      if (seenKeys.has(key)) continue;
+      const keyTokens = tokenizeTopic(key);
+      if (keyTokens.some((token) => topicTokens.includes(token))) {
+        addEntries(key, entries);
+      }
+    }
+  }
+
+  return {
+    normalizedTopic,
+    topicTokens,
+    matchedKeys,
+    evidence: Array.from(evidenceBySourceId.values()),
+  };
 }
 
 export function getRule(config: StrategyConfig, name: string): StrategyRule | null {

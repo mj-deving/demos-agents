@@ -23,6 +23,7 @@ import {
   buildEvidenceIndex,
   createAction,
   findRule,
+  findTopicEvidenceMatches,
   getRule,
   getRateLimitState,
   getVerifiedTopics,
@@ -45,6 +46,7 @@ export function decideActions(
 ): { actions: StrategyAction[]; log: DecisionLog } {
   const now = context.now ?? new Date();
   const evidenceIndex = buildEvidenceIndex(availableEvidence);
+  const debugPublishToGaps = process.env.DEMOS_DEBUG_PUBLISH_TO_GAPS === "1";
   const considered: DecisionLog["considered"] = [];
   const rejected: DecisionLog["rejected"] = [];
   const candidates: Array<{ action: StrategyAction; rule: string }> = [];
@@ -168,35 +170,40 @@ export function decideActions(
     let publishNoEvidence = 0;
     let publishStaleEvidence = 0;
 
+    if (debugPublishToGaps) {
+      console.debug("[strategy:publish_to_gaps] evidence index", {
+        keyCount: evidenceIndex.size,
+        keySample: Array.from(evidenceIndex.keys()).slice(0, 10),
+      });
+    }
+
     for (const gap of colonyState.gaps.underservedTopics) {
       publishGapsChecked++;
-      // Gap topics are often long phrases while evidence index keys are short normalized terms.
-      // Tokenize first, then fall back to the full normalized topic, deduping by sourceId.
-      const gapTopic = normalize(gap.topic);
-      const gapTokens = gapTopic.split(/\s+/).filter((token) => token.length >= 3);
-      const allEvidenceMap = new Map<string, AvailableEvidence>();
+      const topicMatch = findTopicEvidenceMatches(gap.topic, evidenceIndex);
+      const allEvidence = topicMatch.evidence;
 
-      for (const token of gapTokens) {
-        const entries = evidenceIndex.get(token);
-        if (!entries) continue;
-        for (const item of entries) {
-          allEvidenceMap.set(item.sourceId, item);
-        }
+      if (debugPublishToGaps) {
+        console.debug("[strategy:publish_to_gaps] gap topic", {
+          topic: gap.topic,
+          normalizedTopic: topicMatch.normalizedTopic,
+          tokens: topicMatch.topicTokens,
+          matched: topicMatch.matchedKeys.length > 0,
+          matchedKeys: topicMatch.matchedKeys,
+          firstMatches: allEvidence.slice(0, 3).map((item) => ({
+            sourceId: item.sourceId,
+            subject: item.subject,
+            richness: item.richness,
+            freshness: item.freshness,
+            stale: item.stale,
+          })),
+        });
       }
 
-      const fullTopicEntries = evidenceIndex.get(gapTopic);
-      if (fullTopicEntries) {
-        for (const item of fullTopicEntries) {
-          allEvidenceMap.set(item.sourceId, item);
-        }
-      }
-
-      const allEvidence = Array.from(allEvidenceMap.values());
       const matchingEvidence = allEvidence
         .filter((item) =>
           !item.stale
           && item.freshness < MAX_PUBLISH_EVIDENCE_FRESHNESS_SECONDS
-          && item.richness > adjustedRichnessThreshold
+          && item.richness >= adjustedRichnessThreshold
         );
 
       if (matchingEvidence.length === 0) {
