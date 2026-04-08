@@ -13,7 +13,7 @@ import { upsertSourceResponse, getSourceResponse } from "../src/toolkit/colony/s
 import { fetchSource } from "../src/toolkit/sources/fetch.js";
 import type { SourceRecordV2 } from "../src/toolkit/sources/catalog.js";
 import { acquireRateLimitToken } from "../src/toolkit/sources/rate-limit.js";
-import { updateRating, evaluateTransition } from "../src/toolkit/sources/lifecycle.js";
+import { persistRatingUpdate, persistTransition } from "../src/toolkit/sources/lifecycle.js";
 import type { SourceTestResult } from "../src/toolkit/sources/health.js";
 
 import type { V3LoopDeps } from "./v3-loop.js";
@@ -257,31 +257,36 @@ export async function fetchSourcesParallel(
     });
   }
 
-  // Lifecycle — update ratings and evaluate transitions so degraded sources get auto-demoted
+  // Lifecycle — persist ratings and evaluate transitions so degraded sources get auto-demoted
+  // Uses persistRatingUpdate/persistTransition to write results to colony DB (survives across sessions)
+  // Wrapped in a single transaction to avoid per-source disk syncs (N sources → 1 commit)
   let lifecycleTransitions = 0;
-  for (const { source, success } of fetchOutcomes) {
-    const testResult: SourceTestResult = {
-      sourceId: source.id,
-      provider: source.provider,
-      status: success ? "OK" : "FETCH_FAILED",
-      latencyMs: 0,
-      entryCount: 0,
-      sampleTitles: [],
-      error: null,
-    };
-    const updated = updateRating(source, testResult);
-    const transition = evaluateTransition(updated, testResult);
-    if (transition.newStatus !== null) {
-      lifecycleTransitions++;
-      observe("insight", `Source lifecycle: ${source.id} ${transition.currentStatus}→${transition.newStatus} (${transition.reason})`, {
-        source: "v3-loop:sourceLifecycle",
+  const persistLifecycleBatch = db.transaction(() => {
+    for (const { source, success } of fetchOutcomes) {
+      const testResult: SourceTestResult = {
         sourceId: source.id,
-        from: transition.currentStatus,
-        to: transition.newStatus,
-        reason: transition.reason,
-      });
+        provider: source.provider,
+        status: success ? "OK" : "FETCH_FAILED",
+        latencyMs: 0,
+        entryCount: 0,
+        sampleTitles: [],
+        error: null,
+      };
+      const updated = persistRatingUpdate(db, source, testResult);
+      const transition = persistTransition(db, updated, testResult);
+      if (transition.newStatus !== null) {
+        lifecycleTransitions++;
+        observe("insight", `Source lifecycle: ${source.id} ${transition.currentStatus}→${transition.newStatus} (${transition.reason})`, {
+          source: "v3-loop:sourceLifecycle",
+          sourceId: source.id,
+          from: transition.currentStatus,
+          to: transition.newStatus,
+          reason: transition.reason,
+        });
+      }
     }
-  }
+  });
+  persistLifecycleBatch();
 
   return { fetched, cached, lifecycleTransitions };
 }
