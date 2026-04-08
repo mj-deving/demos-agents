@@ -267,20 +267,20 @@ Wire apiEnrichment into defaultObserve() using executor injection pattern (ADR-0
 Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, which paths fire, evidence quality, richness filtering, dedup behavior. Target: 2/4 sessions publish 1+ post, 2+ different paths fire.
 - [x] 14d: Sessions 89-93 run. Session 93: 2 posts published, 2/2 verified in feed. 4 session-diagnosed fixes applied (asset alias, publish cap, colony dedup rotation, match threshold).
 
-### Phase 15: Infrastructure Depth — Data Coverage + Persistence + Retirement
+### Phase 15: Infrastructure Depth — Omniweb Intelligence + Persistence + Retirement
 
-> Goal: Broaden beyond crypto, persist source lifecycle, retire legacy code.
+> Goal: Transform from crypto commenter to omniweb intelligence publisher. Persist source lifecycle. Retire legacy code.
 > Spec: `docs/phase15-infrastructure-depth.md`
 
-- [ ] 15a -- Multi-asset pool fetch: BTC/ETH/SOL/ARB/XRP pools → pick highest activity. Unblocks publish_prediction.
-- [ ] 15b -- Macro source adapters: FRED (API key, JSON), VIX (CSV), ECB (XML). 5-10 macro catalog entries.
+- [ ] 15a -- Dynamic pool + prediction market discovery: fetch pools for ALL oracle-tracked assets + wire Polymarket prediction markets. No hardcoded asset lists.
+- [ ] 15b -- Source activation sweep + macro adapters: (1) audit + batch-promote quarantined sources that already work, (2) build FRED/VIX/ECB adapters, (3) broaden strategy topic weights beyond crypto.
 - [ ] 15c -- Source registry as DB: colony DB migration v9, source_lifecycle table, persist ratings/transitions across sessions.
 - [ ] 15d -- Prefetch cascade: selectSourceForTopicV2 returns ranked list, fallback on fetch failure.
 - [ ] 15e -- Session-runner retirement: audit→port→slim→deprecate. 17 shared imports. Low priority.
 
-**Batch 1** (parallel): 15a + 15b-1 (FRED) + 15c-1/15c-2 (schema+store)
-**Batch 2** (after Batch 1): 15b-2 (VIX) + 15b-4 (catalog) + 15c-3/15c-4 (lifecycle wiring)
-**Batch 3** (design-heavy): 15d (prefetch cascade) + 15b-3 (ECB)
+**Batch 1** (parallel): 15a-1/2 (pool discovery) + 15b-1 (catalog audit) + 15c-1/2 (DB schema+store)
+**Batch 2** (parallel): 15b-2 (batch promote) + 15b-3 (FRED) + 15a-3/4 (prediction markets) + 15c-3/4 (lifecycle wiring)
+**Batch 3**: 15b-4/5/6 (VIX + ECB + strategy weights) + 15d (prefetch cascade)
 **Batch 4** (large): 15e (session-runner retirement)
 
 ### Future (no phase assigned)
