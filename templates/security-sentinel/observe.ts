@@ -1,17 +1,18 @@
 /**
  * Security Sentinel — custom observe function.
  *
- * Fetches from NVD, GitHub Security Advisories, and colony intelligence
- * in parallel. Evidence is dual-placed: in the evidence array (for the
- * strategy engine) AND in apiEnrichment.signals (for enrichment rules).
+ * Extends enrichedObserve with external security sources (NVD, GitHub GHSA).
+ * Evidence from all sources feeds the strategy engine. Colony signals from
+ * enrichedObserve provide additional threat context.
  *
  * Separated from agent.ts so tests can import without pulling in SDK.
  */
-import { buildColonyStateFromFeed, mapFeedPosts } from "../../src/toolkit/agent-loop.js";
+import { enrichedObserve } from "../../src/toolkit/agent-loop.js";
 import type { ObserveResult } from "../../src/toolkit/agent-loop.js";
 import type { Toolkit } from "../../src/toolkit/primitives/types.js";
 import type { AvailableEvidence } from "../../src/toolkit/colony/available-evidence.js";
 import type { SignalData } from "../../src/toolkit/supercolony/types.js";
+import type { ApiEnrichmentData } from "../../src/toolkit/strategy/types.js";
 
 const FETCH_TIMEOUT_MS = 10_000;
 
@@ -106,34 +107,24 @@ async function fetchGhsa(): Promise<AvailableEvidence[]> {
 // ── Security Observe (exported for tests) ──────
 
 export async function securityObserve(toolkit: Toolkit, ourAddress: string): Promise<ObserveResult> {
-  // Run all data sources in parallel
-  const [feedResult, signalsResult, nvdResult, ghsaResult] = await Promise.all([
-    toolkit.feed.getRecent({ limit: 100 }),
-    toolkit.intelligence.getSignals(),
+  // Start with enrichedObserve — gives us colonyState, feed, oracle, prices, signals, leaderboard
+  // Run external security sources in parallel with enrichment
+  const [base, nvdResult, ghsaResult] = await Promise.all([
+    enrichedObserve(toolkit, ourAddress),
     fetchNvd(),
     fetchGhsa(),
   ]);
 
-  // Build colony state from feed using shared mapper
-  const posts = mapFeedPosts(feedResult as any);
-  const colonyState = buildColonyStateFromFeed(posts, ourAddress);
+  // Collect evidence: base enrichment evidence + external security sources
+  const evidence: AvailableEvidence[] = [...(base.evidence ?? []), ...nvdResult, ...ghsaResult];
 
-  // Collect evidence from all sources
-  const evidence: AvailableEvidence[] = [...nvdResult, ...ghsaResult];
-
-  // Signals: dual-place in evidence AND apiEnrichment (null-safe)
-  const signals: SignalData[] = signalsResult?.ok
-    ? (Array.isArray(signalsResult.data) ? signalsResult.data : [])
-    : [];
+  // Extract signals from enrichment for dual-placement in evidence
+  const apiEnrichment = base.context?.apiEnrichment as ApiEnrichmentData | undefined;
+  const signals: SignalData[] = Array.isArray(apiEnrichment?.signals) ? apiEnrichment.signals : [];
   evidence.push(...signalToEvidence(signals));
 
   return {
-    colonyState,
+    ...base,
     evidence,
-    context: {
-      apiEnrichment: {
-        signals: signals.length > 0 ? signals : undefined,
-      },
-    },
   };
 }

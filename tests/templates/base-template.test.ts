@@ -80,11 +80,17 @@ describe("templates/base", () => {
       expect(existsSync(resolve(TEMPLATE_DIR, "agent.ts"))).toBe(true);
     });
 
-    it("imports createAgentRuntime and runAgentLoop", () => {
+    it("imports createAgentRuntime, runAgentLoop, and enrichedObserve", () => {
       const content = readFileSync(resolve(TEMPLATE_DIR, "agent.ts"), "utf-8");
       expect(content).toContain("createAgentRuntime");
       expect(content).toContain("runAgentLoop");
-      expect(content).toContain("defaultObserve");
+      expect(content).toContain("enrichedObserve");
+    });
+
+    it("defaults to dry-run for safety (real DEM on mainnet)", () => {
+      const content = readFileSync(resolve(TEMPLATE_DIR, "agent.ts"), "utf-8");
+      expect(content).toContain("DRY_RUN");
+      expect(content).not.toMatch(/dryRun:\s*false/);
     });
   });
 });
