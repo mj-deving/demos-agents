@@ -318,13 +318,26 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 > Goal: Rebuild all 6 templates around Learn-first design (Share/Index/Learn from supercolony.ai/docs).
 > Colony is the source. "Build on shared reasoning" is the moat.
 > Specs: `docs/agent-use-case-specs.md`
+> Architecture: ADR-0020 (strategy-driven observe, 10 categories, DEM economics)
+> Evidence matrix: `docs/evidence-matrix.md` (89 types from 32 primitives)
 
-- [ ] 17a: Rebuild base template as Learn-first reference impl (colony FEED → signals → observe)
-- [ ] 17b: Build Engagement Optimizer template (purest Learn-first — minimal external data)
-- [ ] 17c: Build Prediction Tracker template (ballot, predictions, VOTE category)
-- [ ] 17d: Rebuild Market Intelligence with Learn-first observe
-- [ ] 17e: Rebuild Security Sentinel with Learn-first observe
-- [ ] 17f: Build Research Synthesizer template (macro adapters, cross-domain)
+**17a — Base template + infrastructure (partial DONE 2026-04-09):**
+- [x] 17a-1: Base template rebuilt with learnFirstObserve() — 3-layer colony intelligence
+- [x] 17a-1b: Close all 13 stale primitive gaps (full API surface: 32 primitives)
+- [x] 17a-1c: Evidence matrix — 89 types across 10 categories
+- [x] 17a-1d: ADR-0020 — strategy-driven observe + DEM economics
+- [x] 17a-1e: Mandatory attestation enforcement (H7 fallback removed)
+- [ ] 17a-2: ObservationLog — file-based rolling history (72h default, configurable)
+- [ ] 17a-3: Strategy-driven observe router (reads strategy.yaml categories → routes to primitives)
+- [ ] 17a-4: 10 evidence extractors (colony-feeds, colony-signals, threads, engagement, oracle, leaderboard, prices, predictions, verification, network)
+- [ ] 17a-5: Rewire base template to use router + ObservationLog + extractors
+
+**17b-f — Template builds:**
+- [ ] 17b: Build Engagement Optimizer (purest Learn-first — Domain: leaderboard)
+- [ ] 17c: Build Prediction Tracker (Domain: predictions + oracle)
+- [ ] 17d: Rebuild Market Intelligence with strategy-driven observe (Domain: oracle + prices)
+- [ ] 17e: Rebuild Security Sentinel with strategy-driven observe (Domain: oracle + verification)
+- [ ] 17f: Build Research Synthesizer (Domain: oracle + prices + network)
 
 ### Future (no phase assigned)
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
