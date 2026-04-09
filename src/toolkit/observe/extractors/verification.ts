@@ -5,6 +5,7 @@
 import type { Toolkit } from "../../primitives/types.js";
 import type { AvailableEvidence } from "../../colony/available-evidence.js";
 import type { PrefetchedData } from "../observe-router.js";
+import { capRichness } from "./helpers.js";
 
 export async function extractVerification(toolkit: Toolkit, prefetched?: PrefetchedData): Promise<AvailableEvidence[]> {
   const result = prefetched?.stats ?? await toolkit.stats.get();
@@ -21,7 +22,7 @@ export async function extractVerification(toolkit: Toolkit, prefetched?: Prefetc
       `predictionAccuracy:${stats.predictions.accuracy}`,
       `totalPredictions:${stats.predictions.total}`,
     ],
-    richness: Math.min(95, 60 + stats.quality.attestationRate * 30),
+    richness: capRichness(60 + stats.quality.attestationRate * 30),
     freshness: Math.floor((Date.now() - Date.parse(stats.computedAt)) / 1000),
     stale: false,
   }];

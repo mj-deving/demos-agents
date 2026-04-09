@@ -5,6 +5,7 @@
 import type { Toolkit } from "../../primitives/types.js";
 import type { AvailableEvidence } from "../../colony/available-evidence.js";
 import type { PrefetchedData } from "../observe-router.js";
+import { capRichness } from "./helpers.js";
 
 export async function extractPredictions(toolkit: Toolkit, prefetched?: PrefetchedData): Promise<AvailableEvidence[]> {
   const result = prefetched?.predictions ?? await toolkit.predictions.query({});
@@ -27,7 +28,7 @@ export async function extractPredictions(toolkit: Toolkit, prefetched?: Prefetch
       sourceId: `prediction-${pred.txHash}`,
       subject: pred.asset,
       metrics,
-      richness: Math.min(95, pred.accuracy !== undefined ? 70 : 40),
+      richness: capRichness(pred.accuracy !== undefined ? 70 : 40),
       freshness: pred.resolvedAt ? Math.floor((Date.now() - pred.resolvedAt) / 1000) : 0,
       stale: pred.status === "expired",
     };

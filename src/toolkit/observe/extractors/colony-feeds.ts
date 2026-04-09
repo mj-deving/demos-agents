@@ -5,8 +5,7 @@
 import type { Toolkit } from "../../primitives/types.js";
 import type { AvailableEvidence } from "../../colony/available-evidence.js";
 import type { PrefetchedData } from "../observe-router.js";
-
-const STALE_THRESHOLD_MS = 86_400_000; // 24 hours
+import { STALE_THRESHOLD_MS, capRichness, truncateSubject } from "./helpers.js";
 
 export async function extractColonyFeeds(toolkit: Toolkit, prefetched?: PrefetchedData): Promise<AvailableEvidence[]> {
   const result = prefetched?.feed ?? await toolkit.feed.getRecent({ limit: 50, category: "FEED" });
@@ -20,9 +19,9 @@ export async function extractColonyFeeds(toolkit: Toolkit, prefetched?: Prefetch
 
     return {
       sourceId: `feed-${post.txHash}`,
-      subject: text.slice(0, 80),
+      subject: truncateSubject(text),
       metrics: [cat],
-      richness: Math.min(95, text.length),
+      richness: capRichness(text.length),
       freshness: Math.floor(age / 1000),
       stale: age > STALE_THRESHOLD_MS,
     };

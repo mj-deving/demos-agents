@@ -5,6 +5,7 @@
 import type { Toolkit } from "../../primitives/types.js";
 import type { AvailableEvidence } from "../../colony/available-evidence.js";
 import type { PrefetchedData } from "../observe-router.js";
+import { capRichness, truncateSubject } from "./helpers.js";
 
 export async function extractOracle(toolkit: Toolkit, prefetched?: PrefetchedData): Promise<AvailableEvidence[]> {
   const result = prefetched?.oracle ?? await toolkit.oracle.get({ assets: ["BTC", "ETH"], window: "24h" });
@@ -26,7 +27,7 @@ export async function extractOracle(toolkit: Toolkit, prefetched?: PrefetchedDat
         sourceId: `oracle-${asset.ticker}`,
         subject: asset.ticker,
         metrics,
-        richness: Math.min(95, 40 + asset.postCount * 2),
+        richness: capRichness(40 + asset.postCount * 2),
         freshness: 0,
         stale: false,
       });
@@ -37,9 +38,9 @@ export async function extractOracle(toolkit: Toolkit, prefetched?: PrefetchedDat
   for (const div of data.divergences ?? []) {
     evidence.push({
       sourceId: `divergence-${div.asset}-${div.type}`,
-      subject: div.description.slice(0, 80),
+      subject: truncateSubject(div.description),
       metrics: [`severity:${div.severity}`, `type:${div.type}`],
-      richness: Math.min(95, div.severity === "high" ? 80 : div.severity === "medium" ? 60 : 40),
+      richness: capRichness(div.severity === "high" ? 80 : div.severity === "medium" ? 60 : 40),
       freshness: 0,
       stale: false,
     });

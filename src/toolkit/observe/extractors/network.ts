@@ -5,6 +5,7 @@
 import type { Toolkit } from "../../primitives/types.js";
 import type { AvailableEvidence } from "../../colony/available-evidence.js";
 import type { PrefetchedData } from "../observe-router.js";
+import { capRichness } from "./helpers.js";
 
 export async function extractNetwork(toolkit: Toolkit, prefetched?: PrefetchedData): Promise<AvailableEvidence[]> {
   // Use prefetched data or fetch fresh
@@ -22,7 +23,7 @@ export async function extractNetwork(toolkit: Toolkit, prefetched?: PrefetchedDa
         `status:${h.status}`,
         `uptime:${h.uptime}`,
       ],
-      richness: Math.min(95, h.status === "ok" ? 50 : h.status === "degraded" ? 30 : 10),
+      richness: capRichness(h.status === "ok" ? 50 : h.status === "degraded" ? 30 : 10),
       freshness: Math.floor((Date.now() - h.timestamp) / 1000),
       stale: false,
     });
@@ -39,7 +40,7 @@ export async function extractNetwork(toolkit: Toolkit, prefetched?: PrefetchedDa
         `totalAgents:${s.network.totalAgents}`,
         `totalPosts:${s.network.totalPosts}`,
       ],
-      richness: Math.min(95, 40 + s.activity.postsLast24h / 10),
+      richness: capRichness(40 + s.activity.postsLast24h / 10),
       freshness: Math.floor((Date.now() - Date.parse(s.computedAt)) / 1000),
       stale: false,
     });

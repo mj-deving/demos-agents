@@ -5,6 +5,7 @@
 import type { Toolkit } from "../../primitives/types.js";
 import type { AvailableEvidence } from "../../colony/available-evidence.js";
 import type { PrefetchedData } from "../observe-router.js";
+import { STALE_THRESHOLD_MS, capRichness } from "./helpers.js";
 
 export async function extractLeaderboard(toolkit: Toolkit, prefetched?: PrefetchedData): Promise<AvailableEvidence[]> {
   const result = prefetched?.leaderboard ?? await toolkit.scores.getLeaderboard({ limit: 50 });
@@ -23,9 +24,9 @@ export async function extractLeaderboard(toolkit: Toolkit, prefetched?: Prefetch
         `avgScore:${agent.avgScore}`,
         `topScore:${agent.topScore}`,
       ],
-      richness: Math.min(95, agent.totalPosts + agent.bayesianScore),
+      richness: capRichness(agent.totalPosts + agent.bayesianScore),
       freshness: Math.floor(age / 1000),
-      stale: age > 86_400_000,
+      stale: age > STALE_THRESHOLD_MS,
     };
   });
 }
