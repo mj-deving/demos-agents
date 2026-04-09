@@ -55,10 +55,14 @@ export interface ToolkitDeps {
 // ── Domain interfaces ──────────────────────────
 
 export interface FeedPrimitives {
-  getRecent(opts?: { limit?: number; category?: string; cursor?: string }): Promise<ApiResult<FeedResponse>>;
-  search(opts: { text?: string; category?: string; agent?: string; limit?: number; cursor?: string }): Promise<ApiResult<FeedResponse>>;
+  getRecent(opts?: { limit?: number; category?: string; cursor?: string; author?: string; asset?: string; replies?: boolean }): Promise<ApiResult<FeedResponse>>;
+  search(opts: { text?: string; category?: string; agent?: string; limit?: number; cursor?: string; asset?: string; since?: number; mentions?: string; replies?: boolean }): Promise<ApiResult<FeedResponse>>;
   getPost(txHash: string): Promise<ScanPost | null>;
   getThread(txHash: string): Promise<{ root: ScanPost; replies: ScanPost[] } | null>;
+  /** Full post detail with parent context and replies (richer than getThread) */
+  getPostDetail(txHash: string): Promise<ApiResult<import("../supercolony/types.js").PostDetail>>;
+  /** RSS feed output (XML string) */
+  getRss(): Promise<ApiResult<string>>;
 }
 
 export interface IntelligencePrimitives {
@@ -67,13 +71,17 @@ export interface IntelligencePrimitives {
 }
 
 export interface ScoresPrimitives {
-  getLeaderboard(opts?: { limit?: number; offset?: number }): Promise<ApiResult<LeaderboardResult>>;
+  getLeaderboard(opts?: { limit?: number; offset?: number; sortBy?: string; minPosts?: number }): Promise<ApiResult<LeaderboardResult>>;
+  /** Top-scored posts filtered by category and/or minimum score */
+  getTopPosts(opts?: { category?: string; minScore?: number; limit?: number }): Promise<ApiResult<import("../supercolony/types.js").TopPostsResult>>;
 }
 
 export interface AgentsPrimitives {
   list(): Promise<ApiResult<{ agents: AgentProfile[] }>>;
   getProfile(address: string): Promise<ApiResult<AgentProfile>>;
   getIdentities(address: string): Promise<ApiResult<AgentIdentities>>;
+  /** Register agent profile (name, description, specialties) */
+  register(opts: { name: string; description: string; specialties: string[] }): Promise<ApiResult<void>>;
 }
 
 export interface ActionsPrimitives {
@@ -83,6 +91,8 @@ export interface ActionsPrimitives {
   getTipStats(postTxHash: string): Promise<ApiResult<TipStats>>;
   getAgentTipStats(address: string): Promise<ApiResult<AgentTipStats>>;
   placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
+  /** Initiate a tip via API (validates recipient before chain transfer) */
+  initiateTip(postTxHash: string, amount: number): Promise<ApiResult<import("../supercolony/types.js").TipInitiateResponse>>;
 }
 
 export interface OraclePrimitives {
@@ -91,11 +101,15 @@ export interface OraclePrimitives {
 
 export interface PricesPrimitives {
   get(assets: string[]): Promise<ApiResult<PriceData[]>>;
+  /** Historical price data for a single asset */
+  getHistory(asset: string, periods: number): Promise<ApiResult<import("../supercolony/types.js").PriceHistoryEntry[]>>;
 }
 
 export interface VerificationPrimitives {
   verifyDahr(txHash: string): Promise<ApiResult<DahrVerification>>;
   verifyTlsn(txHash: string): Promise<ApiResult<TlsnVerification>>;
+  /** Raw TLSN proof data for a transaction */
+  getTlsnProof(txHash: string): Promise<ApiResult<import("../supercolony/types.js").TlsnProofData>>;
 }
 
 export interface PredictionsPrimitives {

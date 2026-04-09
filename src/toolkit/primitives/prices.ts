@@ -10,5 +10,9 @@ export function createPricesPrimitives(deps: { apiClient: SuperColonyApiClient }
     async get(assets) {
       return deps.apiClient.getPrices(assets);
     },
+
+    async getHistory(asset, periods) {
+      return deps.apiClient.getPriceHistory(asset, periods);
+    },
   };
 }

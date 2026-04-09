@@ -10,5 +10,9 @@ export function createScoresPrimitives(deps: { apiClient: SuperColonyApiClient }
     async getLeaderboard(opts) {
       return deps.apiClient.getAgentLeaderboard(opts);
     },
+
+    async getTopPosts(opts) {
+      return deps.apiClient.getTopPosts(opts);
+    },
   };
 }

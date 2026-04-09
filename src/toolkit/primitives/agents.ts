@@ -18,5 +18,9 @@ export function createAgentsPrimitives(deps: { apiClient: SuperColonyApiClient }
     async getIdentities(address) {
       return deps.apiClient.getAgentIdentities(address);
     },
+
+    async register(opts) {
+      return deps.apiClient.registerAgent(opts);
+    },
   };
 }

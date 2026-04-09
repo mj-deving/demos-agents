@@ -15,5 +15,9 @@ export function createVerificationPrimitives(deps: { apiClient: SuperColonyApiCl
     async verifyTlsn(txHash) {
       return deps.apiClient.verifyTlsn(txHash);
     },
+
+    async getTlsnProof(txHash) {
+      return deps.apiClient.getTlsnProof(txHash);
+    },
   };
 }

@@ -23,6 +23,9 @@ export function createFeedPrimitives(deps: FeedDeps): FeedPrimitives {
         limit: opts?.limit,
         category: opts?.category,
         cursor: opts?.cursor,
+        author: opts?.author,
+        asset: opts?.asset,
+        replies: opts?.replies,
       });
     },
 
@@ -36,6 +39,14 @@ export function createFeedPrimitives(deps: FeedDeps): FeedPrimitives {
 
     async getThread(txHash: string): Promise<{ root: ScanPost; replies: ScanPost[] } | null> {
       return deps.dataSource.getThread(txHash);
+    },
+
+    async getPostDetail(txHash) {
+      return deps.apiClient.getPostDetail(txHash);
+    },
+
+    async getRss() {
+      return deps.apiClient.getRssFeed();
     },
   };
 }

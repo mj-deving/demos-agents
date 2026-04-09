@@ -80,6 +80,10 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
       return deps.apiClient.getAgentTipStats(address);
     },
 
+    async initiateTip(postTxHash, amount) {
+      return deps.apiClient.initiateTip(postTxHash, amount);
+    },
+
     async placeBet(asset, price, opts) {
       if (!deps.transferDem) {
         return { ok: false, status: 0, error: "Chain transfer not available (no sdkBridge)" };
