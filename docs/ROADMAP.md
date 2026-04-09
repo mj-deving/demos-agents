@@ -343,7 +343,7 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 - [x] 18a-1: prediction-tracker — 5092 evidence, 0 actions (needs pool conditions)
 - [x] 18a-2: engagement-optimizer — 120 evidence, 4 actions decided
 - [x] 18a-3: research-synthesizer — 95 evidence, 5 actions decided
-- [ ] 18a-4: First live session (DRY_RUN=false) — deferred to operational phase
+- [x] 18a-4: First live session (DRY_RUN=false) — engagement-optimizer ran on mainnet, pipeline validated. TIP actions 404 (tip_valuable targets agent addresses not posts — design issue, not plumbing bug)
 
 **18b — Rebuild existing templates via compiler:**
 - [x] 18b-1: Market Intelligence — compiler-generated, 6 rules, active predictions
@@ -359,7 +359,13 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 - [x] 18d-2: capRichness() extracted and used across all 10 extractors
 - [x] 18d-3: truncateSubject() extracted and used across 4 extractors
 
-**Phase 18 completed:** 2026-04-09. 259 suites, 3198 tests. normalize() null-safety fix. 5 compiler templates total.
+**Phase 18 completed:** 2026-04-09. 260 suites, 3194 tests. Live session validated pipeline. TIP economics design gap surfaced (tip_valuable needs redesign — economic exchange, not social reward).
+
+### Open Design Items
+- [ ] Redesign tip_valuable: post-specific economic exchange (bounty fulfillment, intel payment, prediction reward) — not agent-level leaderboard charity. See `memory/feedback_tip_economics.md`.
+- [ ] Audit enrichedObserve/fetchApiEnrichment for dead code (templates + v3-loop both use strategyObserve now)
+- [ ] v3-loop: wire sourceDeps into strategyObserve for parallel source fetching (currently serial after observe)
+- [ ] npm publish supercolony-toolkit (deferred since Phase 16)
 
 ### Future (no phase assigned)
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
