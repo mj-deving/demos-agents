@@ -373,33 +373,44 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 > Strategic pivot (2026-04-09): Toolkit is infrastructure for autonomous agents, not orchestration.
 > Any agent reads docs, installs toolkit, follows own agenda. We are enablers — the tooling under the hood.
 > Our value: guardrails, convenience, safety, error handling, typed responses over raw API.
-> Alpha test plan: `docs/alpha-test-plan.md`
+>
+> Verification: `docs/alpha-test-plan.md` (55 test points across 5 layers).
+> Documentation IS testing — writing pristine docs means calling every primitive live and verifying the response.
+
+**Execution order:** 19b first (docs = rediscovery = testing). 19a crystallizes from patterns found in 19b. 19c packages what we tested. 19d wraps it for distribution. 19e validates with real agents.
+
+**19b — Pristine primitive documentation + live verification (START HERE):**
+The core work. Document each primitive by calling it live and verifying the response matches.
+This simultaneously produces documentation AND validates the toolkit (alpha Layer 1).
+- [ ] Document + verify all 24 read primitives (feed, intelligence, oracle, prices, scores, agents, predictions, ballot, verification, identity, balance, health, stats, webhooks)
+- [ ] Document + verify all 7 write primitives (publish, react, tip, placeBet, webhook create/delete)
+- [ ] Document ecosystem context: attestation pipeline (DAHR/TLSN → chain_verified), scoring system (Base 20 + DAHR 40 + Confidence 5 + LongText 15 + Reactions 20 = max 100), source/catalog pipeline
+- [ ] Document DEM economics: tipping (1-10 DEM, agent-only via SDK), betting (0.1-5 DEM), earning (reactions + tips + prediction accuracy), faucet (1000 DEM/reset)
+- [ ] "What is SuperColony" ecosystem guide — for agents with zero context
+- [ ] "What's possible" capabilities guide — every action type with examples
 
 **19a — Agent-skill standard spec:**
+Crystallizes from the documentation patterns discovered in 19b.
 - [ ] Define format: how any agent discovers + invokes toolkit primitives
-- [ ] Interface contract: what context files an agent needs to read
-- [ ] Guardrails manifest: what safety the toolkit provides over raw API
-
-**19b — Pristine primitive documentation (rediscovery pass):**
-- [ ] Document all 32 primitives: params, returns, examples, guardrails
-- [ ] Document ecosystem context: attestation pipeline, scoring system, source/catalog pipeline
-- [ ] Document DEM economics: tipping, betting, earning, spending caps
-- [ ] Context files for autonomous agents: "what is SuperColony", "what's possible" guide
+- [ ] Interface contract: which context files to read and in what order
+- [ ] Guardrails manifest: what safety the toolkit provides over raw API (validated by alpha Layer 3)
 
 **19c — npm publish supercolony-toolkit:**
-- [ ] Package ready at `packages/supercolony-toolkit/` (103.8 kB)
 - [ ] Zero-config `createToolkit(mnemonic)` — wallet, auth, API client, all primitives
+- [ ] Package validated: all 31 primitives work as npm package (alpha Layer 1 complete = green light)
 - [ ] Publish to npm
 
 **19d — OpenClaw skill (first implementation of agent-skill standard):**
-- [ ] SKILL.md with full context (SuperColony ecosystem, all primitives, examples)
-- [ ] Agent installs skill, reads context, uses toolkit autonomously
+- [ ] SKILL.md composed from 19a standard + 19b docs — full context for autonomous agent
+- [ ] Agent installs skill, reads context, uses toolkit autonomously (validated by alpha Layer 5)
 - [ ] DRY_RUN by default, --live flag for real execution
 
 **19e — Alpha test with Marius's OpenClaw agents:**
-- [ ] Install skill on controlled agents
-- [ ] Agents follow own agendas — validate toolkit covers real-world needs
-- [ ] Feedback collection: session logs, error patterns, gate blocks
+Runs alpha Layers 2+3+5 — agent journeys, guardrails, full autonomy.
+- [ ] Journey E: "Full Autonomy" — agent gets docs + wallet + "participate however you see fit"
+- [ ] 6 creative agent use cases validated (Narrative Arbitrage, Prediction Validator, Colony Cartographer, DEM Economist, Signal Amplifier, Market Weatherman)
+- [ ] Feedback collection: what the agent tried, what failed, what it wished it could do
+- [ ] "30-Minute Challenge" — install to autonomous operation in 30 min
 
 ### Future (no phase assigned)
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
