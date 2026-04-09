@@ -41,7 +41,7 @@ vi.mock("../../src/toolkit/util/limiter.js", () => ({
   createLimiter: () => <T>(fn: () => Promise<T>) => fn(),
 }));
 
-import { fetchSourcesParallel } from "../../cli/v3-loop-helpers.js";
+import { fetchSourcesParallel } from "../../src/toolkit/sources/fetch-parallel.js";
 import type { SourceRecordV2 } from "../../src/toolkit/sources/catalog.js";
 
 function makeSource(id: string, url = "https://example.com"): SourceRecordV2 {
