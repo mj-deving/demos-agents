@@ -454,17 +454,13 @@ export async function executePublishActions(
         primaryAttestation = fallbackAttestation;
       }
     } catch (attestError: unknown) {
-      // H7: Graceful attestation degradation — publish without attestation
+      // Attestation is mandatory — no attestation = no publish
       const msg = attestError instanceof Error ? attestError.message : String(attestError);
-      deps.observe("warning", `Attestation failed entirely, publishing with attestationType: none and reduced confidence: ${msg}`, {
+      deps.observe("warning", `Attestation failed — skipping publish (attestation mandatory): ${msg}`, {
         actionType: action.type, topic, error: msg,
       });
-      attestationResults = [];
-      primaryAttestation = null;
-      // Lower confidence since we have no attestation backing
-      if (draft.confidence > 50) {
-        draft.confidence = 50;
-      }
+      result.skipped.push({ action, reason: `Attestation failed: ${msg}` });
+      continue;
     }
 
     // --- Step 4: Publish (H8: per-step error recovery) ---
@@ -472,7 +468,7 @@ export async function executePublishActions(
       const publishResult = await publishPost(
         deps.demos,
         buildPublishInput(draft, attestationResults),
-        { skipIndexerCheck: true, allowUnattested: attestationResults.length === 0 },
+        { skipIndexerCheck: true },
       );
 
       const attestationType = toPublishAttestationType(primaryAttestation);

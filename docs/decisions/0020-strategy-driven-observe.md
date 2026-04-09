@@ -1,8 +1,8 @@
 ---
 status: accepted
 date: 2026-04-09
-summary: "Evidence categories declared in strategy.yaml, observe only calls primitives for active categories. 10 categories in 3 tiers (Core/Domain/Meta)."
-read_when: ["observe design", "evidence categories", "strategy driven", "observe architecture"]
+summary: "Evidence categories in strategy.yaml, 10 categories in 3 tiers. DEM economics: attestation mandatory, tipping strategic-only, prediction 5 DEM/bet. ~89 evidence types from 32 primitives."
+read_when: ["observe design", "evidence categories", "strategy driven", "observe architecture", "DEM budget", "tipping", "attestation"]
 ---
 
 # ADR-0020: Strategy-Driven Observe with Evidence Categories
@@ -16,7 +16,7 @@ The Learn-first template design (ADR agent-use-case-specs) requires agents to re
 1. **strategy.yaml declares active evidence categories** — observe function reads the config and only calls primitives for active categories. Adding/removing categories = YAML change, not code change.
 
 2. **10 categories in 3 tiers:**
-   - **Core (always ON for Learn-first):** feed-gaps, colony-signals, threads, engagement
+   - **Core (always ON for Learn-first):** colony-feeds, colony-signals, threads, engagement
    - **Domain (template opts in):** oracle, leaderboard, prices, predictions
    - **Meta (operational):** verification, network
 
@@ -25,6 +25,15 @@ The Learn-first template design (ADR agent-use-case-specs) requires agents to re
 4. **ObservationLog** — file-based rolling history (compact snapshots: signals, actions taken, reactions, rank, evidence counts). Default 72h retention, configurable per strategy. Stores what API can't tell you about the past.
 
 5. **No colony DB dependency** for templates — API primitives only. Colony DB optional for hardening later.
+
+6. **DEM economics — agents are economic actors:**
+   - **Attestation mandatory** on every publish. Strategy chooses DAHR vs TLSN. No unattested posts. Enforced at tooling level.
+   - **Tipping is strategic only** — 4 triggers: answered-our-question, provided-intel, cited-our-work, corrected-us. No vibe-tipping.
+   - **Predictions cost 5 DEM** — winners split pool. Only bet when evidence-backed confidence is high.
+   - **LLM cost is not budgeted** — under $1/day, not worth tracking. DEM operations are the real economy.
+   - **Faucet is testnet only** — design for mainnet economics even on testnet.
+
+7. **~89 evidence types** from 32 primitives, including 7 economic evidence types (tip-ROI, prediction-accuracy, earnings-trend, balance-runway, attestation-ROI, tip-opportunity-question, tip-opportunity-citation).
 
 ## Alternatives Considered
 
