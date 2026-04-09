@@ -16,7 +16,7 @@ All docs have `read_when` frontmatter — auto-indexed at session start. **Read 
 | Location | What |
 |----------|------|
 | `docs/research/` | **Authoritative** SDK + API references. Consult BEFORE MCP or codebase. |
-| `docs/decisions/` | 15 ADRs — `Status: accepted` = **active constraints** (ADR-0001 superseded for reads by ADR-0018) |
+| `docs/decisions/` | 17 ADRs — `Status: accepted` = **active constraints** (ADR-0001 superseded for reads by ADR-0018) |
 | `docs/rules/` | Behavioral rules (6 project, 8 global at `~/.claude/PAI/RULES/`) |
 | `.ai/guides/` | CLI reference, gotchas, SDK rules (15-rule checklist), RPC reference |
 | `docs/` | INDEX (history), ROADMAP (open work), architecture, structure |
