@@ -453,6 +453,8 @@ Phase 1-4 (DONE) --> Phase 5 (DONE) --> Phase 6 (DONE) --> Phase 7 (DONE) --> Ph
 | Fabric design: document inconsistencies in phase7-design.md | Archive doc, iterative thought process, not blocking | Next doc cleanup |
 | Fabric 8a design: decouple verification from scanner as independent worker | Intentional: incremental in caller, not a separate service | If attestation volume exceeds scan budget |
 | Fabric 8a design: harden RPC client (mTLS, rate limiting, circuit breaker) | Generic infra concern, SDK abstracts the chain | If running own RPC node |
+| v3-loop source fetch is serial (after strategyObserve, not parallel) | Sequential by design — signal-driven source selection depends on enrichment from prefetch | If source fetch latency becomes production bottleneck |
+| Enrichment schema test coverage weaker after api-enrichment.test.ts deletion | observe-router.test.ts covers the same build path. Deleted tests were for dead fetchApiEnrichment | If enrichment schema validation bugs surface in production |
 | Error handling: state-helpers parse error may leak partial content | Minor — key name already omitted | If state format becomes sensitive |
 | Sequential proof ingestion + agent profile refresh in SENSE phase | Independent ops run serially; ~5-10s parallelizable | Next SENSE phase performance pass |
 | Sequential source fetches in SENSE phase (serial HTTP in 15s budget) | Could parallelize with concurrency limiter for more coverage | Next SENSE phase performance pass |
