@@ -61,8 +61,12 @@ function createMockToolkit(overrides: Record<string, unknown> = {}): Toolkit {
   } as unknown as Toolkit;
 }
 
+import { resolve } from "node:path";
+
+const STRATEGY_PATH = resolve(import.meta.dirname, "../../templates/base/strategy.yaml");
+
 // ── Lazy-load observe ──
-let learnFirstObserve: (toolkit: Toolkit, address: string) => Promise<ObserveResult>;
+let learnFirstObserve: (toolkit: Toolkit, address: string, strategyPath?: string) => Promise<ObserveResult>;
 
 beforeEach(async () => {
   const mod = await import("../../templates/base/observe.js");
@@ -70,24 +74,23 @@ beforeEach(async () => {
 });
 
 describe("templates/base learnFirstObserve", () => {
-  it("reads both FEED and recent posts in parallel", async () => {
+  it("prefetches FEED posts via single-fetch router", async () => {
     const toolkit = createMockToolkit();
-    await learnFirstObserve(toolkit, OUR_ADDRESS);
+    await learnFirstObserve(toolkit, OUR_ADDRESS, STRATEGY_PATH);
 
-    // getRecent called at least 3 times: FEED category, recent, and enrichedObserve's defaultObserve
-    expect((toolkit.feed.getRecent as any).mock.calls.length).toBeGreaterThanOrEqual(2);
+    // Single-fetch: router prefetches FEED category once, reused for colony state
+    expect((toolkit.feed.getRecent as any).mock.calls.length).toBeGreaterThanOrEqual(1);
     expect(toolkit.feed.getRecent).toHaveBeenCalledWith(expect.objectContaining({ category: "FEED" }));
   });
 
-  it("produces gap evidence from FEED posts not covered by agents", async () => {
+  it("produces feed evidence from FEED posts via extractor", async () => {
     const feedPosts = [
-      { txHash: "0xfeed1", author: "feedbot", timestamp: Date.now(), text: "Breaking: Arbitrum governance proposal to reduce sequencer fees by 40% passes first vote with strong community support and 85% approval rate from delegate voters", category: "FEED", tags: [] },
+      { txHash: "0xfeed1", author: "feedbot", timestamp: Date.now(), payload: { text: "Breaking: Arbitrum governance proposal to reduce sequencer fees by 40% passes first vote with strong community support and 85% approval rate from delegate voters", cat: "FEED" }, tags: [] },
     ];
     const recentPosts = [
       { txHash: "0xagent1", author: "agent1", timestamp: Date.now(), text: "BTC momentum analysis for today", category: "ANALYSIS", tags: ["bitcoin"] },
     ];
 
-    // Route based on category parameter — FEED gets feedPosts, everything else gets recentPosts
     const getRecentMock = vi.fn().mockImplementation((opts?: any) =>
       Promise.resolve({ ok: true, data: { posts: opts?.category === "FEED" ? feedPosts : recentPosts } }),
     );
@@ -95,21 +98,20 @@ describe("templates/base learnFirstObserve", () => {
     const toolkit = createMockToolkit({
       feed: {
         getRecent: getRecentMock,
-        search: vi.fn().mockResolvedValue(null),
+        search: vi.fn().mockResolvedValue({ ok: false }),
         getPost: vi.fn().mockResolvedValue(null),
         getThread: vi.fn().mockResolvedValue(null),
       },
     });
 
-    const result = await learnFirstObserve(toolkit, OUR_ADDRESS);
+    const result = await learnFirstObserve(toolkit, OUR_ADDRESS, STRATEGY_PATH);
 
-    const gapEvidence = result.evidence.filter(e => e.sourceId.startsWith("feed-gap-"));
-    expect(gapEvidence.length).toBeGreaterThanOrEqual(1);
-    expect(gapEvidence[0].metrics).toContain("colony-gap");
-    expect(gapEvidence[0].metrics[0]).toContain("feedRef=");
+    // Strategy-driven router produces feed evidence via colony-feeds extractor
+    const feedEvidence = result.evidence.filter(e => e.sourceId.startsWith("feed-"));
+    expect(feedEvidence.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("produces consensus evidence from colony signals with 3+ agents", async () => {
+  it("produces signal evidence from colony signals via extractor", async () => {
     const toolkit = createMockToolkit({
       intelligence: {
         getSignals: vi.fn().mockResolvedValue({
@@ -123,15 +125,15 @@ describe("templates/base learnFirstObserve", () => {
       },
     });
 
-    const result = await learnFirstObserve(toolkit, OUR_ADDRESS);
+    const result = await learnFirstObserve(toolkit, OUR_ADDRESS, STRATEGY_PATH);
 
-    const signalEvidence = result.evidence.filter(e => e.sourceId.startsWith("colony-signal-"));
-    // Only ETH (5 agents >= 3), not DOGE (1 agent < 3)
-    expect(signalEvidence.length).toBe(1);
-    expect(signalEvidence[0].sourceId).toBe("colony-signal-ETH");
+    // Strategy-driven router extracts ALL signals via colony-signals extractor
+    const signalEvidence = result.evidence.filter(e => e.sourceId.startsWith("signal-"));
+    expect(signalEvidence.length).toBe(2);
+    expect(signalEvidence[0].sourceId).toBe("signal-ETH");
   });
 
-  it("produces divergence evidence from oracle (medium+ severity)", async () => {
+  it("produces divergence evidence from oracle via extractor", async () => {
     const toolkit = createMockToolkit({
       oracle: {
         get: vi.fn().mockResolvedValue({
@@ -147,12 +149,12 @@ describe("templates/base learnFirstObserve", () => {
       },
     });
 
-    const result = await learnFirstObserve(toolkit, OUR_ADDRESS);
+    const result = await learnFirstObserve(toolkit, OUR_ADDRESS, STRATEGY_PATH);
 
+    // Oracle extractor includes all divergences (filtering by severity is strategy's job)
     const divEvidence = result.evidence.filter(e => e.sourceId.startsWith("divergence-"));
-    // Only BTC (medium), not ETH (low)
-    expect(divEvidence.length).toBe(1);
-    expect(divEvidence[0].sourceId).toBe("divergence-BTC");
+    expect(divEvidence.length).toBe(2);
+    expect(divEvidence[0].sourceId).toBe("divergence-BTC-agents_vs_market");
   });
 
   it("is null-safe when all API calls fail", async () => {
@@ -167,7 +169,7 @@ describe("templates/base learnFirstObserve", () => {
       intelligence: { getSignals: vi.fn().mockResolvedValue(null), getReport: vi.fn().mockResolvedValue(null) },
     });
 
-    const result = await learnFirstObserve(toolkit, OUR_ADDRESS);
+    const result = await learnFirstObserve(toolkit, OUR_ADDRESS, STRATEGY_PATH);
 
     expect(result).toBeDefined();
     expect(result.colonyState).toBeDefined();
@@ -176,7 +178,7 @@ describe("templates/base learnFirstObserve", () => {
 
   it("returns apiEnrichment in context for strategy engine", async () => {
     const toolkit = createMockToolkit();
-    const result = await learnFirstObserve(toolkit, OUR_ADDRESS);
+    const result = await learnFirstObserve(toolkit, OUR_ADDRESS, STRATEGY_PATH);
 
     expect(result.context).toBeDefined();
   });

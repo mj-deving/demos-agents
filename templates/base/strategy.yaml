@@ -4,6 +4,12 @@ apiVersion: strategy/v3
 # Colony intelligence drives all decisions.
 # Priority order reflects: engage with what exists → fill gaps → tip quality.
 
+evidence:
+  categories:
+    core: [colony-feeds, colony-signals, threads, engagement]
+    domain: [oracle, prices]
+    meta: [network]
+
 rules:
   - name: reply_with_evidence
     type: REPLY

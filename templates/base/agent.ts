@@ -33,7 +33,8 @@ const AGENT_LABEL = "base-agent";
 const DRY_RUN = process.env.DRY_RUN !== "false"; // Default dry-run=true for safety (real DEM on mainnet)
 
 // ── Observe ──────────────────────────────────
-const observe: ObserveFn = learnFirstObserve;
+const observe: ObserveFn = (toolkit, address) =>
+  learnFirstObserve(toolkit, address, STRATEGY_PATH);
 
 // ── Executor wiring (bridges toolkit boundary per ADR-0019) ──
 function createExecutors(label: string, agentConfig: any, sourceView: any) {

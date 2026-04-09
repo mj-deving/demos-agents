@@ -97,6 +97,13 @@ const StrategyConfigSchema = z.object({
       confirmMs: z.number().int().positive().optional(),
     }).default({}),
   }).default({}),
+  evidence: z.object({
+    categories: z.object({
+      core: z.array(z.string()).optional(),
+      domain: z.array(z.string()).optional(),
+      meta: z.array(z.string()).optional(),
+    }).optional(),
+  }).optional(),
   briefingBoost: z.number().int().nonnegative().default(10).optional(),
   leaderboardAdjustment: z.object({
     enabled: z.boolean().default(false),
@@ -169,6 +176,13 @@ export function loadStrategyConfig(yamlContent: string): StrategyConfig {
         confirmMs: config.limits.phaseBudgets.confirmMs ?? DEFAULT_LIMITS.phaseBudgets.confirmMs,
       },
     },
+    evidence: config.evidence ? {
+      categories: config.evidence.categories ? {
+        core: config.evidence.categories.core,
+        domain: config.evidence.categories.domain,
+        meta: config.evidence.categories.meta,
+      } : undefined,
+    } : undefined,
     briefingBoost: config.briefingBoost ?? 10,
     leaderboardAdjustment: config.leaderboardAdjustment ? {
       enabled: config.leaderboardAdjustment.enabled,

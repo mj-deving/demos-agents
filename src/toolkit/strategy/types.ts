@@ -53,6 +53,14 @@ export interface StrategyConfig {
     /** Minimum confidence for consensus participation (default: 40) */
     minConfidence: number;
   };
+  /** Phase 17b: Evidence categories from ADR-0020 — optional, for compiler-generated templates. */
+  evidence?: {
+    categories?: {
+      core?: string[];
+      domain?: string[];
+      meta?: string[];
+    };
+  };
   /** Phase C: V3 loop operational limits — all optional with defaults matching current hardcoded values. */
   limits?: LoopLimitsConfig;
   /** Phase 7: Priority boost for topics mentioned in colony briefing (default: 10). */

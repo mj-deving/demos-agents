@@ -127,7 +127,14 @@ function formatViolations(label: string, violations: string[]): string {
 
 // ── Pre-compute (read files once) ────────────────
 
-const toolkitFiles = findTsFiles(TOOLKIT_DIR);
+// Files excluded from boundary scanning — contain import statements in string templates (code generation output)
+const CODEGEN_EXCLUSIONS = [
+  "compiler/template-composer.ts",
+];
+
+const toolkitFiles = findTsFiles(TOOLKIT_DIR).filter(
+  f => !CODEGEN_EXCLUSIONS.some(exc => f.endsWith(exc)),
+);
 const parsed = parseToolkitFiles(toolkitFiles);
 
 interface ShimFile {
