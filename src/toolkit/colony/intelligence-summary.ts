@@ -55,6 +55,10 @@ export function buildColonyIntelligence(
       recentInteractions[addr] = (recentInteractions[addr] ?? 0) + 1;
       if (interaction.interactionType === "we_tipped") {
         recentTips[addr] = (recentTips[addr] ?? 0) + 1;
+        // Also key by post txHash for post-specific tip dedup (tip_valuable redesign)
+        if (interaction.theirTxHash) {
+          recentTips[interaction.theirTxHash] = (recentTips[interaction.theirTxHash] ?? 0) + 1;
+        }
       }
     }
   } catch {
