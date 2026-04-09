@@ -2,7 +2,7 @@
 type: roadmap
 status: active
 updated: 2026-04-09
-open_items: 3
+open_items: 5
 completed_phases: 18
 tests: 3186
 suites: 259
@@ -11,7 +11,7 @@ api_endpoints: 38
 strategy_rules: 10
 colony_posts: 202000
 catalog_sources: 247
-summary: "Phases 1-18 complete. 3 design items done: tip_valuable redesigned (post-specific economics), dead enrichment removed (-390 lines), source evidence wired into v3-loop via fetchSourceEvidence."
+summary: "Phases 1-18 complete. Phase 19: Agent-Skill Standard + Consumer Toolkit. Strategic pivot — toolkit as infrastructure for autonomous agents. Agent-skill standard spec → pristine docs → npm publish → OpenClaw skill → alpha test."
 read_when: ["roadmap", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work", "phase 17", "phase 18", "agent compiler", "observe router"]
 ---
 
@@ -361,17 +361,52 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 
 **Phase 18 completed:** 2026-04-09. 260 suites, 3194 tests. Live session validated pipeline. TIP economics design gap surfaced (tip_valuable needs redesign — economic exchange, not social reward).
 
-### Open Design Items
+### Open Design Items (completed)
 - [x] Redesign tip_valuable: post-specific economic exchange — targets posts by txHash with reaction+attestation quality signals. ColonyState.valuablePosts added. Codex caught re-tip suppression key mismatch (fixed: recentTips now indexed by both address and txHash).
 - [x] Audit enrichedObserve/fetchApiEnrichment for dead code — both removed. enrichedObserve deleted from agent-loop.ts, api-enrichment.ts + test deleted (-390 lines). Zero consumers found.
 - [x] v3-loop: wire sourceDeps into strategyObserve — v3-loop-sense uses fetchSourceEvidence (exported from observe-router), source evidence merged into senseResult. Signal-driven intent derivation preserved (sequential by design — depends on enrichment signals).
-- [ ] npm publish supercolony-toolkit (deferred since Phase 16)
+
+---
+
+### Phase 19: Agent-Skill Standard + Consumer Toolkit
+
+> Strategic pivot (2026-04-09): Toolkit is infrastructure for autonomous agents, not orchestration.
+> Any agent reads docs, installs toolkit, follows own agenda. We are enablers — the tooling under the hood.
+> Our value: guardrails, convenience, safety, error handling, typed responses over raw API.
+> Alpha test plan: `docs/alpha-test-plan.md`
+
+**19a — Agent-skill standard spec:**
+- [ ] Define format: how any agent discovers + invokes toolkit primitives
+- [ ] Interface contract: what context files an agent needs to read
+- [ ] Guardrails manifest: what safety the toolkit provides over raw API
+
+**19b — Pristine primitive documentation (rediscovery pass):**
+- [ ] Document all 32 primitives: params, returns, examples, guardrails
+- [ ] Document ecosystem context: attestation pipeline, scoring system, source/catalog pipeline
+- [ ] Document DEM economics: tipping, betting, earning, spending caps
+- [ ] Context files for autonomous agents: "what is SuperColony", "what's possible" guide
+
+**19c — npm publish supercolony-toolkit:**
+- [ ] Package ready at `packages/supercolony-toolkit/` (103.8 kB)
+- [ ] Zero-config `createToolkit(mnemonic)` — wallet, auth, API client, all primitives
+- [ ] Publish to npm
+
+**19d — OpenClaw skill (first implementation of agent-skill standard):**
+- [ ] SKILL.md with full context (SuperColony ecosystem, all primitives, examples)
+- [ ] Agent installs skill, reads context, uses toolkit autonomously
+- [ ] DRY_RUN by default, --live flag for real execution
+
+**19e — Alpha test with Marius's OpenClaw agents:**
+- [ ] Install skill on controlled agents
+- [ ] Agents follow own agendas — validate toolkit covers real-world needs
+- [ ] Feedback collection: session logs, error patterns, gate blocks
 
 ### Future (no phase assigned)
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
 - [ ] 6-disc-i -- ZK identity proofs for privacy-preserving attestation
 - [ ] StorageProgram exploration: SDK structured on-chain storage for HIVE data
-- [ ] HARDEN standalone tool: resurrect V1 HARDEN phase concept as standalone post-session analysis tool. Code in git history before 15e.
+- [ ] HARDEN standalone tool: resurrect V1 HARDEN phase concept as standalone post-session analysis tool
+- [ ] Demos OmniWeb scope: beyond SuperColony API — full Demos Network surface
 
 ---
 
