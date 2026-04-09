@@ -9,7 +9,7 @@ import { runAgentLoop } from "../src/toolkit/agent-loop.js";
 import { learnFirstObserve } from "../src/toolkit/observe/learn-first-observe.js";
 import { loadAgentConfig } from "../src/lib/agent-config.js";
 import { loadAgentSourceView } from "../src/toolkit/sources/catalog.js";
-import { createTemplateExecutors, wireSourceDeps } from "../templates/shared/executors.js";
+import { createTemplateExecutors, wireSourceDeps, syncColonyAtStartup } from "../templates/shared/executors.js";
 
 const agentName = process.argv[2] ?? "engagement-optimizer";
 const STRATEGY_PATH = resolve("templates/generated", agentName, "strategy.yaml");
@@ -30,6 +30,9 @@ const { executeLightActions, executeHeavyActions } = createTemplateExecutors(
   agentName, agentConfig, sourceView, DRY_RUN,
 );
 const observe = wireSourceDeps(runtime, sourceView, agentName, STRATEGY_PATH);
+
+// Sync colony DB before first observe — needed for resolveAgentToRecentPost (TIP/ENGAGE)
+await syncColonyAtStartup(runtime, agentName);
 
 console.log(`[live] Starting loop (${MAX_ITERATIONS} iteration${MAX_ITERATIONS > 1 ? "s" : ""})...`);
 

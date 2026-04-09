@@ -68,6 +68,32 @@ export function createTemplateExecutors(
 }
 
 /**
+ * Sync colony DB from API before first observe.
+ * Needed so resolveAgentToRecentPost has data for TIP/ENGAGE actions.
+ * Without this, TIP actions fail with 404 (no post to tip).
+ */
+export async function syncColonyAtStartup(
+  runtime: { colonyDb?: any; authenticatedApiCall?: any },
+  label: string,
+): Promise<void> {
+  if (!runtime.colonyDb) return;
+  try {
+    const { SuperColonyApiClient } = await import("../../src/toolkit/supercolony/api-client.js");
+    const { syncColonyFromApi } = await import("../../src/toolkit/colony/api-backfill.js");
+    const apiClient = new SuperColonyApiClient({ getToken: async () => null });
+    const stats = await syncColonyFromApi(runtime.colonyDb, apiClient, {
+      maxPages: 5, // Quick sync — just recent posts, not full backfill
+      onProgress: () => {},
+    });
+    if (stats.inserted > 0) {
+      console.log(`[${label}] Colony sync: ${stats.inserted} posts from API (${stats.pages} pages)`);
+    }
+  } catch (err) {
+    console.warn(`[${label}] Colony sync failed (non-fatal):`, err instanceof Error ? err.message : String(err));
+  }
+}
+
+/**
  * Wire source deps into an ObserveFn.
  * If colony DB and sources are available, creates a source-aware observe.
  * Otherwise falls back to colony-only observe.
