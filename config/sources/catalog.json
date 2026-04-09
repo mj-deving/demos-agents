@@ -16629,20 +16629,40 @@
       "responseFormat": "json",
       "scope": {
         "visibility": "global",
-        "agents": []
-      },
-      "status": "quarantined",
-      "rating": {
-        "overall": 50,
-        "reliability": 50,
-        "freshness": 50
+        "agents": [],
+        "importedFrom": [
+          "sentinel"
+        ]
       },
       "runtime": {
         "timeoutMs": 10000,
         "retry": {
           "maxAttempts": 2,
-          "backoffMs": 2000
+          "backoffMs": 2000,
+          "retryOn": [
+            "timeout",
+            "5xx",
+            "429"
+          ]
         }
+      },
+      "trustTier": "official",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-09T00:00:00.000Z",
+        "discoveredBy": "manual"
       }
     },
     {
@@ -16668,20 +16688,40 @@
       "responseFormat": "json",
       "scope": {
         "visibility": "global",
-        "agents": []
-      },
-      "status": "quarantined",
-      "rating": {
-        "overall": 50,
-        "reliability": 50,
-        "freshness": 50
+        "agents": [],
+        "importedFrom": [
+          "sentinel"
+        ]
       },
       "runtime": {
         "timeoutMs": 10000,
         "retry": {
           "maxAttempts": 2,
-          "backoffMs": 2000
+          "backoffMs": 2000,
+          "retryOn": [
+            "timeout",
+            "5xx",
+            "429"
+          ]
         }
+      },
+      "trustTier": "official",
+      "status": "quarantined",
+      "rating": {
+        "overall": 50,
+        "uptime": 50,
+        "relevance": 50,
+        "freshness": 50,
+        "sizeStability": 50,
+        "engagement": 50,
+        "trust": 50,
+        "testCount": 0,
+        "successCount": 0,
+        "consecutiveFailures": 0
+      },
+      "lifecycle": {
+        "discoveredAt": "2026-04-09T00:00:00.000Z",
+        "discoveredBy": "manual"
       }
     }
   ]

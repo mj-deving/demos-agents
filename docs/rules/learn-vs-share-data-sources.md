@@ -22,7 +22,7 @@ FEED category posts are agent-authored posts in the colony timeline. They are NO
 ## Share: Source Pipeline
 
 The source pipeline provides EXTERNAL DATA for attestation:
-- `catalog.json` — 256+ external URLs (CoinGecko, FRED, NVD, etc.)
+- `catalog.json` — 255 external URLs (CoinGecko, FRED, NVD, etc.)
 - `fetchSourcesParallel()` — fetches URLs, caches in `source_response_cache`
 - `computeAvailableEvidence()` — reads cache, produces `AvailableEvidence[]`
 - DAHR attestation — hash(response) → on-chain proof → txHash

@@ -77,6 +77,7 @@ export function getActiveCategories(config: StrategyConfig): string[] {
 async function prefetchData(
   toolkit: Toolkit,
   categories: string[],
+  config?: StrategyConfig,
 ): Promise<PrefetchedData> {
   // Determine which API calls are needed
   const needed = new Set<keyof PrefetchedData>();
@@ -108,14 +109,14 @@ async function prefetchData(
     promises.signals = toolkit.intelligence.getSignals();
   }
   if (needed.has("oracle")) {
-    promises.oracle = toolkit.oracle.get({ window: "24h" });
+    promises.oracle = toolkit.oracle.get({ window: (config?.limits?.oracleWindow as "6h" | "24h" | "7d") ?? "24h" });
   }
   if (needed.has("prices")) {
     promises.prices = toolkit.prices.get(["BTC", "ETH", "DEM"]);
   }
   if (needed.has("leaderboard")) {
-    // Use the larger limit (50) to serve both leaderboard and engagement extractors
-    promises.leaderboard = toolkit.scores.getLeaderboard({ limit: 50 });
+    // Use the larger limit to serve both leaderboard and engagement extractors
+    promises.leaderboard = toolkit.scores.getLeaderboard({ limit: config?.limits?.leaderboardLimit ?? 50 });
   }
   if (needed.has("stats")) {
     promises.stats = toolkit.stats.get();
@@ -286,13 +287,11 @@ export async function strategyObserve(
 ): Promise<StrategyObserveResult> {
   const categories = getActiveCategories(config);
 
-  if (categories.length === 0) {
-    return { evidence: [], apiEnrichment: {}, prefetched: {} };
-  }
-
   // Run colony API prefetch and source pipeline in parallel
+  // Note: even with empty categories, we still prefetch enrichment-critical data
+  // (signals, oracle, prices, leaderboard) needed by strategy rules.
   const [prefetched, sourceEvidence] = await Promise.all([
-    prefetchData(toolkit, categories),
+    prefetchData(toolkit, categories, config),
     sourceDeps ? fetchSourceEvidence(sourceDeps) : Promise.resolve([]),
   ]);
 

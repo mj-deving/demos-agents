@@ -28,7 +28,7 @@ const DRY_RUN = process.env.DRY_RUN !== "false"; // Default dry-run=true for saf
 // ── Main ───────────────────────────────────────
 async function main() {
   console.log(`[${AGENT_LABEL}] Starting...`);
-  const runtime = await createAgentRuntime();
+  const runtime = await createAgentRuntime({ agentName: AGENT_LABEL });
   console.log(`[${AGENT_LABEL}] Connected as ${runtime.address}`);
 
   const agentConfig = loadAgentConfig(AGENT_LABEL);

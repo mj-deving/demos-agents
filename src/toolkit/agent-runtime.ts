@@ -115,8 +115,8 @@ export async function createAgentRuntime(opts?: AgentRuntimeOptions): Promise<Ag
       const colonyDir = resolve(agentDir, "colony");
       mkdirSync(colonyDir, { recursive: true });
       colonyDb = initColonyCache(resolve(colonyDir, "cache.db"));
-    } catch {
-      // Non-fatal — templates work without colony DB (no source evidence)
+    } catch (err) {
+      console.warn("[agent-runtime] Colony DB init failed (non-fatal):", err instanceof Error ? err.message : String(err));
     }
   }
 

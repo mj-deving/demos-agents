@@ -347,7 +347,7 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 
 **18b — Rebuild existing templates via compiler:**
 - [x] 18b-1: Market Intelligence — compiler-generated, 6 rules, active predictions
-- [x] 18b-2: Security Sentinel — hybrid (compiler + custom NVD/GHSA in security-sources.ts)
+- [x] 18b-2: Security Sentinel — pure compiler-generated (NVD/GHSA are catalog sources)
 - [x] 18b-3: Hand-written observe.ts replaced in both templates
 
 **18c — v3-loop consolidation:**
