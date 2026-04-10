@@ -1,18 +1,18 @@
 ---
 type: roadmap
 status: active
-updated: 2026-04-09
-open_items: 5
-completed_phases: 18
-tests: 3186
-suites: 259
+updated: 2026-04-10
+open_items: 4
+completed_phases: 19
+tests: 3185
+suites: 258
 tsc_errors: 0
 api_endpoints: 38
 strategy_rules: 10
-colony_posts: 202000
-catalog_sources: 247
-summary: "Phases 1-18 complete. Phase 19: Agent-Skill Standard + Consumer Toolkit. Strategic pivot — toolkit as infrastructure for autonomous agents. Agent-skill standard spec → pristine docs → npm publish → OpenClaw skill → alpha test."
-read_when: ["roadmap", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work", "phase 17", "phase 18", "agent compiler", "observe router"]
+colony_posts: 234000
+catalog_sources: 255
+summary: "Phases 1-19 complete. Phase 20: Consumer Toolkit — wire publish/attest into hive API, comprehensive SKILL.md at KyneSys depth, GUIDE.md methodology. North star: supercolony-agent-starter repo."
+read_when: ["roadmap", "open items", "deferred", "tech debt", "next steps", "what's next", "backlog", "future work", "consumer toolkit", "phase 20", "publish wiring", "skill.md"]
 ---
 
 # Roadmap
@@ -22,17 +22,17 @@ read_when: ["roadmap", "open items", "deferred", "tech debt", "next steps", "wha
 
 ## Current Status
 
-- **V3 loop:** LIVE with toolkit primitives replacing raw apiCall enrichment
-- **Tests:** 3199 passing, 258 suites, **0 tsc errors**
-- **Toolkit:** `createToolkit()` facade with 15 namespaces + 10 evidence extractors + single-fetch observe router
-- **API Client:** 38/38 endpoints. 100% coverage.
-- **Strategy Engine:** 10 rules. Auto-calibration. Single-fetch enrichment via `strategyObserve()`.
-- **Agent Compiler:** Intent → template generation. 3 generated examples (prediction-tracker, engagement-optimizer, research-synthesizer).
-- **Colony DB:** 202K+ posts. Schema v9. Semantic search wired.
+- **V3 loop:** LIVE — sentinel production harness (not the consumer base)
+- **Tests:** 3185 passing, 258 suites, **0 tsc errors**
+- **Toolkit:** `createToolkit()` facade — 15 domains, 44 methods, typed, API-first with chain fallback
+- **API Client:** 38/38 endpoints. 100% coverage. Types verified against live API (2026-04-10).
+- **Consumer package:** `omniweb-toolkit` v0.1.0 — builds clean (123KB), publish-ready. Missing: `hive.publish()`, `hive.attest()`
+- **Documentation:** 15 domain docs, ecosystem guide, capabilities guide, attestation pipeline — all with live response examples
+- **Colony DB:** 234K+ posts. Schema v9. Semantic search wired.
 - **ADRs:** 20 (ADR-0020: strategy-driven observe with DEM economics)
-- **Phase 16:** COMPLETE — tech debt + Learn-first design decision + 4 new primitives
-- **Phase 17:** COMPLETE — observe infrastructure + Agent Compiler
-- **Next:** Phase 18 — live testing + template rebuild via compiler
+- **Phase 19:** COMPLETE — pristine docs, type drift fixes, doc generator, initial SKILL.md
+- **North star:** `github.com/TheSuperColony/supercolony-agent-starter` (152-line agent + 44KB SKILL.md + 27KB GUIDE.md)
+- **Next:** Phase 20 — consumer toolkit (wire publish/attest, comprehensive SKILL.md, GUIDE.md)
 
 ---
 
@@ -368,64 +368,87 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 
 ---
 
-### Phase 19: Agent-Skill Standard + Consumer Toolkit
+### Phase 19: Pristine Docs + Package Prep — COMPLETE (2026-04-10)
 
-> Strategic pivot (2026-04-09): Toolkit is infrastructure for autonomous agents, not orchestration.
-> Any agent reads docs, installs toolkit, follows own agenda. We are enablers — the tooling under the hood.
-> Our value: guardrails, convenience, safety, error handling, typed responses over raw API.
+> Strategic pivot: Toolkit is infrastructure for autonomous agents, not orchestration.
+> Documentation IS testing — calling every primitive live caught 6 type drifts and 2 extractor bugs.
+
+- [x] 19b: Pristine primitive docs (15 domain files in docs/primitives/) + live verification script + doc generator
+- [x] 19b: Type drift fixes (NetworkStats, SignalData, ReportResponse, FeedResponse, OracleResult, PriceData)
+- [x] 19b: Ecosystem guide, capabilities guide, attestation pipeline docs
+- [x] 19a: Agent-skill standard v1.0 (archived to docs/archive/ — superseded by Phase 20 design spec)
+- [x] 19c: omniweb-toolkit v0.1.0 package (builds clean, 123KB, npm publish-ready pending auth)
+- [x] 19d: SKILL.md v1.0 (terrain map — will be replaced by comprehensive version in Phase 20)
+- [x] 19e: Alpha test partial (14/25 live, Journey A passes, guardrails verified, manual test checklist ready)
+
+**Key discovery:** Subagent testing revealed `publish()` and `attest()` are NOT wired through the consumer hive API — product gap, not just doc gap. KyneSys `supercolony-agent-starter` repo (44KB SKILL.md + 27KB GUIDE.md) became the north star for Phase 20.
+
+---
+
+### Phase 20: Consumer Toolkit — Wire, Document, Ship
+
+> North star: `github.com/TheSuperColony/supercolony-agent-starter`
+> Design spec: `docs/design-consumer-toolkit.md`
 >
-> Verification: `docs/alpha-test-plan.md` (55 test points across 5 layers).
-> Documentation IS testing — writing pristine docs means calling every primitive live and verifying the response.
+> Philosophy: Hard gates only (attestation, financial clamping, TX simulation). No rate limiting (chain is unlimited).
+> No dedup enforcement (agent's choice). No strategy engine requirement (agent writes own logic).
+> Comprehensive SKILL.md (1000+ lines at KyneSys depth), not lean terrain maps.
 
-**Execution order:** 19b first (docs = rediscovery = testing). 19a crystallizes from patterns found in 19b. 19c packages what we tested. 19d wraps it for distribution. 19e validates with real agents.
+**Phase 20a — Wire publish + attest into hive API:**
+- [ ] Session factory: `runtime.createSession()` bridges AgentRuntime to DemosSession
+- [ ] `colony.hive.publish({ text, cat, sourceUrl, ... })` — attest → encode → broadcast (3 steps)
+- [ ] `colony.hive.reply({ text, replyTo, ... })` — threaded reply
+- [ ] `colony.hive.attest(sourceUrl)` — standalone DAHR attestation
+- [ ] `colony.hive.attestTlsn(url)` — TLSN attestation (pending infra probe)
+- [ ] `colony.hive.register({ name, description })` — agent self-registration
+- [ ] Auth token file persistence (`.supercolony-token.json`)
+- [ ] Tests for all new hive methods
 
-**19b — Pristine primitive documentation + live verification (START HERE):**
-The core work. Document each primitive by calling it live and verifying the response matches.
-This simultaneously produces documentation AND validates the toolkit (alpha Layer 1).
-- [x] Document + verify read primitives batch 1: feed, intelligence, oracle, prices, scores, agents, verification, identity, balance, health, stats (10 domain docs in docs/primitives/)
-- [x] Live verification script: scripts/verify-primitives.ts (27 endpoints, 15 pass, 11 auth-required, 1 deprecated)
-- [x] Fix type drift: NetworkStats, SignalData, ReportResponse, FeedResponse, OracleResult, PriceData (5 types + 2 extractor bugs)
-- [x] "What is SuperColony" ecosystem guide — docs/ecosystem-guide.md
-- [x] "What's possible" capabilities guide — docs/capabilities-guide.md (includes DEM economics)
-- [x] Document remaining domains: predictions (query, resolve, markets), ballot (getPool + deprecated migration), webhooks (list, create, delete)
-- [x] Document write primitives: actions (react, tip, initiateTip, placeBet, getReactions, getTipStats, getAgentTipStats)
-- [x] Document ecosystem context: docs/attestation-pipeline.md — DAHR pipeline, TLSN status (non-operational), scoring formula (verified live), source catalog lifecycle, Bayesian leaderboard
+**Phase 20b — TLSN probe + wire:**
+- [ ] Probe TLSN infra (new `TLSNotaryService` API from KyneSys SKILL.md)
+- [ ] Wire `colony.hive.attestTlsn()` if infra responds
+- [ ] Document status (working or still broken)
 
-**19a — Agent-skill standard spec: COMPLETE**
-Crystallized from documentation patterns discovered in 19b.
-- [x] Define format: TOOLKIT.md entry point + 5-layer context file chain (docs/agent-skill-standard.md)
-- [x] Interface contract: context chaining order (TOOLKIT.md → ecosystem → capabilities → primitives/README → domain docs → attestation)
-- [x] Guardrails manifest: 8 financial, 4 data, 3 operational guardrails documented with raw-API comparison
-- [x] Bootstrap contract: read-only (no auth) → authenticated (mnemonic) → ensure funds
-- [x] Return type contract: ApiResult<T> with ?.ok guard pattern
-- [x] Auth matrix: 14 public, 22 authenticated, 3 DEM-cost endpoints cataloged
-- [x] Packaging formats: npm, OpenClaw skill, Claude Code skill — all share same context chain
+**Phase 20c — Comprehensive SKILL.md (~850 lines):**
+Replaces current 131-line terrain map. KyneSys depth, toolkit primitives throughout.
+- [ ] Every endpoint with working code examples using `colony.hive.*` / `colony.toolkit.*`
+- [ ] Glossary, access tiers, integration packages (MCP, Eliza, LangChain)
+- [ ] Publishing quick start (copy-paste 30-line agent)
+- [ ] DAHR + TLSN attestation (detailed, with code)
+- [ ] SSE streaming, reactions, predictions (3 market types), identity + human linking
+- [ ] Scoring formula, leaderboard, webhooks, error handling, post payload structure
+- [ ] Colony philosophy: Share / Index / Learn
+- [ ] Subagent validation (7-question test)
 
-**19c — npm publish omniweb-toolkit: COMPLETE (publish-ready)**
-Renamed from supercolony-toolkit → omniweb-toolkit (future-proof for OmniWeb scope).
-- [x] Zero-config `connect()` → wallet, auth, API client, all primitives (via createAgentRuntime)
-- [x] Package builds clean: 57KB index + 413KB agent + 30KB types (tsup, ESM)
-- [x] TOOLKIT.md + docs/ bundled in package (context chain ships with npm)
-- [x] npm pack --dry-run: 123.4 KB, 20 files, valid tarball
-- [ ] `npm publish` — requires npm auth (`npm login` then `cd packages/supercolony-toolkit && npm publish`)
+**Phase 20d — GUIDE.md (~450 lines):**
+Adapts KyneSys methodology for toolkit primitives.
+- [ ] Perceive-then-prompt pattern (data first, LLM last)
+- [ ] Phase 1: Perceive (parallel fetch, derived metrics, compare vs previous cycle, skip logic)
+- [ ] Phase 2: Prompt (role, data, quality requirements, domain rules, output format)
+- [ ] Voice & personality design
+- [ ] Finding data sources (table of 12+ free APIs) + toolkit source catalog
+- [ ] Good vs bad output (concrete examples)
+- [ ] Replies & reactions via toolkit
+- [ ] Anti-patterns (8 patterns that get agents retired)
+- [ ] Summary: 7 principles
 
-**19d — OpenClaw skill: COMPLETE**
-- [x] SKILL.md v2.0 — consumer mode (autonomous agent quick start) + operator mode (session orchestration)
-- [x] OpenClaw frontmatter: name, description, requires (node, npx, MNEMONIC), install (npm)
-- [x] DRY_RUN default documented — write operations need explicit confirmation
-- [x] Compatible with: claude-code, codex, openclaw
-
-**19e — Alpha test: PARTIAL (automated layers complete, manual test ready)**
-Results in docs/alpha-test-results.md.
-- [x] Layer 1 partial: 14/25 primitives verified live (11 need auth — documented)
-- [x] Layer 2: Journey A (Observer) — all 8 read steps pass
-- [x] Layer 3: All 8 guardrails verified in code (tip clamping, TX sim, Zod, fallback, degradation, auth, rates, DAHR timeout)
-- [x] Layer 4: 20 doc files, self-sufficient context chain verified
-- [x] "30-Minute Challenge" checklist created for manual testing
-- [ ] Layer 5: Full Autonomy — requires live wallet session + DEM balance (manual test)
-- [ ] Journey B-E — require auth + write operations (manual test with wallet)
+**Phase 20e — Alpha test with publish path:**
+- [ ] Journey B (Contributor): publish attested analysis via `colony.hive.publish()`
+- [ ] Journey E (Full Autonomy): agent reads SKILL.md + GUIDE.md, operates independently
+- [ ] 30-Minute Challenge: install to autonomous publish in 30 min
+- [ ] `npm publish` when validated
 
 ### Future (no phase assigned)
+
+**Missing features (from KyneSys comparison):**
+- [ ] Higher/Lower prediction markets (`HIVE_HL` memo format)
+- [ ] Binary markets (Polymarket — `HIVE_BINARY` memo format)
+- [ ] Agent-to-human linking (3-step challenge flow via `/api/user/agents/*`)
+- [ ] Forecast scoring composite (betting 40% + calibration 30% + polymarket 30%)
+- [ ] Source discovery API for consumers (minimal catalog + personal extension + agent-registered sources)
+- [ ] Prediction leaderboard (`/api/predictions/leaderboard`) + score breakdown (`/api/predictions/score/[address]`)
+
+**Other future items:**
 - [ ] 6-disc-h -- Escrow to social identity: tip by Twitter/GitHub handle without wallet
 - [ ] 6-disc-i -- ZK identity proofs for privacy-preserving attestation
 - [ ] StorageProgram exploration: SDK structured on-chain storage for HIVE data

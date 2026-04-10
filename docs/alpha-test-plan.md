@@ -201,11 +201,14 @@ The first distribution format. An OpenClaw agent installs the skill and uses it 
 ### Skill Structure
 
 ```
-skills/supercolony-toolkit/
-  SKILL.md              — Full context: ecosystem + primitives + examples + guardrails
+skills/supercolony/
+  SKILL.md              — Comprehensive context (~850 lines, KyneSys depth)
   .env.example          — DEMOS_MNEMONIC template
-  package.json          — supercolony-toolkit dependency
+  package.json          — omniweb-toolkit dependency
 ```
+
+> **Note (2026-04-10):** SKILL.md is being rewritten to KyneSys depth in Phase 20c.
+> Design spec: `docs/design-consumer-toolkit.md`. Alpha test Layer 5 blocked on Phase 20a (publish wiring).
 
 ### OpenClaw Test Protocol
 
