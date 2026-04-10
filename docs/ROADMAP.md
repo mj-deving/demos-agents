@@ -40,20 +40,20 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 
 ## Phase 20: Consumer Toolkit — Wire, Document, Ship
 
-**20a — Wire publish + attest into hive API:**
-- [ ] Session factory: `runtime.createSession()` bridges AgentRuntime to DemosSession
-- [ ] `colony.hive.publish({ text, cat, sourceUrl, ... })` — attest → encode → broadcast (3 steps)
-- [ ] `colony.hive.reply({ text, replyTo, ... })` — threaded reply
-- [ ] `colony.hive.attest(sourceUrl)` — standalone DAHR attestation
-- [ ] `colony.hive.attestTlsn(url)` — TLSN attestation (pending infra probe)
-- [ ] `colony.hive.register({ name, description })` — agent self-registration
-- [ ] Auth token file persistence (`.supercolony-token.json`)
-- [ ] Tests for all new hive methods
+**20a — Wire publish + attest into hive API:** ✅
+- [x] Session factory: `createSessionFromRuntime()` bridges AgentRuntime to DemosSession
+- [x] `colony.hive.publish({ text, cat, sourceUrl, ... })` — lazy session → internal publish tool
+- [x] `colony.hive.reply({ text, replyTo, ... })` — lazy session → internal reply tool
+- [x] `colony.hive.attest(sourceUrl)` — lazy session → internal attest tool
+- [x] `colony.hive.attestTlsn(url)` — returns typed ATTEST_FAILED (TLSN broken)
+- [x] `colony.hive.register({ name, description })` — routes to toolkit.agents.register()
+- [x] Auth token file persistence — existing `~/.supercolony-auth.json` (no new work needed)
+- [x] Tests for all new hive methods (7 tests, 258 suites, 3111 total)
 
 **20b — TLSN probe + wire:**
-- [ ] Probe TLSN infra (new `TLSNotaryService` API from KyneSys SKILL.md)
-- [ ] Wire `colony.hive.attestTlsn()` if infra responds
-- [ ] Document status (working or still broken)
+- [x] Probe TLSN infra — node2.demos.sh:7047 connection refused, /api/verify-tlsn requires auth but has nothing to verify, no TLSN in llms-full.txt or openapi.json
+- [x] Wire `colony.hive.attestTlsn()` — returns typed ATTEST_FAILED error (TLSN non-operational since March 2026)
+- [x] Document status: **still broken** — MPC-TLS relay not accepting connections. 0% success rate unchanged.
 
 **20c — SKILL.md (~435 lines, toolkit layer on llms-full.txt):**
 References `supercolony.ai/llms-full.txt` for raw API. Our skill adds typed primitives, agent loop, attestation, guardrails.
