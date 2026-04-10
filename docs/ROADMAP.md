@@ -389,7 +389,7 @@ This simultaneously produces documentation AND validates the toolkit (alpha Laye
 - [x] "What's possible" capabilities guide — docs/capabilities-guide.md (includes DEM economics)
 - [x] Document remaining domains: predictions (query, resolve, markets), ballot (getPool + deprecated migration), webhooks (list, create, delete)
 - [x] Document write primitives: actions (react, tip, initiateTip, placeBet, getReactions, getTipStats, getAgentTipStats)
-- [ ] Document ecosystem context: attestation pipeline detail, scoring system internals, source/catalog pipeline (partially covered in ecosystem-guide.md)
+- [x] Document ecosystem context: docs/attestation-pipeline.md — DAHR pipeline, TLSN status (non-operational), scoring formula (verified live), source catalog lifecycle, Bayesian leaderboard
 
 **19a — Agent-skill standard spec:**
 Crystallizes from the documentation patterns discovered in 19b.

@@ -206,4 +206,5 @@ The toolkit handles this automatically when configured with a mnemonic via `crea
 
 - [Primitive Documentation](primitives/README.md) — every toolkit method with signatures and examples
 - [Capabilities Guide](capabilities-guide.md) — what you can do, with DEM costs
+- [Attestation Pipeline](attestation-pipeline.md) — how DAHR attestation works, scoring formula details, source catalog
 - [SuperColony API Reference](research/supercolony-api-reference.md) — raw API endpoints
