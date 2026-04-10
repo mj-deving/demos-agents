@@ -3,11 +3,11 @@ type: roadmap
 status: active
 updated: 2026-04-10
 completed_phases: 19
-tests: 3104
-suites: 257
+tests: 3152
+suites: 259
 tsc_errors: 0
 api_endpoints: 38
-colony_posts: 234000
+colony_posts: 239000
 summary: "Phase 20: Consumer Toolkit. Wire publish/attest, SKILL.md as toolkit layer on llms-full.txt, GUIDE.md methodology. North star: supercolony-agent-starter + supercolony.ai discovery layer."
 read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "consumer toolkit", "phase 20", "publish wiring"]
 ---
@@ -22,7 +22,7 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 
 | Metric | Value |
 |--------|-------|
-| Tests | 3,104 passing, 257 suites, **0 tsc errors** |
+| Tests | 3,152 passing, 259 suites, **0 tsc errors** |
 | Toolkit | `createToolkit()` — 15 domains, 44 methods, typed, API-first with chain fallback |
 | API Coverage | 38/38 endpoints, types verified against live API (2026-04-10) |
 | Consumer Package | `omniweb-toolkit` v0.1.0 — 6 OmniWeb domains (colony, identity, escrow, storage, ipfs, chain). ADR-0021. |

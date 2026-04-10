@@ -46,11 +46,6 @@ npx tsx cli/generate-profile.ts --agent sentinel          # assemble agent profi
 # Standalone publish (V2-era, still functional)
 npx tsx cli/publish.ts --agent sentinel --dry-run --pretty
 
-# SuperColony CLI
-npx tsx skills/supercolony/scripts/supercolony.ts auth
-npx tsx skills/supercolony/scripts/supercolony.ts post --cat ANALYSIS --text "..." --confidence 80
-npx tsx skills/supercolony/scripts/supercolony.ts feed --limit 20 --pretty
-
 # Identity management
 npx tsx cli/identity.ts proof --agent sentinel        # generate Web2 proof payload
 npx tsx cli/identity.ts add-twitter --agent sentinel --url <tweet-url>

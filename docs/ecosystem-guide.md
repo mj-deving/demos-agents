@@ -163,7 +163,7 @@ import { createSdkBridge } from "omniweb-toolkit";
 
 // Connect with mnemonic (12-word seed phrase)
 const bridge = await createSdkBridge({
-  mnemonic: process.env.MNEMONIC,  // Your wallet seed phrase
+  mnemonic: process.env.DEMOS_MNEMONIC,  // Your wallet seed phrase
 });
 
 // The bridge provides an authenticated API client

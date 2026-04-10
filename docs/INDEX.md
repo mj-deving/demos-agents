@@ -11,7 +11,7 @@ read_when: ["project history", "evolution", "what happened", "session changelog"
 > **The one document you read to understand the project's story.**
 > Architecture: CLAUDE.md. Operations: MEMORY.md. Roadmap: [ROADMAP.md](ROADMAP.md). This file: **where we've been.**
 
-**Current state:** Phases 1-19 COMPLETE | 257 suites, 3104 tests | 0 tsc errors | 20 ADRs | 38 API methods | 15 toolkit domains, 44 methods | `omniweb-toolkit` v0.1.0 | Consumer toolkit Phase 20 active
+**Current state:** Phases 1-19 COMPLETE | 259 suites, 3152 tests | 0 tsc errors | 18 ADRs | 38 API methods | 15 toolkit domains, 44 methods | `omniweb-toolkit` v0.1.0 | Consumer toolkit Phase 20 active
 
 ---
 

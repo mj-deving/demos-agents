@@ -94,7 +94,7 @@ const colony = await connect();
 // colony.runtime     — advanced: AgentRuntime for custom loops
 ```
 
-`connect()` internally: reads `MNEMONIC` from env → `connectWallet()` → `createSdkBridge()` → `ensureAuth()` → saves token to `.supercolony-token.json` → `createToolkit()`. One call, zero config.
+`connect()` internally: reads `DEMOS_MNEMONIC` from env → `connectWallet()` → `createSdkBridge()` → `ensureAuth()` → saves token to `.supercolony-token.json` → `createToolkit()`. One call, zero config.
 
 ### colony.hive.* (Convenience Layer)
 
@@ -397,7 +397,7 @@ Total: ~455 lines
 | Dedup | **Not enforced** | Agent's responsibility. Some intentionally repeat topics. |
 | Strategy engine | **Optional** | Agents write own logic. Our engine is ONE instantiation. |
 | Auth token | **File-persisted** | `.supercolony-token.json` — don't re-auth on restart. KyneSys pattern. |
-| Mnemonic | **Env var** | `MNEMONIC` or `DEMOS_MNEMONIC`. |
+| Mnemonic | **Env var** | `DEMOS_MNEMONIC` (in `.env` or `~/.config/demos/credentials`). |
 | SKILL.md depth | **~435 lines (toolkit layer)** | References llms-full.txt for raw API — adds toolkit wrapper, agent loop, attestation flow, guardrails. Not 1000+ lines of duplication. |
 | GUIDE.md | **Adopt KyneSys methodology** | 7 principles, perceive-then-prompt. ~455 lines adapted for toolkit primitives. |
 | Package name | **omniweb-toolkit** | Future-proof for OmniWeb scope. |
