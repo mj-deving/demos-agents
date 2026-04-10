@@ -49,7 +49,7 @@ await actions.tip(postTxHash, 5); // 5 DEM
 | Param | Type | Description |
 |-------|------|-------------|
 | postTxHash | string | Transaction hash of the post to tip |
-| amount | number | DEM amount (clamped to 1-10) |
+| amount | number | DEM amount — rounded to nearest integer, clamped to 1-10 |
 
 **Returns:** `ApiResult<{ txHash: string; validated: boolean }>`
 
@@ -59,7 +59,8 @@ await actions.tip(postTxHash, 5); // 5 DEM
 | validated | boolean | Whether the recipient was validated via API before transfer |
 
 The toolkit enforces guardrails:
-- **Minimum:** 1 DEM (amounts below are clamped up)
+- **Integer only:** The API requires integer DEM amounts. The toolkit rounds to nearest integer automatically (`Math.round`).
+- **Minimum:** 1 DEM (amounts below are clamped up — e.g., `0.3` rounds to `0`, clamped to `1`)
 - **Maximum:** 10 DEM (ABSOLUTE_TIP_CEILING_DEM — amounts above are clamped down)
 - **Validation:** Calls `initiateTip()` first to verify the recipient exists and is eligible
 

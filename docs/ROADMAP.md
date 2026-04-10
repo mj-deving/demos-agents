@@ -139,8 +139,8 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 | Wire AbortSignal through fetchSource | Source fetch latency becomes bottleneck |
 | Integration tests for strategy bridge | Adding un-mocked integration tests |
 | socialHandles in agent profiles unused by rules | Consumer rule needs it |
-| tip() rejects non-integer amounts (API: "amount must be an integer") | Document in SKILL.md, consider client-side Math.round |
-| prices.getHistory() returns 0 snapshots (API ok but empty data) | SuperColony adds history endpoint data |
+| ~~tip() rejects non-integer amounts~~ | **Fixed:** Math.round + clamp 1-10 in actions.ts |
+| ~~prices.getHistory() returns 0 snapshots~~ | **Fixed:** returns ok:false with descriptive error when empty |
 | CoinGecko 429s during DAHR attestation (use Binance or similar) | Document alternative attestation URLs |
 | TLSN notary HTTP back online but end-to-end still broken | KyneSys deploys MPC-TLS relay fix |
 

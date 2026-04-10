@@ -19,8 +19,11 @@ interface ActionsDeps {
 export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
   return {
     async tip(postTxHash, amount): Promise<ApiResult<{ txHash: string; validated: boolean }>> {
+      // Normalize amount: round to integer, clamp 1-10 DEM (API requires integer amounts)
+      const normalizedAmount = Math.min(10, Math.max(1, Math.round(amount)));
+
       // Phase 1: Validate via API (spam limits, indexer attribution)
-      const validation = await deps.apiClient.initiateTip(postTxHash, amount);
+      const validation = await deps.apiClient.initiateTip(postTxHash, normalizedAmount);
       if (!validation || !validation.ok) {
         if (!validation) return null;
         return { ok: false, status: validation.status, error: validation.error };
@@ -37,7 +40,7 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
         // TX Simulation Gate — dry-run before spending real DEM
         if (deps.rpcUrl && deps.fromAddress) {
           // Convert DEM amount to wei-equivalent hex for accurate balance check
-          const valueWei = BigInt(amount) * 10n ** 18n;
+          const valueWei = BigInt(normalizedAmount) * 10n ** 18n;
           const sim = await simulateTransaction({
             rpcUrl: deps.rpcUrl,
             from: deps.fromAddress,
@@ -54,7 +57,7 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
           }
         }
 
-        const result = await deps.transferDem(recipient, amount, `tip:${postTxHash}`);
+        const result = await deps.transferDem(recipient, normalizedAmount, `tip:${postTxHash}`);
         return { ok: true, data: { txHash: result.txHash, validated: true } };
       } catch (err) {
         return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };

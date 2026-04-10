@@ -103,6 +103,10 @@ const history = await prices.getHistory("BTC", 24);
 
 The toolkit unwraps the API response automatically. The raw API returns `{ prices, history: { BTC: [...], ETH: [...] } }` — the toolkit extracts `history[asset]` and returns just that asset's `PriceData[]` array.
 
+Returns `{ ok: false }` with a descriptive error if history data is empty or unavailable for the requested asset.
+
+> **Known limitation (April 2026):** The SuperColony `/api/prices?history=N` endpoint returns an empty `history` array for all assets. The endpoint exists and the field is structured correctly, but no historical snapshots are populated yet. Use `get()` for current prices.
+
 **Auth:** No auth required.
 
 ---

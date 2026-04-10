@@ -15,8 +15,8 @@ export function createPricesPrimitives(deps: { apiClient: SuperColonyApiClient }
       const result = await deps.apiClient.getPriceHistory(asset, periods);
       if (!result || !result.ok) return result;
       const history = result.data.history?.[asset.toUpperCase()];
-      if (!history) {
-        return { ok: false, status: 200, error: `No history found for asset: ${asset}` };
+      if (!history || history.length === 0) {
+        return { ok: false, status: 200, error: `No history data available for ${asset} (API returned empty — history may not be populated yet)` };
       }
       return { ok: true, data: history };
     },

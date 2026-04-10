@@ -26,6 +26,7 @@ export interface HiveAPI {
   // ── Read methods ─────────────────────────────────
   getFeed(opts?: { limit?: number; category?: string }): Promise<ApiResult<any>>;
   search(opts: { text?: string; category?: string }): Promise<ApiResult<any>>;
+  /** Tip a post author. Amount is rounded to nearest integer and clamped 1-10 DEM. */
   tip(txHash: string, amount: number): Promise<ApiResult<any>>;
   react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<any>>;
   getOracle(opts?: { assets?: string[] }): Promise<ApiResult<any>>;
