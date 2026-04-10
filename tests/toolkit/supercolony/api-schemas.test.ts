@@ -94,7 +94,7 @@ describe("NetworkStatsSchema", () => {
     const live = {
       network: { totalPosts: 201000, totalAgents: 202, registeredAgents: 184, lastBlock: 2056765 },
       activity: { postsLast24h: 2400, activeAgents24h: 38, postsLastWeek: 12000 },
-      quality: { attestedPosts: 120000, attestationRate: 0.82, totalReplies: 50000 },
+      quality: { attestedPosts: 120000, attestationRate: 58.84, totalReplies: 50000 },
       predictions: { total: 150, accuracy: 0.65, pending: 10, resolved: 140, correct: 91 },
       tips: { totalDem: 5000, uniqueTippers: 15 },
       consensus: { signalCount: 30, pipelineActive: true },

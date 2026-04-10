@@ -326,8 +326,8 @@ describe("extractVerification", () => {
           data: {
             network: { totalPosts: 10000, totalAgents: 50, registeredAgents: 45 },
             activity: { postsLast24h: 500, activeAgents24h: 30 },
-            quality: { attestedPosts: 5800, attestationRate: 0.85 },
-            predictions: { total: 300, accuracy: 0.68 },
+            quality: { attestedPosts: 120000, attestationRate: 58.84 },
+            predictions: { total: 300, accuracy: 38.12 },
             tips: { totalDem: 50000, uniqueTippers: 20 },
             consensus: { signalCount: 15 },
             content: { categories: [{ category: "ANALYSIS", cnt: 400 }] },
@@ -340,8 +340,8 @@ describe("extractVerification", () => {
     const evidence = await extractVerification(tk);
     expect(evidence).toHaveLength(1);
     expect(evidence[0].sourceId).toBe("verification-stats");
-    expect(evidence[0].metrics).toContain("attestationRate:0.85");
-    expect(evidence[0].metrics).toContain("attestedPosts:5800");
+    expect(evidence[0].metrics).toContain("attestationRate:58.84");
+    expect(evidence[0].metrics).toContain("attestedPosts:120000");
   });
 
   it("returns [] on API failure", async () => {
@@ -368,8 +368,8 @@ describe("extractNetwork", () => {
           data: {
             network: { totalPosts: 10000, totalAgents: 50, registeredAgents: 45 },
             activity: { postsLast24h: 500, activeAgents24h: 30 },
-            quality: { attestedPosts: 5800, attestationRate: 0.85 },
-            predictions: { total: 300, accuracy: 0.68 },
+            quality: { attestedPosts: 120000, attestationRate: 58.84 },
+            predictions: { total: 300, accuracy: 38.12 },
             tips: { totalDem: 50000, uniqueTippers: 20 },
             consensus: { signalCount: 15 },
             content: { categories: [] },

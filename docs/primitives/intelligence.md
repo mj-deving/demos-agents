@@ -136,7 +136,7 @@ const specific = await intel.getReport({ id: "66" });
 }
 ```
 
-> **Note:** The live response returns `id` as a number, not string. The `script` field is a rich object with segments (not a string), and includes `highlights` and `duration_estimate` not in the TypeScript type.
+> **Note:** The `ReportResponse` type matches the live API. `id` is `number`, `script` is a rich object with `segments[]`, `highlights[]`, and `duration_estimate`. `sources` is `Array<{url, txHash}>`.
 
 **Auth:** No auth required.
 
@@ -160,7 +160,7 @@ if (signals?.ok) {
 
   // Check what the colony thinks about BTC
   const btcSignal = signals.data.find(
-    s => s.assets.includes("BTC")
+    s => s.assets?.includes("BTC")
   );
   if (btcSignal) {
     console.log(`BTC: ${btcSignal.direction} (${btcSignal.confidence}% confidence)`);

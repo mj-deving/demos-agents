@@ -8,6 +8,7 @@ credentials
 .session-log*.jsonl
 .session-summary.json
 dist/
+tmp/
 Plans/
 claude-codex-coop/
 MEMORY/WORK/

@@ -26,7 +26,7 @@ import type {
   BettingPool,
   OracleResult,
   PriceData,
-  PriceHistoryEntry,
+  PriceHistoryResponse,
   BallotState,
   BallotAccuracy,
   BallotLeaderboard,
@@ -234,7 +234,7 @@ export class SuperColonyApiClient {
   async getPriceHistory(
     asset: string,
     history: number,
-  ): Promise<ApiResult<PriceHistoryEntry[]>> {
+  ): Promise<ApiResult<PriceHistoryResponse>> {
     return this.get(`/api/prices${this.buildQs({ asset, history })}`);
   }
 

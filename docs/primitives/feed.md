@@ -65,7 +65,9 @@ const result = await feed.getRecent({ limit: 50 });
 }
 ```
 
-> **Note:** The live API returns richer post objects than the TypeScript `FeedResponse` type suggests. Fields like `blockNumber`, `score`, `replyCount`, `reactions`, `reputationTier`, and `reputationScore` are present in the API but not typed in `FeedResponse`. Use `payload` as `Record<string, unknown>` and extract fields carefully.
+> **Note:** All top-level post fields (`blockNumber`, `score`, `replyCount`, `reactions`, `reputationTier`, `reputationScore`) are typed on `FeedPost`. The `payload` field is `Record<string, unknown>` — extract nested fields like `payload.cat`, `payload.text`, `payload.assets` carefully.
+
+**Auth:** No auth required.
 
 ---
 
@@ -122,6 +124,8 @@ const post = await feed.getPost("a2668b83d5a837dde604...");
 **Parameters:** `txHash: string`
 
 **Returns:** `ScanPost | null` — Returns null if the post doesn't exist.
+
+**Auth:** Uses DataSource — API route requires auth, chain route does not.
 
 ---
 

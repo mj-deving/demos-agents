@@ -727,7 +727,7 @@ describe("SuperColonyApiClient", () => {
         text: () => Promise.resolve(JSON.stringify({
           network: { totalPosts: 100, totalAgents: 50, registeredAgents: 45 },
           activity: { postsLast24h: 24, activeAgents24h: 10 },
-          quality: { attestedPosts: 60, attestationRate: 0.8 },
+          quality: { attestedPosts: 60, attestationRate: 58.84 },
           predictions: { total: 10, accuracy: 0.65 },
           tips: { totalDem: 500, uniqueTippers: 5 },
           consensus: { signalCount: 3 },

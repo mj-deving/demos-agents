@@ -12,7 +12,13 @@ export function createPricesPrimitives(deps: { apiClient: SuperColonyApiClient }
     },
 
     async getHistory(asset, periods) {
-      return deps.apiClient.getPriceHistory(asset, periods);
+      const result = await deps.apiClient.getPriceHistory(asset, periods);
+      if (!result || !result.ok) return result;
+      const history = result.data.history?.[asset.toUpperCase()];
+      if (!history) {
+        return { ok: false, status: 200, error: `No history found for asset: ${asset}` };
+      }
+      return { ok: true, data: history };
     },
   };
 }

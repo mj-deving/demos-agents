@@ -237,6 +237,14 @@ export interface PriceData {
   source: string;
 }
 
+export interface PriceHistoryResponse {
+  prices: PriceData[];
+  fetchedAt: number;
+  stale: boolean;
+  history: Record<string, PriceData[]>;
+}
+
+/** @deprecated Use PriceHistoryResponse instead. */
 export interface PriceHistoryEntry {
   price: number;
   timestamp: number;

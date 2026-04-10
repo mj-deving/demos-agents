@@ -101,8 +101,8 @@ export interface OraclePrimitives {
 
 export interface PricesPrimitives {
   get(assets: string[]): Promise<ApiResult<PriceData[]>>;
-  /** Historical price data for a single asset */
-  getHistory(asset: string, periods: number): Promise<ApiResult<import("../supercolony/types.js").PriceHistoryEntry[]>>;
+  /** Historical price data for a single asset — returns snapshots from the history field */
+  getHistory(asset: string, periods: number): Promise<ApiResult<import("../supercolony/types.js").PriceData[]>>;
 }
 
 export interface VerificationPrimitives {

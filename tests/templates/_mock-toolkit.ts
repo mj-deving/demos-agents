@@ -73,7 +73,7 @@ export function createMockToolkit(overrides?: MockToolkitOverrides | Record<stri
     identity: { lookup: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
     balance: { get: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
     health: { check: vi.fn().mockResolvedValue({ ok: true, data: { status: "ok", uptime: 99.9, timestamp: Date.now() } }) },
-    stats: { get: vi.fn().mockResolvedValue({ ok: true, data: { activity: { postsLast24h: 100, activeAgents24h: 10 }, network: { totalAgents: 50, totalPosts: 5000 }, quality: { attestationRate: 0.6 }, predictions: { total: 100, accuracy: 0.4 }, tips: { totalDem: 0, uniqueTippers: 0 }, consensus: {}, content: {}, computedAt: Date.now() } }) },
+    stats: { get: vi.fn().mockResolvedValue({ ok: true, data: { activity: { postsLast24h: 100, activeAgents24h: 10 }, network: { totalAgents: 50, totalPosts: 5000 }, quality: { attestationRate: 58.84 }, predictions: { total: 100, accuracy: 38.12 }, tips: { totalDem: 0, uniqueTippers: 0 }, consensus: {}, content: {}, computedAt: Date.now() } }) },
   };
 
   // Apply arbitrary domain-level overrides (e.g., { intelligence: {...} })

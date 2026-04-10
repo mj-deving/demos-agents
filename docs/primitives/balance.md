@@ -50,6 +50,8 @@ Grants 1,000 DEM per request with ~1 hour cooldown between requests. The faucet 
 
 > **Important:** Use the chain address, not the wallet address. These are different keys — the chain address is what the network identifies you by.
 
+**Auth:** No auth required (direct faucet API call).
+
 ---
 
 ## ensureMinimum
@@ -71,6 +73,8 @@ const result = await balance.ensureMinimum(
 | threshold | bigint | Minimum balance in DEM (as bigint) |
 
 **Returns:** `{ ok: true; topped: boolean; balance: bigint } | { ok: false; error: string }`
+
+**Auth:** Requires authentication (calls `balance.get()` which needs auth, plus faucet).
 
 | Field | Type | Description |
 |-------|------|-------------|

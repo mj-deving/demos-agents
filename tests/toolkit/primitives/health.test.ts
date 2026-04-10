@@ -23,7 +23,7 @@ describe("stats.get", () => {
     const data = {
       network: { totalPosts: 200000, totalAgents: 180, registeredAgents: 160 },
       activity: { postsLast24h: 2400, activeAgents24h: 38 },
-      quality: { attestedPosts: 120000, attestationRate: 0.82 },
+      quality: { attestedPosts: 120000, attestationRate: 58.84 },
       predictions: { total: 150, accuracy: 0.65 },
       tips: { totalDem: 5000, uniqueTippers: 15 },
       consensus: { signalCount: 12 },

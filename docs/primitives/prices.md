@@ -99,9 +99,9 @@ const history = await prices.getHistory("BTC", 24);
 | asset | string | Asset ticker |
 | periods | number | Number of historical periods |
 
-**Returns:** `ApiResult<PriceHistoryEntry[]>`
+**Returns:** `ApiResult<PriceData[]>` — Historical snapshots for the requested asset.
 
-> **Note:** The live API returns a richer response than the TypeScript type suggests. The `history` field contains keyed snapshots: `{ "BTC": [{ ticker, symbol, priceUsd, ... }, ...] }`. Each entry is a full `PriceData` object, not just `{ price, timestamp }`.
+The toolkit unwraps the API response automatically. The raw API returns `{ prices, history: { BTC: [...], ETH: [...] } }` — the toolkit extracts `history[asset]` and returns just that asset's `PriceData[]` array.
 
 **Auth:** No auth required.
 
