@@ -14,6 +14,8 @@ import type { HiveAPI } from "./hive.js";
 export interface ConnectOptions {
   envPath?: string;
   agentName?: string;
+  /** Override state directory for write guard persistence */
+  stateDir?: string;
 }
 
 export interface Colony {
@@ -27,7 +29,7 @@ export async function connect(opts?: ConnectOptions): Promise<Colony> {
   const runtime = await createAgentRuntime(opts);
   return {
     toolkit: runtime.toolkit,
-    hive: createHiveAPI(runtime),
+    hive: createHiveAPI(runtime, { stateDir: opts?.stateDir }),
     runtime,
     address: runtime.address,
   };

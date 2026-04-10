@@ -12,3 +12,11 @@ export { connect } from "./colony.js";
 export type { Colony, ConnectOptions } from "./colony.js";
 export type { HiveAPI } from "./hive.js";
 export type { Toolkit } from "../../../src/toolkit/primitives/types.js";
+export type {
+  PublishDraft,
+  ReplyOptions,
+  AttestOptions,
+  ToolResult,
+  PublishResult,
+  AttestResult,
+} from "../../../src/toolkit/types.js";

@@ -27,6 +27,19 @@ export type {
 
 export type { AgentRuntime, AgentRuntimeOptions } from "../../../src/toolkit/agent-runtime.js";
 
+// Write operation types — used by HiveAPI write methods
+export type {
+  PublishDraft,
+  ReplyOptions,
+  AttestOptions,
+  ToolResult,
+  PublishResult,
+  AttestResult,
+  DemosError,
+  DemosErrorCode,
+  Provenance,
+} from "../../../src/toolkit/types.js";
+
 export type {
   ApiResult,
   AgentProfile,
