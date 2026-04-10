@@ -290,21 +290,23 @@ describe("HiveAPI write methods", () => {
   // ── tipByHandle() ──────────────────────────────────
 
   describe("tipByHandle()", () => {
-    it("resolves handle and tips", async () => {
-      const mockTip = runtime.toolkit.actions.tip as any;
-      mockTip.mockResolvedValue({ ok: true, data: { txHash: "tx_tip_001" } });
+    it("resolves handle and transfers DEM directly", async () => {
+      (runtime.sdkBridge as any).transferDem = vi.fn().mockResolvedValue({ txHash: "tx_tip_001" });
 
       const result = await hive.tipByHandle("twitter", "alice", 5);
-      expect(result).toHaveProperty("ok");
+      expect(result?.ok).toBe(true);
+      expect((runtime.sdkBridge as any).transferDem).toHaveBeenCalledWith(
+        "demos1resolved", 5, "TIP:twitter:alice"
+      );
     });
 
     it("clamps amount to 1-10 range", async () => {
-      const mockTip = runtime.toolkit.actions.tip as any;
-      mockTip.mockResolvedValue({ ok: true, data: { txHash: "tx_tip_002" } });
+      (runtime.sdkBridge as any).transferDem = vi.fn().mockResolvedValue({ txHash: "tx_tip_002" });
 
       await hive.tipByHandle("twitter", "alice", 100);
-      // Tip receives clamped amount (10 max)
-      expect(mockTip).toHaveBeenCalledWith("demos1resolved", 10);
+      expect((runtime.sdkBridge as any).transferDem).toHaveBeenCalledWith(
+        "demos1resolved", 10, "TIP:twitter:alice"
+      );
     });
   });
 
@@ -329,7 +331,7 @@ describe("HiveAPI write methods", () => {
         expect(data.composite).toBeLessThanOrEqual(100);
         expect(data.betting).toBeDefined();
         expect(data.calibration).toBeDefined();
-        expect(data.polymarket).toBeDefined();
+        expect(data.polymarket).toBeNull(); // polymarket pending
         // 2/3 correct = 67% betting, calibration based on confidence alignment
         expect(data.betting).toBe(67);
       }
@@ -342,8 +344,10 @@ describe("HiveAPI write methods", () => {
       expect(result?.ok).toBe(true);
       if (result?.ok) {
         const data = (result as any).data;
-        expect(data.composite).toBe(50); // all defaults = 50
+        // betting 50 * 0.57 + calibration 50 * 0.43 = 50 (reweighted without polymarket)
+        expect(data.composite).toBe(50);
         expect(data.betting).toBe(50);
+        expect(data.polymarket).toBeNull();
       }
     });
   });

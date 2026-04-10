@@ -53,9 +53,9 @@ export interface HiveAPI {
 
   // ── Discovery methods ────────────────────────────
   /** Query prediction markets (Polymarket odds). */
-  getMarkets(opts?: { category?: string; limit?: number }): Promise<ApiResult<any>>;
+  getMarkets(opts?: { category?: string; limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PredictionMarket[]>>;
   /** Query tracked predictions with deadlines. */
-  getPredictions(opts?: { status?: string; asset?: string; agent?: string }): Promise<ApiResult<any>>;
+  getPredictions(opts?: { status?: string; asset?: string; agent?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").Prediction[]>>;
   /** Link a Web2 identity (Twitter/GitHub) to your Demos address. Requires proof URL. */
   linkIdentity(platform: "twitter" | "github", proofUrl: string): Promise<{ ok: boolean; error?: string }>;
 
@@ -68,8 +68,8 @@ export interface HiveAPI {
   tipByHandle(platform: "twitter" | "github" | "discord" | "telegram", username: string, amount: number): Promise<ApiResult<{ txHash: string }>>;
 
   // ── Forecast scoring ─────────────────────────────
-  /** Get composite forecast score for an agent (betting 40% + calibration 30% + polymarket 30%). */
-  getForecastScore(address: string): Promise<ApiResult<{ composite: number; betting: number; calibration: number; polymarket: number }>>;
+  /** Get composite forecast score for an agent (betting 40% + calibration 30% + polymarket 30%). Polymarket component pending — returns null until data available. */
+  getForecastScore(address: string): Promise<ApiResult<{ composite: number; betting: number; calibration: number; polymarket: number | null }>>;
 }
 
 export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOptions): HiveAPI {
@@ -208,15 +208,22 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
 
     // ── Higher/Lower prediction markets ──────────────
     async placeHL(asset, direction, hlOpts) {
-      const amount = Math.min(5, Math.max(0.1, hlOpts?.amount ?? 1));
-      const horizon = hlOpts?.horizon ?? "30m";
-
+      // Input validation (mirrors placeBet in actions.ts — money-moving path)
       if (!asset || typeof asset !== "string" || asset.includes(":")) {
         return { ok: false, status: 0, error: "Invalid asset — must be non-empty string without colons" };
       }
       if (direction !== "higher" && direction !== "lower") {
         return { ok: false, status: 0, error: "Direction must be 'higher' or 'lower'" };
       }
+      const horizon = hlOpts?.horizon ?? "30m";
+      if (horizon.includes(":")) {
+        return { ok: false, status: 0, error: "Invalid horizon — must not contain colons" };
+      }
+      const rawAmount = hlOpts?.amount ?? 1;
+      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+        return { ok: false, status: 0, error: "Invalid amount — must be a positive finite number" };
+      }
+      const amount = Math.min(5, Math.max(0.1, rawAmount));
 
       try {
         const poolResult = await toolkit.ballot.getPool({ asset, horizon });
@@ -225,9 +232,13 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
           return { ok: false, status: poolResult.status, error: `Failed to resolve pool: ${poolResult.error}` };
         }
 
+        // Pool echo-check + address validation (ported from placeBet)
         const poolAddress = (poolResult.data as any).poolAddress;
-        if (!poolAddress) {
-          return { ok: false, status: 0, error: "Pool returned no address" };
+        if (!poolAddress || typeof poolAddress !== "string" || poolAddress.length < 5) {
+          return { ok: false, status: 0, error: "Pool returned invalid address" };
+        }
+        if ((poolResult.data as any).asset !== asset) {
+          return { ok: false, status: 0, error: `Pool asset mismatch: requested ${asset}, got ${(poolResult.data as any).asset}` };
         }
 
         const memo = `HIVE_HL:${asset}:${direction}:${horizon}`;
@@ -241,6 +252,9 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     // ── Tip by social handle ─────────────────────────
     async tipByHandle(platform, username, amount) {
       const clampedAmount = Math.min(10, Math.max(1, amount));
+      if (!Number.isFinite(clampedAmount)) {
+        return { ok: false, status: 0, error: "Invalid amount — must be a finite number" };
+      }
 
       try {
         const { lookupByWeb2 } = await getChainIdentityModule();
@@ -249,9 +263,15 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
         if (!accounts || accounts.length === 0) {
           return { ok: false, status: 404, error: `No Demos account linked to ${platform}:${username}` };
         }
+        if (accounts.length > 1) {
+          return { ok: false, status: 0, error: `Ambiguous: ${accounts.length} Demos accounts linked to ${platform}:${username}. Cannot determine which to tip.` };
+        }
 
         const recipientAddress = accounts[0].pubkey;
-        return toolkit.actions.tip(recipientAddress, clampedAmount);
+        // Use transferDem directly — toolkit.actions.tip() expects a postTxHash, not an address
+        const memo = `TIP:${platform}:${username}`;
+        const result = await runtime.sdkBridge.transferDem(recipientAddress, clampedAmount, memo);
+        return { ok: true, data: { txHash: result.txHash } };
       } catch (e) {
         return { ok: false, status: 0, error: (e as Error).message };
       }
@@ -290,15 +310,14 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
           }
         }
 
-        // Polymarket alignment: how well agent's predictions align with market odds
-        let polymarketScore = 50; // default — no polymarket data means neutral
-        // Polymarket alignment requires cross-referencing prediction assets with market data
-        // This is a placeholder that can be enhanced when polymarket data is richer
+        // Polymarket alignment: not yet available — requires cross-referencing
+        // prediction assets with market data. Returns null to signal unavailability.
+        const polymarketScore: number | null = null;
 
-        // Composite: betting 40% + calibration 30% + polymarket 30%
-        const composite = Math.round(
-          bettingScore * 0.4 + calibrationScore * 0.3 + polymarketScore * 0.3
-        );
+        // Composite: when polymarket unavailable, reweight to betting 57% + calibration 43%
+        const composite = polymarketScore != null
+          ? Math.round(bettingScore * 0.4 + calibrationScore * 0.3 + polymarketScore * 0.3)
+          : Math.round(bettingScore * 0.57 + calibrationScore * 0.43);
 
         return {
           ok: true as const,

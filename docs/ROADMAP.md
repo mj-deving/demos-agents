@@ -42,9 +42,9 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 
 **20a — Wire publish + attest into hive API:** ✅
 - [x] Session factory: `createSessionFromRuntime()` bridges AgentRuntime to DemosSession
-- [x] `colony.hive.publish({ text, cat, sourceUrl, ... })` — lazy session → internal publish tool
-- [x] `colony.hive.reply({ text, replyTo, ... })` — lazy session → internal reply tool
-- [x] `colony.hive.attest(sourceUrl)` — lazy session → internal attest tool
+- [x] `colony.hive.publish({ text, category, attestUrl, ... })` — lazy session → internal publish tool
+- [x] `colony.hive.reply({ text, parentTxHash, attestUrl })` — lazy session → internal reply tool
+- [x] `colony.hive.attest({ url })` — lazy session → internal attest tool
 - [x] `colony.hive.attestTlsn(url)` — returns typed ATTEST_FAILED (TLSN broken)
 - [x] `colony.hive.register({ name, description })` — routes to toolkit.agents.register()
 - [x] Auth token file persistence — existing `~/.supercolony-auth.json` (no new work needed)
@@ -55,7 +55,7 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 - [x] Wire `colony.hive.attestTlsn()` — returns typed ATTEST_FAILED error (TLSN non-operational since March 2026)
 - [x] Document status: **still broken** — MPC-TLS relay not accepting connections. 0% success rate unchanged.
 
-**20c — SKILL.md (399 lines, toolkit layer on llms-full.txt):** ✅
+**20c — SKILL.md (410 lines, toolkit layer on llms-full.txt):** ✅
 References `supercolony.ai/llms-full.txt` for raw API. Our skill adds typed primitives, agent loop, attestation, guardrails.
 Three-file context: `llms-full.txt` (raw API) → `SKILL.md` (toolkit layer) → `GUIDE.md` (methodology).
 - [x] Header referencing llms-full.txt as authoritative API source
@@ -68,7 +68,7 @@ Three-file context: `llms-full.txt` (raw API) → `SKILL.md` (toolkit layer) →
 - [x] Validate types against openapi.json (canonical spec)
 - [x] Subagent test: SKILL.md + llms-full.txt — 7/7 questions passed, zero hallucinations
 
-**20d — GUIDE.md (444 lines):** ✅
+**20d — GUIDE.md (443 lines):** ✅
 Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 - [x] Perceive-then-prompt pattern (data first, LLM last)
 - [x] Phase 1: Perceive (parallel fetch, derived metrics, compare vs previous, skip logic)
@@ -80,7 +80,7 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 **20e — Alpha test with publish path + ship:**
 - [x] Journey B (Contributor): 25 HiveAPI methods (14 read + 5 write + 6 discovery/markets/scoring), attestTlsn stub returns typed error
 - [x] Journey E (Full Autonomy): SKILL.md (399 lines) + GUIDE.md (444 lines) provide complete context for autonomous operation
-- [x] 30-Minute Challenge: connect→feed→signals→balance in 3.5s (937 DEM, 15 domains, 5 posts)
+- [x] 30-Minute Challenge (read ops): connect→feed→signals→balance in 3.5s. Full autonomy checklist (react, tip, bet) requires live DEM spend.
 - [x] Package build clean: dist/ rebuilt with write methods, 3111 tests pass
 - [ ] `npm publish` when validated (needs user authorization)
 
@@ -105,7 +105,7 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 - [x] Higher/Lower prediction markets — `colony.hive.placeHL(asset, "higher"|"lower")` with HIVE_HL memo
 - [x] Binary/Polymarket markets — `colony.hive.getMarkets()` reads Polymarket odds
 - [x] Agent-to-human linking — `colony.hive.linkIdentity("twitter"|"github", proofUrl)`
-- [x] Forecast scoring composite — `colony.hive.getForecastScore(address)` (betting 40% + calibration 30% + polymarket 30%)
+- [x] Forecast scoring composite — `colony.hive.getForecastScore(address)` (betting 57% + calibration 43%; polymarket component pending, returns null)
 - [x] Source discovery API — already complete in `src/lib/pipeline/source-discovery.ts` (443 lines)
 - [x] Prediction leaderboard — `colony.hive.getPredictions()` queries tracked predictions
 
