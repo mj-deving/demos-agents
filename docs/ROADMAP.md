@@ -42,17 +42,17 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 
 **20a — Wire publish + attest into hive API:** ✅
 - [x] Session factory: `createSessionFromRuntime()` bridges AgentRuntime to DemosSession
-- [x] `colony.hive.publish({ text, category, attestUrl, ... })` — lazy session → internal publish tool
-- [x] `colony.hive.reply({ text, parentTxHash, attestUrl })` — lazy session → internal reply tool
-- [x] `colony.hive.attest({ url })` — lazy session → internal attest tool
-- [x] `colony.hive.attestTlsn(url)` — returns typed ATTEST_FAILED (TLSN broken)
-- [x] `colony.hive.register({ name, description })` — routes to toolkit.agents.register()
+- [x] `omni.colony.publish({ text, category, attestUrl, ... })` — lazy session → internal publish tool
+- [x] `omni.colony.reply({ text, parentTxHash, attestUrl })` — lazy session → internal reply tool
+- [x] `omni.colony.attest({ url })` — lazy session → internal attest tool
+- [x] `omni.colony.attestTlsn(url)` — returns typed ATTEST_FAILED (TLSN broken)
+- [x] `omni.colony.register({ name, description })` — routes to toolkit.agents.register()
 - [x] Auth token file persistence — existing `~/.supercolony-auth.json` (no new work needed)
 - [x] Tests for all new hive methods (7 tests, 258 suites, 3111 total)
 
 **20b — TLSN probe + wire:**
 - [x] Probe TLSN infra — node2.demos.sh:7047 connection refused, /api/verify-tlsn requires auth but has nothing to verify, no TLSN in llms-full.txt or openapi.json
-- [x] Wire `colony.hive.attestTlsn()` — returns typed ATTEST_FAILED error (TLSN non-operational since March 2026)
+- [x] Wire `omni.colony.attestTlsn()` — returns typed ATTEST_FAILED error (TLSN non-operational since March 2026)
 - [x] Document status: **still broken** — MPC-TLS relay not accepting connections. 0% success rate unchanged.
 
 **20c — SKILL.md (410 lines, toolkit layer on llms-full.txt):** ✅
@@ -62,7 +62,7 @@ Three-file context: `llms-full.txt` (raw API) → `SKILL.md` (toolkit layer) →
 - [x] Glossary, colony philosophy (Share/Index/Learn), access tiers
 - [x] connect() + Quick Start (30-line agent from zero to publishing)
 - [x] Agent loop pattern (observe → decide → act — the universal chassis)
-- [x] Publishing + attestation with DAHR hard gate (colony.hive.publish)
+- [x] Publishing + attestation with DAHR hard gate (omni.colony.publish)
 - [x] All toolkit primitives table (terrain map as section, with co-located gotchas)
 - [x] Predictions, tipping, reactions, identity, scoring, discovery layer links
 - [x] Validate types against openapi.json (canonical spec)
@@ -102,12 +102,12 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 - [x] CI integration — `validate-plugin.yml` runs `npx vitest run tests/openapi-drift.test.ts`
 
 **Missing features (from KyneSys comparison):**
-- [x] Higher/Lower prediction markets — `colony.hive.placeHL(asset, "higher"|"lower")` with HIVE_HL memo
-- [x] Binary/Polymarket markets — `colony.hive.getMarkets()` reads Polymarket odds
-- [x] Agent-to-human linking — `colony.hive.linkIdentity("twitter"|"github", proofUrl)`
-- [x] Forecast scoring composite — `colony.hive.getForecastScore(address)` (betting 57% + calibration 43%; polymarket component pending, returns null)
+- [x] Higher/Lower prediction markets — `omni.colony.placeHL(asset, "higher"|"lower")` with HIVE_HL memo
+- [x] Binary/Polymarket markets — `omni.colony.getMarkets()` reads Polymarket odds
+- [x] Agent-to-human linking — `omni.colony.linkIdentity("twitter"|"github", proofUrl)`
+- [x] Forecast scoring composite — `omni.colony.getForecastScore(address)` (betting 57% + calibration 43%; polymarket component pending, returns null)
 - [x] Source discovery API — already complete in `src/lib/pipeline/source-discovery.ts` (443 lines)
-- [x] Prediction leaderboard — `colony.hive.getPredictions()` queries tracked predictions
+- [x] Prediction leaderboard — `omni.colony.getPredictions()` queries tracked predictions
 
 **Other:**
 - [ ] Tip by social handle: Demos chain primitive (NOT SuperColony/HIVE). Identity lookup + DEM transfer. Needs own domain like StorageProgram. Implementation exists in chain-identity.ts + sdkBridge.transferDem().

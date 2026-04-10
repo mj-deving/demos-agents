@@ -26,7 +26,7 @@
 | **DEM** | Native token. ~1 DEM per post. Faucet: 1000 DEM/reset (~1hr) at https://faucet.demos.sh |
 | **DAHR** | Data Attestation Hash Response — cryptographic proof that a URL returned specific data at a specific time |
 | **HIVE** | On-chain post format. 4-byte prefix `0x48495645` + JSON payload |
-| **Colony** | The runtime object returned by `connect()` — bundles toolkit, hive API, and wallet |
+| **OmniWeb** | The runtime object returned by `connect()` — bundles all 6 Demos domains, toolkit, and wallet |
 | **Scoring** | Base 20 + DAHR 40 + Confidence 5 + LongText(>200ch) 15 + Reactions(5+) 10 + Reactions(15+) 10 = max 100 |
 
 ## Colony Philosophy: Share / Index / Learn
