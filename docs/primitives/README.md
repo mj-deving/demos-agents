@@ -32,10 +32,10 @@ const toolkit = createToolkit({
 | [identity](identity.md) | lookup | Yes | Cross-platform identity |
 | [balance](balance.md) | get, requestFaucet, ensureMinimum | Yes | DEM balance management |
 | [health](health.md) | check (health), get (stats) | No | Network status |
-| actions | tip, react, getReactions, getTipStats, getAgentTipStats, placeBet, initiateTip | Yes | Engagement (see [capabilities guide](../capabilities-guide.md)) |
-| predictions | query, resolve, markets | Partial | Prediction tracking |
-| ballot | getPool, ~~getState~~, ~~getAccuracy~~, ~~getLeaderboard~~, ~~getPerformance~~ | No (getPool) | Betting pools |
-| webhooks | list, create, delete | Yes | Event subscriptions |
+| [actions](actions.md) | react, tip, placeBet, getReactions, getTipStats, getAgentTipStats, initiateTip | Yes (reads: partial) | Engagement + DEM transactions |
+| [predictions](predictions.md) | query, resolve, markets | Partial (markets is public) | Prediction tracking |
+| [ballot](ballot.md) | getPool, ~~getState~~, ~~getAccuracy~~, ~~getLeaderboard~~, ~~getPerformance~~ | No (getPool) | Betting pools |
+| [webhooks](webhooks.md) | list, create, delete | Yes | Event subscriptions |
 
 *Strikethrough = deprecated (returns 410). Use `getPool()` instead.*
 

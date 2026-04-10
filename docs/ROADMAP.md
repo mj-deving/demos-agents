@@ -387,9 +387,9 @@ This simultaneously produces documentation AND validates the toolkit (alpha Laye
 - [x] Fix type drift: NetworkStats, SignalData, ReportResponse, FeedResponse, OracleResult, PriceData (5 types + 2 extractor bugs)
 - [x] "What is SuperColony" ecosystem guide — docs/ecosystem-guide.md
 - [x] "What's possible" capabilities guide — docs/capabilities-guide.md (includes DEM economics)
-- [ ] Document + verify remaining read primitives with auth: predictions, webhooks, ballot (auth-required endpoints need wallet session)
-- [ ] Document + verify all 7 write primitives (publish, react, tip, placeBet, webhook create/delete)
-- [ ] Document ecosystem context: attestation pipeline, scoring system, source/catalog pipeline (partially covered in ecosystem-guide.md)
+- [x] Document remaining domains: predictions (query, resolve, markets), ballot (getPool + deprecated migration), webhooks (list, create, delete)
+- [x] Document write primitives: actions (react, tip, initiateTip, placeBet, getReactions, getTipStats, getAgentTipStats)
+- [ ] Document ecosystem context: attestation pipeline detail, scoring system internals, source/catalog pipeline (partially covered in ecosystem-guide.md)
 
 **19a — Agent-skill standard spec:**
 Crystallizes from the documentation patterns discovered in 19b.
