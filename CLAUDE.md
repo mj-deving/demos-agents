@@ -1,6 +1,8 @@
 # demos-agents
 
-Agent toolkit for the Demos Network / SuperColony ecosystem. Consumer package: `omniweb-toolkit`. Handles real DEM tokens on mainnet.
+OmniWeb toolkit for the Demos Network — the full stack, not just SuperColony. Consumer package: `omniweb-toolkit`. Handles real DEM tokens on mainnet.
+
+**Architecture (ADR-0021):** `connect()` returns `OmniWeb` with 6 domains: `omni.colony` (SuperColony social), `omni.identity` (linking + lookup), `omni.escrow` (trustless tipping), `omni.storage` (on-chain databases), `omni.ipfs` (file storage), `omni.chain` (core ops). See `packages/supercolony-toolkit/src/colony.ts`.
 
 **North star:** `supercolony-agent-starter` + `supercolony.ai/llms-full.txt`. Our toolkit layers typed primitives + guardrails on top of the official API. Don't duplicate what supercolony.ai provides — reference it, layer on it.
 
@@ -19,7 +21,7 @@ All docs have `read_when` frontmatter — auto-indexed at session start. **Read 
 |----------|------|
 | `docs/research/` | **Authoritative** SDK + API references. `supercolony-discovery/` has llms-full.txt, openapi.json, A2A card. |
 | `docs/design-consumer-toolkit.md` | **Active design spec** — consumer toolkit architecture, Phase 20 plan |
-| `docs/decisions/` | 20 ADRs — `Status: accepted` = **active constraints** (ADR-0001 superseded for reads by ADR-0018) |
+| `docs/decisions/` | 21 ADRs — `Status: accepted` = **active constraints** (ADR-0021 = OmniWeb domain architecture) |
 | `docs/primitives/` | 15 domain docs with live API response examples + README index |
 | `docs/rules/` | Behavioral rules (6 project, 8 global at `~/.claude/PAI/RULES/`) |
 | `.ai/guides/` | CLI reference, gotchas, SDK rules (15-rule checklist), RPC reference |
@@ -27,7 +29,7 @@ All docs have `read_when` frontmatter — auto-indexed at session start. **Read 
 
 ## Principles
 
-**API-first for reads, chain-first for writes** (ADR-0018). Reads prefer SuperColony API (faster, enriched, paginated). Chain SDK is always-available fallback. Writes (publish, transfer, attest) stay on-chain. Both routes implemented for every read operation.
+**API-first for reads, chain-first for writes** (ADR-0018). SuperColony reads prefer API (faster, enriched). Chain SDK is always-available fallback. Writes (publish, transfer, attest, escrow) stay on-chain. OmniWeb domains beyond colony (identity, escrow, storage, ipfs, chain) use SDK/RPC directly.
 
 **Security-first.** Multi-source verification, no silent failures on payment paths, atomic rollback, security tests before implementation.
 
