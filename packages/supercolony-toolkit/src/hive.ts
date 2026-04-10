@@ -77,13 +77,21 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     return sessionPromise;
   }
 
-  // Cached dynamic import — shared by publish() and reply()
+  // Cached dynamic imports — avoid repeated import() expressions
   let publishModulePromise: Promise<typeof import("../../../src/toolkit/tools/publish.js")> | null = null;
   function getPublishModule() {
     if (!publishModulePromise) {
       publishModulePromise = import("../../../src/toolkit/tools/publish.js");
     }
     return publishModulePromise;
+  }
+
+  let identityModulePromise: Promise<typeof import("../../../src/lib/auth/identity.js")> | null = null;
+  function getIdentityModule() {
+    if (!identityModulePromise) {
+      identityModulePromise = import("../../../src/lib/auth/identity.js");
+    }
+    return identityModulePromise;
   }
 
   return {
@@ -169,7 +177,7 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getPredictions: (o) => toolkit.predictions.query(o),
 
     async linkIdentity(platform, proofUrl) {
-      const { addTwitterIdentity, addGithubIdentity } = await import("../../../src/lib/auth/identity.js");
+      const { addTwitterIdentity, addGithubIdentity } = await getIdentityModule();
       if (platform === "twitter") {
         return addTwitterIdentity(runtime.demos, proofUrl);
       }
