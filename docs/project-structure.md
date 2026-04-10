@@ -18,7 +18,7 @@ This is a **monorepo with a publishing facade**. All implementation lives in `sr
                              ▼
                 ┌────────────────────────────────┐
                 │  src/toolkit/                   │ ← ALL implementation
-                │  (81 files, 15 domains)         │   Framework-agnostic
+                │  (158 files, 15 domains)        │   Framework-agnostic
                 └────────────┬───────────────────┘
                              │ imports
                              ▼
@@ -36,10 +36,15 @@ This is a **monorepo with a publishing facade**. All implementation lives in `sr
 ```
 demos-agents/
 ├── CLAUDE.md                            # Architecture + principles (≤100 lines)
+├── README.md                            # Public-facing repo docs
+├── LICENSE                              # MIT
+├── package.json                         # Root workspace config
+├── tsconfig.json                        # Root TypeScript config
+├── vitest.config.ts                     # Test runner config
 │
 ├── packages/supercolony-toolkit/        # Consumer package (omniweb-toolkit)
-│   ├── SKILL.md                         #   Agent integration skill (463 lines)
-│   ├── GUIDE.md                         #   Perceive-then-prompt methodology
+│   ├── SKILL.md                         #   Agent integration skill (463 lines) — SOURCE OF TRUTH
+│   ├── GUIDE.md                         #   Perceive-then-prompt methodology (444 lines)
 │   ├── TOOLKIT.md                       #   Quick-start bridge
 │   ├── README.md                        #   npm README
 │   ├── package.json                     #   v0.1.0, published to npm
@@ -60,38 +65,44 @@ demos-agents/
 │       ├── attestation-pipeline.md      #     How attestation works
 │       └── primitives/README.md         #     Domain index
 │
-├── src/toolkit/                         # Core implementation (ADR-0002: mechanism)
-│   ├── index.ts                         #   Barrel export
-│   ├── types.ts                         #   ToolResult, DemosError, DemosSession
-│   ├── session.ts                       #   Typed SigningHandle, expiry, bridge
-│   ├── agent-runtime.ts                 #   6-step SDK init factory
-│   ├── sdk-bridge.ts                    #   ChainTxPipeline for all chain writes
-│   ├── schemas.ts                       #   Zod schemas (11 + CatalogEntry)
-│   ├── url-validator.ts                 #   SSRF validator + createPinnedFetch
-│   ├── primitives/                      #   15 domain primitives (types.ts + per-domain .ts)
-│   ├── tools/                           #   10 atomic tools (publish, attest, tip, scan, etc.)
-│   ├── guards/                          #   6 guards (rate-limit, dedup, tip-cap, pay-cap, etc.)
-│   ├── sources/                         #   Source catalog, fetch, health, rate-limit
-│   ├── providers/                       #   Declarative engine, generic adapter
-│   ├── reactive/                        #   EventLoop<TAction>, watermark-store
-│   ├── chain/                           #   tx-pipeline (executeChainTx), tx-simulator
-│   ├── math/                            #   Ring buffer, MAD, z-score, winsorize
-│   ├── network/                         #   fetch-with-timeout, storage-client
-│   ├── supercolony/                     #   api-client (46 methods), types, scoring
-│   ├── colony/                          #   Colony DB: schema, posts, reactions, search
-│   ├── publish/                         #   quality-gate (pre-publish validation)
-│   └── util/                            #   errors, subprocess, timed-phase, hook-dispatch
+├── src/                                 # Core source (all implementation)
+│   ├── index.ts                         #   Root barrel
+│   ├── types.ts                         #   FrameworkPlugin, Action, EventPlugin
+│   ├── toolkit/                         #   Core implementation (ADR-0002: mechanism, 158 files)
+│   │   ├── index.ts                     #     Barrel export
+│   │   ├── types.ts                     #     ToolResult, DemosError, DemosSession
+│   │   ├── session.ts                   #     Typed SigningHandle, expiry, bridge
+│   │   ├── agent-runtime.ts             #     6-step SDK init factory
+│   │   ├── sdk-bridge.ts               #     ChainTxPipeline for all chain writes
+│   │   ├── schemas.ts                   #     Zod schemas (11 + CatalogEntry)
+│   │   ├── url-validator.ts             #     SSRF validator + createPinnedFetch
+│   │   ├── primitives/                  #     15 domain primitives (types.ts + per-domain .ts)
+│   │   ├── tools/                       #     10 atomic tools (publish, attest, tip, scan, etc.)
+│   │   ├── guards/                      #     6 guards (rate-limit, dedup, tip-cap, pay-cap, etc.)
+│   │   ├── sources/                     #     Source catalog, fetch, health, rate-limit
+│   │   ├── providers/                   #     Declarative engine, generic adapter
+│   │   ├── reactive/                    #     EventLoop<TAction>, watermark-store
+│   │   ├── chain/                       #     tx-pipeline (executeChainTx), tx-simulator
+│   │   ├── math/                        #     Ring buffer, MAD, z-score, winsorize
+│   │   ├── network/                     #     fetch-with-timeout, storage-client
+│   │   ├── supercolony/                 #     api-client (46 methods), types, scoring
+│   │   ├── colony/                      #     Colony DB: schema, posts, reactions, search
+│   │   ├── publish/                     #     quality-gate (pre-publish validation)
+│   │   └── util/                        #     errors, subprocess, timed-phase, hook-dispatch
+│   ├── lib/                             #   Business logic (ADR-0002: policy)
+│   │   ├── auth/                        #     Challenge-response auth, token cache, identity
+│   │   ├── llm/                         #     Provider-agnostic LLM adapter
+│   │   ├── attestation/                 #     Claim extraction, attestation planner/policy
+│   │   ├── scoring/                     #     Expected score, quality signals
+│   │   ├── sources/                     #     Legacy shims → toolkit/sources/
+│   │   ├── network/                     #     SDK wrapper (connectWallet, apiCall)
+│   │   └── pipeline/                    #     Source scanning, observe
+│   ├── plugins/                         #   24 FrameworkPlugin implementations
+│   ├── actions/                         #   Executor, publish pipeline (ChainTxPipeline)
+│   ├── adapters/                        #   Framework adapters
+│   └── reactive/                        #   @deprecated shims → toolkit/reactive/
 │
-├── src/lib/                             # Business logic (ADR-0002: policy)
-│   ├── auth/                            #   Challenge-response auth, token cache, identity
-│   ├── llm/                             #   Provider-agnostic LLM adapter
-│   ├── attestation/                     #   Claim extraction, attestation planner/policy
-│   ├── scoring/                         #   Expected score, quality signals
-│   ├── sources/                         #   Legacy shims → toolkit/sources/
-│   ├── network/                         #   SDK wrapper (connectWallet, apiCall)
-│   └── pipeline/                        #   Source scanning, observe
-│
-├── cli/                                 # CLI entry points (34 scripts)
+├── cli/                                 # CLI entry points (42 scripts)
 │   ├── session-runner.ts                #   Cron loop (V3: SENSE→ACT→CONFIRM)
 │   ├── v3-loop.ts                       #   V3 loop implementation
 │   ├── publish-executor.ts              #   Full attestation publish
@@ -99,16 +110,25 @@ demos-agents/
 │   └── ...                              #   audit, scan-feed, gate, verify, identity, etc.
 │
 ├── agents/                              # Agent definitions (YAML persona + strategy)
-│   ├── sentinel/                        #   General-purpose verification (active)
-│   ├── crawler/                         #   Deep research (100+ sources)
-│   └── ...                              #   pioneer, nexus, defi-markets, infra-ops
+│   └── sentinel/                        #   General-purpose verification (active)
+│
+├── templates/                           # Agent starter templates (ADR-0019)
+│   ├── base/                            #   Minimal agent (agent.ts, observe.ts, strategy.yaml)
+│   ├── market-intelligence/             #   Market analysis template
+│   ├── security-sentinel/               #   Security monitoring template
+│   ├── shared/                          #   Shared template utilities
+│   └── generated/                       #   Agent compiler output
 │
 ├── config/
 │   ├── sources/catalog.json             #   Unified source catalog (226 sources)
 │   └── strategies/base-loop.yaml        #   Base loop strategy
 │
+├── vendor/                              # Vendored native dependencies (ADR-0016)
+│   ├── better-sqlite3/                  #   Patched SQLite binding
+│   └── types-better-sqlite3/            #   Type declarations
+│
 ├── docs/                                # All docs have read_when frontmatter
-│   ├── INDEX.md                         #   Project history (9 eras, phases 1-19)
+│   ├── INDEX.md                         #   Project history (12 eras, phases 1-19)
 │   ├── ROADMAP.md                       #   Open work + metrics
 │   ├── project-structure.md             #   This file
 │   ├── design-consumer-toolkit.md       #   Active design spec (Phase 20)
@@ -125,13 +145,20 @@ demos-agents/
 │   ├── sdk-interaction-guidelines.md    #   Transaction 3-step pipeline
 │   ├── sdk-rpc-reference.md             #   SDK method signatures
 │   ├── gotchas-detail.md                #   Scoring formula, TLSN status
-│   └── agent-template-guide.md          #   Template architecture
+│   ├── agent-template-guide.md          #   Template architecture
+│   └── colony-db-research.md            #   Colony DB exploration notes
+│
+├── .github/workflows/                   # CI
+│   └── validate-plugin.yml             #   OpenAPI drift check
+│
+├── .githooks/                           # Git hooks
+│   └── pre-push                         #   Pre-push validation
 │
 ├── scripts/                             # Operational scripts
 │   ├── stress-test-primitives.ts        #   Live primitive test (52 tests, all domains)
-│   └── ...                              #   Cron wrapper, log rotation
+│   └── ...                              #   Cron wrapper, log rotation, doc verification
 │
-└── tests/                               # vitest test suites (260 files, 3159 tests)
+└── tests/                               # vitest test suites (259 files, 3152 tests)
     ├── architecture/                    #   Boundary enforcement (ADR-0014)
     ├── toolkit/                         #   Primitives, tools, guards, colony
     ├── openapi-drift.test.ts            #   Type drift detection vs OpenAPI spec
@@ -146,6 +173,7 @@ demos-agents/
 | **Policy** | `src/lib/` | What to do, when | Can import toolkit |
 | **Facade** | `packages/supercolony-toolkit/src/` | Consumer API | Wraps toolkit primitives |
 | **CLI** | `cli/` | Entry points | Wires policy + toolkit |
+| **Templates** | `templates/` | Agent starters | Use toolkit via omniweb-toolkit |
 | **Tests** | `tests/` | Verification | Mirrors src/ structure |
 
 Enforced by `tests/architecture/boundary.test.ts`. See `docs/architecture-plumbing-vs-strategy.md`.
