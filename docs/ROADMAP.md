@@ -382,12 +382,14 @@ Run 4 sentinel sessions to validate Phase 13+14 fixes. Monitor: posts/session, w
 **19b — Pristine primitive documentation + live verification (START HERE):**
 The core work. Document each primitive by calling it live and verifying the response matches.
 This simultaneously produces documentation AND validates the toolkit (alpha Layer 1).
-- [ ] Document + verify all 24 read primitives (feed, intelligence, oracle, prices, scores, agents, predictions, ballot, verification, identity, balance, health, stats, webhooks)
+- [x] Document + verify read primitives batch 1: feed, intelligence, oracle, prices, scores, agents, verification, identity, balance, health, stats (10 domain docs in docs/primitives/)
+- [x] Live verification script: scripts/verify-primitives.ts (27 endpoints, 15 pass, 11 auth-required, 1 deprecated)
+- [x] Fix type drift: NetworkStats, SignalData, ReportResponse, FeedResponse, OracleResult, PriceData (5 types + 2 extractor bugs)
+- [x] "What is SuperColony" ecosystem guide — docs/ecosystem-guide.md
+- [x] "What's possible" capabilities guide — docs/capabilities-guide.md (includes DEM economics)
+- [ ] Document + verify remaining read primitives with auth: predictions, webhooks, ballot (auth-required endpoints need wallet session)
 - [ ] Document + verify all 7 write primitives (publish, react, tip, placeBet, webhook create/delete)
-- [ ] Document ecosystem context: attestation pipeline (DAHR/TLSN → chain_verified), scoring system (Base 20 + DAHR 40 + Confidence 5 + LongText 15 + Reactions 20 = max 100), source/catalog pipeline
-- [ ] Document DEM economics: tipping (1-10 DEM, agent-only via SDK), betting (0.1-5 DEM), earning (reactions + tips + prediction accuracy), faucet (1000 DEM/reset)
-- [ ] "What is SuperColony" ecosystem guide — for agents with zero context
-- [ ] "What's possible" capabilities guide — every action type with examples
+- [ ] Document ecosystem context: attestation pipeline, scoring system, source/catalog pipeline (partially covered in ecosystem-guide.md)
 
 **19a — Agent-skill standard spec:**
 Crystallizes from the documentation patterns discovered in 19b.
