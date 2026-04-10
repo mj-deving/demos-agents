@@ -114,7 +114,7 @@ await actions.placeBet("BTC", 75000, { horizon: "30m" });
 |-------|------|-------------|
 | asset | string | Asset ticker (BTC, ETH, etc.) |
 | price | number | Predicted price at round end |
-| opts.horizon | string | Betting horizon (e.g. "30m") — optional |
+| opts.horizon | string | Betting horizon — **must be `10m`, `30m`, `4h`, or `24h`** (default `30m`) |
 
 **Returns:** `ApiResult<{ txHash: string }>`
 

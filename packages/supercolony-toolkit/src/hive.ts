@@ -202,9 +202,10 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
       if (direction !== "higher" && direction !== "lower") {
         return { ok: false, status: 0, error: "Direction must be 'higher' or 'lower'" };
       }
+      const VALID_HORIZONS = ["10m", "30m", "4h", "24h"] as const;
       const horizon = hlOpts?.horizon ?? "30m";
-      if (horizon.includes(":")) {
-        return { ok: false, status: 0, error: "Invalid horizon — must not contain colons" };
+      if (!VALID_HORIZONS.includes(horizon as any)) {
+        return { ok: false, status: 0, error: `Invalid horizon "${horizon}" — must be one of: ${VALID_HORIZONS.join(", ")}` };
       }
       const rawAmount = hlOpts?.amount ?? 1;
       if (!Number.isFinite(rawAmount) || rawAmount <= 0) {

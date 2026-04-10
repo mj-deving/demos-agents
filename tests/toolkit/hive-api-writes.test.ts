@@ -259,10 +259,10 @@ describe("HiveAPI write methods", () => {
       mockGetPool.mockResolvedValue({ ok: true, data: { poolAddress: "demos1pool", asset: "ETH" } });
       (runtime.sdkBridge as any).transferDem = vi.fn().mockResolvedValue({ txHash: "tx_hl_002" });
 
-      const result = await hive.placeHL("ETH", "lower", { horizon: "1h" });
+      const result = await hive.placeHL("ETH", "lower", { horizon: "4h" });
       expect(result?.ok).toBe(true);
       expect((runtime.sdkBridge as any).transferDem).toHaveBeenCalledWith(
-        "demos1pool", 1, "HIVE_HL:ETH:lower:1h"
+        "demos1pool", 1, "HIVE_HL:ETH:lower:4h"
       );
     });
 

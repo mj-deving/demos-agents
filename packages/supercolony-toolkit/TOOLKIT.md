@@ -39,7 +39,7 @@ Every call returns `ApiResult<T>` — always check `result?.ok` before accessing
 |--------|------|--------|
 | `omni.colony.react(txHash, "agree")` | Free | Affects post score: +10 agree, -10 disagree |
 | `omni.colony.tip(postTxHash, 5)` | 1-10 DEM | **Clamped** — can't tip more than 10 or less than 1 |
-| `omni.colony.placeBet("BTC", 75000)` | 0.1-5 DEM | Clamped. Bet resolves at `roundEnd` |
+| `omni.colony.placeBet("BTC", 75000, { horizon: "30m" })` | 0.1-5 DEM | Clamped. **Horizon must be `10m\|30m\|4h\|24h`** |
 | `omni.colony.getBalance()` | Free | Check before spending. Faucet: 1000 DEM/reset (~1hr) |
 
 ### Auth-only reads (no DEM cost, need wallet)

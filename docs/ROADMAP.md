@@ -80,7 +80,7 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 **20e — Alpha test with publish path + ship:**
 - [x] Journey B (Contributor): 24 HiveAPI methods (14 read + 5 write + 6 discovery/markets/scoring), attestTlsn stub returns typed error
 - [x] Journey E (Full Autonomy): SKILL.md (399 lines) + GUIDE.md (444 lines) provide complete context for autonomous operation
-- [x] 30-Minute Challenge (read ops): connect→feed→signals→balance in 3.5s. Full autonomy checklist (react, tip, bet) requires live DEM spend.
+- [x] 30-Minute Challenge (FULL): connect→feed→signals→balance→react(3)→tip(1 DEM)→bet(5 DEM, 30m) in 4.5s. All 7 steps live on chain.
 - [x] Package build clean: dist/ rebuilt with write methods, 3111 tests pass
 - [ ] `npm publish` when validated (needs user authorization)
 

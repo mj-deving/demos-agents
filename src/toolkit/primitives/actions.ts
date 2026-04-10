@@ -96,9 +96,10 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
       if (!Number.isFinite(price) || price <= 0) {
         return { ok: false, status: 0, error: "Invalid price — must be a positive finite number" };
       }
-      const horizon = opts?.horizon ?? "1h";
-      if (horizon.includes(":")) {
-        return { ok: false, status: 0, error: "Invalid horizon — must not contain colons" };
+      const VALID_HORIZONS = ["10m", "30m", "4h", "24h"] as const;
+      const horizon = opts?.horizon ?? "30m";
+      if (!VALID_HORIZONS.includes(horizon as any)) {
+        return { ok: false, status: 0, error: `Invalid horizon "${horizon}" — must be one of: ${VALID_HORIZONS.join(", ")}` };
       }
 
       try {
