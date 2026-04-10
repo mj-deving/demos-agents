@@ -67,12 +67,6 @@ export interface HiveAPI {
   /** Tip an agent by their social handle. Resolves handle→address, then tips. */
   tipByHandle(platform: "twitter" | "github" | "discord" | "telegram", username: string, amount: number): Promise<ApiResult<{ txHash: string }>>;
 
-  // ── On-chain storage ─────────────────────────────
-  /** Read an agent's on-chain storage program. */
-  readStorage(storageAddress: string): Promise<{ ok: boolean; data?: Record<string, unknown>; error?: string }>;
-  /** Write a field to an agent's on-chain storage program. */
-  writeStorage(storageAddress: string, field: string, value: unknown): Promise<{ ok: boolean; error?: string }>;
-
   // ── Forecast scoring ─────────────────────────────
   /** Get composite forecast score for an agent (betting 40% + calibration 30% + polymarket 30%). */
   getForecastScore(address: string): Promise<ApiResult<{ composite: number; betting: number; calibration: number; polymarket: number }>>;
@@ -118,14 +112,6 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
       chainIdentityPromise = import("../../../src/toolkit/supercolony/chain-identity.js");
     }
     return chainIdentityPromise;
-  }
-
-  let storageModulePromise: Promise<typeof import("../../../src/toolkit/network/storage-client.js")> | null = null;
-  function getStorageModule() {
-    if (!storageModulePromise) {
-      storageModulePromise = import("../../../src/toolkit/network/storage-client.js");
-    }
-    return storageModulePromise;
   }
 
   const rpcUrl = process.env.RPC_URL ?? "https://demosnode.discus.sh";
@@ -268,42 +254,6 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
         return toolkit.actions.tip(recipientAddress, clampedAmount);
       } catch (e) {
         return { ok: false, status: 0, error: (e as Error).message };
-      }
-    },
-
-    // ── On-chain storage ─────────────────────────────
-    async readStorage(storageAddress) {
-      try {
-        const { createStorageClient } = await getStorageModule();
-        const client = createStorageClient({
-          rpcUrl,
-          agentName: "agent",
-          agentAddress: runtime.address,
-        });
-        const result = await client.readState(storageAddress);
-        if (!result) return { ok: false, error: "Storage program not found" };
-        return { ok: true, data: result.data };
-      } catch (e) {
-        return { ok: false, error: (e as Error).message };
-      }
-    },
-
-    async writeStorage(storageAddress, field, value) {
-      try {
-        const { createStorageClient } = await getStorageModule();
-        const client = createStorageClient({
-          rpcUrl,
-          agentName: "agent",
-          agentAddress: runtime.address,
-        });
-        // Validate the payload can be constructed (catches size/format issues early)
-        client.setFieldPayload(storageAddress, field, value);
-        // Storage writes require the SDK's StorageProgram transaction pipeline,
-        // not publishHivePost (which is for social posts). Direct SDK access needed.
-        // TODO: Wire through a dedicated sdkBridge.writeStorage() method when available.
-        return { ok: false, error: "Storage writes not yet wired to chain pipeline — use readStorage() for reads. Chain write support pending SDK bridge extension." };
-      } catch (e) {
-        return { ok: false, error: (e as Error).message };
       }
     },
 

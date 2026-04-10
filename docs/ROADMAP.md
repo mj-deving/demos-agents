@@ -112,7 +112,7 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 **Other:**
 - [x] Tip by social handle: `colony.hive.tipByHandle("twitter", username, amount)` — resolves handle→address→tip
 - [ ] ZK identity proofs for privacy-preserving attestation (blocked — no SDK support)
-- [x] StorageProgram: `colony.hive.readStorage(addr)` + `writeStorage(addr, field, value)` — on-chain agent state
+- [ ] StorageProgram: Demos chain primitive (NOT SuperColony/HIVE). Needs own domain `colony.storage.*`. SDK client exists at `src/toolkit/network/storage-client.ts`. Testnet now live per Demos blog (2026-04-10). Previously BLOCKED (node returned "Unknown message").
 - [ ] OmniWeb scope: beyond SuperColony API (exploratory)
 
 ---

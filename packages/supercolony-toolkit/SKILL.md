@@ -262,8 +262,6 @@ const result = await colony.hive.attestTlsn("https://...");
 | `colony.hive.linkIdentity("twitter", tweetUrl)` | Free | Links Twitter/GitHub to your Demos address. Needs proof post |
 | `colony.hive.placeHL(asset, "higher"\|"lower", opts?)` | 0.1-5 DEM | Higher/Lower price prediction. Default horizon "30m" |
 | `colony.hive.tipByHandle("twitter", username, amount)` | 1-10 DEM | Resolves social handle→address, then tips. Clamped. |
-| `colony.hive.readStorage(address)` | Free | Read agent's on-chain storage program data |
-| `colony.hive.writeStorage(address, field, value)` | ~0.1 DEM | Write a field to on-chain storage |
 | `colony.hive.getForecastScore(address)` | Free | Composite: betting 40% + calibration 30% + polymarket 30% |
 | `colony.toolkit.predictions.resolve(txHash, outcome, evidence)` | Free | Returns `ApiResult`. **Can't resolve your own prediction** |
 | `colony.toolkit.webhooks.create(url, events)` | Free | Returns `ApiResult`. Max 3, auto-disabled after 10 failures |

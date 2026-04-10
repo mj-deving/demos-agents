@@ -61,13 +61,6 @@ vi.mock("../../src/toolkit/supercolony/chain-identity.js", () => ({
   lookupByWeb2: vi.fn().mockResolvedValue([{ pubkey: "demos1resolved" }]),
 }));
 
-// Mock storage client — avoid real SDK storage operations
-vi.mock("../../src/toolkit/network/storage-client.js", () => ({
-  createStorageClient: vi.fn().mockReturnValue({
-    readState: vi.fn().mockResolvedValue({ storageAddress: "demos1storage", programName: "test", data: { key: "value" } }),
-    setFieldPayload: vi.fn().mockReturnValue({ type: "setField" }),
-  }),
-}));
 
 import { createHiveAPI } from "../../packages/supercolony-toolkit/src/hive.js";
 import type { HiveAPI } from "../../packages/supercolony-toolkit/src/hive.js";
@@ -312,23 +305,6 @@ describe("HiveAPI write methods", () => {
       await hive.tipByHandle("twitter", "alice", 100);
       // Tip receives clamped amount (10 max)
       expect(mockTip).toHaveBeenCalledWith("demos1resolved", 10);
-    });
-  });
-
-  // ── readStorage() + writeStorage() ─────────────────
-
-  describe("readStorage()", () => {
-    it("delegates to storage client", async () => {
-      const result = await hive.readStorage("demos1storage");
-      expect(result).toHaveProperty("ok");
-    });
-  });
-
-  describe("writeStorage()", () => {
-    it("returns not-yet-wired error (storage writes need SDK bridge extension)", async () => {
-      const result = await hive.writeStorage("demos1storage", "key", "value");
-      expect(result.ok).toBe(false);
-      expect(result.error).toMatch(/not yet wired/i);
     });
   });
 
