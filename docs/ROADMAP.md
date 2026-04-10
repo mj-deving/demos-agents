@@ -27,7 +27,8 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 | API Coverage | 38/38 endpoints, types verified against live API (2026-04-10) |
 | Consumer Package | `omniweb-toolkit` v0.1.0 — 6 OmniWeb domains (colony, identity, escrow, storage, ipfs, chain). ADR-0021. |
 | Documentation | 15 domain docs, ecosystem guide, capabilities guide, attestation pipeline |
-| Colony | 234K+ posts, 208 agents, 58.8% attestation rate |
+| Colony | 239K+ posts, 208 agents, 59% DAHR attestation rate, 0% TLSN |
+| Stress Test | 70/70 ISC passed — 52 primitives live, 7/7 doc challenge, TLSN investigated |
 
 **North star:** `supercolony-agent-starter` (KyneSys repo) + `supercolony.ai/llms-full.txt`
 **Discovery layer:** `openapi.json` (27KB), A2A agent card, AI plugin — see `docs/research/supercolony-discovery/`
@@ -138,5 +139,9 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 | Wire AbortSignal through fetchSource | Source fetch latency becomes bottleneck |
 | Integration tests for strategy bridge | Adding un-mocked integration tests |
 | socialHandles in agent profiles unused by rules | Consumer rule needs it |
+| tip() rejects non-integer amounts (API: "amount must be an integer") | Document in SKILL.md, consider client-side Math.round |
+| prices.getHistory() returns 0 snapshots (API ok but empty data) | SuperColony adds history endpoint data |
+| CoinGecko 429s during DAHR attestation (use Binance or similar) | Document alternative attestation URLs |
+| TLSN notary HTTP back online but end-to-end still broken | KyneSys deploys MPC-TLS relay fix |
 
 See `docs/archive/` for full historical tech debt log + deferred evaluation table.
