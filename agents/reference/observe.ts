@@ -55,7 +55,7 @@ export interface Observation {
  */
 export async function observe(
   omni: OmniWeb,
-  opts: { assets: string[]; qualityThreshold: number },
+  opts: { assets: string[]; qualityThreshold: number; divergenceThreshold?: number },
 ): Promise<Observation> {
   // Phase 1: Parallel fetch — GUIDE.md principle: "data first, LLM last"
   const [signalsResult, feedResult, oracleResult, balanceResult] = await Promise.all([
@@ -107,8 +107,15 @@ export async function observe(
       }>
     : [];
 
+  // Filter by severity threshold if configured
+  const severityRank: Record<string, number> = { low: 1, medium: 2, high: 3 };
+  const minSeverity = opts.divergenceThreshold ?? 0; // 0 = all, 2 = medium+, 3 = high only
+  const filteredDivergences = rawDivergences.filter(
+    (d) => (severityRank[d.severity] ?? 0) >= minSeverity,
+  );
+
   // Enrich divergences with signal direction for bet decisions
-  const divergences = rawDivergences.map((d) => {
+  const divergences = filteredDivergences.map((d) => {
     // Find matching signal for this asset to get direction
     const matchingSignal = signals.find((s) =>
       s.assets.includes(d.asset) || s.topic.toLowerCase().includes(d.asset.toLowerCase())

@@ -38,12 +38,15 @@ function loadStrategy(): Strategy {
   return parseYaml(raw) as Strategy;
 }
 
-// ── CoinGecko ticker → id map (F3: tickers ≠ CoinGecko ids) ──
-const COINGECKO_IDS: Record<string, string> = {
-  BTC: "bitcoin", ETH: "ethereum", SOL: "solana", AVAX: "avalanche-2",
-  MATIC: "matic-network", DOT: "polkadot", ADA: "cardano", LINK: "chainlink",
-  UNI: "uniswap", AAVE: "aave", ARB: "arbitrum", OP: "optimism",
-};
+// Reuse existing asset map — CoinGecko IDs differ from tickers
+// (e.g., "BTC" → "bitcoin", "AVAX" → "avalanche-2")
+import { ASSET_MAP } from "../../src/toolkit/chain/asset-helpers.js";
+
+/** Resolve ticker to CoinGecko coin ID via ASSET_MAP */
+function tickerToCoinId(ticker: string): string {
+  const entry = ASSET_MAP.find(([, , sym]) => sym === ticker);
+  return entry ? entry[1] : ticker.toLowerCase();
+}
 
 // ── Decision types ─────────────────────────────────
 type Action =
@@ -79,8 +82,7 @@ function decide(obs: Observation, strategy: Strategy): Action[] {
     ].join("\n");
 
     if (text.length >= strategy.publishing.minTextLength) {
-      // Use CoinGecko with correct coin ID (not ticker)
-      const coinId = COINGECKO_IDS[div.asset] ?? div.asset.toLowerCase();
+      const coinId = tickerToCoinId(div.asset);
       const attestUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`;
       actions.push({ type: "publish", text, category: "ANALYSIS", attestUrl });
       budgetRemaining -= strategy.budget.perPublish;
@@ -114,8 +116,7 @@ function decide(obs: Observation, strategy: Strategy): Action[] {
     break; // tip one per cycle
   }
 
-  // 4. Bet on divergences — SKILL.md: "placeHL(asset, 'higher'|'lower', { horizon })"
-  // F2 fix: derive direction from signal, not absolute divergence percentage
+  // 4. Bet on divergences — direction from signal consensus, not price magnitude
   let betCount = 0;
   for (const div of obs.divergences) {
     if (betCount >= strategy.budget.betsPerCycle) break;
@@ -151,7 +152,8 @@ async function act(omni: OmniWeb, actions: Action[], dryRun: boolean): Promise<v
             category: action.category,
             attestUrl: action.attestUrl,
           });
-          console.log(`[PUBLISH] ${result.ok ? "OK" : "FAIL"}: ${result.ok ? (result as any).data?.txHash : (result as any).error?.message}`);
+          const detail = result.ok ? result.data?.txHash : result.error?.message;
+          console.log(`[PUBLISH] ${result.ok ? "OK" : "FAIL"}: ${detail}`);
           break;
         }
         case "react": {
