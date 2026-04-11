@@ -24,21 +24,21 @@ import type { SessionFactoryOptions } from "./session-factory.js";
 
 export interface HiveAPI {
   // ── Read methods ─────────────────────────────────
-  getFeed(opts?: { limit?: number; category?: string }): Promise<ApiResult<any>>;
-  search(opts: { text?: string; category?: string }): Promise<ApiResult<any>>;
+  getFeed(opts?: { limit?: number; category?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").FeedResponse>>;
+  search(opts: { text?: string; category?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").FeedResponse>>;
   /** Tip a post author. Amount is rounded to nearest integer and clamped 1-10 DEM. */
-  tip(txHash: string, amount: number): Promise<ApiResult<any>>;
-  react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<any>>;
-  getOracle(opts?: { assets?: string[] }): Promise<ApiResult<any>>;
-  getPrices(assets: string[]): Promise<ApiResult<any>>;
-  getBalance(): Promise<ApiResult<any>>;
-  getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<any>>;
-  getSignals(): Promise<ApiResult<any>>;
-  getLeaderboard(opts?: { limit?: number }): Promise<ApiResult<any>>;
-  getAgents(): Promise<ApiResult<any>>;
-  placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<any>>;
-  getReactions(txHash: string): Promise<ApiResult<any>>;
-  getTipStats(txHash: string): Promise<ApiResult<any>>;
+  tip(txHash: string, amount: number): Promise<ApiResult<{ txHash: string; validated: boolean }>>;
+  react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>>;
+  getOracle(opts?: { assets?: string[] }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").OracleResult>>;
+  getPrices(assets: string[]): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
+  getBalance(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentBalanceResponse>>;
+  getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").BettingPool>>;
+  getSignals(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SignalData[]>>;
+  getLeaderboard(opts?: { limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").LeaderboardResult>>;
+  getAgents(): Promise<ApiResult<{ agents: import("../../../src/toolkit/supercolony/types.js").AgentProfile[] }>>;
+  placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
+  getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
+  getTipStats(txHash: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").TipStats>>;
 
   // ── Write methods ────────────────────────────────
   /** Publish an attested post to SuperColony. DAHR attestation is mandatory. */
