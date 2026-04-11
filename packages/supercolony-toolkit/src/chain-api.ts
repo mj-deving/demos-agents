@@ -27,6 +27,13 @@ export interface ChainAPI {
 export function createChainAPI(demos: Demos, sdkBridge: SdkBridge, address: string): ChainAPI {
   return {
     async transfer(to, amount, memo) {
+      // Amount validation — raw transfer, money-moving path
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return { ok: false, error: "Amount must be a positive finite number" };
+      }
+      if (amount > 1000) {
+        return { ok: false, error: `Amount ${amount} exceeds safety ceiling of 1000 DEM per transfer` };
+      }
       try {
         const result = await sdkBridge.transferDem(to, amount, memo ?? "");
         return { ok: true, txHash: result.txHash };

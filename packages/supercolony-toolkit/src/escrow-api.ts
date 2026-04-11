@@ -12,19 +12,22 @@
 
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
 
+export type EscrowPlatform = "twitter" | "github" | "telegram";
+
+/** Maximum DEM per escrow send (safety ceiling). */
+const MAX_ESCROW_AMOUNT = 100;
+
 export interface EscrowAPI {
-  /** Send DEM to a social identity. Recipient claims after linking their Demos address. */
-  sendToIdentity(platform: "twitter" | "github" | "telegram", username: string, amount: number, opts?: { expiryDays?: number; message?: string }): Promise<{ ok: boolean; txHash?: string; error?: string }>;
+  /** Send DEM to a social identity. Amount clamped to 0.1-100 DEM. Recipient claims after linking their Demos address. */
+  sendToIdentity(platform: EscrowPlatform, username: string, amount: number, opts?: { expiryDays?: number; message?: string }): Promise<{ ok: boolean; txHash?: string; error?: string }>;
   /** Claim DEM sent to your social identity (must link identity first). */
-  claimEscrow(platform: "twitter" | "github" | "telegram", username: string): Promise<{ ok: boolean; txHash?: string; error?: string }>;
+  claimEscrow(platform: EscrowPlatform, username: string): Promise<{ ok: boolean; txHash?: string; error?: string }>;
   /** Refund expired escrow back to sender. */
-  refundExpired(platform: "twitter" | "github" | "telegram", username: string): Promise<{ ok: boolean; txHash?: string; error?: string }>;
+  refundExpired(platform: EscrowPlatform, username: string): Promise<{ ok: boolean; txHash?: string; error?: string }>;
   /** Check claimable escrows for a social identity. */
-  getClaimable(platform: string, username: string): Promise<{ ok: boolean; data?: unknown; error?: string }>;
+  getClaimable(platform: EscrowPlatform, username: string): Promise<{ ok: boolean; data?: unknown; error?: string }>;
   /** Get escrow balance for a social identity. */
-  getBalance(platform: string, username: string): Promise<{ ok: boolean; data?: unknown; error?: string }>;
-  /** Get deterministic escrow address for a platform/username. */
-  getEscrowAddress(platform: string, username: string): string;
+  getEscrowBalance(platform: EscrowPlatform, username: string): Promise<{ ok: boolean; data?: unknown; error?: string }>;
 }
 
 export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
@@ -45,11 +48,18 @@ export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
 
   return {
     async sendToIdentity(platform, username, amount, opts) {
+      // Amount validation — money-moving path, fail-closed
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return { ok: false, error: "Amount must be a positive finite number" };
+      }
+      if (amount > MAX_ESCROW_AMOUNT) {
+        return { ok: false, error: `Amount ${amount} exceeds maximum ${MAX_ESCROW_AMOUNT} DEM per escrow send` };
+      }
       try {
         const { EscrowTransaction } = await getEscrowModule();
         const tx = await EscrowTransaction.sendToIdentity(demos, platform, username, amount, opts);
         const confirmed = await demos.confirm(tx);
-        const result = await demos.broadcast(confirmed);
+        await demos.broadcast(confirmed);
         return { ok: true, txHash: (confirmed as any)?.response?.data?.transaction?.hash ?? "pending" };
       } catch (e) {
         return { ok: false, error: (e as Error).message };
@@ -91,7 +101,7 @@ export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
       }
     },
 
-    async getBalance(platform, username) {
+    async getEscrowBalance(platform, username) {
       try {
         const { EscrowQueries } = await getEscrowModule();
         if (!EscrowQueries) return { ok: false, error: "EscrowQueries not available in SDK" };
@@ -100,13 +110,6 @@ export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
       } catch (e) {
         return { ok: false, error: (e as Error).message };
       }
-    },
-
-    getEscrowAddress(platform, username) {
-      // Deterministic address derivation — no async, no SDK import needed
-      // The SDK uses: sha256(platform + ":" + username) → hex address
-      // For now, delegate to SDK when loaded
-      return `escrow:${platform}:${username}`;
     },
   };
 }
