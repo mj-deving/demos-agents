@@ -361,10 +361,24 @@ Extend existing CI gates — don't create parallel systems.
 - F7 MEDIUM: allowed-tools too broad — **fixed** (narrowed to Read only)
 - F8 LOW: Architecture doc overclaims — **fixed** (wording downgraded, exit criteria added)
 
-**Deferred (not Phase 0 scope):**
+**Review 3 (2026-04-11, GPT-5.4):** 5 findings on Phase A+B. All implemented:
+- F1 HIGH: observe.ts wrong response shapes — **fixed** (uses correct SignalData/FeedPost/OracleResult)
+- F2 HIGH: bet direction always "higher" — **fixed** (derives from signal direction)
+- F3 MEDIUM: CoinGecko ticker→id mismatch — **fixed** (explicit id map)
+- F4 MEDIUM: Playbook API inconsistencies — **fixed** (per-post reactions, single attestUrl)
+- F5 MEDIUM: Playbook strategy snippets partial — **fixed** (labeled as overrides)
+
+**Review 4 (2026-04-11, GPT-5.4):** 5 findings on Phase C+D. All implemented:
+- F1 HIGH: Eval validator too weak — **fixed** (validates bare + namespaced methods, guardrail tokens)
+- F2 HIGH: trajectories.yaml not promptfoo-compatible — **fixed** (labeled as design spec)
+- F3 MEDIUM: CI pack check uses string grep — **fixed** (npm pack --json, exact file membership)
+- F4 MEDIUM: Orphaned pre-push hook — **fixed** (.githooks/pre-push references deleted tools/)
+- F5 MEDIUM: Missing eval scenarios — **fixed** (5 added: connect, auth, reply, address, allowlist)
+
+**Deferred (beyond current scope):**
 - `skills-ref validate` — requires Python tooling; add as CI step when publishing
 - DAHR proxy SSRF coverage — client-side tests can't test proxy behavior; documented as trust boundary
-- Description eval testing (~20 queries) — planned for Phase C eval expansion
+- Promptfoo conversion — trajectories.yaml is design spec; convert when promptfoo runner is needed
 
 ## Success Criteria
 
