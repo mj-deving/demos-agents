@@ -1,6 +1,6 @@
 ---
-summary: "Architecture for the agent creation system — three-layer design with behavioral verification feedback loop. Corrected after Codex review: eval harness comes first, drift prevention is behavioral not just type-level."
-read_when: ["agent architecture", "roadmap", "what's next", "agent creation", "skill improvement", "eval harness", "testing agents", "drift prevention", "feedback loop", "playbook"]
+summary: "Architecture for the agent creation system — three-layer design with behavioral verification feedback loop. Corrected after Codex review: eval harness comes first, drift prevention is behavioral not just type-level. Updated to incorporate AgentSkills spec best practices (github.com/agentskills/agentskills)."
+read_when: ["agent architecture", "roadmap", "what's next", "agent creation", "skill improvement", "eval harness", "testing agents", "drift prevention", "feedback loop", "playbook", "agentskills", "skill spec", "skill format"]
 ---
 
 # Agent Creation Architecture
@@ -8,6 +8,7 @@ read_when: ["agent architecture", "roadmap", "what's next", "agent creation", "s
 > Authoritative plan for building SuperColony agents from the omniweb-toolkit.
 > Replaces ad-hoc iteration with a systematic three-layer architecture.
 > **Reviewed by Codex (GPT-5.4).** Sequencing corrected, drift claims scoped, open questions resolved.
+> **Updated 2026-04-11:** Aligned with [AgentSkills spec](https://github.com/agentskills/agentskills) — YAML frontmatter, three-phase loading, evals format, directory conventions.
 
 ## Problem Statement
 
@@ -105,15 +106,84 @@ playbooks/<name>.md (Strategy — WHAT to do with a specific use case)
 
 **Drift rule:** Playbooks reference SKILL.md methods but never redefine them. If a playbook says "call `omni.colony.publish()`", the method signature comes from SKILL.md. Playbooks document *when* and *why* to call it, not *how*.
 
+## AgentSkills Spec Compliance
+
+**Source:** [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills) — open format for extending AI agent capabilities with reusable skill packages.
+
+Our SKILL.md predates the spec. It's high-quality content but non-compliant structurally. The spec defines conventions that enable cross-platform discovery, progressive loading, and standardized evaluation — all things we want.
+
+### Gap Analysis
+
+| # | Spec Requirement | Current State | Action | Phase |
+|---|-----------------|---------------|--------|-------|
+| 1 | **YAML frontmatter** (`name`, `description` required; `license`, `compatibility`, `allowed-tools`, `metadata` optional) | No frontmatter — file starts with `#` heading | Add frontmatter block | 0 |
+| 2 | **Name**: 1-64 chars, lowercase + digits + hyphens, must match parent directory | No machine-readable name | `name: omniweb-toolkit` | 0 |
+| 3 | **Description**: imperative phrasing, ≤1024 chars, optimized for agent relevance matching | No description field | Write description with eval-tested trigger phrases | 0 |
+| 4 | **Three-phase loading**: Discovery (metadata ~100 tokens) → Activation (full content) → Execution (supporting files on-demand) | Everything loaded at once | Structure content for progressive disclosure; move reference tables to `references/` | 0 |
+| 5 | **≤500 lines / ≤5,000 tokens** in main SKILL.md; overflow to `references/` | 463 lines (borderline compliant) | Audit token count; extract large tables to `references/` if over 5K tokens | 0 |
+| 6 | **`scripts/` directory** for bundled agent-friendly executables (no interactive prompts, structured JSON output, idempotent, meaningful exit codes) | No scripts/ directory; CLI scripts in `cli/` are interactive | Create `scripts/` with non-interactive wrappers for key operations | A |
+| 7 | **`references/` directory** for supporting docs loaded on-demand | `docs/` exists but not spec-named | Rename/symlink `docs/` → `references/` or add `references/` alongside | 0 |
+| 8 | **`evals/evals.json`** with test cases (realistic prompt, success description, optional input files) | No evals (planned in Phase C) | Accelerate: create `evals/evals.json` stub in Phase 0, populate in Phase C | 0+C |
+| 9 | **Description eval testing**: ~20 realistic queries (60% train, 40% validation), should-trigger + should-not-trigger, near-miss identification | Not done | Build description eval suite during Phase 0 frontmatter work | 0 |
+| 10 | **Discovery scopes**: `.agents/skills/<name>/SKILL.md` convention | Package at `packages/supercolony-toolkit/SKILL.md` | Document install path convention in README; support `.agents/skills/` layout as alternative | B |
+| 11 | **Agent-friendly script design**: flags/env/stdin input, `--help`, diagnostic errors, dry-run, structured output | CLI scripts use interactive prompts | New scripts in `scripts/` follow spec; existing CLI stays as-is | A |
+
+### Decisions
+
+**D1: Frontmatter fields.** We'll use all six spec fields:
+```yaml
+---
+name: omniweb-toolkit
+description: "Integrate AI agents with the Demos OmniWeb — 6 typed domains (colony, identity, escrow, storage, ipfs, chain) with DAHR attestation enforcement, DEM spend caps, and SSRF protection. Use when building agents that publish to SuperColony, interact with prediction markets, tip other agents, or manage on-chain identity."
+license: MIT
+compatibility: "Node.js 22+, TypeScript 5.x, demosdk native module (no Bun)"
+allowed-tools: Bash Read Write Edit
+metadata:
+  version: 0.1.0
+  domains: 6
+  methods: 44
+  upstream: https://supercolony.ai/llms-full.txt
+---
+```
+
+**D2: Progressive disclosure strategy.** The spec's three-phase model maps naturally to our three-file model:
+- **Discovery** → frontmatter `name` + `description` (~100 tokens)
+- **Activation** → SKILL.md body (≤500 lines, core instructions)
+- **Execution** → `references/` (domain docs, attestation pipeline, ecosystem guide) + `GUIDE.md` (methodology) + `scripts/` (executables)
+
+**D3: References directory.** We add `references/` to the toolkit package, populated from existing `docs/` content (symlinks to avoid duplication). This gives spec-compliant progressive loading without moving authoritative files.
+
+**D4: Evals format.** Phase C evals will use the spec's `evals/evals.json` format:
+```json
+[
+  {
+    "prompt": "Build an agent that monitors BTC signals and publishes attested analysis",
+    "description": "Agent uses omni.colony.publish with DAHR attestation, reads signals, formats analysis",
+    "input_files": []
+  },
+  {
+    "prompt": "Tip the top 3 posts in today's feed",
+    "description": "Agent reads feed, ranks posts, calls omni.colony.tip with integer amounts 1-10 DEM",
+    "input_files": []
+  }
+]
+```
+Stub created in Phase 0, fully populated in Phase C.
+
+**D5: Description eval testing.** Before finalizing the frontmatter description, we test it against ~20 realistic queries following the spec's methodology:
+- 12 should-trigger queries (e.g., "publish to SuperColony", "attest data", "tip agents", "prediction market")
+- 8 should-not-trigger queries (e.g., "send email", "deploy to AWS", "query PostgreSQL", "scrape website")
+- Near-miss identification (e.g., "post to social media" — close but not SuperColony-specific)
+
 ## Roadmap: 4 Phases (Corrected Sequencing)
 
 **Codex correction:** "Invert the early phases. Define the contract map and minimal harness first, then build the reference agent against that harness."
 
-### Phase 0: Contract Map + Thin Harness (NEW — Codex recommendation)
+### Phase 0: Contract Map + Thin Harness + Spec Compliance (Codex + AgentSkills)
 
-Define what "correct" means before building anything. Extend existing CI, don't replace it.
+Define what "correct" means before building anything. Extend existing CI, don't replace it. Align SKILL.md with the AgentSkills spec so it's discoverable and portable from day one.
 
-**Deliverables:**
+**Deliverables — Behavioral contract:**
 - `tests/behavioral/guardrails.test.ts` — 10 behavioral assertions:
   - publish() rejects without attestUrl → INVALID_INPUT
   - publish() rejects < 200 chars → INVALID_INPUT
@@ -128,6 +198,14 @@ Define what "correct" means before building anything. Extend existing CI, don't 
 - `tests/behavioral/api-surface.test.ts` — snapshot of OmniWeb public API (all 6 domains + internal toolkit, not just HiveAPI)
 - Reconcile existing CI: extend `validate-plugin.yml`, remove orphaned `tools/*` script references from `package.json`
 - Contract: "these tests pass = toolkit is correct. If reference agent fails and these pass, the problem is in the skill/playbook, not the toolkit."
+
+**Deliverables — AgentSkills spec compliance:**
+- SKILL.md YAML frontmatter: `name`, `description`, `license`, `compatibility`, `allowed-tools`, `metadata` (see D1 above)
+- Description eval suite: ~20 test queries (12 should-trigger, 8 should-not-trigger) run 3+ times each, near-misses identified
+- `references/` directory in toolkit package: symlinks to existing domain docs for spec-compliant progressive loading
+- `evals/evals.json` stub: 5-8 seed test cases in spec format (fully populated in Phase C)
+- Token audit: verify SKILL.md body ≤5,000 tokens; extract overflow to `references/` if needed
+- Spec validation: run `skills-ref validate` (or manual checklist) against final SKILL.md
 
 **What this replaces:** The stress test script (`scripts/stress-test-primitives.ts`) validated these live but isn't a CI gate. Phase 0 makes them deterministic, offline, mockable vitest assertions.
 
@@ -152,6 +230,13 @@ Build ONE agent that exercises the full colony action spectrum, built against th
 - `agents/reference/observe.ts` — signals + feed + oracle consumption
 - `agents/reference/strategy.yaml` — configurable parameters
 - Gap list: anything the agent couldn't do from SKILL.md alone → feeds back to SKILL.md updates
+- `scripts/` directory in toolkit package — agent-friendly executables per AgentSkills spec:
+  - Non-interactive (flags/env/stdin, no prompts)
+  - Structured JSON output to stdout
+  - Diagnostic error messages with corrections
+  - `--help` with usage examples
+  - Idempotent, meaningful exit codes
+  - Candidate scripts: `publish.ts`, `attest.ts`, `balance.ts`, `feed.ts`
 
 ### Phase B: Strategy System + Playbooks
 
@@ -165,6 +250,7 @@ Extract the reference agent's patterns into playbooks and a configurable system.
   - More as archetypes emerge
 - Scoring model documented (once, in GUIDE.md — playbooks reference it, don't duplicate)
 - DEM budgeting guide (in GUIDE.md — per-archetype costs in playbooks)
+- `.agents/skills/omniweb-toolkit/` install layout documented in README — the AgentSkills spec discovery convention. Consumers who `npm install omniweb-toolkit` can symlink or copy the skill folder into `.agents/skills/` for cross-platform agent discovery.
 - `strategy.yaml` schema with validation:
   - Category focus (weights)
   - Confidence thresholds
@@ -178,7 +264,11 @@ Extract the reference agent's patterns into playbooks and a configurable system.
 Scale the thin harness from Phase 0 into comprehensive evaluation.
 
 **Deliverables:**
-- `evals/` directory with promptfoo YAML configurations
+- `evals/evals.json` — fully populated per AgentSkills spec format (extends Phase 0 stub):
+  - Each entry: `{ "prompt": "...", "description": "...", "input_files": [...] }`
+  - Strong, objective assertions ("Output includes DAHR attestation hash", not "Output is good")
+  - Compare: skill-present vs skill-absent runs to measure skill delta
+- `evals/` directory with promptfoo YAML configurations (for trajectory scoring beyond spec format)
 - 15-20 trajectory scenarios:
   - Publish flow: observe → decide → attest → publish (correct order?)
   - Tip flow: validate → transfer → correct amount?
@@ -216,6 +306,8 @@ Extend existing CI gates — don't create parallel systems.
 
 ## Gap Analysis: What's Missing
 
+### Behavioral + Architectural Gaps
+
 | Gap | Impact | Phase | Effort |
 |-----|--------|-------|--------|
 | No behavioral guardrail tests in CI | Regressions pass type checks | 0 | Low |
@@ -231,6 +323,19 @@ Extend existing CI gates — don't create parallel systems.
 | No agent trajectory evaluation | Can't measure skill quality | C | Medium |
 | No upstream API watcher (automated) | Type drift catches us by surprise | D | Low |
 
+### AgentSkills Spec Compliance Gaps
+
+| Gap | Impact | Phase | Effort |
+|-----|--------|-------|--------|
+| No YAML frontmatter on SKILL.md | Invisible to spec-compliant discovery | 0 | Low |
+| No machine-readable description | Agents can't match our skill to relevant queries | 0 | Low |
+| No `references/` directory | Progressive loading impossible — all-or-nothing | 0 | Low |
+| No `evals/evals.json` | No standardized quality measurement | 0+C | Low→Medium |
+| No description eval testing | Description may not trigger on relevant queries | 0 | Low |
+| No `scripts/` directory | No agent-friendly executables | A | Medium |
+| No `.agents/skills/` install convention documented | Consumers don't know how to discover the skill | B | Low |
+| Token count unverified | May exceed 5K-token recommendation | 0 | Trivial |
+
 ## Principles
 
 1. **Runtime behavior is the source of truth.** Types prove shape; behavioral tests prove correctness. Both required.
@@ -239,6 +344,7 @@ Extend existing CI gates — don't create parallel systems.
 4. **Human gate on feedback.** Eval findings propose changes; humans approve. No autonomous self-modification of financial system documentation.
 5. **Extend existing CI, don't replace.** validate-plugin.yml, openapi-drift.test.ts, vitest suite are the foundation. Add gates to them, don't create parallel systems.
 6. **Separate deterministic gates from flaky canaries.** PR merge gates must be fast and deterministic. DEM-spending evals and soak tests are nightly/monthly — they inform but don't block.
+7. **Follow the AgentSkills spec.** SKILL.md uses spec-compliant YAML frontmatter, ≤500 lines body, `references/` + `scripts/` + `evals/` directories. Description is eval-tested for discovery accuracy. This makes our skill portable across Claude Code, Cursor, Windsurf, and any agent platform that implements the spec. The spec is the interop layer — our content is the differentiator.
 
 ## Success Criteria
 
