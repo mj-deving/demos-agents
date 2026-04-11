@@ -28,7 +28,8 @@
     "docs/",
     "references/",
     "evals/",
-    "scripts/"
+    "scripts/",
+    "playbooks/"
   ],
   "scripts": {
     "build": "tsup",
