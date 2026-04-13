@@ -59,10 +59,6 @@ export function createMockToolkit(overrides?: MockToolkitOverrides | Record<stri
       markets: vi.fn().mockResolvedValue({ ok: true, data: [] }),
     },
     ballot: {
-      getState: vi.fn().mockResolvedValue({ ok: true, data: {} }),
-      getAccuracy: vi.fn().mockResolvedValue({ ok: true, data: {} }),
-      getLeaderboard: vi.fn().mockResolvedValue({ ok: true, data: {} }),
-      getPerformance: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       getPool: vi.fn().mockResolvedValue({ ok: true, data: {} }),
     },
     webhooks: {

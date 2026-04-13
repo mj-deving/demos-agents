@@ -88,8 +88,6 @@ export interface ApiEnrichmentData {
   leaderboard?: import("../supercolony/types.js").LeaderboardResult;
   oracle?: import("../supercolony/types.js").OracleResult;
   prices?: import("../supercolony/types.js").PriceData[];
-  /** @deprecated Ballot endpoints return 410. Use bettingPool instead. */
-  ballotAccuracy?: import("../supercolony/types.js").BallotAccuracy;
   /** Active betting pools discovered from tracked oracle assets. */
   bettingPools?: import("../supercolony/types.js").BettingPool[];
   /** @deprecated Use bettingPools. Retained as the first bettingPools entry for backward compatibility. */

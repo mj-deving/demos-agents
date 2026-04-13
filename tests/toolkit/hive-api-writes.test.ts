@@ -75,7 +75,7 @@ function createMockRuntime(tempDir: string): AgentRuntime {
       prices: { get: vi.fn(), getHistory: vi.fn() },
       verification: { verifyDahr: vi.fn(), verifyTlsn: vi.fn(), getTlsnProof: vi.fn() },
       predictions: { query: vi.fn(), resolve: vi.fn(), markets: vi.fn() },
-      ballot: { getState: vi.fn(), getAccuracy: vi.fn(), getLeaderboard: vi.fn(), getPerformance: vi.fn(), getPool: vi.fn() },
+      ballot: { getPool: vi.fn() },
       webhooks: { list: vi.fn(), create: vi.fn(), delete: vi.fn() },
       identity: { lookup: vi.fn() },
       balance: { get: vi.fn(), requestFaucet: vi.fn(), ensureMinimum: vi.fn() },

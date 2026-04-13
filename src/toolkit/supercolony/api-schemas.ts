@@ -61,14 +61,6 @@ export const PriceDataSchema = z.object({
   source: z.string(),
 }).passthrough();
 
-export const BallotAccuracySchema = z.object({
-  address: z.string(),
-  totalVotes: z.number(),
-  correctVotes: z.number(),
-  accuracy: z.number(),
-  streak: z.number(),
-});
-
 export const SignalDataSchema = z.object({
   topic: z.string(),
   consensus: z.boolean(),

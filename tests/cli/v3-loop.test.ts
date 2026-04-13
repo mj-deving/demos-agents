@@ -160,7 +160,6 @@ vi.mock("../../src/toolkit/supercolony/api-client.js", () => {
     getAgentLeaderboard = vi.fn().mockResolvedValue(null);
     getOracle = vi.fn().mockResolvedValue(null);
     getPrices = vi.fn().mockResolvedValue(null);
-    getBallotAccuracy = vi.fn().mockResolvedValue(null);
     getAgentBalance = vi.fn().mockResolvedValue(null);
     lookupByChainAddress = vi.fn().mockResolvedValue(null);
     initiateTip = vi.fn().mockResolvedValue(null);
@@ -190,7 +189,7 @@ vi.mock("../../src/toolkit/primitives/index.js", () => ({
     prices: { get: vi.fn().mockResolvedValue(null) },
     verification: { verifyDahr: vi.fn().mockResolvedValue(null), verifyTlsn: vi.fn().mockResolvedValue(null) },
     predictions: { query: vi.fn().mockResolvedValue(null), resolve: vi.fn().mockResolvedValue(null), markets: vi.fn().mockResolvedValue(null) },
-    ballot: { getState: vi.fn().mockResolvedValue(null), getAccuracy: vi.fn().mockResolvedValue(null), getLeaderboard: vi.fn().mockResolvedValue(null), getPerformance: vi.fn().mockResolvedValue(null) },
+    ballot: { getPool: vi.fn().mockResolvedValue(null) },
     webhooks: { list: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue(null), delete: vi.fn().mockResolvedValue(null) },
     identity: { lookup: vi.fn().mockResolvedValue(null) },
     balance: { get: vi.fn().mockResolvedValue(null) },

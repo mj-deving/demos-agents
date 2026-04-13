@@ -250,40 +250,6 @@ export interface PriceHistoryEntry {
   timestamp: number;
 }
 
-// ── Ballot ──────────────────────────────────────────
-
-export interface BallotState {
-  votes: Array<{
-    asset: string;
-    direction: "up" | "down";
-    agent: string;
-    confidence: number;
-    timestamp: number;
-  }>;
-  totalVotes: number;
-}
-
-export interface BallotAccuracy {
-  address: string;
-  totalVotes: number;
-  correctVotes: number;
-  accuracy: number;
-  streak: number;
-}
-
-export interface BallotLeaderboardEntry {
-  address: string;
-  name?: string;
-  accuracy: number;
-  totalVotes: number;
-  streak: number;
-}
-
-export interface BallotLeaderboard {
-  entries: BallotLeaderboardEntry[];
-  count: number;
-}
-
 // ── Network Stats ───────────────────────────────────
 
 export interface NetworkStats {
@@ -432,12 +398,51 @@ export interface PredictionMarket {
   endDate?: string;
 }
 
-// ── Ballot Performance ──────────────────────────────
+// ── Convergence ────────────────────────────────────
 
-export interface BallotPerformanceData {
-  daily: Array<{ date: string; accuracy: number; votes: number }>;
-  bestAsset: string;
-  worstAsset: string;
+export interface ConvergenceSignal {
+  topic: string;
+  direction: string;
+  confidence: number;
+  sources: Array<{ agent: string; text: string; timestamp: number }>;
+  assets?: string[];
+  createdAt: string;
+}
+
+// ── Higher-Lower Betting ───────────────────────────
+
+export interface HigherLowerPool {
+  asset: string;
+  currentPrice: number;
+  roundEnd: number;
+  totalHigher: number;
+  totalLower: number;
+  totalDem: number;
+  bets: Array<{ txHash: string; bettor: string; direction: "higher" | "lower"; amount: number; roundEnd: number }>;
+}
+
+// ── Binary Betting (Polymarket) ────────────────────
+
+export interface BinaryPool {
+  marketId: string;
+  question: string;
+  outcomeYes: number;
+  outcomeNo: number;
+  volume: number;
+  endDate?: string;
+  bets: Array<{ txHash: string; bettor: string; outcome: "yes" | "no"; amount: number }>;
+}
+
+// ── Graduation Markets (PumpFun → Raydium) ─────────
+
+export interface GraduationMarket {
+  tokenAddress: string;
+  tokenSymbol: string;
+  migrationStatus: string;
+  bondingCurveProgress: number;
+  marketCap?: number;
+  volume24h?: number;
+  createdAt: string;
 }
 
 // ── Feed (FEED category) — DEPRECATED ───────────────

@@ -27,9 +27,6 @@ import type {
   OracleResult,
   PriceData,
   PriceHistoryResponse,
-  BallotState,
-  BallotAccuracy,
-  BallotLeaderboard,
   NetworkStats,
   HealthStatus,
   TlsnVerification,
@@ -42,7 +39,10 @@ import type {
   AgentBalanceResponse,
   ReportResponse,
   PredictionMarket,
-  BallotPerformanceData,
+  ConvergenceSignal,
+  HigherLowerPool,
+  BinaryPool,
+  GraduationMarket,
 } from "./types.js";
 
 // ── Config ──────────────────────────────────────────
@@ -213,6 +213,33 @@ export class SuperColonyApiClient {
     return this.get(`/api/bets/pool${this.buildQs({ asset, horizon })}`);
   }
 
+  async getHigherLowerPool(
+    asset: string,
+    horizon?: string,
+  ): Promise<ApiResult<HigherLowerPool>> {
+    return this.get(`/api/bets/higher-lower/pool${this.buildQs({ asset, horizon })}`);
+  }
+
+  async getBinaryPools(opts?: {
+    category?: string;
+    limit?: number;
+  }): Promise<ApiResult<BinaryPool[]>> {
+    return this.extractField(
+      this.get<{ pools: BinaryPool[] }>(`/api/bets/binary/pools${this.buildQs({ category: opts?.category, limit: opts?.limit })}`),
+      "pools",
+    );
+  }
+
+  async getGraduationMarkets(opts?: {
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResult<GraduationMarket[]>> {
+    return this.extractField(
+      this.get<{ markets: GraduationMarket[] }>(`/api/bets/graduation/markets${this.buildQs({ limit: opts?.limit, status: opts?.status })}`),
+      "markets",
+    );
+  }
+
   // ── Oracle ───────────────────────────────────
 
   async getOracle(opts?: {
@@ -236,24 +263,6 @@ export class SuperColonyApiClient {
     history: number,
   ): Promise<ApiResult<PriceHistoryResponse>> {
     return this.get(`/api/prices${this.buildQs({ asset, history })}`);
-  }
-
-  // ── Ballot ───────────────────────────────────
-
-  async getBallot(assets?: string[]): Promise<ApiResult<BallotState>> {
-    return this.get(`/api/ballot${this.buildQs({ assets: assets?.join(",") })}`);
-  }
-
-  async getBallotAccuracy(address: string, asset?: string): Promise<ApiResult<BallotAccuracy>> {
-    return this.get(`/api/ballot/accuracy${this.buildQs({ address, asset })}`);
-  }
-
-  async getBallotLeaderboard(opts?: {
-    limit?: number;
-    asset?: string;
-    minVotes?: number;
-  }): Promise<ApiResult<BallotLeaderboard>> {
-    return this.get(`/api/ballot/leaderboard${this.buildQs({ limit: opts?.limit, asset: opts?.asset, minVotes: opts?.minVotes })}`);
   }
 
   // ── Network ──────────────────────────────────
@@ -329,6 +338,35 @@ export class SuperColonyApiClient {
     );
   }
 
+  // ── Convergence ───────────────────────────
+
+  async getConvergence(): Promise<ApiResult<ConvergenceSignal[]>> {
+    return this.extractField(
+      this.get<{ signals: ConvergenceSignal[] }>("/api/convergence"),
+      "signals",
+    );
+  }
+
+  // ── Feed Stream (SSE) ─────────────────────
+
+  /**
+   * Get the SSE feed stream URL for real-time feed events.
+   * Returns the fully-qualified URL with auth token embedded as query param.
+   * Caller connects via EventSource or fetch with streaming.
+   */
+  async getFeedStreamUrl(opts?: {
+    categories?: string[];
+    assets?: string[];
+  }): Promise<string> {
+    const qs = this.buildQs({
+      categories: opts?.categories?.join(","),
+      assets: opts?.assets?.join(","),
+    });
+    const token = await this.getToken();
+    const authQs = token ? `${qs ? qs + "&" : "?"}token=${encodeURIComponent(token)}` : qs;
+    return `${this.baseUrl}/api/feed/stream${authQs}`;
+  }
+
   // ── TLSN Proof ─────────────────────────────
 
   async getTlsnProof(txHash: string): Promise<ApiResult<TlsnProofData>> {
@@ -373,15 +411,6 @@ export class SuperColonyApiClient {
       this.get<{ predictions: PredictionMarket[] }>(`/api/predictions/markets${this.buildQs({ category: opts?.category, limit: opts?.limit })}`),
       "predictions",
     );
-  }
-
-  // ── Ballot Performance ─────────────────────
-
-  async getBallotPerformance(opts?: {
-    days?: number;
-    asset?: string;
-  }): Promise<ApiResult<BallotPerformanceData>> {
-    return this.get(`/api/ballot/performance${this.buildQs({ days: opts?.days, asset: opts?.asset })}`);
   }
 
   // ── Feed (FEED category) — DEPRECATED ─────

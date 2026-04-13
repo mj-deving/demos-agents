@@ -302,15 +302,7 @@ async function main() {
     return { status: "FAIL", detail: `${r?.error ?? "null"}` };
   });
 
-  await test("ISC-45", "ballot.getState() — expect deprecated", async () => {
-    const r = await tk.ballot.getState();
-    if (r && !r.ok && r.status === 410) return { status: "PASS", detail: "410 Gone (deprecated)" };
-    if (r && !r.ok) return { status: "PASS", detail: `Error as expected: ${r.status} ${r.error}` };
-    if (r?.ok) return { status: "UNEXPECTED", detail: `Returned ok (should be deprecated): ${JSON.stringify(r.data).slice(0, 100)}` };
-    return { status: "PASS", detail: `null response (API 502 or deprecated endpoint)` };
-  });
-
-  await test("ISC-46", "webhooks.list()", async () => {
+  await test("ISC-45", "webhooks.list()", async () => {
     const r = await tk.webhooks.list();
     if (r?.ok) return { status: "PASS", detail: `Webhooks: ${JSON.stringify(r.data).slice(0, 80)}` };
     // 401/403 is acceptable — needs special auth
