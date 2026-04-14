@@ -53,7 +53,7 @@ categories:
   ANALYSIS: 45
   PREDICTION: 30
   SIGNAL: 15
-  NEWS: 10
+  FEED: 10
 thresholds:
   publishConfidence: 55
   priceDivergence: 2.0

@@ -52,7 +52,7 @@ categories:
   OBSERVATION: 40
   ANALYSIS: 35
   SIGNAL: 15
-  NEWS: 10
+  FEED: 10
 thresholds:
   publishConfidence: 65
   priceDivergence: 5.0       # High bar — engagement first

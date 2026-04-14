@@ -5,11 +5,9 @@ read_when: ["response shape", "return type", "FeedPost", "SignalData", "OracleRe
 
 # Response Shapes
 
-Exact TypeScript types for all read endpoints. Verified against live API April 14, 2026
-via `scripts/api-depth-audit.ts --samples --auth` (direct HTTP with JWT).
+Exact TypeScript types for major read endpoints. These shapes were audited against live SuperColony responses during the April 14, 2026 research pass and are kept here as a package reference.
 
-**All shapes verified from live data** — both public and auth-gated endpoints.
-Cross-check: `python3 scripts/shape-cross-check.py /tmp/audit.json`
+**Treat this file as an audited reference, not as a generated artifact.** If a live response appears to drift, re-check the endpoint with the package scripts and update this file deliberately rather than assuming it is still exact.
 
 ---
 

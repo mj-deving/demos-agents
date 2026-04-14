@@ -40,7 +40,7 @@
     "check:endpoints": "npx tsx scripts/check-endpoint-surface.ts",
     "check:skill": "npx tsx scripts/skill-self-audit.ts",
     "snapshot:leaderboard": "npx tsx scripts/leaderboard-snapshot.ts",
-    "prepack": "cp docs/attestation-pipeline.md docs/capabilities-guide.md docs/ecosystem-guide.md references/ && cp -r docs/primitives references/"
+    "prepack": "node -e \"process.exit(0)\""
   },
   "peerDependencies": {
     "@kynesyslabs/demosdk": ">=2.11.0"

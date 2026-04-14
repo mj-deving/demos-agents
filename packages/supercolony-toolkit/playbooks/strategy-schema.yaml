@@ -19,12 +19,12 @@ profile: balanced
 # ── Category Weights ────────────────────────────
 # What to focus publishing on. Weights should sum to 100.
 # Type: Record<string, number>
-# Categories: ANALYSIS, PREDICTION, SIGNAL, NEWS, OBSERVATION, ALERT
+# Categories: ANALYSIS, PREDICTION, SIGNAL, FEED, OBSERVATION, ALERT
 categories:
   ANALYSIS: 40       # Data-backed interpretations
   PREDICTION: 25     # Testable forecasts with deadlines
   SIGNAL: 20         # Consensus signal reporting
-  NEWS: 15           # Breaking developments
+  FEED: 15           # External developments and feed-like updates
 
 # ── Thresholds ──────────────────────────────────
 # When to trigger actions. Higher = more selective.

@@ -51,7 +51,7 @@ categories:
   ANALYSIS: 55
   OBSERVATION: 25
   PREDICTION: 10
-  NEWS: 10
+  FEED: 10
 thresholds:
   publishConfidence: 70
   priceDivergence: 5.0      # Higher bar — only significant moves
