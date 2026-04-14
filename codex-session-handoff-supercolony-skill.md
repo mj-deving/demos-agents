@@ -28,6 +28,7 @@ Three kinds of work were completed:
 2. The `supercolony-toolkit` skill package was refactored so `SKILL.md` became a lean activation router and `GUIDE.md` became a methodology companion.
 3. Deterministic validation scripts and routed reference files were added, then verified against live SuperColony behavior on 2026-04-14.
 4. A second follow-up pass added package-complete AgentSkills metadata, output templates, and improved eval coverage so the lean skill structure is enforced.
+5. A third integrity pass removed stale packaging behavior, updated onboarding/reference consistency, and corrected playbook category drift.
 
 ## Research Performed
 
@@ -160,6 +161,13 @@ That drove the methodology refactor.
 - [assets/reply-template.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/reply-template.md)
 - [assets/agent-loop-skeleton.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/agent-loop-skeleton.ts)
 
+### Additional package-alignment changes
+
+- [TOOLKIT.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/TOOLKIT.md) was rewritten as a compact onboarding file aligned to the new reference layer.
+- [references/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/ecosystem-guide.md) was rewritten to be source-boundary aware rather than carrying stale network metrics.
+- [references/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/capabilities-guide.md) was rewritten as a stable action inventory aligned to the current package surface.
+- the playbooks and strategy schema were updated to use `FEED` instead of the stale `NEWS` category.
+
 ### Discovery snapshot added
 
 - [docs/research/supercolony-discovery/agent.json](/home/mj/projects/demos-agents/docs/research/supercolony-discovery/agent.json)
@@ -178,6 +186,12 @@ That drove the methodology refactor.
 - [package.json](/home/mj/projects/demos-agents/packages/supercolony-toolkit/package.json)
 - [evals/run-evals.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/evals/run-evals.ts)
 - [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/skill-self-audit.ts)
+- [TOOLKIT.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/TOOLKIT.md)
+- [references/response-shapes.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/response-shapes.md)
+- [playbooks/strategy-schema.yaml](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/strategy-schema.yaml)
+- [playbooks/market-analyst.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/market-analyst.md)
+- [playbooks/research-agent.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/research-agent.md)
+- [playbooks/engagement-optimizer.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/engagement-optimizer.md)
 
 ### Refactor intent
 
@@ -230,6 +244,8 @@ Added script entries:
 
 Also updated package publishing scope so `agents/` and `assets/` are included in package files.
 
+On the third pass, the old `prepack` behavior that copied `docs/*.md` back into `references/` was removed. This was important because it would have overwritten the new reference layer at publish time.
+
 #### `agents/openai.yaml`
 
 Added UI-facing AgentSkills metadata:
@@ -268,6 +284,18 @@ Expanded the self-audit to enforce:
 - asset discoverability
 - existence of `agents/openai.yaml`
 - presence of `$omniweb-toolkit` in the default prompt
+- current `TOOLKIT.md` links
+- removal of stale `NEWS` category use in playbooks
+- package file-list coverage for `agents/`, `assets/`, `references/`, and `scripts/`
+- absence of `prepack` logic that overwrites `references/`
+
+#### `TOOLKIT.md`
+
+Rewritten as a compact onboarding document that now points at `SKILL.md`, `GUIDE.md`, and the new routed reference set instead of the older copied-doc layout.
+
+#### Playbooks and strategy schema
+
+Updated to replace stale `NEWS` category usage with `FEED`, aligning the package archetypes with the audited category set.
 
 ## Verification Performed
 
@@ -287,6 +315,9 @@ Result:
 - confirmed references and scripts are discoverable from `SKILL.md`
 - confirmed assets are discoverable from `SKILL.md` or `GUIDE.md`
 - confirmed `agents/openai.yaml` exists and is wired correctly
+- confirmed `TOOLKIT.md` no longer points at stale copied-doc paths
+- confirmed playbooks no longer use the obsolete `NEWS` category
+- confirmed package metadata no longer contains a `prepack` step that overwrites `references/`
 
 ### Script entrypoint verification
 
@@ -320,6 +351,8 @@ After the follow-up eval/metadata pass:
 - `26` pass
 - `0` warn
 - `0` fail
+
+That status remained green after the third integrity pass.
 
 ### Live drift verification
 
@@ -421,6 +454,13 @@ Remaining reasonable follow-up work for Claude is mainly:
 
 - polish older reference files to match the new reference style
 - decide whether to add more explicit eval cases for source-boundary correctness
+
+The older highest-risk mismatches have already been addressed:
+
+- stale `TOOLKIT.md`
+- stale `NEWS` category in playbooks
+- stale packaging overwrite behavior
+- stale non-bundled audit-tool references in `response-shapes.md`
 
 ## GitOps Recommendation
 

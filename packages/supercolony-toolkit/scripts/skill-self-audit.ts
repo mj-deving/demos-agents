@@ -33,27 +33,39 @@ Exit codes: 0 = pass, 1 = audit failure, 2 = invalid args`);
 const packageRoot = resolve(getStringArg(args, "--package-root") ?? PACKAGE_ROOT);
 const skillPath = resolve(packageRoot, "SKILL.md");
 const guidePath = resolve(packageRoot, "GUIDE.md");
+const toolkitPath = resolve(packageRoot, "TOOLKIT.md");
 const referencesDir = resolve(packageRoot, "references");
 const scriptsDir = resolve(packageRoot, "scripts");
 const assetsDir = resolve(packageRoot, "assets");
+const playbooksDir = resolve(packageRoot, "playbooks");
 const openaiYamlPath = resolve(packageRoot, "agents", "openai.yaml");
 
 const skillText = readFileSync(skillPath, "utf8");
 const guideText = readFileSync(guidePath, "utf8");
+const toolkitText = readFileSync(toolkitPath, "utf8");
 const openaiYamlText = existsRelative(packageRoot, "agents/openai.yaml")
   ? readFileSync(openaiYamlPath, "utf8")
   : "";
+const packageJsonText = readFileSync(resolve(packageRoot, "package.json"), "utf8");
+const packageJson = JSON.parse(packageJsonText) as {
+  files?: string[];
+  scripts?: Record<string, string>;
+};
+const playbookTexts = readdirSync(playbooksDir)
+  .filter((name) => name.endsWith(".md") || name.endsWith(".yaml"))
+  .map((name) => readFileSync(resolve(playbooksDir, name), "utf8"));
 
 const skillFrontmatter = parseFrontmatter(skillText);
 const skillLinks = extractRelativeLinks(skillText);
 const guideLinks = extractRelativeLinks(guideText);
+const toolkitLinks = extractRelativeLinks(toolkitText);
 const topLevelReferenceFiles = listTopLevelFiles(referencesDir, ".md");
 const topLevelScriptFiles = listTopLevelFiles(scriptsDir, ".ts")
   .filter((name) => !name.startsWith("_"));
 const topLevelAssetFiles = listTopLevelFiles(assetsDir)
   .filter((name) => !name.startsWith("."));
 
-const brokenLinks = [...new Set([...skillLinks, ...guideLinks])]
+const brokenLinks = [...new Set([...skillLinks, ...guideLinks, ...toolkitLinks])]
   .filter((link) => !existsRelative(packageRoot, link));
 
 const oneLevelViolations = skillLinks.filter((link) => {
@@ -74,7 +86,12 @@ const missingScriptMentions = topLevelScriptFiles
 
 const missingAssetMentions = topLevelAssetFiles
   .map((name) => `assets/${name}`)
-  .filter((target) => !skillLinks.includes(target) && !guideLinks.includes(target));
+  .filter((target) => !skillLinks.includes(target) && !guideLinks.includes(target) && !toolkitLinks.includes(target));
+
+const stalePatterns = [
+  { label: "stale docs links", ok: !toolkitText.includes("docs/ecosystem-guide.md") && !toolkitText.includes("docs/capabilities-guide.md") && !toolkitText.includes("docs/attestation-pipeline.md") },
+  { label: "obsolete NEWS category", ok: playbookTexts.every((text) => !text.includes("NEWS:")) },
+];
 
 const checks = [
   {
@@ -128,6 +145,28 @@ const checks = [
     name: "openai_yaml_default_prompt",
     ok: openaiYamlText.includes("$omniweb-toolkit"),
     detail: "agents/openai.yaml default_prompt should mention $omniweb-toolkit",
+  },
+  {
+    name: "toolkit_links_current",
+    ok: stalePatterns[0].ok,
+    detail: stalePatterns[0].label,
+  },
+  {
+    name: "playbook_categories_current",
+    ok: stalePatterns[1].ok,
+    detail: stalePatterns[1].label,
+  },
+  {
+    name: "package_files_include_skill_assets",
+    ok: ["agents/", "assets/", "references/", "scripts/"].every((entry) => packageJson.files?.includes(entry)),
+    detail: "package.json files should include agents/, assets/, references/, and scripts/",
+  },
+  {
+    name: "prepack_does_not_overwrite_references",
+    ok: typeof packageJson.scripts?.prepack === "string" &&
+      !packageJson.scripts.prepack.includes("cp docs/") &&
+      !packageJson.scripts.prepack.includes("references/"),
+    detail: "package.json prepack should not overwrite references/",
   },
 ];
 
