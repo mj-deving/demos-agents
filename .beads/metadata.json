@@ -1,7 +1,0 @@
-{
-  "database": "dolt",
-  "backend": "dolt",
-  "dolt_mode": "embedded",
-  "dolt_database": "demos_agents",
-  "project_id": "0c47e273-6a31-45a3-9139-171eebf66ae2"
-}
