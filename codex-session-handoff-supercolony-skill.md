@@ -2,7 +2,7 @@
 
 Date: 2026-04-14  
 Workspace: `/home/mj/projects/demos-agents`  
-Primary scope: `packages/supercolony-toolkit` and related SuperColony research material
+Primary scope: `packages/omniweb-toolkit` and related SuperColony research material
 
 ## Purpose
 
@@ -40,12 +40,12 @@ Three kinds of work were completed:
 
 ### Local package and repo files reviewed
 
-- `packages/supercolony-toolkit/SKILL.md`
-- `packages/supercolony-toolkit/GUIDE.md`
-- `packages/supercolony-toolkit/README.md`
-- `packages/supercolony-toolkit/src/index.ts`
-- `packages/supercolony-toolkit/src/colony.ts`
-- `packages/supercolony-toolkit/src/hive.ts`
+- `packages/omniweb-toolkit/SKILL.md`
+- `packages/omniweb-toolkit/GUIDE.md`
+- `packages/omniweb-toolkit/README.md`
+- `packages/omniweb-toolkit/src/index.ts`
+- `packages/omniweb-toolkit/src/colony.ts`
+- `packages/omniweb-toolkit/src/hive.ts`
 - `scripts/colony-state-reader.ts`
 
 ### Official live resources fetched
@@ -137,43 +137,43 @@ That drove the methodology refactor.
 ### Standalone audit and research docs
 
 - [codex-skill-guide-audit-report.md](/home/mj/projects/demos-agents/codex-skill-guide-audit-report.md)
-- [research-supercolony-skill-sources.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/research-supercolony-skill-sources.md)
-- [skill-improvement-recommendations.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/skill-improvement-recommendations.md)
+- [research-supercolony-skill-sources.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/research-supercolony-skill-sources.md)
+- [skill-improvement-recommendations.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/skill-improvement-recommendations.md)
 
 ### New reference files added to the skill package
 
-- [platform-surface.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/platform-surface.md)
-- [categories.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/categories.md)
-- [discovery-and-manifests.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/discovery-and-manifests.md)
-- [live-endpoints.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/live-endpoints.md)
-- [scoring-and-leaderboard.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/scoring-and-leaderboard.md)
-- [interaction-patterns.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/interaction-patterns.md)
-- [toolkit-guardrails.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/toolkit-guardrails.md)
+- [platform-surface.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/platform-surface.md)
+- [categories.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/categories.md)
+- [discovery-and-manifests.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/discovery-and-manifests.md)
+- [live-endpoints.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/live-endpoints.md)
+- [scoring-and-leaderboard.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/scoring-and-leaderboard.md)
+- [interaction-patterns.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/interaction-patterns.md)
+- [toolkit-guardrails.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/toolkit-guardrails.md)
 
 ### New validation / research scripts added to the skill package
 
-- [scripts/_shared.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/_shared.ts)
-- [scripts/check-discovery-drift.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-discovery-drift.ts)
-- [scripts/check-live-categories.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-live-categories.ts)
-- [scripts/check-endpoint-surface.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-endpoint-surface.ts)
-- [scripts/check-live.sh](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-live.sh)
-- [scripts/check-release.sh](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-release.sh)
-- [scripts/leaderboard-snapshot.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/leaderboard-snapshot.ts)
-- [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/skill-self-audit.ts)
+- [scripts/_shared.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/_shared.ts)
+- [scripts/check-discovery-drift.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-discovery-drift.ts)
+- [scripts/check-live-categories.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-live-categories.ts)
+- [scripts/check-endpoint-surface.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-endpoint-surface.ts)
+- [scripts/check-live.sh](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-live.sh)
+- [scripts/check-release.sh](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-release.sh)
+- [scripts/leaderboard-snapshot.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/leaderboard-snapshot.ts)
+- [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/skill-self-audit.ts)
 
 ### New AgentSkills metadata and assets
 
-- [agents/openai.yaml](/home/mj/projects/demos-agents/packages/supercolony-toolkit/agents/openai.yaml)
-- [assets/post-template-analysis.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/post-template-analysis.md)
-- [assets/post-template-prediction.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/post-template-prediction.md)
-- [assets/reply-template.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/reply-template.md)
-- [assets/agent-loop-skeleton.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/agent-loop-skeleton.ts)
+- [agents/openai.yaml](/home/mj/projects/demos-agents/packages/omniweb-toolkit/agents/openai.yaml)
+- [assets/post-template-analysis.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/assets/post-template-analysis.md)
+- [assets/post-template-prediction.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/assets/post-template-prediction.md)
+- [assets/reply-template.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/assets/reply-template.md)
+- [assets/agent-loop-skeleton.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/assets/agent-loop-skeleton.ts)
 
 ### Additional package-alignment changes
 
-- [TOOLKIT.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/TOOLKIT.md) was rewritten as a compact onboarding file aligned to the new reference layer.
-- [references/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/ecosystem-guide.md) was rewritten to be source-boundary aware rather than carrying stale network metrics.
-- [references/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/capabilities-guide.md) was rewritten as a stable action inventory aligned to the current package surface.
+- [TOOLKIT.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/TOOLKIT.md) was rewritten as a compact onboarding file aligned to the new reference layer.
+- [references/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/ecosystem-guide.md) was rewritten to be source-boundary aware rather than carrying stale network metrics.
+- [references/capabilities-guide.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/capabilities-guide.md) was rewritten as a stable action inventory aligned to the current package surface.
 - the playbooks and strategy schema were updated to use `FEED` instead of the stale `NEWS` category.
 - the legacy `docs/` copies for attestation, capabilities, ecosystem, and primitives were converted into short compatibility stubs that point to the canonical `references/` content.
 - package metadata and playbook intros were cleaned up to remove stale fixed-count claims such as hardcoded agent counts and method/domain counts.
@@ -190,27 +190,27 @@ That drove the methodology refactor.
 
 ### Refactored
 
-- [SKILL.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/SKILL.md)
-- [GUIDE.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/GUIDE.md)
-- [README.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/README.md)
-- [package.json](/home/mj/projects/demos-agents/packages/supercolony-toolkit/package.json)
-- [evals/run-evals.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/evals/run-evals.ts)
-- [evals/evals.json](/home/mj/projects/demos-agents/packages/supercolony-toolkit/evals/evals.json)
-- [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/skill-self-audit.ts)
-- [TOOLKIT.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/TOOLKIT.md)
-- [references/response-shapes.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/response-shapes.md)
-- [playbooks/strategy-schema.yaml](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/strategy-schema.yaml)
-- [playbooks/market-analyst.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/market-analyst.md)
-- [playbooks/research-agent.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/research-agent.md)
-- [playbooks/engagement-optimizer.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/engagement-optimizer.md)
-- [docs/attestation-pipeline.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/attestation-pipeline.md)
-- [docs/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/capabilities-guide.md)
-- [docs/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/ecosystem-guide.md)
-- [docs/primitives/README.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/primitives/README.md)
-- [scripts/_shared.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/_shared.ts)
-- [scripts/check-live.sh](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-live.sh)
-- [scripts/check-release.sh](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-release.sh)
-- [src/colony.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/src/colony.ts)
+- [SKILL.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/SKILL.md)
+- [GUIDE.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/GUIDE.md)
+- [README.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/README.md)
+- [package.json](/home/mj/projects/demos-agents/packages/omniweb-toolkit/package.json)
+- [evals/run-evals.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/evals/run-evals.ts)
+- [evals/evals.json](/home/mj/projects/demos-agents/packages/omniweb-toolkit/evals/evals.json)
+- [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/skill-self-audit.ts)
+- [TOOLKIT.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/TOOLKIT.md)
+- [references/response-shapes.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/references/response-shapes.md)
+- [playbooks/strategy-schema.yaml](/home/mj/projects/demos-agents/packages/omniweb-toolkit/playbooks/strategy-schema.yaml)
+- [playbooks/market-analyst.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/playbooks/market-analyst.md)
+- [playbooks/research-agent.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/playbooks/research-agent.md)
+- [playbooks/engagement-optimizer.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/playbooks/engagement-optimizer.md)
+- [docs/attestation-pipeline.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/attestation-pipeline.md)
+- [docs/capabilities-guide.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/capabilities-guide.md)
+- [docs/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/ecosystem-guide.md)
+- [docs/primitives/README.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/primitives/README.md)
+- [scripts/_shared.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/_shared.ts)
+- [scripts/check-live.sh](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-live.sh)
+- [scripts/check-release.sh](/home/mj/projects/demos-agents/packages/omniweb-toolkit/scripts/check-release.sh)
+- [src/colony.ts](/home/mj/projects/demos-agents/packages/omniweb-toolkit/src/colony.ts)
 
 ### Refactor intent
 
@@ -293,7 +293,7 @@ On the seventh pass, the published script surface itself was corrected:
 
 On the eighth pass, the package-owned runtime contract for shipped helpers was corrected:
 
-- `packages/supercolony-toolkit/package.json` now declares `tsx` directly so shipped `.ts` helper scripts do not rely on the monorepo root dev toolchain
+- `packages/omniweb-toolkit/package.json` now declares `tsx` directly so shipped `.ts` helper scripts do not rely on the monorepo root dev toolchain
 - the root [package-lock.json](/home/mj/projects/demos-agents/package-lock.json) was updated so the workspace lock metadata matches that new package dependency edge
 - `README.md` and `TOOLKIT.md` now explain that the package-owned `tsx` dependency is what keeps those helper entrypoints runnable after a normal install
 - `scripts/skill-self-audit.ts` now fails if top-level `.ts` scripts are shipped without a corresponding `tsx` dependency
@@ -552,7 +552,7 @@ Latest package-audit highlights:
 - `top_level_scripts_support_help`: pass
 - `toolkit_mentions_release_and_live_shell_checks`: pass
 - `package_subpath_exports_are_documented`: pass
-- workspace lock metadata now includes the `packages/supercolony-toolkit -> tsx` dependency edge
+- workspace lock metadata now includes the `packages/omniweb-toolkit -> tsx` dependency edge
 - workspace lock metadata now also matches `proper-lockfile`, `better-sqlite3`, `openai`, and `@anthropic-ai/sdk` package manifest edges
 
 Current expected constrained check:
@@ -687,29 +687,29 @@ git add \
   codex-skill-guide-audit-report.md \
   codex-session-handoff-supercolony-skill.md \
   docs/research/supercolony-discovery/agent.json \
-  packages/supercolony-toolkit/SKILL.md \
-  packages/supercolony-toolkit/GUIDE.md \
-  packages/supercolony-toolkit/README.md \
-  packages/supercolony-toolkit/package.json \
-  packages/supercolony-toolkit/agents/openai.yaml \
-  packages/supercolony-toolkit/assets/ \
-  packages/supercolony-toolkit/docs/research-supercolony-skill-sources.md \
-  packages/supercolony-toolkit/docs/skill-improvement-recommendations.md \
-  packages/supercolony-toolkit/docs/attestation-pipeline.md \
-  packages/supercolony-toolkit/docs/capabilities-guide.md \
-  packages/supercolony-toolkit/docs/ecosystem-guide.md \
-  packages/supercolony-toolkit/docs/primitives/README.md \
-  packages/supercolony-toolkit/evals/evals.json \
-  packages/supercolony-toolkit/evals/run-evals.ts \
-  packages/supercolony-toolkit/references/ \
-  packages/supercolony-toolkit/src/colony.ts \
-  packages/supercolony-toolkit/scripts/
+  packages/omniweb-toolkit/SKILL.md \
+  packages/omniweb-toolkit/GUIDE.md \
+  packages/omniweb-toolkit/README.md \
+  packages/omniweb-toolkit/package.json \
+  packages/omniweb-toolkit/agents/openai.yaml \
+  packages/omniweb-toolkit/assets/ \
+  packages/omniweb-toolkit/docs/research-supercolony-skill-sources.md \
+  packages/omniweb-toolkit/docs/skill-improvement-recommendations.md \
+  packages/omniweb-toolkit/docs/attestation-pipeline.md \
+  packages/omniweb-toolkit/docs/capabilities-guide.md \
+  packages/omniweb-toolkit/docs/ecosystem-guide.md \
+  packages/omniweb-toolkit/docs/primitives/README.md \
+  packages/omniweb-toolkit/evals/evals.json \
+  packages/omniweb-toolkit/evals/run-evals.ts \
+  packages/omniweb-toolkit/references/ \
+  packages/omniweb-toolkit/src/colony.ts \
+  packages/omniweb-toolkit/scripts/
 ```
 
 That staging set now includes both release-integrity shell helpers:
 
-- `packages/supercolony-toolkit/scripts/check-live.sh`
-- `packages/supercolony-toolkit/scripts/check-release.sh`
+- `packages/omniweb-toolkit/scripts/check-live.sh`
+- `packages/omniweb-toolkit/scripts/check-release.sh`
 
 Do not stage unrelated untracked files currently visible in `git status`, such as:
 

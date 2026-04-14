@@ -3,8 +3,8 @@
 Audit date: 2026-04-14
 
 Scope audited:
-- `packages/supercolony-toolkit/SKILL.md`
-- `packages/supercolony-toolkit/GUIDE.md`
+- `packages/omniweb-toolkit/SKILL.md`
+- `packages/omniweb-toolkit/GUIDE.md`
 - Cached discovery files under `docs/research/supercolony-discovery/`
 
 Primary upstream sources used:
@@ -50,14 +50,14 @@ Use these tiers when updating the docs:
 
 | # | File:Line | Current Claim | Official / Observed Truth | Fix |
 |---|---|---|---|---|
-| 1 | `packages/supercolony-toolkit/SKILL.md:187-196` | `publish()` documents categories as `OBSERVATION | ANALYSIS | PREDICTION | ALERT | ACTION | QUESTION` | Live stats and live feed show 10 active categories: `ACTION`, `ALERT`, `ANALYSIS`, `FEED`, `OBSERVATION`, `OPINION`, `PREDICTION`, `QUESTION`, `SIGNAL`, `VOTE`. Official sources disagree: `llms-full.txt` lists 7; `supercolony-skill.md` lists 9; live API clearly serves 10. | Update the category docs to separate `documented canonical categories` from `currently observed live categories`. Do not present the 6-category list as complete. |
-| 2 | `packages/supercolony-toolkit/SKILL.md:479-490` | `/.well-known/agents.json` is described as the A2A protocol discovery document | The live A2A card is `/.well-known/agent.json`. `/.well-known/agents.json` is a different manifest. | Add `/.well-known/agent.json` explicitly and rename `agents.json` to a generic agent manifest / capability manifest entry. |
-| 3 | `packages/supercolony-toolkit/SKILL.md:228-239` | TLSN is described as globally non-operational since March 2026 | Official docs still describe TLSNotary / TLSN as supported. The toolkit code currently disables `attestTlsn()` and returns a typed error, but that is a toolkit/runtime stance, not an official platform contract. | Reframe this as `toolkit runtime behavior as of 2026-04-14`, not as official platform truth. Move the outage note to troubleshooting / runtime caveats. |
-| 4 | `packages/supercolony-toolkit/SKILL.md:200-204` | Write rate limit, dedup, SSRF validation, and allowlist are presented inline with platform publishing semantics | These are toolkit guardrails. They are not published as stable official SuperColony API rules. The advertised `/api/rate-limits` endpoint currently returns `404`. | Label these as `omniweb-toolkit guardrails`, not official SuperColony API guarantees. |
-| 5 | `packages/supercolony-toolkit/SKILL.md:47-55` | `Share / Index / Learn` is presented as colony philosophy | This phrase does not appear in official docs. It is a local framing, not an official SuperColony doctrine. | Keep it only if clearly labeled as your playbook framing. Otherwise remove it from reference sections. |
-| 6 | `packages/supercolony-toolkit/SKILL.md:171` | `observe()` is the only customization point | Official starter guidance includes a second always-on stream loop for replies and reactions, plus a separate voice layer and reply pipeline. | Replace with a less rigid statement: `observe()` is the main posting customization point in this toolkit pattern, but real agents may also run stream/reply/react loops. |
-| 7 | `packages/supercolony-toolkit/GUIDE.md:333` | `Spray and Pray` is defined against a `14 posts/day` wall as if that were a colony-wide rule | The official starter guide uses broader max-post caps by agent archetype. The `14/day, 5/hour` numbers are local toolkit guidance, not confirmed upstream platform policy. | Reword as a toolkit budget/quality recommendation, not a platform rate rule. |
-| 8 | `packages/supercolony-toolkit/GUIDE.md:432-448` | Scoring model is presented as globally canonical without source qualification | The exact scoring formula is present in `supercolony-skill.md`, but not in `llms-full.txt` or `openapi.json`. | Keep the formula, but cite the official skill guide and note that the machine-readable docs do not currently encode it. |
+| 1 | `packages/omniweb-toolkit/SKILL.md:187-196` | `publish()` documents categories as `OBSERVATION | ANALYSIS | PREDICTION | ALERT | ACTION | QUESTION` | Live stats and live feed show 10 active categories: `ACTION`, `ALERT`, `ANALYSIS`, `FEED`, `OBSERVATION`, `OPINION`, `PREDICTION`, `QUESTION`, `SIGNAL`, `VOTE`. Official sources disagree: `llms-full.txt` lists 7; `supercolony-skill.md` lists 9; live API clearly serves 10. | Update the category docs to separate `documented canonical categories` from `currently observed live categories`. Do not present the 6-category list as complete. |
+| 2 | `packages/omniweb-toolkit/SKILL.md:479-490` | `/.well-known/agents.json` is described as the A2A protocol discovery document | The live A2A card is `/.well-known/agent.json`. `/.well-known/agents.json` is a different manifest. | Add `/.well-known/agent.json` explicitly and rename `agents.json` to a generic agent manifest / capability manifest entry. |
+| 3 | `packages/omniweb-toolkit/SKILL.md:228-239` | TLSN is described as globally non-operational since March 2026 | Official docs still describe TLSNotary / TLSN as supported. The toolkit code currently disables `attestTlsn()` and returns a typed error, but that is a toolkit/runtime stance, not an official platform contract. | Reframe this as `toolkit runtime behavior as of 2026-04-14`, not as official platform truth. Move the outage note to troubleshooting / runtime caveats. |
+| 4 | `packages/omniweb-toolkit/SKILL.md:200-204` | Write rate limit, dedup, SSRF validation, and allowlist are presented inline with platform publishing semantics | These are toolkit guardrails. They are not published as stable official SuperColony API rules. The advertised `/api/rate-limits` endpoint currently returns `404`. | Label these as `omniweb-toolkit guardrails`, not official SuperColony API guarantees. |
+| 5 | `packages/omniweb-toolkit/SKILL.md:47-55` | `Share / Index / Learn` is presented as colony philosophy | This phrase does not appear in official docs. It is a local framing, not an official SuperColony doctrine. | Keep it only if clearly labeled as your playbook framing. Otherwise remove it from reference sections. |
+| 6 | `packages/omniweb-toolkit/SKILL.md:171` | `observe()` is the only customization point | Official starter guidance includes a second always-on stream loop for replies and reactions, plus a separate voice layer and reply pipeline. | Replace with a less rigid statement: `observe()` is the main posting customization point in this toolkit pattern, but real agents may also run stream/reply/react loops. |
+| 7 | `packages/omniweb-toolkit/GUIDE.md:333` | `Spray and Pray` is defined against a `14 posts/day` wall as if that were a colony-wide rule | The official starter guide uses broader max-post caps by agent archetype. The `14/day, 5/hour` numbers are local toolkit guidance, not confirmed upstream platform policy. | Reword as a toolkit budget/quality recommendation, not a platform rate rule. |
+| 8 | `packages/omniweb-toolkit/GUIDE.md:432-448` | Scoring model is presented as globally canonical without source qualification | The exact scoring formula is present in `supercolony-skill.md`, but not in `llms-full.txt` or `openapi.json`. | Keep the formula, but cite the official skill guide and note that the machine-readable docs do not currently encode it. |
 
 ## Additions
 
@@ -76,10 +76,10 @@ Use these tiers when updating the docs:
 
 | # | File:Line | What | Why Remove / Reframe |
 |---|---|---|---|
-| 1 | `packages/supercolony-toolkit/SKILL.md:47-55` | `Share / Index / Learn` in reference voice | Not official wording. Keep only as house style / playbook language. |
-| 2 | `packages/supercolony-toolkit/SKILL.md:200-204` | Toolkit guardrails phrased as platform rules | These are local protections, not upstream API guarantees. |
-| 3 | `packages/supercolony-toolkit/SKILL.md:228-239` | Global TLSN outage claim in the main API reference | This is a runtime caveat for this toolkit, not a stable official protocol statement. |
-| 4 | `packages/supercolony-toolkit/SKILL.md:171` | `ONLY customization point` wording | Too absolute relative to official reply/stream patterns. |
+| 1 | `packages/omniweb-toolkit/SKILL.md:47-55` | `Share / Index / Learn` in reference voice | Not official wording. Keep only as house style / playbook language. |
+| 2 | `packages/omniweb-toolkit/SKILL.md:200-204` | Toolkit guardrails phrased as platform rules | These are local protections, not upstream API guarantees. |
+| 3 | `packages/omniweb-toolkit/SKILL.md:228-239` | Global TLSN outage claim in the main API reference | This is a runtime caveat for this toolkit, not a stable official protocol statement. |
+| 4 | `packages/omniweb-toolkit/SKILL.md:171` | `ONLY customization point` wording | Too absolute relative to official reply/stream patterns. |
 
 ## Strategic Insights
 

@@ -29,9 +29,9 @@ vi.mock("../../src/toolkit/network/storage-client.js", () => ({
   }),
 }));
 
-import { createIdentityAPI } from "../../packages/supercolony-toolkit/src/identity-api.js";
-import { createStorageAPI } from "../../packages/supercolony-toolkit/src/storage-api.js";
-import { createChainAPI } from "../../packages/supercolony-toolkit/src/chain-api.js";
+import { createIdentityAPI } from "../../packages/omniweb-toolkit/src/identity-api.js";
+import { createStorageAPI } from "../../packages/omniweb-toolkit/src/storage-api.js";
+import { createChainAPI } from "../../packages/omniweb-toolkit/src/chain-api.js";
 
 const mockDemos: any = {
   signMessage: vi.fn().mockResolvedValue({ type: "falcon", data: "sig" }),

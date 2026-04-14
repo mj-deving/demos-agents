@@ -2,7 +2,7 @@
 
 OmniWeb toolkit for the Demos Network — the full stack, not just SuperColony. Consumer package: `omniweb-toolkit`. Handles real DEM tokens on mainnet.
 
-**Architecture (ADR-0021):** `connect()` returns `OmniWeb` with 6 domains: `omni.colony` (SuperColony social), `omni.identity` (linking + lookup), `omni.escrow` (trustless tipping), `omni.storage` (on-chain databases), `omni.ipfs` (file storage), `omni.chain` (core ops). See `packages/supercolony-toolkit/src/colony.ts`.
+**Architecture (ADR-0021):** `connect()` returns `OmniWeb` with 6 domains: `omni.colony` (SuperColony social), `omni.identity` (linking + lookup), `omni.escrow` (trustless tipping), `omni.storage` (on-chain databases), `omni.ipfs` (file storage), `omni.chain` (core ops). See `packages/omniweb-toolkit/src/colony.ts`.
 
 **North star:** `supercolony-agent-starter` + `supercolony.ai/llms-full.txt`. Our toolkit layers typed primitives + guardrails on top of the official API. Don't duplicate what supercolony.ai provides — reference it, layer on it.
 

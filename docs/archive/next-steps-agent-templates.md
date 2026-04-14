@@ -90,7 +90,7 @@ Phase 10d: docs/research/openclaw-*         ─┘ (independent)
      ↓
 Phase 10e: templates/README.md + docs update
      ↓
-Phase 10f: packages/supercolony-toolkit/     (npm package prep + ColonyPublisher compat shim)
+Phase 10f: packages/omniweb-toolkit/     (npm package prep + ColonyPublisher compat shim)
 ```
 
 ---
@@ -1129,7 +1129,7 @@ await runAgentLoop(colony.runtime, myObserve, { strategyPath: "./strategy.yaml" 
 ### Package structure
 
 ```
-packages/supercolony-toolkit/
+packages/omniweb-toolkit/
   ├── package.json              # name: "supercolony-toolkit", peer dep on @kynesyslabs/demosdk
   ├── tsconfig.json             # extends root, compiles to dist/
   ├── src/
@@ -1160,27 +1160,27 @@ packages/supercolony-toolkit/
 
 | File | Lines (est.) | Phase |
 |------|-------------|-------|
-| `packages/supercolony-toolkit/package.json` | ~30 | 10f |
-| `packages/supercolony-toolkit/tsconfig.json` | ~15 | 10f |
-| `packages/supercolony-toolkit/src/index.ts` | ~15 | 10f |
-| `packages/supercolony-toolkit/src/colony.ts` | ~60 | 10f |
-| `packages/supercolony-toolkit/src/hive.ts` | ~100 | 10f |
-| `packages/supercolony-toolkit/src/agent.ts` | ~10 | 10f |
-| `packages/supercolony-toolkit/src/types.ts` | ~40 | 10f |
-| `packages/supercolony-toolkit/README.md` | ~120 | 10f |
-| `tests/packages/supercolony-toolkit.test.ts` | ~100 | 10f |
+| `packages/omniweb-toolkit/package.json` | ~30 | 10f |
+| `packages/omniweb-toolkit/tsconfig.json` | ~15 | 10f |
+| `packages/omniweb-toolkit/src/index.ts` | ~15 | 10f |
+| `packages/omniweb-toolkit/src/colony.ts` | ~60 | 10f |
+| `packages/omniweb-toolkit/src/hive.ts` | ~100 | 10f |
+| `packages/omniweb-toolkit/src/agent.ts` | ~10 | 10f |
+| `packages/omniweb-toolkit/src/types.ts` | ~40 | 10f |
+| `packages/omniweb-toolkit/README.md` | ~120 | 10f |
+| `tests/packages/omniweb-toolkit.test.ts` | ~100 | 10f |
 
 ### Checklist
 
-- [ ] Create `packages/supercolony-toolkit/` directory structure
+- [ ] Create `packages/omniweb-toolkit/` directory structure
 - [ ] Write `package.json` with correct name, version, peer deps, exports map
-- [x] Write `packages/supercolony-toolkit/src/colony.ts` — Colony class holding runtime + hive + toolkit
-- [x] Write `packages/supercolony-toolkit/src/hive.ts` — all `hive.*` methods wrapping toolkit primitives
-- [x] Write `packages/supercolony-toolkit/src/index.ts` — `connect()` factory + re-exports
-- [x] Write `packages/supercolony-toolkit/src/agent.ts` — re-export runAgentLoop, defaultObserve
+- [x] Write `packages/omniweb-toolkit/src/colony.ts` — Colony class holding runtime + hive + toolkit
+- [x] Write `packages/omniweb-toolkit/src/hive.ts` — all `hive.*` methods wrapping toolkit primitives
+- [x] Write `packages/omniweb-toolkit/src/index.ts` — `connect()` factory + re-exports
+- [x] Write `packages/omniweb-toolkit/src/agent.ts` — re-export runAgentLoop, defaultObserve
 - [ ] Write `src/types.ts` — public API types
 - [ ] Write `README.md` with install, connect(), hive.* examples, toolkit.* examples, agent loop
-- [ ] Write `tests/packages/supercolony-toolkit.test.ts`
+- [ ] Write `tests/packages/omniweb-toolkit.test.ts`
 - [ ] Verify: `npm test` passes, `npx tsc --noEmit` passes
 
 ---
@@ -1230,15 +1230,15 @@ packages/supercolony-toolkit/
 | `tests/templates/base-template.test.ts` | ~60 | 10a-3 |
 | `tests/templates/market-intelligence.test.ts` | ~100 | 10b |
 | `tests/templates/security-sentinel.test.ts` | ~100 | 10c |
-| `packages/supercolony-toolkit/package.json` | ~30 | 10f |
-| `packages/supercolony-toolkit/tsconfig.json` | ~15 | 10f |
-| `packages/supercolony-toolkit/src/index.ts` | ~15 | 10f |
-| `packages/supercolony-toolkit/src/colony.ts` | ~60 | 10f |
-| `packages/supercolony-toolkit/src/hive.ts` | ~100 | 10f |
-| `packages/supercolony-toolkit/src/agent.ts` | ~10 | 10f |
-| `packages/supercolony-toolkit/src/types.ts` | ~40 | 10f |
-| `packages/supercolony-toolkit/README.md` | ~120 | 10f |
-| `tests/packages/supercolony-toolkit.test.ts` | ~100 | 10f |
+| `packages/omniweb-toolkit/package.json` | ~30 | 10f |
+| `packages/omniweb-toolkit/tsconfig.json` | ~15 | 10f |
+| `packages/omniweb-toolkit/src/index.ts` | ~15 | 10f |
+| `packages/omniweb-toolkit/src/colony.ts` | ~60 | 10f |
+| `packages/omniweb-toolkit/src/hive.ts` | ~100 | 10f |
+| `packages/omniweb-toolkit/src/agent.ts` | ~10 | 10f |
+| `packages/omniweb-toolkit/src/types.ts` | ~40 | 10f |
+| `packages/omniweb-toolkit/README.md` | ~120 | 10f |
+| `tests/packages/omniweb-toolkit.test.ts` | ~100 | 10f |
 | **Total** | **~1,933** | |
 
 ---
@@ -1273,15 +1273,15 @@ packages/supercolony-toolkit/
 - [ ] Verify: `npm test` + `npx tsc --noEmit` both pass
 
 ### Phase 10f: npm Package (`supercolony-toolkit`)
-- [ ] Create `packages/supercolony-toolkit/` directory structure
+- [ ] Create `packages/omniweb-toolkit/` directory structure
 - [ ] Write package.json with exports map, peer dep on @kynesyslabs/demosdk
-- [x] Write `packages/supercolony-toolkit/src/colony.ts` — Colony class (runtime + hive + toolkit)
-- [x] Write `packages/supercolony-toolkit/src/hive.ts` — `hive.*` methods wrapping toolkit primitives
-- [x] Write `packages/supercolony-toolkit/src/index.ts` — `connect()` factory + re-exports
-- [x] Write `packages/supercolony-toolkit/src/agent.ts` — re-export runAgentLoop, defaultObserve
+- [x] Write `packages/omniweb-toolkit/src/colony.ts` — Colony class (runtime + hive + toolkit)
+- [x] Write `packages/omniweb-toolkit/src/hive.ts` — `hive.*` methods wrapping toolkit primitives
+- [x] Write `packages/omniweb-toolkit/src/index.ts` — `connect()` factory + re-exports
+- [x] Write `packages/omniweb-toolkit/src/agent.ts` — re-export runAgentLoop, defaultObserve
 - [ ] Write `src/types.ts` — public API types
 - [ ] Write README.md with connect(), hive.*, toolkit.*, agent loop examples
-- [ ] Write `tests/packages/supercolony-toolkit.test.ts`
+- [ ] Write `tests/packages/omniweb-toolkit.test.ts`
 - [ ] Final: `npm test` + `npx tsc --noEmit` both pass
 
 ---
@@ -1319,7 +1319,7 @@ packages/supercolony-toolkit/
 | 5 | `ObserveFn` type mismatch (`defaultObserve` takes 2 args), wrong import path | High | **FIXED in plan** — `ObserveFn` now `(toolkit, address)`, import path → `available-evidence.js` |
 | 6 | `.env.example` env var name mismatch | Medium | **FIXED in plan** — aligned to `SUPERCOLONY_API` |
 | 7 | Reaction counter counts TIP as reactions | Medium | **FIXED in plan** — filter to ENGAGE only |
-| 8 | Root tsconfig won't check `packages/supercolony-toolkit` | Medium | **Fix during 10f** — add to tsconfig includes (dir doesn't exist yet) |
+| 8 | Root tsconfig won't check `packages/omniweb-toolkit` | Medium | **Fix during 10f** — add to tsconfig includes (dir doesn't exist yet) |
 
 ---
 

@@ -147,7 +147,7 @@ These findings inform what the agent needs access to:
 | `scripts/smoke-test-omniweb.ts` | Quick 11-endpoint read validation | Working — 11/11 PASS |
 | `scripts/publish-test.ts` | Source-matched attestation acid test | Working — txHash 997bc43b |
 | `tests/openapi-drift.test.ts` | Schema superset check against openapi.json | Existing CI gate |
-| `packages/supercolony-toolkit/evals/run-evals.ts` | Eval consistency validator | Working — 25/25 PASS |
+| `packages/omniweb-toolkit/evals/run-evals.ts` | Eval consistency validator | Working — 25/25 PASS |
 
 ## Source Files to Modify
 
@@ -156,7 +156,7 @@ These findings inform what the agent needs access to:
 | `src/toolkit/supercolony/types.ts` | 458 | Fix 14+ interface definitions |
 | `src/toolkit/supercolony/api-client.ts` | 501 | Remove ballot methods, add convergence/SSE |
 | `src/toolkit/supercolony/api-schemas.ts` | 127 | Update Zod schemas to match fixed types |
-| `packages/supercolony-toolkit/references/response-shapes.md` | 108 | Full rewrite from live data |
-| `packages/supercolony-toolkit/SKILL.md` | 502 | Update response shapes summary table |
+| `packages/omniweb-toolkit/references/response-shapes.md` | 108 | Full rewrite from live data |
+| `packages/omniweb-toolkit/SKILL.md` | 502 | Update response shapes summary table |
 | `tests/openapi-drift.test.ts` | varies | Add field-addition detection |
 | `tests/behavioral/api-surface.test.ts` | varies | Update ExactKeys unions after type changes |

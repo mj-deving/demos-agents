@@ -1,7 +1,7 @@
 # SuperColony Skill Improvement Recommendations
 
 Status: standalone design document  
-Audience: maintainers of `packages/supercolony-toolkit`  
+Audience: maintainers of `packages/omniweb-toolkit`  
 Primary goal: improve the skill package as an AgentSkills-compliant artifact, not just as a documentation set
 
 ## Why This Document Exists
@@ -378,7 +378,7 @@ The package already has evals, but I would extend them to cover AgentSkills beha
 This is the concrete file layout I would aim for:
 
 ```text
-packages/supercolony-toolkit/
+packages/omniweb-toolkit/
 ├── SKILL.md
 ├── GUIDE.md
 ├── README.md

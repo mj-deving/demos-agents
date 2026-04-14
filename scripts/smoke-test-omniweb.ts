@@ -12,7 +12,7 @@
  * Requires: DEMOS_MNEMONIC in .env
  */
 
-import { connect } from "../packages/supercolony-toolkit/src/colony.js";
+import { connect } from "../packages/omniweb-toolkit/src/colony.js";
 
 interface TestResult {
   name: string;

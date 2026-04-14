@@ -201,7 +201,7 @@ describe("Behavioral Guardrails — Phase 0 Contract", () => {
   it("ChainAPI.transfer() rejects amounts over 1000 DEM", async () => {
     // Import ChainAPI factory directly
     const { createChainAPI } = await import(
-      "../../packages/supercolony-toolkit/src/chain-api.js"
+      "../../packages/omniweb-toolkit/src/chain-api.js"
     );
 
     // Stub demos + sdkBridge — transfer should be rejected before reaching them
@@ -218,7 +218,7 @@ describe("Behavioral Guardrails — Phase 0 Contract", () => {
   // ── 10b. ChainAPI.transfer() allows exactly 1000 DEM (boundary) ──
   it("ChainAPI.transfer() allows exactly 1000 DEM (boundary)", async () => {
     const { createChainAPI } = await import(
-      "../../packages/supercolony-toolkit/src/chain-api.js"
+      "../../packages/omniweb-toolkit/src/chain-api.js"
     );
 
     const stubBridge = {
@@ -235,7 +235,7 @@ describe("Behavioral Guardrails — Phase 0 Contract", () => {
   // ── 11. placeHL() rejects invalid direction ──
   it("placeHL() rejects invalid direction", async () => {
     const { createHiveAPI } = await import(
-      "../../packages/supercolony-toolkit/src/hive.js"
+      "../../packages/omniweb-toolkit/src/hive.js"
     );
 
     // We need to test placeHL direction validation without a real runtime.

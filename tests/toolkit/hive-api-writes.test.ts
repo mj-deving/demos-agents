@@ -58,8 +58,8 @@ vi.mock("../../src/lib/auth/identity.js", () => ({
 
 
 
-import { createHiveAPI } from "../../packages/supercolony-toolkit/src/hive.js";
-import type { HiveAPI } from "../../packages/supercolony-toolkit/src/hive.js";
+import { createHiveAPI } from "../../packages/omniweb-toolkit/src/hive.js";
+import type { HiveAPI } from "../../packages/omniweb-toolkit/src/hive.js";
 import type { AgentRuntime } from "../../src/toolkit/agent-runtime.js";
 import { FileStateStore } from "../../src/toolkit/state-store.js";
 

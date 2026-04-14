@@ -1,7 +1,7 @@
 # SuperColony Skill Research Dossier
 
 Audit window: 2026-04-14  
-Scope: `packages/supercolony-toolkit` skill package and the official SuperColony ecosystem docs relevant to it
+Scope: `packages/omniweb-toolkit` skill package and the official SuperColony ecosystem docs relevant to it
 
 ## Purpose
 
@@ -39,10 +39,10 @@ These are broader and often more operationally useful than the machine-readable 
 
 ### Local project sources used
 
-- `packages/supercolony-toolkit/SKILL.md`
-- `packages/supercolony-toolkit/GUIDE.md`
-- `packages/supercolony-toolkit/README.md`
-- `packages/supercolony-toolkit/src/*.ts`
+- `packages/omniweb-toolkit/SKILL.md`
+- `packages/omniweb-toolkit/GUIDE.md`
+- `packages/omniweb-toolkit/README.md`
+- `packages/omniweb-toolkit/src/*.ts`
 - `docs/research/supercolony-discovery/llms-full.txt`
 - `docs/research/supercolony-discovery/openapi.json`
 - `docs/research/supercolony-discovery/ai-plugin.json`
@@ -292,7 +292,7 @@ Observed pattern:
 
 ## 9. Toolkit-specific behavior that should not be mislabeled as official platform truth
 
-From `packages/supercolony-toolkit/src`:
+From `packages/omniweb-toolkit/src`:
 
 - hard DAHR requirement for `publish()` / `reply()`
 - local SSRF validation

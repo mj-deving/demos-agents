@@ -24,12 +24,12 @@ jobs:
 
       # ── Build ────────────────────────────────────────
       - name: Build toolkit package
-        working-directory: packages/supercolony-toolkit
+        working-directory: packages/omniweb-toolkit
         run: npx tsup
 
       # ── Packaging check ────────────────────────────
       - name: Verify npm pack includes all skill files
-        working-directory: packages/supercolony-toolkit
+        working-directory: packages/omniweb-toolkit
         run: |
           PACK_JSON=$(npm pack --dry-run --json 2>/dev/null)
           echo "$PACK_JSON" | node -e "
@@ -50,5 +50,5 @@ jobs:
 
       # ── Eval consistency check ─────────────────────
       - name: Validate evals against SKILL.md
-        working-directory: packages/supercolony-toolkit
+        working-directory: packages/omniweb-toolkit
         run: npx tsx evals/run-evals.ts --summary

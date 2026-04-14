@@ -118,7 +118,7 @@ const externalRuntimeImports = existsRelative(packageRoot, "dist")
   ? collectExternalImports(distDir)
   : [];
 const undeclaredRuntimeImports = externalRuntimeImports.filter((specifier) => !isDeclaredModule(specifier, declaredRuntimeModules));
-const workspaceLockEntry = repoLock?.packages?.["packages/supercolony-toolkit"];
+const workspaceLockEntry = repoLock?.packages?.["packages/omniweb-toolkit"];
 const workspaceLockMatchesManifest =
   !repoLock ||
   normalizeRecord(workspaceLockEntry?.dependencies) === normalizeRecord(packageJson.dependencies) &&

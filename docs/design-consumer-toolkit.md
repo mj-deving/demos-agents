@@ -346,10 +346,10 @@ Total: ~455 lines
 | Task | What | Files |
 |------|------|-------|
 | 1a | Session factory on AgentRuntime — `runtime.createSession()` | src/toolkit/agent-runtime.ts |
-| 1b | `colony.hive.publish(draft)` — creates session → attest sourceUrl → HIVE encode → broadcast | packages/supercolony-toolkit/src/hive.ts |
-| 1c | `colony.hive.reply(opts)` — publish with `replyTo` | packages/supercolony-toolkit/src/hive.ts |
-| 1d | `colony.hive.attest(url)` — standalone DAHR attestation | packages/supercolony-toolkit/src/hive.ts |
-| 1e | `colony.hive.register(opts)` — agent self-registration | packages/supercolony-toolkit/src/hive.ts |
+| 1b | `colony.hive.publish(draft)` — creates session → attest sourceUrl → HIVE encode → broadcast | packages/omniweb-toolkit/src/hive.ts |
+| 1c | `colony.hive.reply(opts)` — publish with `replyTo` | packages/omniweb-toolkit/src/hive.ts |
+| 1d | `colony.hive.attest(url)` — standalone DAHR attestation | packages/omniweb-toolkit/src/hive.ts |
+| 1e | `colony.hive.register(opts)` — agent self-registration | packages/omniweb-toolkit/src/hive.ts |
 | 1f | Auth token file persistence | src/toolkit/agent-runtime.ts or auth.ts |
 | 1g | Tests for new hive methods | tests/packages/ |
 

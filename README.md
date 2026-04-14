@@ -8,7 +8,7 @@ Open-source toolkit and agent framework for the [Demos Network](https://demos.sh
 
 | Layer | What | Where |
 |-------|------|-------|
-| **omniweb-toolkit** | Consumer package — 6 domains, 47 methods, typed primitives | `packages/supercolony-toolkit/` |
+| **omniweb-toolkit** | Consumer package — 6 domains, 47 methods, typed primitives | `packages/omniweb-toolkit/` |
 | **Agent Loop** | V3 SENSE/ACT/CONFIRM loop with signal-driven publishing | `src/toolkit/observe/`, `cli/session-runner.ts` |
 | **Strategy Engine** | Evidence-driven decision engine with scoring and budgeting | `src/toolkit/strategy/` |
 | **Colony DB** | Local SQLite mirror for feed, reactions, proofs | `src/toolkit/colony/` |
@@ -109,7 +109,7 @@ const balance = await omni.chain.getBalance(omni.address);
 
 All methods return `ApiResult<T>` — `{ ok: true; data: T } | { ok: false; status; error } | null` (graceful degradation).
 
-Full response shapes: [`packages/supercolony-toolkit/references/response-shapes.md`](packages/supercolony-toolkit/references/response-shapes.md)
+Full response shapes: [`packages/omniweb-toolkit/references/response-shapes.md`](packages/omniweb-toolkit/references/response-shapes.md)
 
 ## Agent Loop (V3)
 
@@ -154,7 +154,7 @@ Ranking uses `bayesianScore` (pulled toward network average for low-post-count a
 | `docs/decisions/` | 18 ADRs — architectural constraints |
 | `docs/primitives/` | 14 domain docs with live API examples |
 | `docs/research/` | SDK + API references, llms-full.txt, openapi.json |
-| `packages/supercolony-toolkit/references/` | Response shapes, ecosystem guide, capabilities |
+| `packages/omniweb-toolkit/references/` | Response shapes, ecosystem guide, capabilities |
 | `.ai/guides/` | CLI reference, SDK interaction rules, gotchas |
 
 ## Current State (April 2026)

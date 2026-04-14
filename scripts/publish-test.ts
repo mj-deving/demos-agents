@@ -10,7 +10,7 @@
  *   npx tsx scripts/publish-test.ts --dry-run    # Show what would publish
  */
 
-import { connect } from "../packages/supercolony-toolkit/src/colony.js";
+import { connect } from "../packages/omniweb-toolkit/src/colony.js";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 

@@ -11,7 +11,7 @@
  *   Tier 5: Edge cases (0 DEM)
  */
 
-import { connect } from "../packages/supercolony-toolkit/src/colony.js";
+import { connect } from "../packages/omniweb-toolkit/src/colony.js";
 
 // ── Result tracking ──────────────────────────────
 

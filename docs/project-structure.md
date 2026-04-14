@@ -7,11 +7,11 @@ read_when: ["project structure", "directory", "file layout", "where does code go
 
 ## Architecture Model
 
-This is a **monorepo with a publishing facade**. All implementation lives in `src/toolkit/` and `src/lib/`. The consumer package (`packages/supercolony-toolkit/`) is a thin adapter that re-exports and wraps internal logic — it becomes self-contained only after the build step (tsup bundles everything into `dist/`).
+This is a **monorepo with a publishing facade**. All implementation lives in `src/toolkit/` and `src/lib/`. The consumer package (`packages/omniweb-toolkit/`) is a thin adapter that re-exports and wraps internal logic — it becomes self-contained only after the build step (tsup bundles everything into `dist/`).
 
 ```
                 ┌────────────────────────────────┐
-                │  packages/supercolony-toolkit/  │ ← Publishing facade
+                │  packages/omniweb-toolkit/  │ ← Publishing facade
                 │  (11 adapter files)             │   npm: omniweb-toolkit
                 └────────────┬───────────────────┘
                              │ imports ../../../src/toolkit/
@@ -29,7 +29,7 @@ This is a **monorepo with a publishing facade**. All implementation lives in `sr
 ```
 
 **For consumers:** `npm install omniweb-toolkit` — self-contained, no monorepo needed.
-**For contributors:** Clone the repo — `packages/supercolony-toolkit/src/` files import from `src/toolkit/` via relative paths.
+**For contributors:** Clone the repo — `packages/omniweb-toolkit/src/` files import from `src/toolkit/` via relative paths.
 
 ## Directory Tree
 
@@ -42,7 +42,7 @@ omniweb-agents/
 ├── tsconfig.json                        # Root TypeScript config
 ├── vitest.config.ts                     # Test runner config
 │
-├── packages/supercolony-toolkit/        # Consumer package (omniweb-toolkit)
+├── packages/omniweb-toolkit/        # Consumer package (omniweb-toolkit)
 │   ├── SKILL.md                         #   Agent integration skill (463 lines) — SOURCE OF TRUTH
 │   ├── GUIDE.md                         #   Perceive-then-prompt methodology (444 lines)
 │   ├── TOOLKIT.md                       #   Quick-start bridge
@@ -171,7 +171,7 @@ omniweb-agents/
 |-------|----------|----------|------|
 | **Mechanism** | `src/toolkit/` | How things work | No policy, no LLM calls |
 | **Policy** | `src/lib/` | What to do, when | Can import toolkit |
-| **Facade** | `packages/supercolony-toolkit/src/` | Consumer API | Wraps toolkit primitives |
+| **Facade** | `packages/omniweb-toolkit/src/` | Consumer API | Wraps toolkit primitives |
 | **CLI** | `cli/` | Entry points | Wires policy + toolkit |
 | **Templates** | `templates/` | Agent starters | Use toolkit via omniweb-toolkit |
 | **Tests** | `tests/` | Verification | Mirrors src/ structure |
@@ -186,12 +186,12 @@ External agents integrate via three files shipped in the npm package:
 2. **`SKILL.md`** — Full OmniWeb toolkit reference (463 lines, 6 domains)
 3. **`GUIDE.md`** — Perceive-then-prompt methodology (444 lines)
 
-These live at `packages/supercolony-toolkit/` and ship with `npm install omniweb-toolkit`.
+These live at `packages/omniweb-toolkit/` and ship with `npm install omniweb-toolkit`.
 
 ## Build & Publish
 
 ```bash
-cd packages/supercolony-toolkit
+cd packages/omniweb-toolkit
 npx tsup                    # Bundles src/ + ../../../src/toolkit/ → dist/
 npm publish                 # Publishes self-contained package
 ```

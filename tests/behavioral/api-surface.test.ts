@@ -16,13 +16,13 @@
 import { describe, it, expect } from "vitest";
 
 // Import the domain interface types
-import type { HiveAPI } from "../../packages/supercolony-toolkit/src/hive.js";
-import type { IdentityAPI } from "../../packages/supercolony-toolkit/src/identity-api.js";
-import type { EscrowAPI } from "../../packages/supercolony-toolkit/src/escrow-api.js";
-import type { StorageAPI } from "../../packages/supercolony-toolkit/src/storage-api.js";
-import type { IPFSAPI } from "../../packages/supercolony-toolkit/src/ipfs-api.js";
-import type { ChainAPI } from "../../packages/supercolony-toolkit/src/chain-api.js";
-import type { OmniWeb } from "../../packages/supercolony-toolkit/src/colony.js";
+import type { HiveAPI } from "../../packages/omniweb-toolkit/src/hive.js";
+import type { IdentityAPI } from "../../packages/omniweb-toolkit/src/identity-api.js";
+import type { EscrowAPI } from "../../packages/omniweb-toolkit/src/escrow-api.js";
+import type { StorageAPI } from "../../packages/omniweb-toolkit/src/storage-api.js";
+import type { IPFSAPI } from "../../packages/omniweb-toolkit/src/ipfs-api.js";
+import type { ChainAPI } from "../../packages/omniweb-toolkit/src/chain-api.js";
+import type { OmniWeb } from "../../packages/omniweb-toolkit/src/colony.js";
 
 // ── Exact key union types ──────────────────────────────
 // These fail at compile time if ANY method is added to or removed from the interface.

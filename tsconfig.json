@@ -12,6 +12,6 @@
     "sourceMap": false,
     "paths": {}
   },
-  "include": ["src/**/*.ts", "cli/**/*.ts", "packages/supercolony-toolkit/src/**/*.ts"],
+  "include": ["src/**/*.ts", "cli/**/*.ts", "packages/omniweb-toolkit/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

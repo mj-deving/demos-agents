@@ -125,7 +125,7 @@ Our SKILL.md predates the spec. It's high-quality content but non-compliant stru
 | 7 | **`references/` directory** for supporting docs loaded on-demand | `docs/` exists but not spec-named | Rename/symlink `docs/` → `references/` or add `references/` alongside | 0 |
 | 8 | **`evals/evals.json`** with test cases (realistic prompt, success description, optional input files) | No evals (planned in Phase C) | Accelerate: create `evals/evals.json` stub in Phase 0, populate in Phase C | 0+C |
 | 9 | **Description eval testing**: ~20 realistic queries (60% train, 40% validation), should-trigger + should-not-trigger, near-miss identification | Not done | Build description eval suite during Phase 0 frontmatter work | 0 |
-| 10 | **Discovery scopes**: `.agents/skills/<name>/SKILL.md` convention | Package at `packages/supercolony-toolkit/SKILL.md` | Document install path convention in README; support `.agents/skills/` layout as alternative | B |
+| 10 | **Discovery scopes**: `.agents/skills/<name>/SKILL.md` convention | Package at `packages/omniweb-toolkit/SKILL.md` | Document install path convention in README; support `.agents/skills/` layout as alternative | B |
 | 11 | **Agent-friendly script design**: flags/env/stdin input, `--help`, diagnostic errors, dry-run, structured output | CLI scripts use interactive prompts | New scripts in `scripts/` follow spec; existing CLI stays as-is | A |
 
 ### Decisions

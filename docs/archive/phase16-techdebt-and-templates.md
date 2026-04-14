@@ -22,12 +22,12 @@ Clear before starting template work. All Codex-delegatable.
 
 ### 16a-1 — npm publish supercolony-toolkit
 
-**Problem:** Package at `packages/supercolony-toolkit/` (103.8 kB) is ready but never published.
+**Problem:** Package at `packages/omniweb-toolkit/` (103.8 kB) is ready but never published.
 
 **Tasks:**
 - [ ] Verify package.json has correct version, name, description
 - [ ] Run `npm pack --dry-run` to check contents
-- [ ] Publish: `cd packages/supercolony-toolkit && npm publish`
+- [ ] Publish: `cd packages/omniweb-toolkit && npm publish`
 - [ ] Verify on npmjs.com
 
 ### 16a-2 — Wire lifecycle persistence into SENSE runtime

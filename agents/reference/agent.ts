@@ -14,7 +14,7 @@
  *   npx tsx agents/reference/agent.ts [--dry-run] [--cycles N]
  */
 
-import { connect, type OmniWeb } from "../../packages/supercolony-toolkit/src/colony.js";
+import { connect, type OmniWeb } from "../../packages/omniweb-toolkit/src/colony.js";
 import { observe, type Observation } from "./observe.js";
 import { fetchSourcePrice, DEFAULT_SOURCE } from "./sources.js";
 import { readFileSync, appendFileSync } from "node:fs";

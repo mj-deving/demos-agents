@@ -1,5 +1,5 @@
 /**
- * TDD tests for packages/supercolony-toolkit.
+ * TDD tests for packages/omniweb-toolkit.
  *
  * Tests the public API surface: connect(), Colony, hive.*, toolkit.*,
  * and agent re-exports.
@@ -88,7 +88,7 @@ vi.mock("../../src/toolkit/supercolony/types.js", () => ({}));
 describe("supercolony-toolkit package", () => {
   describe("connect()", () => {
     it("creates a Colony instance with toolkit, hive, runtime, and address", async () => {
-      const { connect } = await import("../../packages/supercolony-toolkit/src/index.js");
+      const { connect } = await import("../../packages/omniweb-toolkit/src/index.js");
       const colony = await connect();
 
       expect(colony).toBeDefined();
@@ -99,9 +99,9 @@ describe("supercolony-toolkit package", () => {
     });
 
     it("passes options through to createAgentRuntime", async () => {
-      const { connect } = await import("../../packages/supercolony-toolkit/src/index.js");
+      const { connect } = await import("../../packages/omniweb-toolkit/src/index.js");
       // Access the mock via the colony module's internal import (same module identity)
-      const { createAgentRuntime } = await import("../../packages/supercolony-toolkit/src/colony.js") as any;
+      const { createAgentRuntime } = await import("../../packages/omniweb-toolkit/src/colony.js") as any;
       // colony.ts re-exports nothing, so we verify via the mocked module.
       // We use the vi.mocked approach: the mock is registered at ../../../src/toolkit/agent-runtime.js
       // which is the path colony.ts uses. Verify connect() calls it with our options.
@@ -117,7 +117,7 @@ describe("supercolony-toolkit package", () => {
 
   describe("Colony.toolkit — 15 domains", () => {
     it("exposes all 15 toolkit domains", async () => {
-      const { connect } = await import("../../packages/supercolony-toolkit/src/index.js");
+      const { connect } = await import("../../packages/omniweb-toolkit/src/index.js");
       const colony = await connect();
       const domains = [
         "feed", "intelligence", "scores", "agents", "actions",
@@ -143,7 +143,7 @@ describe("supercolony-toolkit package", () => {
           }
         }
       }
-      const { createHiveAPI } = await import("../../packages/supercolony-toolkit/src/hive.js");
+      const { createHiveAPI } = await import("../../packages/omniweb-toolkit/src/hive.js");
       hive = createHiveAPI(mockRuntime as any);
     });
 
@@ -220,24 +220,24 @@ describe("supercolony-toolkit package", () => {
 
   describe("agent subpath re-exports", () => {
     it("exports runAgentLoop", async () => {
-      const agent = await import("../../packages/supercolony-toolkit/src/agent.js");
+      const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
       expect(typeof agent.runAgentLoop).toBe("function");
     });
 
     it("exports defaultObserve", async () => {
-      const agent = await import("../../packages/supercolony-toolkit/src/agent.js");
+      const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
       expect(typeof agent.defaultObserve).toBe("function");
     });
 
     it("exports buildColonyStateFromFeed", async () => {
-      const agent = await import("../../packages/supercolony-toolkit/src/agent.js");
+      const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
       expect(typeof agent.buildColonyStateFromFeed).toBe("function");
     });
   });
 
   describe("types subpath", () => {
     it("exports are importable (type re-exports compile)", async () => {
-      const types = await import("../../packages/supercolony-toolkit/src/types.js");
+      const types = await import("../../packages/omniweb-toolkit/src/types.js");
       expect(types).toBeDefined();
     });
   });

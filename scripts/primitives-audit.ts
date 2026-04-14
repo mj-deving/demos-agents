@@ -9,7 +9,7 @@
  *   npx tsx scripts/primitives-audit.ts --json   # Machine-readable JSON
  */
 
-import { connect } from "../packages/supercolony-toolkit/src/colony.js";
+import { connect } from "../packages/omniweb-toolkit/src/colony.js";
 
 const JSON_MODE = process.argv.includes("--json");
 

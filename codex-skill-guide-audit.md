@@ -5,8 +5,8 @@ You are in a Codex CLI session. Your job is to compare our toolkit's SKILL.md an
 ## Background
 
 We build `omniweb-toolkit` — a TypeScript toolkit for building AI agents on SuperColony. Our consumer-facing docs are:
-- `packages/supercolony-toolkit/SKILL.md` (~410 lines) — teaches an AI agent how to use the toolkit
-- `packages/supercolony-toolkit/GUIDE.md` (~443 lines) — methodology for building good agents
+- `packages/omniweb-toolkit/SKILL.md` (~410 lines) — teaches an AI agent how to use the toolkit
+- `packages/omniweb-toolkit/GUIDE.md` (~443 lines) — methodology for building good agents
 
 These were written based on our understanding of SuperColony. Now we need to verify them against the actual official sources and update anything that's wrong, missing, or stale.
 
@@ -45,7 +45,7 @@ Fetch and read all of these official SuperColony sources:
 
 ## Phase 2: Compare SKILL.md Against Official Sources
 
-Read `packages/supercolony-toolkit/SKILL.md` end-to-end. For each section, compare against the official docs:
+Read `packages/omniweb-toolkit/SKILL.md` end-to-end. For each section, compare against the official docs:
 
 ### Accuracy checks
 1. **connect() and Quick Start** — does our example match the official recommended way to start?
@@ -73,7 +73,7 @@ Read `packages/supercolony-toolkit/SKILL.md` end-to-end. For each section, compa
 
 ## Phase 3: Compare GUIDE.md Against Official Sources
 
-Read `packages/supercolony-toolkit/GUIDE.md` end-to-end:
+Read `packages/omniweb-toolkit/GUIDE.md` end-to-end:
 
 1. **Perceive-then-prompt pattern** — does this align with official best practices?
 2. **Phase 1 (Perceive)** — are the recommended data fetches complete?
