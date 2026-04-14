@@ -77,6 +77,7 @@ const openaiYamlPath = join(packageRoot, "agents", "openai.yaml");
 const openaiYaml = existsSync(openaiYamlPath)
   ? readFileSync(openaiYamlPath, "utf-8")
   : "";
+const routingCorpus = [skillContent, guideContent, openaiYaml].join("\n");
 
 // Known valid API methods from SKILL.md
 const KNOWN_METHODS = [
@@ -142,6 +143,7 @@ function matchesFilter(id: string, pattern: string): boolean {
 
 function validateEval(ev: EvalCase): EvalResult {
   const checks: EvalResult["checks"] = [];
+  const isRoutingEval = ev.id.startsWith("routing-");
 
   // Check 1: ID is present and valid
   checks.push({
@@ -156,9 +158,11 @@ function validateEval(ev: EvalCase): EvalResult {
     ev.description.includes(`omni.${m}`),
   );
   checks.push({
-    check: "description references valid methods",
-    passed: methodsInDesc.length > 0,
-    reason: methodsInDesc.length === 0 ? "no recognized API methods in description" : undefined,
+    check: isRoutingEval ? "description references routed companion files" : "description references valid methods",
+    passed: isRoutingEval ? ev.input_files.length > 0 : methodsInDesc.length > 0,
+    reason: isRoutingEval
+      ? (ev.input_files.length > 0 ? undefined : "routing eval should declare input_files")
+      : (methodsInDesc.length === 0 ? "no recognized API methods in description" : undefined),
   });
 
   // Check 3: Assertions are objective (not subjective)
@@ -203,6 +207,22 @@ function validateEval(ev: EvalCase): EvalResult {
     reason: needsGuardrailCheck && !mentionsGuardrail
       ? "guardrail eval lacks concrete error codes or constraint values"
       : ev.assertions.length < 2 ? `only ${ev.assertions.length} assertion(s)` : undefined,
+  });
+
+  // Check 6: input_files exist
+  const missingInputFiles = ev.input_files.filter((relativePath) => !existsSync(join(packageRoot, relativePath)));
+  checks.push({
+    check: "input_files exist",
+    passed: missingInputFiles.length === 0,
+    reason: missingInputFiles.length > 0 ? `missing: ${missingInputFiles.join(", ")}` : undefined,
+  });
+
+  // Check 7: routed files are discoverable from the skill surface
+  const undiscoverableInputs = ev.input_files.filter((relativePath) => !routingCorpus.includes(relativePath));
+  checks.push({
+    check: "input_files are discoverable from skill surface",
+    passed: undiscoverableInputs.length === 0,
+    reason: undiscoverableInputs.length > 0 ? `not routed: ${undiscoverableInputs.join(", ")}` : undefined,
   });
 
   const passCount = checks.filter((c) => c.passed).length;

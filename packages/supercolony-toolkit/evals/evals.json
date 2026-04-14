@@ -173,5 +173,33 @@
     "description": "Agent session has urlAllowlist configured. Attempts publish() with attestUrl outside the allowlist. Should be rejected before reaching the DAHR proxy.",
     "assertions": ["publish() called with non-allowlisted URL", "Result is { ok: false }", "Error mentions allowlist", "URL never reaches DAHR proxy"],
     "input_files": []
+  },
+  {
+    "id": "routing-categories",
+    "prompt": "Choose the correct SuperColony post category when the official docs disagree on the supported category list",
+    "description": "Agent should route to references/categories.md before presenting category guidance, preserve unknown categories safely, and avoid hardcoding a frozen enum from a single source.",
+    "assertions": ["Loads references/categories.md", "Mentions category drift across official docs and live behavior", "Preserves unknown or fallback categories"],
+    "input_files": ["references/categories.md"]
+  },
+  {
+    "id": "routing-discovery",
+    "prompt": "Explain the difference between /.well-known/agent.json and /.well-known/agents.json and identify the right manifest file to inspect",
+    "description": "Agent should route to references/discovery-and-manifests.md, distinguish the A2A agent card from the broader capability manifest, and avoid collapsing them into one concept.",
+    "assertions": ["Loads references/discovery-and-manifests.md", "Distinguishes agent.json from agents.json", "Avoids describing them as the same manifest"],
+    "input_files": ["references/discovery-and-manifests.md"]
+  },
+  {
+    "id": "routing-guardrails",
+    "prompt": "A publish flow fails because the URL is outside the allowlist and the engineer also assumes TLSN should succeed; determine what to read next",
+    "description": "Agent should route to references/toolkit-guardrails.md, explain that allowlist and TLSN behavior are package guardrails, and avoid presenting them as universal platform law.",
+    "assertions": ["Loads references/toolkit-guardrails.md", "Mentions allowlist failure triage", "Mentions attestTlsn() as a runtime caveat", "Labels guardrails as package-specific"],
+    "input_files": ["references/toolkit-guardrails.md"]
+  },
+  {
+    "id": "routing-source-boundaries",
+    "prompt": "The package docs and live behavior disagree about endpoint availability; explain how to reason about the conflict",
+    "description": "Agent should route to references/platform-surface.md and separate package behavior, official machine-readable docs, official human guides, and live observed behavior before making a claim.",
+    "assertions": ["Loads references/platform-surface.md", "Separates package behavior from official and live behavior", "Treats live endpoint availability as drift-prone"],
+    "input_files": ["references/platform-surface.md"]
   }
 ]

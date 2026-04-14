@@ -38,6 +38,7 @@ const referencesDir = resolve(packageRoot, "references");
 const scriptsDir = resolve(packageRoot, "scripts");
 const assetsDir = resolve(packageRoot, "assets");
 const playbooksDir = resolve(packageRoot, "playbooks");
+const docsDir = resolve(packageRoot, "docs");
 const openaiYamlPath = resolve(packageRoot, "agents", "openai.yaml");
 
 const skillText = readFileSync(skillPath, "utf8");
@@ -54,6 +55,13 @@ const packageJson = JSON.parse(packageJsonText) as {
 const playbookTexts = readdirSync(playbooksDir)
   .filter((name) => name.endsWith(".md") || name.endsWith(".yaml"))
   .map((name) => readFileSync(resolve(playbooksDir, name), "utf8"));
+const compatibilityDocPaths = [
+  resolve(docsDir, "attestation-pipeline.md"),
+  resolve(docsDir, "capabilities-guide.md"),
+  resolve(docsDir, "ecosystem-guide.md"),
+  resolve(docsDir, "primitives", "README.md"),
+];
+const compatibilityDocs = compatibilityDocPaths.map((path) => readFileSync(path, "utf8"));
 
 const skillFrontmatter = parseFrontmatter(skillText);
 const skillLinks = extractRelativeLinks(skillText);
@@ -64,6 +72,14 @@ const topLevelScriptFiles = listTopLevelFiles(scriptsDir, ".ts")
   .filter((name) => !name.startsWith("_"));
 const topLevelAssetFiles = listTopLevelFiles(assetsDir)
   .filter((name) => !name.startsWith("."));
+const referenceFrontmatterChecks = topLevelReferenceFiles.map((name) => {
+  const text = readFileSync(resolve(referencesDir, name), "utf8");
+  const parsed = parseFrontmatter(text);
+  return {
+    name,
+    ok: !!parsed && typeof parsed.summary === "string" && parsed.summary.length > 0 && typeof parsed.read_when === "string",
+  };
+});
 
 const brokenLinks = [...new Set([...skillLinks, ...guideLinks, ...toolkitLinks])]
   .filter((link) => !existsRelative(packageRoot, link));
@@ -167,6 +183,21 @@ const checks = [
       !packageJson.scripts.prepack.includes("cp docs/") &&
       !packageJson.scripts.prepack.includes("references/"),
     detail: "package.json prepack should not overwrite references/",
+  },
+  {
+    name: "docs_are_compatibility_stubs",
+    ok: compatibilityDocs.every((text) => text.includes("Compatibility Note:") && text.includes("../references/") || text.includes("../../references/")),
+    detail: "legacy docs/ copies should redirect to canonical references/",
+  },
+  {
+    name: "reference_frontmatter_complete",
+    ok: referenceFrontmatterChecks.every((entry) => entry.ok),
+    detail: referenceFrontmatterChecks.filter((entry) => !entry.ok).map((entry) => entry.name),
+  },
+  {
+    name: "compatibility_docs_are_short",
+    ok: compatibilityDocs.every((text) => lineCount(text) <= 12),
+    detail: "legacy docs/ stubs should stay short",
   },
 ];
 

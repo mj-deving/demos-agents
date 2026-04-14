@@ -29,6 +29,7 @@ Three kinds of work were completed:
 3. Deterministic validation scripts and routed reference files were added, then verified against live SuperColony behavior on 2026-04-14.
 4. A second follow-up pass added package-complete AgentSkills metadata, output templates, and improved eval coverage so the lean skill structure is enforced.
 5. A third integrity pass removed stale packaging behavior, updated onboarding/reference consistency, and corrected playbook category drift.
+6. A fourth pass converted older `docs/` content into compatibility stubs, added routing/source-boundary eval coverage, and made the package-level `npm run check:*` commands work successfully in this environment.
 
 ## Research Performed
 
@@ -167,6 +168,7 @@ That drove the methodology refactor.
 - [references/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/ecosystem-guide.md) was rewritten to be source-boundary aware rather than carrying stale network metrics.
 - [references/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/capabilities-guide.md) was rewritten as a stable action inventory aligned to the current package surface.
 - the playbooks and strategy schema were updated to use `FEED` instead of the stale `NEWS` category.
+- the legacy `docs/` copies for attestation, capabilities, ecosystem, and primitives were converted into short compatibility stubs that point to the canonical `references/` content.
 
 ### Discovery snapshot added
 
@@ -185,6 +187,7 @@ That drove the methodology refactor.
 - [README.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/README.md)
 - [package.json](/home/mj/projects/demos-agents/packages/supercolony-toolkit/package.json)
 - [evals/run-evals.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/evals/run-evals.ts)
+- [evals/evals.json](/home/mj/projects/demos-agents/packages/supercolony-toolkit/evals/evals.json)
 - [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/skill-self-audit.ts)
 - [TOOLKIT.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/TOOLKIT.md)
 - [references/response-shapes.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/response-shapes.md)
@@ -192,6 +195,10 @@ That drove the methodology refactor.
 - [playbooks/market-analyst.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/market-analyst.md)
 - [playbooks/research-agent.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/research-agent.md)
 - [playbooks/engagement-optimizer.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/playbooks/engagement-optimizer.md)
+- [docs/attestation-pipeline.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/attestation-pipeline.md)
+- [docs/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/capabilities-guide.md)
+- [docs/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/ecosystem-guide.md)
+- [docs/primitives/README.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/primitives/README.md)
 
 ### Refactor intent
 
@@ -236,15 +243,20 @@ Changed to reflect the new package architecture:
 
 Added script entries:
 
+- `check:evals`
+- `check:package`
 - `check:categories`
 - `check:discovery`
 - `check:endpoints`
+- `check:live`
 - `check:skill`
 - `snapshot:leaderboard`
 
 Also updated package publishing scope so `agents/` and `assets/` are included in package files.
 
 On the third pass, the old `prepack` behavior that copied `docs/*.md` back into `references/` was removed. This was important because it would have overwritten the new reference layer at publish time.
+
+On the fourth pass, the package scripts were normalized to `node --import tsx ...` entrypoints so `npm run check:skill`, `npm run check:evals`, and `npm run check:package` all execute successfully in this environment.
 
 #### `agents/openai.yaml`
 
@@ -288,6 +300,8 @@ Expanded the self-audit to enforce:
 - removal of stale `NEWS` category use in playbooks
 - package file-list coverage for `agents/`, `assets/`, `references/`, and `scripts/`
 - absence of `prepack` logic that overwrites `references/`
+- confirmation that canonical `references/*.md` files keep complete frontmatter
+- confirmation that legacy `docs/` copies remain short compatibility stubs
 
 #### `TOOLKIT.md`
 
@@ -297,6 +311,27 @@ Rewritten as a compact onboarding document that now points at `SKILL.md`, `GUIDE
 
 Updated to replace stale `NEWS` category usage with `FEED`, aligning the package archetypes with the audited category set.
 
+#### Legacy docs compatibility layer
+
+Older published docs were converted into short redirect stubs:
+
+- `docs/attestation-pipeline.md`
+- `docs/capabilities-guide.md`
+- `docs/ecosystem-guide.md`
+- `docs/primitives/README.md`
+
+This preserves existing links without keeping a second stale canon alive.
+
+#### Eval suite
+
+`evals/evals.json` and `evals/run-evals.ts` were expanded to cover:
+
+- category-routing behavior
+- discovery-manifest routing
+- toolkit-guardrail routing
+- source-boundary routing
+- existence and discoverability of referenced companion files
+
 ## Verification Performed
 
 ### Structural verification
@@ -304,6 +339,7 @@ Updated to replace stale `NEWS` category usage with `FEED`, aligning the package
 Ran:
 
 - `npx tsx scripts/skill-self-audit.ts`
+- `npm run check:skill`
 
 Result:
 
@@ -315,6 +351,11 @@ Result:
 - confirmed references and scripts are discoverable from `SKILL.md`
 - confirmed assets are discoverable from `SKILL.md` or `GUIDE.md`
 - confirmed `agents/openai.yaml` exists and is wired correctly
+- confirmed `TOOLKIT.md` no longer points at stale copied-doc paths
+- confirmed playbooks no longer use the obsolete `NEWS` category
+- confirmed package metadata no longer contains a `prepack` step that overwrites `references/`
+- confirmed legacy `docs/` copies are short compatibility stubs
+- confirmed canonical reference files keep the expected frontmatter
 - confirmed `TOOLKIT.md` no longer points at stale copied-doc paths
 - confirmed playbooks no longer use the obsolete `NEWS` category
 - confirmed package metadata no longer contains a `prepack` step that overwrites `references/`
@@ -334,6 +375,8 @@ Confirmed each new script supports `--help` and returns structured usage text:
 Ran:
 
 - `npx tsx evals/run-evals.ts --summary`
+- `npm run check:evals`
+- `npm run check:package`
 
 Initial state after the first refactor:
 
@@ -353,6 +396,12 @@ After the follow-up eval/metadata pass:
 - `0` fail
 
 That status remained green after the third integrity pass.
+
+After adding routing/source-boundary evals:
+
+- `30` pass
+- `0` warn
+- `0` fail
 
 ### Live drift verification
 
@@ -461,6 +510,8 @@ The older highest-risk mismatches have already been addressed:
 - stale `NEWS` category in playbooks
 - stale packaging overwrite behavior
 - stale non-bundled audit-tool references in `response-shapes.md`
+- stale duplicated `docs/` canon
+- missing runnable package-level check commands
 
 ## GitOps Recommendation
 
@@ -491,6 +542,11 @@ git add \
   packages/supercolony-toolkit/assets/ \
   packages/supercolony-toolkit/docs/research-supercolony-skill-sources.md \
   packages/supercolony-toolkit/docs/skill-improvement-recommendations.md \
+  packages/supercolony-toolkit/docs/attestation-pipeline.md \
+  packages/supercolony-toolkit/docs/capabilities-guide.md \
+  packages/supercolony-toolkit/docs/ecosystem-guide.md \
+  packages/supercolony-toolkit/docs/primitives/README.md \
+  packages/supercolony-toolkit/evals/evals.json \
   packages/supercolony-toolkit/evals/run-evals.ts \
   packages/supercolony-toolkit/references/ \
   packages/supercolony-toolkit/scripts/
