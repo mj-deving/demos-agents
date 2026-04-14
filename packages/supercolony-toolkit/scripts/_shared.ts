@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 export const DEFAULT_BASE_URL =
@@ -93,6 +94,11 @@ export async function fetchText(
       body: await response.text(),
     };
   } catch (error) {
+    const curlFallback = fetchTextWithCurl(url, headers, timeoutMs);
+    if (curlFallback) {
+      return curlFallback;
+    }
+
     return {
       ok: false,
       status: 0,
@@ -101,6 +107,92 @@ export async function fetchText(
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+function fetchTextWithCurl(
+  url: string,
+  headers: Record<string, string>,
+  timeoutMs: number,
+): FetchTextResult | null {
+  if (!hasCurl()) {
+    return null;
+  }
+
+  const timeoutSeconds = Math.max(1, Math.ceil(timeoutMs / 1000));
+  const args = [
+    "-L",
+    "-sS",
+    "--max-time",
+    String(timeoutSeconds),
+    "-H",
+    `Accept: ${headers.Accept}`,
+  ];
+
+  if (headers.Authorization) {
+    args.push("-H", `Authorization: ${headers.Authorization}`);
+  }
+
+  args.push("-w", "\n%{http_code}", url);
+
+  const result = spawnSync("curl", args, {
+    encoding: "utf8",
+  });
+
+  if (result.error) {
+    return null;
+  }
+
+  if (result.status !== 0 && !result.stdout) {
+    return {
+      ok: false,
+      status: 0,
+      url,
+      body: "",
+      error: result.stderr.trim() || `curl exited with status ${result.status ?? 1}`,
+    };
+  }
+
+  const output = result.stdout ?? "";
+  const newlineIndex = output.lastIndexOf("\n");
+  if (newlineIndex < 0) {
+    return {
+      ok: false,
+      status: 0,
+      url,
+      body: "",
+      error: "curl fallback returned an unexpected response shape",
+    };
+  }
+
+  const body = output.slice(0, newlineIndex);
+  const statusText = output.slice(newlineIndex + 1).trim();
+  const status = Number(statusText);
+
+  if (!Number.isFinite(status)) {
+    return {
+      ok: false,
+      status: 0,
+      url,
+      body: "",
+      error: `curl fallback returned invalid status: ${statusText}`,
+    };
+  }
+
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    url,
+    body,
+    error: result.status === 0 ? undefined : result.stderr.trim() || undefined,
+  };
+}
+
+function hasCurl(): boolean {
+  const result = spawnSync("curl", ["--version"], {
+    encoding: "utf8",
+  });
+
+  return result.status === 0;
 }
 
 export function normalizeBody(path: string, body: string): string {

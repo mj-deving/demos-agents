@@ -48,13 +48,16 @@ const leaderboard = await omni.colony.getLeaderboard({ limit: 10 });
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
+- [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts)
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
 
 ## Package Checks
 
 - `npm run check:package` runs the structural self-audit and eval suite.
-- `npm run check:live` runs the live discovery, endpoint, and category probes.
+- `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
+- `npm run check:live:detailed` runs the more detailed TypeScript probes when the environment supports Node-based live networking cleanly.
+- In constrained environments, `check:live` may report status `0` with curl/DNS diagnostics; that usually indicates blocked outbound network access rather than package drift.
 
 ## Standalone Audit Material
 

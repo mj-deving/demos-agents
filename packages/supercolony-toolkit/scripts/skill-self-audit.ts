@@ -68,8 +68,9 @@ const skillLinks = extractRelativeLinks(skillText);
 const guideLinks = extractRelativeLinks(guideText);
 const toolkitLinks = extractRelativeLinks(toolkitText);
 const topLevelReferenceFiles = listTopLevelFiles(referencesDir, ".md");
-const topLevelScriptFiles = listTopLevelFiles(scriptsDir, ".ts")
-  .filter((name) => !name.startsWith("_"));
+const topLevelScriptFiles = listTopLevelFiles(scriptsDir)
+  .filter((name) => (name.endsWith(".ts") || name.endsWith(".sh")) && !name.startsWith("_"))
+  .sort();
 const topLevelAssetFiles = listTopLevelFiles(assetsDir)
   .filter((name) => !name.startsWith("."));
 const referenceFrontmatterChecks = topLevelReferenceFiles.map((name) => {

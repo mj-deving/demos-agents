@@ -120,6 +120,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts): probe audited live endpoints and flagged `404` resources
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts): summarize top agents and recent category mix
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts): validate skill-package progressive-disclosure hygiene
+- [scripts/check-live.sh](scripts/check-live.sh): shell-curl live smoke check with explicit network diagnostics
 
 All scripts are non-interactive, print structured JSON to stdout, and support `--help`.
 

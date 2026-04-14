@@ -30,6 +30,7 @@ Three kinds of work were completed:
 4. A second follow-up pass added package-complete AgentSkills metadata, output templates, and improved eval coverage so the lean skill structure is enforced.
 5. A third integrity pass removed stale packaging behavior, updated onboarding/reference consistency, and corrected playbook category drift.
 6. A fourth pass converted older `docs/` content into compatibility stubs, added routing/source-boundary eval coverage, and made the package-level `npm run check:*` commands work successfully in this environment.
+7. A fifth pass focused on release integrity: split live checks into smoke vs detailed paths, made smoke-check failures report structured DNS/network diagnostics, removed the last stale fixed-count metadata claims, and rebuilt the package so shipped artifacts matched the new source wording.
 
 ## Research Performed
 
@@ -169,6 +170,7 @@ That drove the methodology refactor.
 - [references/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/references/capabilities-guide.md) was rewritten as a stable action inventory aligned to the current package surface.
 - the playbooks and strategy schema were updated to use `FEED` instead of the stale `NEWS` category.
 - the legacy `docs/` copies for attestation, capabilities, ecosystem, and primitives were converted into short compatibility stubs that point to the canonical `references/` content.
+- package metadata and playbook intros were cleaned up to remove stale fixed-count claims such as hardcoded agent counts and method/domain counts.
 
 ### Discovery snapshot added
 
@@ -199,6 +201,9 @@ That drove the methodology refactor.
 - [docs/capabilities-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/capabilities-guide.md)
 - [docs/ecosystem-guide.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/ecosystem-guide.md)
 - [docs/primitives/README.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/docs/primitives/README.md)
+- [scripts/_shared.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/_shared.ts)
+- [scripts/check-live.sh](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/check-live.sh)
+- [src/colony.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/src/colony.ts)
 
 ### Refactor intent
 
@@ -249,6 +254,7 @@ Added script entries:
 - `check:discovery`
 - `check:endpoints`
 - `check:live`
+- `check:live:detailed`
 - `check:skill`
 - `snapshot:leaderboard`
 
@@ -257,6 +263,13 @@ Also updated package publishing scope so `agents/` and `assets/` are included in
 On the third pass, the old `prepack` behavior that copied `docs/*.md` back into `references/` was removed. This was important because it would have overwritten the new reference layer at publish time.
 
 On the fourth pass, the package scripts were normalized to `node --import tsx ...` entrypoints so `npm run check:skill`, `npm run check:evals`, and `npm run check:package` all execute successfully in this environment.
+
+On the fifth pass, `check:live` was intentionally split:
+
+- `check:live` is now a shell-curl smoke test with structured diagnostics
+- `check:live:detailed` remains the more detailed TypeScript probe path
+
+This was necessary because detailed live networking behavior varies by environment.
 
 #### `agents/openai.yaml`
 
@@ -303,6 +316,17 @@ Expanded the self-audit to enforce:
 - confirmation that canonical `references/*.md` files keep complete frontmatter
 - confirmation that legacy `docs/` copies remain short compatibility stubs
 
+#### `scripts/_shared.ts` and `scripts/check-live.sh`
+
+The live-check path was made more operationally honest:
+
+- `_shared.ts` now contains a best-effort curl fallback path for environments where native fetch fails
+- `check-live.sh` provides a shell-curl smoke test that always prints structured JSON
+- when live probes return status `0`, the smoke test now reports explicit curl exit/error diagnostics instead of failing as unreadable stderr noise
+- `check-live.sh` is now surfaced from `SKILL.md` and `README.md` and counted by the package self-audit as part of the maintained script surface
+
+In this sandboxed environment, `check:live` still fails non-zero because DNS is blocked, but it now fails clearly and usefully.
+
 #### `TOOLKIT.md`
 
 Rewritten as a compact onboarding document that now points at `SKILL.md`, `GUIDE.md`, and the new routed reference set instead of the older copied-doc layout.
@@ -332,6 +356,11 @@ This preserves existing links without keeping a second stale canon alive.
 - source-boundary routing
 - existence and discoverability of referenced companion files
 
+#### Source and build artifacts
+
+- `src/colony.ts` was updated to remove the last stale fixed-count toolkit comment
+- the package was rebuilt so the shipped `dist/` declarations no longer carry that stale count
+
 ## Verification Performed
 
 ### Structural verification
@@ -340,6 +369,7 @@ Ran:
 
 - `npx tsx scripts/skill-self-audit.ts`
 - `npm run check:skill`
+- `npm run build`
 
 Result:
 
@@ -356,6 +386,7 @@ Result:
 - confirmed package metadata no longer contains a `prepack` step that overwrites `references/`
 - confirmed legacy `docs/` copies are short compatibility stubs
 - confirmed canonical reference files keep the expected frontmatter
+- confirmed rebuilt artifacts no longer carry the stale fixed-count wording
 - confirmed `TOOLKIT.md` no longer points at stale copied-doc paths
 - confirmed playbooks no longer use the obsolete `NEWS` category
 - confirmed package metadata no longer contains a `prepack` step that overwrites `references/`
@@ -402,6 +433,40 @@ After adding routing/source-boundary evals:
 - `30` pass
 - `0` warn
 - `0` fail
+
+That status remained green after the fifth release-integrity pass.
+
+### Live-check verification
+
+Ran:
+
+- `npm run check:live`
+
+Result in this environment:
+
+- exits non-zero
+- now prints structured JSON instead of raw curl noise
+- clearly reports `curlExit: 6` and DNS resolution failure
+- includes diagnostics explaining that status `0` usually indicates blocked outbound networking rather than package drift
+
+Interpretation:
+
+- the smoke check is operationally improved
+- the environment remains network-constrained for package-level live checks
+- this is now visible and actionable rather than ambiguous
+
+### Package check status at end of session
+
+Current green checks:
+
+- `npm run check:skill`
+- `npm run check:evals`
+- `npm run check:package`
+
+Current expected constrained check:
+
+- `npm run check:live`
+  It emits structured diagnostics, but still exits non-zero in this sandbox due DNS/network restriction rather than package inconsistency.
 
 ### Live drift verification
 
@@ -512,6 +577,8 @@ The older highest-risk mismatches have already been addressed:
 - stale non-bundled audit-tool references in `response-shapes.md`
 - stale duplicated `docs/` canon
 - missing runnable package-level check commands
+- stale shipped fixed-count metadata
+- unreadable live-check failures under constrained networking
 
 ## GitOps Recommendation
 
@@ -549,6 +616,7 @@ git add \
   packages/supercolony-toolkit/evals/evals.json \
   packages/supercolony-toolkit/evals/run-evals.ts \
   packages/supercolony-toolkit/references/ \
+  packages/supercolony-toolkit/src/colony.ts \
   packages/supercolony-toolkit/scripts/
 ```
 
