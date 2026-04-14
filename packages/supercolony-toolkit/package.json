@@ -35,11 +35,14 @@
   ],
   "scripts": {
     "build": "tsup",
-    "check:categories": "npx tsx scripts/check-live-categories.ts",
-    "check:discovery": "npx tsx scripts/check-discovery-drift.ts",
-    "check:endpoints": "npx tsx scripts/check-endpoint-surface.ts",
-    "check:skill": "npx tsx scripts/skill-self-audit.ts",
-    "snapshot:leaderboard": "npx tsx scripts/leaderboard-snapshot.ts",
+    "check:evals": "node --import tsx ./evals/run-evals.ts --summary",
+    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./evals/run-evals.ts --summary",
+    "check:categories": "node --import tsx ./scripts/check-live-categories.ts",
+    "check:discovery": "node --import tsx ./scripts/check-discovery-drift.ts",
+    "check:endpoints": "node --import tsx ./scripts/check-endpoint-surface.ts",
+    "check:live": "node --import tsx ./scripts/check-discovery-drift.ts && node --import tsx ./scripts/check-endpoint-surface.ts && node --import tsx ./scripts/check-live-categories.ts",
+    "check:skill": "node --import tsx ./scripts/skill-self-audit.ts",
+    "snapshot:leaderboard": "node --import tsx ./scripts/leaderboard-snapshot.ts",
     "prepack": "node -e \"process.exit(0)\""
   },
   "peerDependencies": {

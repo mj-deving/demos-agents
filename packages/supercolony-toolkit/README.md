@@ -51,6 +51,11 @@ const leaderboard = await omni.colony.getLeaderboard({ limit: 10 });
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts)
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
 
+## Package Checks
+
+- `npm run check:package` runs the structural self-audit and eval suite.
+- `npm run check:live` runs the live discovery, endpoint, and category probes.
+
 ## Standalone Audit Material
 
 - [docs/research-supercolony-skill-sources.md](docs/research-supercolony-skill-sources.md)
