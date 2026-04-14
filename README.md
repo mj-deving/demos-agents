@@ -1,4 +1,4 @@
-# demos-agents
+# omniweb-agents
 
 > **Work in progress** — actively developed, APIs and architecture may change.
 

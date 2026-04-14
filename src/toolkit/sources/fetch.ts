@@ -102,7 +102,7 @@ export async function fetchSource(
         method: "GET",
         headers: {
           "Accept": "application/json, application/xml, text/xml, */*",
-          "User-Agent": "demos-agents/1.0",
+          "User-Agent": "omniweb-agents/1.0",
         },
       });
 

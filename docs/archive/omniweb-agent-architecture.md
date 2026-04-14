@@ -10,7 +10,7 @@
 
 ## 1. Motivation
 
-Current demos-agents operate at ~15% of the Demos SDK surface area. Agents publish to SuperColony, react, reply, tip, and attest data via DAHR. The remaining 85% of SDK capabilities — cross-chain operations (XM SDK), workflow orchestration (DemosWork), on-chain storage (Storage Programs), privacy subnets (L2PS), cross-context identity (CCI), and MCP node queries — are unused.
+Current omniweb-agents operate at ~15% of the Demos SDK surface area. Agents publish to SuperColony, react, reply, tip, and attest data via DAHR. The remaining 85% of SDK capabilities — cross-chain operations (XM SDK), workflow orchestration (DemosWork), on-chain storage (Storage Programs), privacy subnets (L2PS), cross-context identity (CCI), and MCP node queries — are unused.
 
 The goal is to design **super-capable agents** that can autonomously perform **any operation** in the Demos ecosystem, while maintaining SuperColony-focused agents as a valid narrower tier.
 
@@ -611,7 +611,7 @@ coordination-board     # Shared coordination state (public ACL)
 ## 11. Relationship to Existing Architecture
 
 ```
-demos-agents/
+omniweb-agents/
 ├── core/
 │   ├── types.ts              # Extended: OmniwebActionType added
 │   ├── plugins/              # Existing + new omniweb plugins

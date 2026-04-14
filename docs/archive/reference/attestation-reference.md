@@ -1,6 +1,6 @@
 # TLSN & DAHR Attestation — Design, Constraints & Drift Analysis
 
-> Consolidated from deep-dive across `demos-agents` (active) and `DEMOS-Work` (archived).
+> Consolidated from deep-dive across `omniweb-agents` (active) and `DEMOS-Work` (archived).
 > Created 2026-03-14 as debugging reference for TLSN reliability work.
 
 ## The Original Design (from DEMOS-Work)
@@ -62,7 +62,7 @@ Systematic testing with `tools/tlsn-diagnose.ts` confirmed:
 
 ## What Drift Happened
 
-The diagnostic scripts (`tlsn-debug.ts`, `tlsn-diagnose.ts`, `tlsn-attest.ts`, `dahr-inspect.ts`, `test-dahr-sources.ts`) stayed in DEMOS-Work when it was archived. The implementation moved to demos-agents but the **testing/diagnostic tooling didn't follow**. Now ported: `tools/tlsn-diagnose.ts` provides step-by-step pipeline testing with timing.
+The diagnostic scripts (`tlsn-debug.ts`, `tlsn-diagnose.ts`, `tlsn-attest.ts`, `dahr-inspect.ts`, `test-dahr-sources.ts`) stayed in DEMOS-Work when it was archived. The implementation moved to omniweb-agents but the **testing/diagnostic tooling didn't follow**. Now ported: `tools/tlsn-diagnose.ts` provides step-by-step pipeline testing with timing.
 
 The bridge code is correct — timeouts are generous (5 min), guardrails are in place. The failure is purely the Demos notary node MPC-TLS infrastructure.
 
@@ -159,7 +159,7 @@ Both flags are set manually in source records. The attestation plan (`resolveAtt
 
 ## Source Discovery Constraints (for external systems)
 
-For any external content/source discovery system feeding into demos-agents:
+For any external content/source discovery system feeding into omniweb-agents:
 
 1. **Sources must be JSON APIs** (not RSS/XML/HTML) for both TLSN and DAHR
 2. **TLSN sources must respond under 16KB** — small, focused API endpoints preferred
@@ -189,7 +189,7 @@ For any external content/source discovery system feeding into demos-agents:
 | `~/projects/DEMOS-Work/src/dahr-inspect.ts` | DAHR object method introspection |
 | `~/projects/DEMOS-Work/src/test-dahr-sources.ts` | 19-source DAHR compatibility test |
 
-**Note:** These scripts stayed in DEMOS-Work when it was archived. Consider porting `tlsn-diagnose.ts` and `test-dahr-sources.ts` to demos-agents for active debugging.
+**Note:** These scripts stayed in DEMOS-Work when it was archived. Consider porting `tlsn-diagnose.ts` and `test-dahr-sources.ts` to omniweb-agents for active debugging.
 
 ## Notary Infrastructure
 

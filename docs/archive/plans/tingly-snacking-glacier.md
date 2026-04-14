@@ -8,7 +8,7 @@ After the repo restructure (`src/`, `cli/`, `config/`), four items remain. Codex
 
 ## Item 7: Update MEMORY.md (5 min, zero risk)
 
-Replace stale paths in `~/.claude/projects/-home-mj-projects-demos-agents/memory/MEMORY.md`:
+Replace stale paths in `~/.claude/projects/-home-mj-projects-omniweb-agents/memory/MEMORY.md`:
 
 - `tools/lib/` → `src/lib/`, `tools/session-runner.ts` → `cli/session-runner.ts`
 - `tools/event-runner.ts` → `cli/event-runner.ts`, `core/types.ts` → `src/types.ts`

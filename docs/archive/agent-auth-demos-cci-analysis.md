@@ -1,7 +1,7 @@
 # Agent Auth Protocol + Demos CCI: Strategic Analysis
 
 > **Date:** 2026-03-20
-> **Purpose:** Evaluate whether Agent Auth Protocol benefits demos-agents, especially via Demos CCI
+> **Purpose:** Evaluate whether Agent Auth Protocol benefits omniweb-agents, especially via Demos CCI
 > **Verdict:** YES — complementary layers, not competing. High strategic value.
 
 ---
@@ -44,7 +44,7 @@ Agent Auth Protocol and Demos CCI solve **different problems at different layers
 | **Reputation** | Aggregated across all linked identities — activity, attestations, scoring |
 | **Storage** | On-chain via GCR (Global Change Registry) + Storage Programs |
 | **SDK** | `@kynesyslabs/demosdk` — identities.inferXmIdentity(), getIdentities(), removeXmIdentity() |
-| **Status** | Architecture defined, SDK available. CCI plugin in demos-agents is SCAFFOLD (Node.js not validated) |
+| **Status** | Architecture defined, SDK available. CCI plugin in omniweb-agents is SCAFFOLD (Node.js not validated) |
 | **What it lacks** | No web service auth protocol, no capability scoping, no per-request JWT model |
 
 ### Demos Full Identity Stack (Beyond CCI)
@@ -66,7 +66,7 @@ Demos has a remarkably deep identity infrastructure that most competitors don't 
 ┌──────────────────────────────────────────────────────────────┐
 │  LAYER 3: APPLICATION BEHAVIOR                                │
 │  What the agent DOES — publish, attest, tip, react, trade     │
-│  → demos-agents session loop (8 phases, 20 plugins)           │
+│  → omniweb-agents session loop (8 phases, 20 plugins)           │
 │  → SuperColony feed operations                                │
 └────────────────────────────┬─────────────────────────────────┘
                              │
@@ -93,7 +93,7 @@ Demos has a remarkably deep identity infrastructure that most competitors don't 
 
 ### What Agent Auth has that Demos lacks
 
-| Capability | Why it matters for demos-agents |
+| Capability | Why it matters for omniweb-agents |
 |------------|-------------------------------|
 | **Per-agent Ed25519 identity for web API auth** | Our agents currently use shared auth tokens. Agent Auth gives each agent its own crypto identity for API calls. |
 | **Scoped capabilities with field-level constraints** | We can't currently restrict what an agent can do at the API level (e.g., "publish but not tip" or "max 3 posts/day enforced by service"). |
@@ -153,7 +153,7 @@ More contexts linked (CCI) → Higher reputation → More capabilities granted (
 
 ---
 
-## Current State in demos-agents
+## Current State in omniweb-agents
 
 | Component | Status | Gap |
 |-----------|--------|-----|
@@ -186,7 +186,7 @@ The full Demos docs are at `https://docs.kynesys.xyz/llms.txt` — a machine-rea
 
 ---
 
-## Actionable Next Steps for demos-agents
+## Actionable Next Steps for omniweb-agents
 
 ### Immediate (next 1-2 sessions)
 
@@ -202,7 +202,7 @@ The full Demos docs are at `https://docs.kynesys.xyz/llms.txt` — a machine-rea
 
 ### Strategic (roadmap item)
 
-7. **Register demos-agents in Agent Auth directory** — make our agents discoverable as Agent Auth-capable services (other agents can interact with ours via the protocol).
+7. **Register omniweb-agents in Agent Auth directory** — make our agents discoverable as Agent Auth-capable services (other agents can interact with ours via the protocol).
 8. **Propose to KyneSys: Agent Auth integration** — Demos network could become an Agent Auth provider, where Demos reputation score is exposed as an attestation that services can check before granting capabilities.
 9. **Propose to Better Auth: Demos as reputation layer** — Agent Auth currently has no reputation model. Demos CCI fills that gap. Strategic partnership opportunity.
 

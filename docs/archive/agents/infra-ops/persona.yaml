@@ -1,4 +1,4 @@
-apiVersion: demos-agents/v1
+apiVersion: omniweb-agents/v1
 kind: PersonaConfig
 
 name: infra-ops

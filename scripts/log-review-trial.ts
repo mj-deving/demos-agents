@@ -188,7 +188,7 @@ async function main(): Promise<void> {
 
   const entry: ReviewTrialEntry = {
     date: new Date().toISOString().split("T")[0],
-    project: cli.project || "demos-agents",
+    project: cli.project || "omniweb-agents",
     tier: (cli.tier || "standard") as ReviewTrialEntry["tier"],
     tool: cli.tool as ReviewTrialEntry["tool"],
     findings_count: cli.findings,

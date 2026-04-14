@@ -237,7 +237,7 @@ phases:
       - "Auto-apply CODE-FIX and GUARDRAIL changes — these are bug fixes, not strategy"
       - "SOURCE-PROMOTE and SOURCE-RETIRE require evidence (3+ data points)"
       - "STRATEGY changes require human approval with evidence (>=3 data points)"
-      - "All fixes must be synced to demos-agents if they affect standalone tools"
+      - "All fixes must be synced to omniweb-agents if they affect standalone tools"
       - "Record every improvement with: npx tsx tools/improvements.ts propose --description \"<description>\" --target \"<file>\" --evidence \"<evidence>\" --agent crawler"
 
 # Scoring path reference (verified formula):

@@ -5,7 +5,7 @@ read_when: ["architecture", "toolkit", "strategy", "boundary", "code placement",
 
 # Architecture: Plumbing vs Strategy
 
-> First-principles analysis of the demos-agents codebase boundary between **toolkit** (reusable plumbing for any Demos SDK consumer) and **strategy** (sentinel-specific personalization).
+> First-principles analysis of the omniweb-agents codebase boundary between **toolkit** (reusable plumbing for any Demos SDK consumer) and **strategy** (sentinel-specific personalization).
 >
 > Produced: 2026-03-29 | Method: 3-agent codebase mapping + FirstPrinciples decomposition + Red Team + Council debate
 > Reviewed: 4-agent /simplify + Codex review (REQUEST CHANGES → addressed)
@@ -115,7 +115,7 @@ Every Demos agent, regardless of strategy, performs combinations of these 10 irr
 | `src/lib/pipeline/source-scanner.ts` | Scanning framework | Sentinel intents | Second consumer | **DEFER** |
 | `src/lib/pipeline/feed-filter.ts` | Filtering engine | Sentinel weights | Second consumer | **DEFER** |
 
-### Pure Strategy (KEEP in demos-agents)
+### Pure Strategy (KEEP in omniweb-agents)
 
 | Module | Why it's strategy |
 |--------|------------------|
@@ -253,7 +253,7 @@ Both DAHR and TLSN are **equally first-class toolkit primitives**. The toolkit p
 
 **Design rule:** Toolkit primitives accept configuration through typed, bounded interfaces with validated defaults. Guards enforce invariants that cannot be overridden. When in doubt, keep it opinionated.
 
-**Sub-path exports:** Use `@demos-agents/core/reactive`, `@demos-agents/core/providers` to keep the main barrel lean. A minimal consumer (`connect`, `publish`, `verify`) should not need to import the EventLoop or DeclarativeEngine.
+**Sub-path exports:** Use `@omniweb-agents/core/reactive`, `@omniweb-agents/core/providers` to keep the main barrel lean. A minimal consumer (`connect`, `publish`, `verify`) should not need to import the EventLoop or DeclarativeEngine.
 
 ---
 

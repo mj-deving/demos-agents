@@ -1,4 +1,4 @@
-# Agent Architecture Comparison — ElizaOS, demos-agents, OpenClaw, Claude Code
+# Agent Architecture Comparison — ElizaOS, omniweb-agents, OpenClaw, Claude Code
 
 > Deep architectural analysis for future refactor. Created 2026-03-18.
 > Visual companion: `~/.agent/diagrams/agent-architecture-comparison.html`
@@ -203,7 +203,7 @@ plugin-name/
 
 ---
 
-## 2. demos-agents — Complete Architecture
+## 2. omniweb-agents — Complete Architecture
 
 ### 2.1 Plugin Interfaces
 
@@ -345,7 +345,7 @@ interface EventAction {
 
 **AGENT.yaml** — Identity, capabilities, constraints:
 ```yaml
-apiVersion: demos-agents/v1
+apiVersion: omniweb-agents/v1
 kind: AgentDefinition
 metadata:
   name: sentinel
@@ -365,7 +365,7 @@ constraints:
 
 **persona.yaml** — Runtime config:
 ```yaml
-apiVersion: demos-agents/v1
+apiVersion: omniweb-agents/v1
 kind: PersonaConfig
 name: sentinel
 topics:
@@ -619,9 +619,9 @@ File-based: MEMORY.md (persistent across sessions), settings.json (config), work
 
 ---
 
-## 5. Type Mapping — ElizaOS ↔ demos-agents
+## 5. Type Mapping — ElizaOS ↔ omniweb-agents
 
-| ElizaOS Type | Signature | demos-agents Equivalent | Bridge Complexity |
+| ElizaOS Type | Signature | omniweb-agents Equivalent | Bridge Complexity |
 |---|---|---|---|
 | `Plugin` | `{ name, init, actions, providers, evaluators, services, events, routes, adapter, models }` | `FrameworkPlugin` + `EventPlugin` | Medium — merge two interfaces |
 | `Action.validate` | `(runtime, message, state) → boolean` | `Action.validate(input) → boolean` | **Low** — wrap input |
@@ -636,9 +636,9 @@ File-based: MEMORY.md (persistent across sessions), settings.json (config), work
 
 ---
 
-## 6. Event Mapping — ElizaOS ↔ demos-agents
+## 6. Event Mapping — ElizaOS ↔ omniweb-agents
 
-| ElizaOS Event | demos-agents Equivalent | Notes |
+| ElizaOS Event | omniweb-agents Equivalent | Notes |
 |---|---|---|
 | `MESSAGE_RECEIVED` | `social:replies` EventSource + `social:mentions` | demos polls for messages, ElizaOS pushes |
 | `MESSAGE_SENT` | `observe("insight", ...)` | Telemetry after publish |
@@ -656,7 +656,7 @@ File-based: MEMORY.md (persistent across sessions), settings.json (config), work
 
 ## 7. Character ↔ Persona Mapping
 
-| ElizaOS Character Field | demos-agents Equivalent | Source File |
+| ElizaOS Character Field | omniweb-agents Equivalent | Source File |
 |---|---|---|
 | `name` | `metadata.name` | AGENT.yaml |
 | `bio` | `identity.role` + `identity.mission` | AGENT.yaml |
@@ -678,19 +678,19 @@ File-based: MEMORY.md (persistent across sessions), settings.json (config), work
 
 ### 8.1 The Question
 
-What is the minimal adapter surface to bridge demos-agents into ElizaOS while preserving unique features?
+What is the minimal adapter surface to bridge omniweb-agents into ElizaOS while preserving unique features?
 
 ### 8.2 Constraint Classification
 
 | Constraint | Type | Rationale |
 |---|---|---|
 | ElizaOS Plugin interface is fixed | **Hard** | Published npm package, community depends on it |
-| demos-agents core/ must stay SDK-free | **Hard** | Architectural invariant for testing + portability |
+| omniweb-agents core/ must stay SDK-free | **Hard** | Architectural invariant for testing + portability |
 | Provider returns string vs ProviderResult | **Soft** | Wrap with JSON.stringify |
 | Event model differs (events{} vs sources[]) | **Soft** | Wrap EventSource as Service that emits events |
 | Watermarks need persistent state | **Hard** | Dedup requires persistence regardless of host |
 | Attestation has no ElizaOS equivalent | **Assumption** | Can expose as ElizaOS Action |
-| Budget must be in demos-agents | **Soft** | Can live as ElizaOS evaluator |
+| Budget must be in omniweb-agents | **Soft** | Can live as ElizaOS evaluator |
 
 ### 8.3 The 6 Bridges
 
@@ -736,7 +736,7 @@ Persist watermarks using ElizaOS database instead of file-based JSON.
 
 ### 8.4 Unique Features as ElizaOS Primitives
 
-| demos-agents Feature | ElizaOS Primitive | Rationale |
+| omniweb-agents Feature | ElizaOS Primitive | Rationale |
 |---|---|---|
 | Attestation (DAHR/TLSN) | **Action** | Exposed as "attest-dahr", "attest-tlsn" actions |
 | BudgetPlugin | **Evaluator** | Gates publish actions based on budget |
@@ -747,7 +747,7 @@ Persist watermarks using ElizaOS database instead of file-based JSON.
 
 ### 8.5 Key Insight
 
-The assumption limiting us was that demos-agents needs its own runtime. In reality, `core/` is already framework-agnostic — it just needs 6 thin bridges to map its interfaces onto ElizaOS's Plugin contract. The two systems share the same conceptual model (Action/Provider/Evaluator) with different signatures.
+The assumption limiting us was that omniweb-agents needs its own runtime. In reality, `core/` is already framework-agnostic — it just needs 6 thin bridges to map its interfaces onto ElizaOS's Plugin contract. The two systems share the same conceptual model (Action/Provider/Evaluator) with different signatures.
 
 ### 8.6 Dual-Mode Architecture
 
@@ -792,7 +792,7 @@ Both modes share `core/` business logic. The adapter directory imports from `cor
 
 ## 10. Cross-System Comparison Summary
 
-| Dimension | ElizaOS | demos-agents | OpenClaw | Claude Code |
+| Dimension | ElizaOS | omniweb-agents | OpenClaw | Claude Code |
 |---|---|---|---|---|
 | **Core Model** | Action/Provider/Evaluator/Service | Action/DataProvider/Evaluator/EventSource | Skills + native tools | Skills + Hooks + MCP |
 | **Config Format** | JSON (Character) | YAML (4-file stack) | JSON + Markdown workspace | Markdown + YAML + JSON |

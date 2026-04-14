@@ -2,7 +2,7 @@
  * Adapter Interface Specs — Design Only (WS2 Deferred)
  *
  * These interfaces define how external frameworks (Eliza OS, OpenClaw)
- * can integrate with the demos-agents plugin system. No implementation yet.
+ * can integrate with the omniweb-agents plugin system. No implementation yet.
  *
  * The adapter pattern bridges external framework events/actions to
  * our FrameworkPlugin and EventPlugin interfaces.
@@ -13,7 +13,7 @@ import type { FrameworkPlugin, EventPlugin, AgentEvent, EventAction } from "../t
 // ── Eliza OS Adapter ────────────────────────────────
 
 /**
- * Eliza OS adapter — bridges Eliza's character/action system to demos-agents plugins.
+ * Eliza OS adapter — bridges Eliza's character/action system to omniweb-agents plugins.
  *
  * Eliza OS uses:
  * - Characters (similar to our personas)
@@ -25,16 +25,16 @@ import type { FrameworkPlugin, EventPlugin, AgentEvent, EventAction } from "../t
  * Eliza plugins register as FrameworkPlugins, and Eliza actions map to our Action type.
  */
 export interface ElizaOSAdapter {
-  /** Convert an Eliza character definition to a demos-agents persona config */
+  /** Convert an Eliza character definition to a omniweb-agents persona config */
   importCharacter(elizaCharacter: unknown): { name: string; topics: string[] };
 
-  /** Wrap an Eliza action as a demos-agents FrameworkPlugin Action */
+  /** Wrap an Eliza action as a omniweb-agents FrameworkPlugin Action */
   wrapAction(elizaAction: unknown): FrameworkPlugin["actions"];
 
-  /** Wrap an Eliza provider as a demos-agents DataProvider */
+  /** Wrap an Eliza provider as a omniweb-agents DataProvider */
   wrapProvider(elizaProvider: unknown): FrameworkPlugin["providers"];
 
-  /** Wrap an Eliza evaluator as a demos-agents Evaluator */
+  /** Wrap an Eliza evaluator as a omniweb-agents Evaluator */
   wrapEvaluator(elizaEvaluator: unknown): FrameworkPlugin["evaluators"];
 
   /** Create a FrameworkPlugin from an Eliza plugin package */
@@ -44,7 +44,7 @@ export interface ElizaOSAdapter {
 // ── OpenClaw Adapter ────────────────────────────────
 
 /**
- * OpenClaw adapter — bridges OpenClaw's IRC bot system to demos-agents plugins.
+ * OpenClaw adapter — bridges OpenClaw's IRC bot system to omniweb-agents plugins.
  *
  * OpenClaw uses:
  * - Bot configs (channel, nick, commands)
@@ -81,11 +81,11 @@ export interface OpenClawAdapter {
 
 /**
  * Generic adapter factory — creates an adapter that translates between
- * an external framework's event/action model and demos-agents plugins.
+ * an external framework's event/action model and omniweb-agents plugins.
  *
  * This is the pattern all adapters should follow:
- * 1. Import: external → demos-agents types
- * 2. Export: demos-agents types → external
+ * 1. Import: external → omniweb-agents types
+ * 2. Export: omniweb-agents types → external
  * 3. Plugin: create FrameworkPlugin or EventPlugin from external config
  */
 export interface AdapterFactory<TConfig, TPlugin extends FrameworkPlugin | EventPlugin> {

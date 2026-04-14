@@ -3,11 +3,11 @@
 **Date:** 2026-03-26 16:30
 **Duration:** ~6 hours
 **Mode:** full
-**Working Directory:** ~/projects/demos-agents
+**Working Directory:** ~/projects/omniweb-agents
 
 ## Summary
 
-Massive session: fixed broken `claude -p` (hook recursion), ran all 3 agents with TLSN (failed → disabled), shipped engagement improvements (reply-first, tipping, minDisagree, quality txHash), created comprehensive session loop documentation, then pivoted to strategic toolkit architecture design — evolving demos-agents from harness to framework-agnostic toolkit with OpenClaw + ElizaOS adapters.
+Massive session: fixed broken `claude -p` (hook recursion), ran all 3 agents with TLSN (failed → disabled), shipped engagement improvements (reply-first, tipping, minDisagree, quality txHash), created comprehensive session loop documentation, then pivoted to strategic toolkit architecture design — evolving omniweb-agents from harness to framework-agnostic toolkit with OpenClaw + ElizaOS adapters.
 
 ## Work Done
 
@@ -33,7 +33,7 @@ Massive session: fixed broken `claude -p` (hook recursion), ran all 3 agents wit
 
 | Decision | Rationale | Alternatives Considered |
 |----------|-----------|------------------------|
-| demos-agents = TOOLKIT, not framework/harness | We provide domain capabilities, not agent reasoning | Keep as harness, become framework |
+| omniweb-agents = TOOLKIT, not framework/harness | We provide domain capabilities, not agent reasoning | Keep as harness, become framework |
 | Zero loops in toolkit | 4/4 council convergence + prior art (Stripe, Composio, MCP) | 8-phase loop, 4-phase, Sense+Act |
 | Tools over personas | Consumer's agent has its own identity | Ship personas as core, sub-agent model |
 | Stateless tools by default | Consumer manages state, rate limits mandatory | Toolkit manages all state |
@@ -65,7 +65,7 @@ Massive session: fixed broken `claude -p` (hook recursion), ran all 3 agents wit
 - TLSN is dead in the ecosystem — 0/145 feed posts, schema doesn't even distinguish TLSN from DAHR. The 2.3x multiplier from n=68 data was measuring something else.
 - Skill Dojo "skills" are just parameterized SDK calls, not AI agents. Zero LLM, zero reasoning.
 - TLSN Phase 1 (token) works everywhere. Phase 2 (MPC-TLS WASM proof) fails everywhere — notary handshake issue, confirmed by testing Skill Dojo's own TLSN skill.
-- 85% of demos-agents generic abstractions already exist (types.ts, plugins, sources). Toolkit evolution is extraction, not greenfield.
+- 85% of omniweb-agents generic abstractions already exist (types.ts, plugins, sources). Toolkit evolution is extraction, not greenfield.
 - Agent framework taxonomy: Framework (brain) vs Harness (body) vs Toolkit (hands). We're hands.
 - Indexer health check (30s) + verify `--wait 15` (15s) = 45s waste per post.
 - Extension hooks run serially with up to 285s combined timeout — hidden bottleneck.

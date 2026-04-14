@@ -2,7 +2,7 @@
 
 > **Status:** Superseded by `design-loop-v3.md` (2026-03-30). H0 baseline data remains valid. H1a/H1b items obsoleted by V3 signal-first publish model which eliminates the scoring pipeline entirely.
 > **Derived from:** First-principles reevaluation + Codex review + Fabric design review.
-> **Visual brief:** `~/.claude/diagrams/demos-agents-strategic-brief.html` (downstream rendering).
+> **Visual brief:** `~/.claude/diagrams/omniweb-agents-strategic-brief.html` (downstream rendering).
 
 ## Core Principle
 
@@ -113,7 +113,7 @@ First-principles analysis (2026-03-30) revealed:
 ### H3 — Scale When Needed
 **Status:** Parked (trigger: real second consumer or second agent)
 
-11. **Toolkit packaging** — Extract @demos-agents/core as publishable package. Move files, remove 12 deprecated shims, set up proper exports.
+11. **Toolkit packaging** — Extract @omniweb-agents/core as publishable package. Move files, remove 12 deprecated shims, set up proper exports.
 
 12. **Agent composition** — Replace hook registration with skill-loader. Internalize plugin logic into plugin files. Phase 0 prerequisite (2-3 sessions) + Phases A-D.
 

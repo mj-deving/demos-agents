@@ -164,11 +164,11 @@ Skills have a standard (Agent Skills). Agent-to-agent communication has a standa
 | Repo | Purpose | Visibility |
 |------|---------|-----------|
 | **`my-agent-skills`** (existing) | Personal skill library — ALL skills (Demos + non-Demos), customized for Marius | Private or public |
-| **`demos-agents`** (new) | Demos ecosystem: agent definitions + strategies + shared tools + portable skills | Public |
+| **`omniweb-agents`** (new) | Demos ecosystem: agent definitions + strategies + shared tools + portable skills | Public |
 | **Skills in OpenClaw registry** | Individual skills published for community discovery | Public (registry) |
 | **Skills following Agent Skills standard** | Same skills work in Claude Code, OpenClaw, Cursor, Codex, etc. | Portable |
 
-`my-agent-skills` stays as personal skill library. `demos-agents` holds agent definitions + Demos-ecosystem skills following the Agent Skills open standard.
+`my-agent-skills` stays as personal skill library. `omniweb-agents` holds agent definitions + Demos-ecosystem skills following the Agent Skills open standard.
 
 ### Sources
 - [Agent Skills Open Standard](https://agentskills.io)
@@ -229,7 +229,7 @@ Skills have a standard (Agent Skills). Agent-to-agent communication has a standa
 A single canonical YAML file per agent. Projected into runtime-specific formats via projectors.
 
 ```yaml
-apiVersion: demos-agents/v1
+apiVersion: omniweb-agents/v1
 kind: AgentDefinition
 
 metadata:
@@ -358,10 +358,10 @@ AGENT.yaml (canonical)
 
 ## Public Repo Structure
 
-**Repo:** `mj-deving/demos-agents` (public, Apache-2.0)
+**Repo:** `mj-deving/omniweb-agents` (public, Apache-2.0)
 
 ```
-demos-agents/
+omniweb-agents/
 ├── README.md
 ├── spec/
 │   ├── AGENT-SPEC.md                 # Agent definition format (OUR spec — no standard exists)
@@ -421,9 +421,9 @@ demos-agents/
 - Each specialized agent adds its own strategy + tools + persona
 
 **Relationship to existing repos:**
-- `my-agent-skills` → **STAYS** as personal skill library. SuperColony skill lives in BOTH (my-agent-skills for personal use, demos-agents for public sharing)
+- `my-agent-skills` → **STAYS** as personal skill library. SuperColony skill lives in BOTH (my-agent-skills for personal use, omniweb-agents for public sharing)
 - `DEMOS-Work` → stays private (session logs, wallet, strategies-in-progress)
-- `openclaw-bot` → references `demos-agents` agent definitions + skills
+- `openclaw-bot` → references `omniweb-agents` agent definitions + skills
 - OpenClaw skills registry → individual skills can be published there too for community discovery
 
 ---
@@ -496,12 +496,12 @@ guardrails:
 ## Implementation Phases
 
 ### Phase 1: Foundation (this session + next)
-1. Create `demos-agents` public repo with directory structure
+1. Create `omniweb-agents` public repo with directory structure
 2. Write `spec/AGENT-SPEC.md` — full format documentation
 3. Write `spec/STRATEGY-SPEC.md` — strategy format docs
 4. Create `agents/hivemind/AGENT.yaml` — canonical definition
 5. Create `agents/isidore/AGENT.yaml` — isidore as hivemind instance
-6. Move `supercolony/` skill from `my-agent-skills` to `demos-agents/skills/`
+6. Move `supercolony/` skill from `my-agent-skills` to `omniweb-agents/skills/`
 7. Extract `strategies/self-improving-loop.yaml` from v4 strategy doc
 
 ### Phase 2: Tooling (2 sessions)
@@ -566,7 +566,7 @@ guardrails:
    - `Research-Agent-Ecosystem.md` — ACP, canonical standards, OpenClaw/PAI/SuperColony patterns
    - `Research-Skill-Patterns.md` — Agent Skills open standard, format comparison
 
-2. **Create `demos-agents` repo** — `~/projects/demos-agents/` with lean structure
+2. **Create `omniweb-agents` repo** — `~/projects/omniweb-agents/` with lean structure
 
 3. **Create Sentinel** — first and only agent:
    - `agents/sentinel/AGENT.yaml` — lightweight definition (identity, capabilities, constraints)

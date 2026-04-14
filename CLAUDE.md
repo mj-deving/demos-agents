@@ -1,4 +1,4 @@
-# demos-agents
+# omniweb-agents
 
 OmniWeb toolkit for the Demos Network — the full stack, not just SuperColony. Consumer package: `omniweb-toolkit`. Handles real DEM tokens on mainnet.
 

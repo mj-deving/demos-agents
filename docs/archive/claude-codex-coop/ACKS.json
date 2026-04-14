@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "acks": [
+    {
+      "agent": "codex",
+      "timestamp": "2026-03-13T07:02:09.611Z",
+      "source": "manual",
+      "note": "validated soft-ack guard",
+      "statusUpdated": "2026-03-13T07:05:00.000Z",
+      "latestHandoffHeading": "## 2026-03-13T07:05:00.000Z | claude"
+    },
+    {
+      "agent": "codex",
+      "timestamp": "2026-03-13T07:04:16.323Z",
+      "source": "takeover",
+      "note": "smoke-test",
+      "statusUpdated": "2026-03-13T07:02:30.512Z",
+      "latestHandoffHeading": "## 2026-03-13T07:02:38.394Z | codex"
+    },
+    {
+      "agent": "codex",
+      "timestamp": "2026-03-13T21:22:52.137Z",
+      "source": "manual",
+      "note": "validate takeover drift snapshot",
+      "statusUpdated": "2026-03-13T22:30:00Z",
+      "latestHandoffHeading": "## 2026-03-13T20:43:42.022Z | codex"
+    },
+    {
+      "agent": "claude",
+      "timestamp": "2026-03-13T22:10:00.000Z",
+      "source": "handoff",
+      "note": "Phase 3 Steps 3+4 complete, handing to Codex for review",
+      "statusUpdated": "2026-03-13T23:30:00Z",
+      "latestHandoffHeading": "## 2026-03-13T22:09:34.513Z | claude"
+    }
+  ]
+}

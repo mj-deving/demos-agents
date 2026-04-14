@@ -1,6 +1,6 @@
 # Agent Framework Modularization Research
 
-> Research deliverable for demos-agents refactor planning.
+> Research deliverable for omniweb-agents refactor planning.
 > Date: 2026-03-17 | Author: Nova (intern agent)
 
 ---
@@ -70,7 +70,7 @@ metadata.openclaw: {"requires":{"bins":["ffmpeg"],"env":["OPENAI_API_KEY"],"conf
 
 ### What "Bring Workflows to OpenClaw Format" Means Concretely
 
-For demos-agents, this would mean:
+For omniweb-agents, this would mean:
 
 1. **Agent definitions** -- Convert each agent's YAML config (AGENT.yaml, persona.yaml, strategy.yaml) into an OpenClaw workspace directory with:
    - `AGENTS.md` containing operating instructions (merge of persona.md + strategy rules + hard constraints)
@@ -318,9 +318,9 @@ Everything else belongs in the extension/app layer.
 
 ---
 
-## 6. Mapping to demos-agents Current Structure
+## 6. Mapping to omniweb-agents Current Structure
 
-### What demos-agents already has that aligns:
+### What omniweb-agents already has that aligns:
 
 | Current | Closest Framework Pattern | Notes |
 |---------|--------------------------|-------|
@@ -334,7 +334,7 @@ Everything else belongs in the extension/app layer.
 | `sources/catalog.json` | No direct equivalent | Unique source lifecycle system |
 | `tools/session-runner.ts` | CrewAI Crews / Agent loop runtime | The "harness" |
 
-### What demos-agents is missing:
+### What omniweb-agents is missing:
 
 1. **Clear harness/app boundary** -- tools/lib/ mixes core plumbing (llm-provider, extensions) with app logic (sdk, publish-pipeline, sources/)
 2. **Package boundary** -- No npm package.json exports, no publishable core
@@ -388,7 +388,7 @@ sources/                         # Catalog data (app-specific)
 
 ### R2: Define a Formal Plugin Interface
 
-Inspired by Eliza's taxonomy, adapted for demos-agents:
+Inspired by Eliza's taxonomy, adapted for omniweb-agents:
 
 ```typescript
 interface DemosPlugin {

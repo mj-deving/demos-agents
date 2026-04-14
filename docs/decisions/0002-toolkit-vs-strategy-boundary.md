@@ -19,25 +19,25 @@ A first-principles analysis (2026-03-29) using 3-agent codebase mapping + FirstP
 
 **`src/toolkit/` is the package boundary. It is expanded to include infrastructure primitives beyond the original 10 tools + 6 guards.**
 
-### Core (main barrel `@demos-agents/core`)
+### Core (main barrel `@omniweb-agents/core`)
 
 | Layer | Location | Reusable? | Package |
 |-------|----------|-----------|---------|
-| Tools (10) | `src/toolkit/tools/` | Yes | `@demos-agents/core` |
-| Guards (6 + state-helpers) | `src/toolkit/guards/` | Yes | `@demos-agents/core` |
-| Session + bridge | `src/toolkit/` (flat) | Yes | `@demos-agents/core` |
-| Types + LLMProvider interface | `src/toolkit/types.ts` | Yes | `@demos-agents/core` |
+| Tools (10) | `src/toolkit/tools/` | Yes | `@omniweb-agents/core` |
+| Guards (6 + state-helpers) | `src/toolkit/guards/` | Yes | `@omniweb-agents/core` |
+| Session + bridge | `src/toolkit/` (flat) | Yes | `@omniweb-agents/core` |
+| Types + LLMProvider interface | `src/toolkit/types.ts` | Yes | `@omniweb-agents/core` |
 
 ### Sub-path exports (lean barrel, opt-in)
 
 | Layer | Location | Sub-path | Status |
 |-------|----------|----------|--------|
-| Reactive | `src/toolkit/reactive/` | `@demos-agents/core/reactive` | Pending (EventLoop needs generic TAction) |
-| Providers | `src/toolkit/providers/` | `@demos-agents/core/providers` | Pending (DeclarativeEngine needs dep extraction) |
-| Sources | `src/toolkit/sources/` | `@demos-agents/core/sources` | Pending |
-| SC scoring | `src/toolkit/supercolony/` | `@demos-agents/core/supercolony/scoring` | **Shipped** (Phase 1) |
+| Reactive | `src/toolkit/reactive/` | `@omniweb-agents/core/reactive` | Pending (EventLoop needs generic TAction) |
+| Providers | `src/toolkit/providers/` | `@omniweb-agents/core/providers` | Pending (DeclarativeEngine needs dep extraction) |
+| Sources | `src/toolkit/sources/` | `@omniweb-agents/core/sources` | Pending |
+| SC scoring | `src/toolkit/supercolony/` | `@omniweb-agents/core/supercolony/scoring` | **Shipped** (Phase 1) |
 | Chain helpers | `src/toolkit/chain/` | — | Pending (ChainTxPipeline, asset-helpers) |
-| Math | `src/toolkit/math/` | `@demos-agents/core/math` | Pending (BaselineMath) |
+| Math | `src/toolkit/math/` | `@omniweb-agents/core/math` | Pending (BaselineMath) |
 
 ### Strategy (NOT exported)
 

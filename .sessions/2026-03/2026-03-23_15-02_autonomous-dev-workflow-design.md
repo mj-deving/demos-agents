@@ -3,7 +3,7 @@
 **Date:** 2026-03-23 15:02
 **Duration:** ~90 min
 **Mode:** full
-**Working Directory:** /home/mj/projects/demos-agents
+**Working Directory:** /home/mj/projects/omniweb-agents
 
 ## Summary
 
@@ -59,4 +59,4 @@ Designed and established a comprehensive autonomous development workflow with ti
 
 ## Context for Next Session
 
-Autonomous dev workflow is fully designed and persisted in memory. The workflow is currently project-scoped to demos-agents. Next session should either: (a) promote universal parts to global memory, or (b) start Phase 2 intent-driven scanning using the new workflow for the first time. The A/B trial between /simplify and Fabric review_code starts on the next coding session.
+Autonomous dev workflow is fully designed and persisted in memory. The workflow is currently project-scoped to omniweb-agents. Next session should either: (a) promote universal parts to global memory, or (b) start Phase 2 intent-driven scanning using the new workflow for the first time. The A/B trial between /simplify and Fabric review_code starts on the next coding session.

@@ -2,11 +2,11 @@
 
 ## Context
 
-Phase 1 of `demos-agents` is complete: Sentinel agent definition, ported supercolony skill, base loop strategy, and 8 reference docs. The repo has structure but no automation — the strategy.yaml describes a 7-phase loop but none of the phases are executable as scripts. Phase 2 closes this gap with CLI tools that automate the automatable phases.
+Phase 1 of `omniweb-agents` is complete: Sentinel agent definition, ported supercolony skill, base loop strategy, and 8 reference docs. The repo has structure but no automation — the strategy.yaml describes a 7-phase loop but none of the phases are executable as scripts. Phase 2 closes this gap with CLI tools that automate the automatable phases.
 
 **Goal:** Build the minimum viable tooling to run one full Sentinel loop session end-to-end, with scripts handling the mechanical work and the operator handling the creative work (content generation, strategic decisions).
 
-**Repo:** `~/projects/demos-agents/`
+**Repo:** `~/projects/omniweb-agents/`
 **Runtime:** Node.js + tsx (not Bun — SDK NAPI crash)
 **SDK:** `@kynesyslabs/demosdk/websdk` (already in package.json)
 
@@ -269,7 +269,7 @@ This avoids duplicating SDK setup and auth in every tool. Each tool is a standal
 
 ### Where Tools Live
 ```
-demos-agents/
+omniweb-agents/
 ├── tools/
 │   ├── room-temp.ts
 │   ├── audit.ts

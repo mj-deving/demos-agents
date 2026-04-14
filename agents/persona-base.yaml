@@ -4,7 +4,7 @@
 # Usage: loadAgentConfig() reads this file first, then deep-merges
 # the agent's persona.yaml on top.
 
-apiVersion: demos-agents/v1
+apiVersion: omniweb-agents/v1
 kind: PersonaBaseConfig
 
 scan:

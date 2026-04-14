@@ -41,7 +41,7 @@ function mockFrameworkPlugin(name: string, opts: { actions?: Action[]; providers
 describe("createElizaPlugin", () => {
   it("returns plugin with correct name and description", () => {
     const plugin = createElizaPlugin([]);
-    expect(plugin.name).toBe("demos-agents");
+    expect(plugin.name).toBe("omniweb-agents");
     expect(plugin.description).toBe("Demos agents framework bridge for ElizaOS");
   });
 

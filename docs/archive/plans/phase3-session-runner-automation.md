@@ -6,7 +6,7 @@ Phase 2 shipped 5 CLI tools (room-temp, audit, improvements, session-review, gat
 
 **Goal:** Build the minimum viable orchestrator to run one full Sentinel loop session from a single command, with automated phases running automatically and human-required phases prompting the operator.
 
-**Repo:** `~/projects/demos-agents/`
+**Repo:** `~/projects/omniweb-agents/`
 **Runtime:** Node.js + tsx (not Bun — SDK NAPI crash)
 **Depends on:** All Phase 2 tools (room-temp, audit, improvements, gate, session-review)
 
@@ -422,7 +422,7 @@ Why not a TUI framework?
 
 ## Codex Review (2026-03-09)
 
-Codex CLI reviewed this plan against the demos-agents codebase. 3 HIGH, 4 MED, 2 LOW findings. All resolved below.
+Codex CLI reviewed this plan against the omniweb-agents codebase. 3 HIGH, 4 MED, 2 LOW findings. All resolved below.
 
 | # | Severity | Finding | Resolution |
 |---|----------|---------|------------|

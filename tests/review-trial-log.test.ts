@@ -10,7 +10,7 @@ describe("review-trial-log", () => {
     it("accepts valid fabric-review entry", () => {
       const entry: ReviewTrialEntry = {
         date: "2026-03-25",
-        project: "demos-agents",
+        project: "omniweb-agents",
         tier: "standard",
         tool: "fabric-review",
         findings_count: 4,
@@ -24,7 +24,7 @@ describe("review-trial-log", () => {
     it("accepts valid simplify entry without notes", () => {
       const entry: ReviewTrialEntry = {
         date: "2026-03-25",
-        project: "demos-agents",
+        project: "omniweb-agents",
         tier: "surgical",
         tool: "simplify",
         findings_count: 2,
@@ -37,7 +37,7 @@ describe("review-trial-log", () => {
     it("rejects invalid tool name", () => {
       const entry = {
         date: "2026-03-25",
-        project: "demos-agents",
+        project: "omniweb-agents",
         tier: "standard",
         tool: "invalid-tool",
         findings_count: 1,
@@ -52,7 +52,7 @@ describe("review-trial-log", () => {
     it("rejects invalid tier", () => {
       const entry = {
         date: "2026-03-25",
-        project: "demos-agents",
+        project: "omniweb-agents",
         tier: "mega",
         tool: "simplify",
         findings_count: 1,
@@ -67,7 +67,7 @@ describe("review-trial-log", () => {
     it("rejects negative findings_count", () => {
       const entry = {
         date: "2026-03-25",
-        project: "demos-agents",
+        project: "omniweb-agents",
         tier: "standard",
         tool: "fabric-review",
         findings_count: -1,
@@ -82,7 +82,7 @@ describe("review-trial-log", () => {
     it("rejects negative duration", () => {
       const entry = {
         date: "2026-03-25",
-        project: "demos-agents",
+        project: "omniweb-agents",
         tier: "standard",
         tool: "fabric-review",
         findings_count: 1,
@@ -100,7 +100,7 @@ describe("review-trial-log", () => {
       const entries: ReviewTrialEntry[] = [
         {
           date: "2026-03-20",
-          project: "demos-agents",
+          project: "omniweb-agents",
           tier: "standard",
           tool: "fabric-review",
           findings_count: 4,
@@ -109,7 +109,7 @@ describe("review-trial-log", () => {
         },
         {
           date: "2026-03-21",
-          project: "demos-agents",
+          project: "omniweb-agents",
           tier: "standard",
           tool: "fabric-review",
           findings_count: 6,
@@ -118,7 +118,7 @@ describe("review-trial-log", () => {
         },
         {
           date: "2026-03-22",
-          project: "demos-agents",
+          project: "omniweb-agents",
           tier: "standard",
           tool: "simplify",
           findings_count: 2,
@@ -127,7 +127,7 @@ describe("review-trial-log", () => {
         },
         {
           date: "2026-03-23",
-          project: "demos-agents",
+          project: "omniweb-agents",
           tier: "surgical",
           tool: "simplify",
           findings_count: 1,
@@ -160,7 +160,7 @@ describe("review-trial-log", () => {
       const entries: ReviewTrialEntry[] = [
         {
           date: "2026-03-20",
-          project: "demos-agents",
+          project: "omniweb-agents",
           tier: "standard",
           tool: "fabric-review",
           findings_count: 3,

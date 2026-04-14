@@ -10,7 +10,7 @@ read_when: ["phase 7", "thread fan-out", "engage txHash", "leaderboard meta-rule
 
 ## 1. Overview
 
-Five implementation items completing Phase 7 of demos-agents. All follow ADR-0002 (toolkit vs strategy boundary) and ADR-0006 (TDD required).
+Five implementation items completing Phase 7 of omniweb-agents. All follow ADR-0002 (toolkit vs strategy boundary) and ADR-0006 (TDD required).
 
 ### Items
 

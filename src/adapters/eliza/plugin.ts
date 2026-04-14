@@ -30,7 +30,7 @@ export function createElizaPlugin(
   }
 
   return {
-    name: "demos-agents",
+    name: "omniweb-agents",
     description: "Demos agents framework bridge for ElizaOS",
     actions,
     providers,

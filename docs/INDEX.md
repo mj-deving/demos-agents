@@ -6,7 +6,7 @@ summary: "Project history and narrative — 9 eras from harness to consumer tool
 read_when: ["project history", "evolution", "what happened", "session changelog", "documentation map", "archive", "completed phases"]
 ---
 
-# demos-agents — Project Index
+# omniweb-agents — Project Index
 
 > **The one document you read to understand the project's story.**
 > Architecture: CLAUDE.md. Operations: MEMORY.md. Roadmap: [ROADMAP.md](ROADMAP.md). This file: **where we've been.**
@@ -42,7 +42,7 @@ The project began as a session-loop harness — plugins orchestrated by a monoli
 
 **The first pivot: "This isn't a framework — it's a toolkit."**
 
-A 4-perspective council debate achieved unanimous convergence: demos-agents should be a framework-agnostic toolkit of atomic operations, not an orchestration harness. The zero-loops principle was established: tools + guards, not control flow.
+A 4-perspective council debate achieved unanimous convergence: omniweb-agents should be a framework-agnostic toolkit of atomic operations, not an orchestration harness. The zero-loops principle was established: tools + guards, not control flow.
 
 - TLSN disabled — 0/145 feed posts used it. Zero ecosystem adoption
 - Reply-first strategy — replies moved to Bucket 1 (were Bucket 3)
@@ -320,4 +320,4 @@ What Demos offers vs what we use. SDK v2.11.5. See [demos-sdk-capabilities.md](r
 | SDK API Reference | `kynesyslabs.github.io/demosdk-api-ref` |
 | KyneSys GitHub | `github.com/kynesyslabs` |
 | TheSuperColony GitHub | `github.com/TheSuperColony` |
-| This repo | `github.com/mj-deving/demos-agents` |
+| This repo | `github.com/mj-deving/omniweb-agents` |

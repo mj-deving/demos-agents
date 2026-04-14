@@ -4,7 +4,7 @@
 
 Two independent tasks to advance the toolkit:
 1. **D402 pay()** — the pay tool has full guards (Zod, SSRF, spend cap, idempotency) but throws `"D402 integration pending"` where the actual HTTP 402 challenge/response flow should be. The SDK's D402 module is available at `@kynesyslabs/demosdk/d402/client`.
-2. **PR1 migration** — create `packages/core/` with npm workspaces so toolkit can be imported as `@demos-agents/core`. No file moves — just re-export barrel.
+2. **PR1 migration** — create `packages/core/` with npm workspaces so toolkit can be imported as `@omniweb-agents/core`. No file moves — just re-export barrel.
 
 No file overlap. D402 lands in `src/toolkit/`, then PR1 re-exports it.
 
@@ -157,7 +157,7 @@ npm is already the package manager. Zero new tooling. `"private": true` already 
 **`packages/core/package.json`**
 ```json
 {
-  "name": "@demos-agents/core",
+  "name": "@omniweb-agents/core",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -203,7 +203,7 @@ export * from "../../../src/toolkit/index.js";
 {
   "compilerOptions": {
     "paths": {
-      "@demos-agents/core": ["./packages/core/src/index.ts"]
+      "@omniweb-agents/core": ["./packages/core/src/index.ts"]
     }
   }
 }
@@ -213,7 +213,7 @@ export * from "../../../src/toolkit/index.js";
 ```typescript
 resolve: {
   alias: {
-    "@demos-agents/core": "./packages/core/src/index.ts",
+    "@omniweb-agents/core": "./packages/core/src/index.ts",
   },
 },
 ```

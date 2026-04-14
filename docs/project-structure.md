@@ -34,7 +34,7 @@ This is a **monorepo with a publishing facade**. All implementation lives in `sr
 ## Directory Tree
 
 ```
-demos-agents/
+omniweb-agents/
 ├── CLAUDE.md                            # Architecture + principles (≤100 lines)
 ├── README.md                            # Public-facing repo docs
 ├── LICENSE                              # MIT

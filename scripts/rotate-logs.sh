@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Remove agent session logs older than 7 days.
-# Crontab: 0 5 * * * /home/mj/projects/demos-agents/scripts/rotate-logs.sh
+# Crontab: 0 5 * * * /home/mj/projects/omniweb-agents/scripts/rotate-logs.sh
 
 LOG_DIR="$HOME/.demos-agent-logs"
 

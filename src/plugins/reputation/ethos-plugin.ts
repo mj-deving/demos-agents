@@ -42,7 +42,7 @@ export class EthosPlugin implements FrameworkPlugin {
           const url = `https://api.ethos.network/v1/score/${encodeURIComponent(topic)}`;
           const response = await fetchWithTimeout(url, 10_000, {
             headers: {
-              "X-Ethos-Client": "demos-agents",
+              "X-Ethos-Client": "omniweb-agents",
               Accept: "application/json",
             },
           });

@@ -3,11 +3,11 @@
 **Date:** 2026-03-27 18:20
 **Duration:** ~3 hours
 **Mode:** full
-**Working Directory:** ~/projects/demos-agents
+**Working Directory:** ~/projects/omniweb-agents
 
 ## Summary
 
-Major toolkit session: wired Zod input validation across all 10 tools, implemented D402 HTTP 402 payment protocol, created `@demos-agents/core` package skeleton (PR1 of 5), and ran a comprehensive pre-packaging security audit (red team + vibesec + desloppify). Fixed 6 security issues, documented 28 total findings for next session.
+Major toolkit session: wired Zod input validation across all 10 tools, implemented D402 HTTP 402 payment protocol, created `@omniweb-agents/core` package skeleton (PR1 of 5), and ran a comprehensive pre-packaging security audit (red team + vibesec + desloppify). Fixed 6 security issues, documented 28 total findings for next session.
 
 ## Work Done
 
@@ -16,7 +16,7 @@ Major toolkit session: wired Zod input validation across all 10 tools, implement
 - `withToolWrapper` error preservation: thrown `DemosError` codes no longer rewritten by catch block.
 - D402 pay() full wiring: 402 challenge/response flow (parse requirement, validate payee, settle, retry with proof). Receipt deferred to 2xx retry. `redirect: "manual"` on all fetches. 14 tests.
 - Codex implemented: wallet-scoped settlement lock (nonce safety) + redirect validation helper (3-hop max, SSRF on each hop, proof stripped cross-origin). 5 tests.
-- `@demos-agents/core` package: npm workspaces, re-export barrel, vitest alias. 7 tests.
+- `@omniweb-agents/core` package: npm workspaces, re-export barrel, vitest alias. 7 tests.
 - Security fixes shipped: `requirePayeeApproval` default → `true`, URL allowlist enforcement in attest/pay/publish, auth sentinel mismatch fixed.
 - Comprehensive audit: Red Team (22 findings), Vibesec (14 findings), Desloppify (86 open issues, 81/100 score, 20 subjective dimensions reviewed).
 - Audit report: `docs/toolkit-audit-2026-03-27.md` — structured checklist with all findings.
@@ -46,7 +46,7 @@ Major toolkit session: wired Zod input validation across all 10 tools, implement
 | `src/toolkit/tools/attest.ts` | edited | Zod validation + URL allowlist |
 | `src/toolkit/tools/publish.ts` | edited | Zod validation + SSRF on attestUrl + URL allowlist |
 | `packages/core/` | created | PR1 package skeleton (package.json, tsconfig, barrel) |
-| `vitest.config.ts` | edited | @demos-agents/core resolve alias |
+| `vitest.config.ts` | edited | @omniweb-agents/core resolve alias |
 | `docs/toolkit-audit-2026-03-27.md` | created | 28-finding structured audit report with checklists |
 | `docs/INDEX.md` | edited | Toolkit shipping changelog, test counts |
 

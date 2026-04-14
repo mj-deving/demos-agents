@@ -12,7 +12,7 @@
 
 ## 1. Problem Statement
 
-demos-agents contains high-value domain logic for operating within the Demos Network ecosystem — attestation pipelines, source catalogs, claim extraction, quality gates, entity resolution, colony intelligence, self-improvement machinery. This logic is currently locked inside a monolithic session harness that only works as a standalone system.
+omniweb-agents contains high-value domain logic for operating within the Demos Network ecosystem — attestation pipelines, source catalogs, claim extraction, quality gates, entity resolution, colony intelligence, self-improvement machinery. This logic is currently locked inside a monolithic session harness that only works as a standalone system.
 
 External agent frameworks (ElizaOS, OpenClaw, Hermes, custom) cannot consume this value without adopting the entire harness. The goal is to extract the toolkit so any agent — regardless of framework — can operate within the Demos ecosystem with minimal friction.
 
@@ -24,7 +24,7 @@ External agent frameworks (ElizaOS, OpenClaw, Hermes, custom) cannot consume thi
 
 Established 2026-03-25. These definitions scope ALL subsequent design decisions.
 
-| Category | Definition | Examples | demos-agents Target |
+| Category | Definition | Examples | omniweb-agents Target |
 |----------|-----------|----------|-------------------|
 | **Framework** | Builds agent logic — provides Actions, Memory, Evaluators as building blocks | ElizaOS, LangChain, CrewAI, AutoGen | NO — we don't define how agents think |
 | **Harness** | Manages agent execution — lifecycle, state, safety, channels, I/O | OpenClaw, Claude Agent SDK, DeepAgents | NO (currently yes, evolving away) |
@@ -67,7 +67,7 @@ ADAPTER LAYER (thin, per-framework)
 └── AgentSkills: skill.md for Hermes/generic
 
 CORE TOOLKIT (framework-agnostic, multi-vertical)
-@demos-agents/core
+@omniweb-agents/core
 ├── base/           Universal abstractions (already in src/types.ts — 600 lines)
 ├── sources/        Source catalog (229), lifecycle, matcher, declarative engine
 ├── pipeline/       Claim extraction, attestation planner, quality gate, scoring
@@ -106,7 +106,7 @@ DEMOS SDK (not ours — Demos team)
 ## 5. Open Design Questions
 
 ### Q1: Naming & Identity ✅
-- [x] "demos-agents" is misleading — implies a framework/harness
+- [x] "omniweb-agents" is misleading — implies a framework/harness
 - [x] Name should signal "plug this into YOUR agent" — a skill/toolkit/plugin
 - [x] Candidates: `demos-toolkit`, `demos-skills`, `@demos/toolkit`
 - **Decision:** Name should reflect toolkit/skill/plugin identity. Not "agents." Exact name TBD but direction is clear — it's a bolt-on, plug-and-play toolkit. Any agent comes along and plugs in.
@@ -125,7 +125,7 @@ DEMOS SDK (not ours — Demos team)
 - [x] `openclaw skills install demos` → 3 commands → publish attested post. Yes.
 - [x] ElizaOS autonomous character? Yes — same core, different adapter.
 - [x] Standalone CLI? Yes — third distribution surface, same core.
-- [x] All three are distribution surfaces, not three products. Same `@demos-agents/core`.
+- [x] All three are distribution surfaces, not three products. Same `@omniweb-agents/core`.
 - [x] No vendor lock-in on strategies — toolkit shows playbooks/heuristics, consumer adopts their own
 - **Decision:** Three distribution surfaces (OpenClaw skill, ElizaOS plugin, standalone CLI) backed by one core. Wow is layered: instant hook → discovery of possibilities → adopt/customize for own use case. No strategy lock-in.
 - **Resolved [2026-03-26]:** Wallet provisioning is "bring your own wallet" — the toolkit does NOT create or fund wallets. The `connect()` docs must include a prerequisite section pointing to Demos wallet setup instructions. A `demos-toolkit doctor` CLI command validates wallet exists, has balance, and RPC is reachable. Strategy discovery: `docs/playbooks/` index + `demos-toolkit list-playbooks` CLI command.
@@ -271,7 +271,7 @@ The current repo is a single root package with direct `cli/*` entrypoints and on
 - Budget 2-3 sessions for this PR alone — "update all imports" hides hundreds of path changes across 90+ test files, 25+ plugins, 10+ CLI scripts
 
 **PR3: Update consumers to import from package**
-- All `cli/`, `tests/`, adapter code imports from `@demos-agents/core` (not relative paths)
+- All `cli/`, `tests/`, adapter code imports from `@omniweb-agents/core` (not relative paths)
 - Re-export shims still present (safety net)
 - Workspace resolution verification script confirms all imports resolve correctly
 
@@ -284,7 +284,7 @@ The current repo is a single root package with direct `cli/*` entrypoints and on
 - `packages/adapters/openclaw/` — SKILL.md + scripts calling core
 - `packages/adapters/eliza/` — Action/Provider/Evaluator wrappers (with adapter-specific session lifecycle — see below)
 - `packages/adapters/cli/` — standalone CLI entry points
-- Integration tests that import from `@demos-agents/core`
+- Integration tests that import from `@omniweb-agents/core`
 - Adapter tests verifying correct ToolResult translation per framework
 
 **Adapter session lifecycle (per framework):**
@@ -419,7 +419,7 @@ interface Plugin {
 
 **What maps to our architecture:**
 
-| ElizaOS | demos-agents | Adapter Work |
+| ElizaOS | omniweb-agents | Adapter Work |
 |---------|-------------|-------------|
 | Action (validate+handler) | FrameworkPlugin.Action | Shape translation only |
 | Provider (context inject) | DataProvider | Add `text` field to output |
@@ -801,7 +801,7 @@ Local path is always tried first (faster, no rate limit, higher fidelity). Skill
 
 > Append-only. Format: `[DATE] DECISION: statement. REASON: why. SUPERSEDES: what (if any).`
 
-[2026-03-25] DECISION: demos-agents is a TOOLKIT, not a framework or harness. REASON: We provide domain capabilities, not agent reasoning or execution management.
+[2026-03-25] DECISION: omniweb-agents is a TOOLKIT, not a framework or harness. REASON: We provide domain capabilities, not agent reasoning or execution management.
 
 [2026-03-25] DECISION: SuperColony is the first vertical, not the only vertical. REASON: Demos SDK offers 7+ verticals. Toolkit API should be `demos.tools.publish()` not `supercolony.publish()`.
 
@@ -821,7 +821,7 @@ Local path is always tried first (faster, no rate limit, higher fidelity). Skill
 
 [2026-03-25] DECISION: Stateless tools by default, optional state adapters. REASON: Consumer manages their own state. Rate limits are the one mandatory guardrail (wallet-scoped, protects from API bans).
 
-[2026-03-25] DECISION: Three distribution surfaces, one core. REASON: OpenClaw skill, ElizaOS plugin, standalone CLI all call the same @demos-agents/core. Not three products.
+[2026-03-25] DECISION: Three distribution surfaces, one core. REASON: OpenClaw skill, ElizaOS plugin, standalone CLI all call the same @omniweb-agents/core. Not three products.
 
 [2026-03-25] ~~DECISION: Scaffold future verticals, don't implement.~~ SUPERSEDED by 2026-03-26 decision: future verticals NOT scaffolded as empty directories in published package. Added only when implementation begins.
 
@@ -849,7 +849,7 @@ Local path is always tried first (faster, no rate limit, higher fidelity). Skill
 
 [2026-03-26] ~~DECISION: Security architecture added.~~ SUPERSEDED by 2026-03-27 reframing below (Safety Architecture).
 
-[2026-03-26] DECISION: Remove `loop/`, `strategies/`, `plugins/` from core package. Loops → `docs/playbooks/`. Plugins remain in codebase for production agents but NOT in toolkit public API. REASON: Codex + Fabric both flagged contradiction with Q5 zero-loops decision. Plugins require a dispatch harness; atomic toolkit has no harness. SUPERSEDES: architecture diagram showing loop/strategies/plugins in @demos-agents/core.
+[2026-03-26] DECISION: Remove `loop/`, `strategies/`, `plugins/` from core package. Loops → `docs/playbooks/`. Plugins remain in codebase for production agents but NOT in toolkit public API. REASON: Codex + Fabric both flagged contradiction with Q5 zero-loops decision. Plugins require a dispatch harness; atomic toolkit has no harness. SUPERSEDES: architecture diagram showing loop/strategies/plugins in @omniweb-agents/core.
 
 [2026-03-26] DECISION: Wallet provisioning is "bring your own wallet" — toolkit does NOT create or fund wallets. `demos-toolkit doctor` CLI validates prerequisites. REASON: Fabric flagged unresolved wallet provisioning blocking wow test. Simplest resolution: document prerequisite, provide diagnostic tool.
 
@@ -877,4 +877,4 @@ Local path is always tried first (faster, no rate limit, higher fidelity). Skill
 
 [2026-03-27] DECISION: Custom catalog/spec validation: schema check + API key pattern scan in URL templates + override logging. REASON: STRIDE T-0012 (HIGH). Malicious custom catalogs can redirect attestations to attacker URLs. T-0017: custom spec with auth.mode "none" can leak API keys on-chain.
 
-[2026-03-30] DECISION: Clarify "zero loops" scope. The Q5 decision ("toolkit ships zero loops") prohibits **agent orchestration loops** (8-phase session loops, sense-act-learn cycles, strategy loops). It does NOT prohibit **reactive infrastructure primitives** — generic poll-diff-dispatch mechanisms that are analogous to Node's EventEmitter or a message queue consumer. An `EventLoop<TAction>` primitive with generic action types is an infrastructure building block, not an opinionated agent loop. However, it MUST: (a) be generic over its action type (no `OmniwebActionType` dependency), (b) live in a sub-path export (`@demos-agents/core/reactive`), not the main barrel, (c) impose zero orchestration opinions (no phases, no strategy, no mandatory hooks). REASON: Codex review of architecture migration plan flagged contradiction between EventLoop extraction and Q5 decision. FirstPrinciples analysis (2026-03-29) identified EventLoop as an atomic operation #9 (OBSERVE) / #10 (SCHEDULE) primitive, not a strategy loop. CLARIFIES (not supersedes): Q5 "zero loops" decision from 2026-03-26.
+[2026-03-30] DECISION: Clarify "zero loops" scope. The Q5 decision ("toolkit ships zero loops") prohibits **agent orchestration loops** (8-phase session loops, sense-act-learn cycles, strategy loops). It does NOT prohibit **reactive infrastructure primitives** — generic poll-diff-dispatch mechanisms that are analogous to Node's EventEmitter or a message queue consumer. An `EventLoop<TAction>` primitive with generic action types is an infrastructure building block, not an opinionated agent loop. However, it MUST: (a) be generic over its action type (no `OmniwebActionType` dependency), (b) live in a sub-path export (`@omniweb-agents/core/reactive`), not the main barrel, (c) impose zero orchestration opinions (no phases, no strategy, no mandatory hooks). REASON: Codex review of architecture migration plan flagged contradiction between EventLoop extraction and Q5 decision. FirstPrinciples analysis (2026-03-29) identified EventLoop as an atomic operation #9 (OBSERVE) / #10 (SCHEDULE) primitive, not a strategy loop. CLARIFIES (not supersedes): Q5 "zero loops" decision from 2026-03-26.

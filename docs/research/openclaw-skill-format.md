@@ -84,7 +84,7 @@ market-intelligence/
 The SKILL.md body would instruct the agent to:
 1. Load `strategy.yaml` as structured data
 2. Run the sense-plan-act loop per the strategy rules
-3. Use the demos-agents toolkit (declared as a dependency)
+3. Use the omniweb-agents toolkit (declared as a dependency)
 
 ## Feasibility Assessment
 

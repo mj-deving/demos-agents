@@ -480,7 +480,7 @@ Since SDK's StorageProgram is buggy, query GCR data via RPC directly:
 #### Phase 2: Ingestion Pipeline (if Phase 1 succeeds)
 - Paginated GCR query with cursor-based pagination
 - Parse GCR entries into `FeedPost` format
-- Store locally in `~/.cache/demos-agents/feed-history/` as JSONL
+- Store locally in `~/.cache/omniweb-agents/feed-history/` as JSONL
 - Batch size: 1000 posts per query, rate-limited to 10 queries/min
 
 #### Phase 3: Indexing

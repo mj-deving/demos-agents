@@ -11,7 +11,7 @@
 #
 # Crontab (every 6 hours UTC):
 #   CRON_TZ=UTC
-#   0 0,6,12,18 * * * /home/mj/projects/demos-agents/scripts/scheduled-run.sh >> ~/.demos-agent-logs/cron.log 2>&1
+#   0 0,6,12,18 * * * /home/mj/projects/omniweb-agents/scripts/scheduled-run.sh >> ~/.demos-agent-logs/cron.log 2>&1
 
 set -euo pipefail
 

@@ -1,7 +1,7 @@
 # TLSN MPC-TLS Infrastructure Report
 
 **To:** KyneSys Team (Jacobo, Azhar, TheCookingSenpai)
-**From:** Marius (demos-agents)
+**From:** Marius (omniweb-agents)
 **Date:** 2026-03-14
 **Subject:** TLSN attestation non-functional — MPC-TLS proxy relay failure on node2.demos.sh
 
@@ -190,8 +190,8 @@ To reproduce the failure with your own SDK code path:
 
 ```bash
 # Clone our repo and install
-git clone https://github.com/mj-deving/demos-agents.git
-cd demos-agents && npm install
+git clone https://github.com/mj-deving/omniweb-agents.git
+cd omniweb-agents && npm install
 
 # Quick notary/token health check (should pass)
 npx tsx tools/tlsn-diagnose.ts --env ~/.config/demos/credentials --step token
@@ -216,4 +216,4 @@ The first command should complete in ~5s. The second and third will hang for 300
 
 ---
 
-*Report generated from systematic debugging across 3 sessions with diagnostic scripts, on-chain analysis, network-wide feed inspection, and independent verification by two AI systems. All test scripts and evidence are committed to the demos-agents repository.*
+*Report generated from systematic debugging across 3 sessions with diagnostic scripts, on-chain analysis, network-wide feed inspection, and independent verification by two AI systems. All test scripts and evidence are committed to the omniweb-agents repository.*

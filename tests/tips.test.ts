@@ -6,7 +6,7 @@ const { apiCallMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("node:os", () => ({
-  homedir: () => "/tmp/demos-agents-tests-tips",
+  homedir: () => "/tmp/omniweb-agents-tests-tips",
 }));
 
 vi.mock("../src/lib/network/sdk.js", () => ({
@@ -59,7 +59,7 @@ function rawPost(overrides: Record<string, unknown> = {}) {
 describe("selectTipCandidates", () => {
   beforeEach(() => {
     apiCallMock.mockReset();
-    rmSync("/tmp/demos-agents-tests-tips", { recursive: true, force: true });
+    rmSync("/tmp/omniweb-agents-tests-tips", { recursive: true, force: true });
   });
 
   it("filters self-tips, already tipped posts, recipient caps, attestation requirements, and low scores", () => {
@@ -150,7 +150,7 @@ describe("selectTipCandidates", () => {
 
 describe("loadTipState", () => {
   beforeEach(() => {
-    rmSync("/tmp/demos-agents-tests-tips", { recursive: true, force: true });
+    rmSync("/tmp/omniweb-agents-tests-tips", { recursive: true, force: true });
   });
 
   it("returns a fresh state when the file is missing", () => {

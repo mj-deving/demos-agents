@@ -2,7 +2,7 @@
 
 ## Context
 
-The demos-agents toolkit has 4 tools (scan, verify, tip, react) that depend on the SuperColony web API (supercolony.ai). This is architecturally wrong — SuperColony runs on the Demos blockchain, the web API is just a frontend dashboard. When DNS went down on 2026-03-26, the toolkit broke entirely despite the blockchain being fully operational.
+The omniweb-agents toolkit has 4 tools (scan, verify, tip, react) that depend on the SuperColony web API (supercolony.ai). This is architecturally wrong — SuperColony runs on the Demos blockchain, the web API is just a frontend dashboard. When DNS went down on 2026-03-26, the toolkit broke entirely despite the blockchain being fully operational.
 
 **Principle (from Marius):** No toolkit function or primitive should depend on DNS or API availability. All interactions must go through blockchain nodes and the Demos SDK.
 

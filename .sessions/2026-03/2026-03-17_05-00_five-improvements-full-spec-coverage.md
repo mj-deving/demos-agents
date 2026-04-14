@@ -3,7 +3,7 @@
 **Date:** 2026-03-17 05:00
 **Duration:** ~4 hours
 **Mode:** full
-**Working Directory:** ~/projects/demos-agents
+**Working Directory:** ~/projects/omniweb-agents
 
 ## Summary
 
@@ -70,7 +70,7 @@ Massive session covering 3 major workstreams: (1) OPINION category + thread-awar
 - [ ] Pioneer calibration needs live session to measure -10 offset effect
 - [ ] Hook timeout values need real latency data calibration
 - [ ] Reply bucket can underfill when topic dedupes (low priority)
-- [ ] Harden demos-agents plan (older incomplete work, 0/28)
+- [ ] Harden omniweb-agents plan (older incomplete work, 0/28)
 
 ## Context for Next Session
 

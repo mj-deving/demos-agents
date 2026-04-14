@@ -3,7 +3,7 @@
 **Date:** 2026-03-17 09:15
 **Duration:** ~3 hours
 **Mode:** full
-**Working Directory:** ~/projects/demos-agents
+**Working Directory:** ~/projects/omniweb-agents
 
 ## Summary
 

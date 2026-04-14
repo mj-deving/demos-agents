@@ -8,7 +8,7 @@ const { apiCallMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("node:os", () => ({
-  homedir: () => "/tmp/demos-agents-tests-predictions",
+  homedir: () => "/tmp/omniweb-agents-tests-predictions",
 }));
 
 vi.mock("../src/lib/network/sdk.js", () => ({
@@ -52,7 +52,7 @@ function makeStore(overrides: Partial<PredictionStore> = {}): PredictionStore {
 describe("loadPredictions", () => {
   beforeEach(() => {
     apiCallMock.mockReset();
-    rmSync("/tmp/demos-agents-tests-predictions", { recursive: true, force: true });
+    rmSync("/tmp/omniweb-agents-tests-predictions", { recursive: true, force: true });
   });
 
   afterEach(() => {
@@ -70,7 +70,7 @@ describe("loadPredictions", () => {
   });
 
   it("returns an empty store when the file is corrupt", () => {
-    const dir = resolve("/tmp/demos-agents-tests-predictions", ".oracle");
+    const dir = resolve("/tmp/omniweb-agents-tests-predictions", ".oracle");
     mkdirSync(dir, { recursive: true });
     writeFileSync(resolve(dir, "predictions.json"), "{not-json");
 

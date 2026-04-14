@@ -144,7 +144,7 @@ npx tsx tools/source-lifecycle.ts apply --pretty   # if transitions recommended
 # Set timezone explicitly (Codex review: cron uses host TZ, not UTC)
 CRON_TZ=UTC
 # Every 6 hours
-0 0,6,12,18 * * * /home/mj/projects/demos-agents/scripts/scheduled-run.sh >> ~/.demos-agent-logs/cron.log 2>&1
+0 0,6,12,18 * * * /home/mj/projects/omniweb-agents/scripts/scheduled-run.sh >> ~/.demos-agent-logs/cron.log 2>&1
 ```
 
 ### Step 3.3: Add log rotation script

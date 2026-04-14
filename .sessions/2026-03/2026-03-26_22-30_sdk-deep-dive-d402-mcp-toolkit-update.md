@@ -3,7 +3,7 @@
 **Date:** 2026-03-26 22:30
 **Duration:** ~1.5 hours (incremental block after prior wrapup at 21:10)
 **Mode:** incremental
-**Working Directory:** /home/mj/projects/demos-agents
+**Working Directory:** /home/mj/projects/omniweb-agents
 
 ## Summary
 

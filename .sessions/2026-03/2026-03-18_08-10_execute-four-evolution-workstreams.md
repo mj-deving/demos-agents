@@ -3,11 +3,11 @@
 **Date:** 2026-03-18 08:10
 **Duration:** ~3 hours
 **Mode:** full
-**Working Directory:** ~/projects/demos-agents
+**Working Directory:** ~/projects/omniweb-agents
 
 ## Summary
 
-Planned and executed 3 of 4 evolution workstreams for demos-agents. Added Action and EventPlugin interfaces to core/types.ts, fixed the improvement loop (dedup, EMA calibration, age-out), and built the complete SuperColony reactive event loop with 4 social sources, 4 handlers, and a long-lived event-runner process. All code reviewed by parallel review agents with critical bugs caught and fixed.
+Planned and executed 3 of 4 evolution workstreams for omniweb-agents. Added Action and EventPlugin interfaces to core/types.ts, fixed the improvement loop (dedup, EMA calibration, age-out), and built the complete SuperColony reactive event loop with 4 social sources, 4 handlers, and a long-lived event-runner process. All code reviewed by parallel review agents with critical bugs caught and fixed.
 
 ## Work Done
 

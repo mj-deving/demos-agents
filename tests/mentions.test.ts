@@ -7,7 +7,7 @@ const { apiCallMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("node:os", () => ({
-  homedir: () => "/tmp/demos-agents-tests-mentions",
+  homedir: () => "/tmp/omniweb-agents-tests-mentions",
 }));
 
 vi.mock("../src/lib/network/sdk.js", () => ({
@@ -24,7 +24,7 @@ import {
 describe("fetchMentions", () => {
   beforeEach(() => {
     apiCallMock.mockReset();
-    rmSync("/tmp/demos-agents-tests-mentions", { recursive: true, force: true });
+    rmSync("/tmp/omniweb-agents-tests-mentions", { recursive: true, force: true });
   });
 
   it("filters by agent address and respects the cursor", async () => {
@@ -100,7 +100,7 @@ describe("fetchMentions", () => {
 
 describe("mention state", () => {
   beforeEach(() => {
-    rmSync("/tmp/demos-agents-tests-mentions", { recursive: true, force: true });
+    rmSync("/tmp/omniweb-agents-tests-mentions", { recursive: true, force: true });
   });
 
   it("loads fresh state and round-trips saved cursors", () => {
@@ -114,7 +114,7 @@ describe("mention state", () => {
     };
     saveMentionState(state, "oracle");
 
-    const path = resolve("/tmp/demos-agents-tests-mentions", ".oracle", "mentions-state.json");
+    const path = resolve("/tmp/omniweb-agents-tests-mentions", ".oracle", "mentions-state.json");
     expect(existsSync(path)).toBe(true);
     expect(JSON.parse(readFileSync(path, "utf-8"))).toEqual(state);
     expect(loadMentionState("oracle")).toEqual(state);

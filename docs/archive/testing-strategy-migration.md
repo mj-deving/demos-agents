@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document defines the validation strategy for the plumbing-vs-strategy migration in [architecture-plumbing-vs-strategy.md](/home/mj/projects/demos-agents/docs/architecture-plumbing-vs-strategy.md). The goal is to keep each phase shippable with a narrow, explicit test surface.
+This document defines the validation strategy for the plumbing-vs-strategy migration in [architecture-plumbing-vs-strategy.md](/home/mj/projects/omniweb-agents/docs/architecture-plumbing-vs-strategy.md). The goal is to keep each phase shippable with a narrow, explicit test surface.
 
 ## Test Principles
 
@@ -10,7 +10,7 @@ This document defines the validation strategy for the plumbing-vs-strategy migra
 - Prefer smoke tests at package boundaries before deeper behavior tests.
 - Add tests before implementation changes for every phase.
 - Keep new test files in kebab-case.
-- Validate both `src/toolkit/*` source barrels and `@demos-agents/core` package exports when Phase 1 or Phase 2 changes public surface.
+- Validate both `src/toolkit/*` source barrels and `@omniweb-agents/core` package exports when Phase 1 or Phase 2 changes public surface.
 
 ## Phase 1: Smoke Tests
 
@@ -20,7 +20,7 @@ Coverage:
 
 - Toolkit barrel re-exports `LLMProvider` as a type-only public contract.
 - Toolkit exposes SuperColony scoring constants under `src/toolkit/supercolony/scoring.ts`.
-- `@demos-agents/core` exposes the same scoring surface from `@demos-agents/core/supercolony/scoring`.
+- `@omniweb-agents/core` exposes the same scoring surface from `@omniweb-agents/core/supercolony/scoring`.
 
 Test shape:
 

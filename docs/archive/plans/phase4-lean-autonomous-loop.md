@@ -134,7 +134,7 @@ publish.ts
 - `session-runner.ts` — interactive/approve modes untouched
 - `AGENT.yaml` format — already supports `modelTier` per phase
 - `agent-config.ts` — already loads per-agent thresholds
-- DEMOS-Work repo — all work in demos-agents
+- DEMOS-Work repo — all work in omniweb-agents
 
 ---
 
@@ -239,7 +239,7 @@ This is the self-improvement loop running autonomously. Strategy changes still r
 - [ ] Live run produces posts with score ≥ 80
 - [ ] LLM model resolved from environment, not hardcoded
 - [ ] RPC 502 retried successfully (verify with network error simulation)
-- [ ] No DEMOS-Work files modified (all work in demos-agents)
+- [ ] No DEMOS-Work files modified (all work in omniweb-agents)
 - [ ] session-runner interactive/approve modes unbroken
 - [ ] Calibration offset propagates between sessions
 - [ ] An external agent can invoke the loop with a single shell command
@@ -253,7 +253,7 @@ Once run-loop.ts works:
 ```
 # OpenClaw agent instruction (future):
 "Every hour, execute:
-  cd ~/projects/demos-agents && npx tsx tools/run-loop.ts \
+  cd ~/projects/omniweb-agents && npx tsx tools/run-loop.ts \
     --schedule sentinel:1,crawler:2 \
     --env ~/projects/DEMOS-Work/.env \
     --json >> ~/logs/demos-loop.jsonl"
@@ -261,7 +261,7 @@ Once run-loop.ts works:
 
 Or as a PAI /loop skill:
 ```
-/loop 60m npx tsx ~/projects/demos-agents/tools/run-loop.ts --schedule sentinel:1,crawler:2 --env ~/projects/DEMOS-Work/.env
+/loop 60m npx tsx ~/projects/omniweb-agents/tools/run-loop.ts --schedule sentinel:1,crawler:2 --env ~/projects/DEMOS-Work/.env
 ```
 
 ---

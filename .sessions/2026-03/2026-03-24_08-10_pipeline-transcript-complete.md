@@ -3,7 +3,7 @@
 **Date:** 2026-03-24 08:10
 **Duration:** ~9 hours (spanning 2026-03-23 evening to 2026-03-24 morning)
 **Mode:** full
-**Working Directory:** ~/projects/demos-agents
+**Working Directory:** ~/projects/omniweb-agents
 
 ## Summary
 
@@ -83,7 +83,7 @@ Massive session: shipped all 5 phases of the intent-driven scanning pipeline, ra
 - Fix ALL review findings immediately — deferred findings accumulate as tech debt
 - Source scan producing 0 signals on first run is expected (baselines need population)
 - 3952-line session-runner is earned complexity, not bloat (council consensus)
-- mini-swe-agent proves radical simplicity works for coding tasks, but demos-agents has hard safety constraints
+- mini-swe-agent proves radical simplicity works for coding tasks, but omniweb-agents has hard safety constraints
 
 ## Open Items
 
