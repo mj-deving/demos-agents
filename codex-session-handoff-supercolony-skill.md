@@ -27,6 +27,7 @@ Three kinds of work were completed:
 1. Standalone audit and research documents were created.
 2. The `supercolony-toolkit` skill package was refactored so `SKILL.md` became a lean activation router and `GUIDE.md` became a methodology companion.
 3. Deterministic validation scripts and routed reference files were added, then verified against live SuperColony behavior on 2026-04-14.
+4. A second follow-up pass added package-complete AgentSkills metadata, output templates, and improved eval coverage so the lean skill structure is enforced.
 
 ## Research Performed
 
@@ -151,6 +152,14 @@ That drove the methodology refactor.
 - [scripts/leaderboard-snapshot.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/leaderboard-snapshot.ts)
 - [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/skill-self-audit.ts)
 
+### New AgentSkills metadata and assets
+
+- [agents/openai.yaml](/home/mj/projects/demos-agents/packages/supercolony-toolkit/agents/openai.yaml)
+- [assets/post-template-analysis.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/post-template-analysis.md)
+- [assets/post-template-prediction.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/post-template-prediction.md)
+- [assets/reply-template.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/reply-template.md)
+- [assets/agent-loop-skeleton.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/assets/agent-loop-skeleton.ts)
+
 ### Discovery snapshot added
 
 - [docs/research/supercolony-discovery/agent.json](/home/mj/projects/demos-agents/docs/research/supercolony-discovery/agent.json)
@@ -167,6 +176,8 @@ That drove the methodology refactor.
 - [GUIDE.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/GUIDE.md)
 - [README.md](/home/mj/projects/demos-agents/packages/supercolony-toolkit/README.md)
 - [package.json](/home/mj/projects/demos-agents/packages/supercolony-toolkit/package.json)
+- [evals/run-evals.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/evals/run-evals.ts)
+- [scripts/skill-self-audit.ts](/home/mj/projects/demos-agents/packages/supercolony-toolkit/scripts/skill-self-audit.ts)
 
 ### Refactor intent
 
@@ -217,6 +228,47 @@ Added script entries:
 - `check:skill`
 - `snapshot:leaderboard`
 
+Also updated package publishing scope so `agents/` and `assets/` are included in package files.
+
+#### `agents/openai.yaml`
+
+Added UI-facing AgentSkills metadata:
+
+- display name
+- short description
+- default prompt that explicitly invokes `$omniweb-toolkit`
+- implicit invocation policy
+
+#### `assets/`
+
+Added concrete templates and a starter scaffold:
+
+- analysis post template
+- prediction post template
+- reply template
+- minimal agent loop skeleton
+
+These are referenced from `SKILL.md`, `GUIDE.md`, and `README.md` so the package now has actual execution scaffolds rather than only prose guidance.
+
+#### `evals/run-evals.ts`
+
+Updated the eval runner so it matches the new lean-skill architecture:
+
+- validates namespaced methods against the package API surface instead of assuming every method string must appear verbatim in `SKILL.md`
+- adds a `skill-architecture` eval that checks:
+  - reference routing from `SKILL.md`
+  - script routing from `SKILL.md`
+  - deeper routing from `GUIDE.md`
+  - existence and correctness of `agents/openai.yaml`
+
+#### `scripts/skill-self-audit.ts`
+
+Expanded the self-audit to enforce:
+
+- asset discoverability
+- existence of `agents/openai.yaml`
+- presence of `$omniweb-toolkit` in the default prompt
+
 ## Verification Performed
 
 ### Structural verification
@@ -233,6 +285,8 @@ Result:
 - confirmed no broken relative links
 - confirmed one-level reference discipline
 - confirmed references and scripts are discoverable from `SKILL.md`
+- confirmed assets are discoverable from `SKILL.md` or `GUIDE.md`
+- confirmed `agents/openai.yaml` exists and is wired correctly
 
 ### Script entrypoint verification
 
@@ -243,6 +297,29 @@ Confirmed each new script supports `--help` and returns structured usage text:
 - `check-endpoint-surface.ts`
 - `leaderboard-snapshot.ts`
 - `skill-self-audit.ts`
+
+### Eval verification
+
+Ran:
+
+- `npx tsx evals/run-evals.ts --summary`
+
+Initial state after the first refactor:
+
+- `14` pass
+- `11` warn
+- `0` fail
+
+Cause:
+
+- the old eval runner assumed namespaced methods had to appear literally in the lean `SKILL.md`
+- that assumption no longer fit the progressive-disclosure design
+
+After the follow-up eval/metadata pass:
+
+- `26` pass
+- `0` warn
+- `0` fail
 
 ### Live drift verification
 
@@ -335,6 +412,16 @@ No blocking issues remain from this session, but Claude could reasonably continu
 - adding small assets or templates if concrete post/reply skeletons are desired
 - adding evals that explicitly check progressive disclosure, trigger quality, and source-boundary discipline
 
+The first two of those are now done:
+
+- templates/assets were added
+- eval coverage now includes architecture checks
+
+Remaining reasonable follow-up work for Claude is mainly:
+
+- polish older reference files to match the new reference style
+- decide whether to add more explicit eval cases for source-boundary correctness
+
 ## GitOps Recommendation
 
 This session touched a meaningful but coherent slice of the repo. The right GitOps move is to isolate and commit only the SuperColony skill refactor work, not unrelated untracked files in the repo root.
@@ -360,8 +447,11 @@ git add \
   packages/supercolony-toolkit/GUIDE.md \
   packages/supercolony-toolkit/README.md \
   packages/supercolony-toolkit/package.json \
+  packages/supercolony-toolkit/agents/openai.yaml \
+  packages/supercolony-toolkit/assets/ \
   packages/supercolony-toolkit/docs/research-supercolony-skill-sources.md \
   packages/supercolony-toolkit/docs/skill-improvement-recommendations.md \
+  packages/supercolony-toolkit/evals/run-evals.ts \
   packages/supercolony-toolkit/references/ \
   packages/supercolony-toolkit/scripts/
 ```

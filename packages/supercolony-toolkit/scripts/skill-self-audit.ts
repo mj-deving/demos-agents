@@ -35,9 +35,14 @@ const skillPath = resolve(packageRoot, "SKILL.md");
 const guidePath = resolve(packageRoot, "GUIDE.md");
 const referencesDir = resolve(packageRoot, "references");
 const scriptsDir = resolve(packageRoot, "scripts");
+const assetsDir = resolve(packageRoot, "assets");
+const openaiYamlPath = resolve(packageRoot, "agents", "openai.yaml");
 
 const skillText = readFileSync(skillPath, "utf8");
 const guideText = readFileSync(guidePath, "utf8");
+const openaiYamlText = existsRelative(packageRoot, "agents/openai.yaml")
+  ? readFileSync(openaiYamlPath, "utf8")
+  : "";
 
 const skillFrontmatter = parseFrontmatter(skillText);
 const skillLinks = extractRelativeLinks(skillText);
@@ -45,6 +50,8 @@ const guideLinks = extractRelativeLinks(guideText);
 const topLevelReferenceFiles = listTopLevelFiles(referencesDir, ".md");
 const topLevelScriptFiles = listTopLevelFiles(scriptsDir, ".ts")
   .filter((name) => !name.startsWith("_"));
+const topLevelAssetFiles = listTopLevelFiles(assetsDir)
+  .filter((name) => !name.startsWith("."));
 
 const brokenLinks = [...new Set([...skillLinks, ...guideLinks])]
   .filter((link) => !existsRelative(packageRoot, link));
@@ -64,6 +71,10 @@ const missingReferenceMentions = topLevelReferenceFiles
 const missingScriptMentions = topLevelScriptFiles
   .map((name) => `scripts/${name}`)
   .filter((target) => !skillLinks.includes(target));
+
+const missingAssetMentions = topLevelAssetFiles
+  .map((name) => `assets/${name}`)
+  .filter((target) => !skillLinks.includes(target) && !guideLinks.includes(target));
 
 const checks = [
   {
@@ -103,6 +114,21 @@ const checks = [
     ok: missingScriptMentions.length === 0,
     detail: missingScriptMentions,
   },
+  {
+    name: "asset_discoverability",
+    ok: missingAssetMentions.length === 0,
+    detail: missingAssetMentions,
+  },
+  {
+    name: "openai_yaml_exists",
+    ok: openaiYamlText.length > 0,
+    detail: "agents/openai.yaml should exist",
+  },
+  {
+    name: "openai_yaml_default_prompt",
+    ok: openaiYamlText.includes("$omniweb-toolkit"),
+    detail: "agents/openai.yaml default_prompt should mention $omniweb-toolkit",
+  },
 ];
 
 const ok = checks.every((check) => check.ok);
@@ -116,6 +142,7 @@ console.log(JSON.stringify({
     guideLines: lineCount(guideText),
     referenceFiles: topLevelReferenceFiles.length,
     scriptFiles: topLevelScriptFiles.length,
+    assetFiles: topLevelAssetFiles.length,
   },
   checks,
 }, null, 2));
@@ -166,9 +193,9 @@ function existsRelative(root: string, relativeTarget: string): boolean {
   }
 }
 
-function listTopLevelFiles(dir: string, extension: string): string[] {
+function listTopLevelFiles(dir: string, extension?: string): string[] {
   return readdirSync(dir)
-    .filter((name) => name.endsWith(extension))
+    .filter((name) => !extension || name.endsWith(extension))
     .sort();
 }
 

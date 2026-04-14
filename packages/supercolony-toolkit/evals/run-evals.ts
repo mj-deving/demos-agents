@@ -19,7 +19,7 @@
  * Exit codes: 0 = all pass, 1 = failures found, 2 = invalid args
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -68,6 +68,15 @@ const evals: EvalCase[] = JSON.parse(
 const skillContent = readFileSync(
   join(__dirname, "..", "SKILL.md"), "utf-8",
 );
+const guideContent = readFileSync(
+  join(__dirname, "..", "GUIDE.md"), "utf-8",
+);
+
+const packageRoot = join(__dirname, "..");
+const openaiYamlPath = join(packageRoot, "agents", "openai.yaml");
+const openaiYaml = existsSync(openaiYamlPath)
+  ? readFileSync(openaiYamlPath, "utf-8")
+  : "";
 
 // Known valid API methods from SKILL.md
 const KNOWN_METHODS = [
@@ -84,6 +93,45 @@ const KNOWN_METHODS = [
   "chain.transfer", "chain.getBalance", "chain.signMessage",
   // IPFS domain
   "ipfs.upload", "ipfs.pin", "ipfs.unpin",
+];
+
+const KNOWN_NAMESPACED_METHODS = [
+  "omni.colony.getFeed",
+  "omni.colony.search",
+  "omni.colony.getSignals",
+  "omni.colony.getOracle",
+  "omni.colony.getPrices",
+  "omni.colony.getLeaderboard",
+  "omni.colony.getAgents",
+  "omni.colony.getPool",
+  "omni.colony.getBalance",
+  "omni.colony.getReactions",
+  "omni.colony.getTipStats",
+  "omni.colony.publish",
+  "omni.colony.reply",
+  "omni.colony.attest",
+  "omni.colony.attestTlsn",
+  "omni.colony.react",
+  "omni.colony.tip",
+  "omni.colony.placeBet",
+  "omni.colony.placeHL",
+  "omni.colony.register",
+  "omni.colony.getMarkets",
+  "omni.colony.getPredictions",
+  "omni.colony.getForecastScore",
+  "omni.identity.link",
+  "omni.identity.lookup",
+  "omni.identity.getIdentities",
+  "omni.identity.createProof",
+  "omni.escrow.sendToIdentity",
+  "omni.escrow.claimEscrow",
+  "omni.escrow.refundExpired",
+  "omni.chain.transfer",
+  "omni.chain.getBalance",
+  "omni.chain.signMessage",
+  "omni.ipfs.upload",
+  "omni.ipfs.pin",
+  "omni.ipfs.unpin",
 ];
 
 // ── Validate each eval ──────────────────────────
@@ -132,11 +180,11 @@ function validateEval(ev: EvalCase): EvalResult {
   const namespacedRefs = allText.match(namespacedPattern) ?? [];
   const bareRefs = allText.match(bareMethodPattern) ?? [];
   const allRefs = [...new Set([...namespacedRefs, ...bareRefs])];
-  const unknownNamespaced = namespacedRefs.filter((m) => !skillContent.includes(m));
+  const unknownNamespaced = namespacedRefs.filter((m) => !KNOWN_NAMESPACED_METHODS.includes(m));
   const unknownBare = bareRefs.filter((m) => !KNOWN_METHODS.includes(m) && !KNOWN_METHODS.some((km) => km.endsWith(`.${m}`)));
   const unknownMethods = [...new Set([...unknownNamespaced, ...unknownBare])];
   checks.push({
-    check: "all referenced methods exist in SKILL.md",
+    check: "all referenced methods exist in package API surface",
     passed: unknownMethods.length === 0,
     reason: unknownMethods.length > 0 ? `unknown: ${unknownMethods.join(", ")}` : undefined,
   });
@@ -164,6 +212,54 @@ function validateEval(ev: EvalCase): EvalResult {
   return { id: ev.id, status, checks };
 }
 
+function validateSkillArchitecture(): EvalResult {
+  const checks: EvalResult["checks"] = [];
+
+  checks.push({
+    check: "SKILL.md routes to references",
+    passed: /Load \[references\//.test(skillContent),
+    reason: /Load \[references\//.test(skillContent) ? undefined : "missing explicit reference routing",
+  });
+
+  checks.push({
+    check: "SKILL.md routes to scripts",
+    passed: skillContent.includes("scripts/check-discovery-drift.ts") &&
+      skillContent.includes("scripts/skill-self-audit.ts"),
+    reason: skillContent.includes("scripts/check-discovery-drift.ts") &&
+      skillContent.includes("scripts/skill-self-audit.ts")
+      ? undefined
+      : "missing explicit script routing",
+  });
+
+  checks.push({
+    check: "GUIDE.md points to deeper references or assets",
+    passed: guideContent.includes("references/interaction-patterns.md") &&
+      guideContent.includes("assets/"),
+    reason: guideContent.includes("references/interaction-patterns.md") &&
+      guideContent.includes("assets/")
+      ? undefined
+      : "guide is not routing to deeper material",
+  });
+
+  checks.push({
+    check: "agents/openai.yaml exists and mentions $omniweb-toolkit",
+    passed: openaiYaml.length > 0 && openaiYaml.includes("$omniweb-toolkit"),
+    reason: openaiYaml.length > 0 && openaiYaml.includes("$omniweb-toolkit")
+      ? undefined
+      : "missing or incomplete openai.yaml",
+  });
+
+  const passCount = checks.filter((check) => check.passed).length;
+  const status = passCount === checks.length ? "PASS"
+    : passCount >= checks.length - 1 ? "WARN" : "FAIL";
+
+  return {
+    id: "skill-architecture",
+    status,
+    checks,
+  };
+}
+
 // ── Run ─────────────────────────────────────────
 const filtered = idFilter
   ? evals.filter((e) => matchesFilter(e.id, idFilter))
@@ -174,7 +270,7 @@ if (filtered.length === 0) {
   process.exit(2);
 }
 
-const results = filtered.map(validateEval);
+const results = [...filtered.map(validateEval), validateSkillArchitecture()];
 const passed = results.filter((r) => r.status === "PASS").length;
 const warned = results.filter((r) => r.status === "WARN").length;
 const failed = results.filter((r) => r.status === "FAIL").length;
