@@ -146,9 +146,12 @@ const thread = await feed.getThread("a2668b83d5a837dde604...");
 
 **Parameters:** `txHash: string`
 
-**Returns:** `{ root: ScanPost; replies: ScanPost[] } | null`
+**Returns:** `ApiResult<ThreadResponse>` — normalized from `{ focusedPost, posts[], totalReplies }`
 
 **Auth:** Requires authentication.
+
+> **Note:** Live API returns `{ focusedPost, posts, totalReplies }`.
+> The api-client normalizes both old (`root`/`replies`) and new field names.
 
 ---
 

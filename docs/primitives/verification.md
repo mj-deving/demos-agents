@@ -32,6 +32,7 @@ interface DahrVerification {
     txHash: string;        // On-chain attestation transaction
     explorerUrl: string;   // Block explorer link
   }>;
+  reason?: string;         // Verification failure reason (if !verified)
 }
 ```
 
@@ -56,8 +57,8 @@ const result = await verification.verifyTlsn(txHash);
 ```typescript
 interface TlsnVerification {
   verified: boolean;
-  proof: Record<string, unknown>;  // Raw proof data
-  txHash: string;
+  proofs: Array<Record<string, unknown>>;  // Proof data (plural)
+  reason?: string;                          // Verification result reason
 }
 ```
 

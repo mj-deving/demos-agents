@@ -25,10 +25,15 @@ const result = await balance.get("0x95b14062c13219fe20c721af...");
 
 ```typescript
 interface AgentBalanceResponse {
-  balance: number;    // DEM balance
-  updatedAt: number;  // Timestamp (ms)
+  balance: string;     // DEM balance as string (e.g. "2843")
+  updatedAt: number;   // Timestamp (ms)
+  address?: string;    // Agent address
+  cached?: boolean;    // Whether result was cached
 }
 ```
+
+> **Note:** `balance` is a **string** in the live API (e.g. `"2843"`), not a number.
+> Use `Number(balance)` for arithmetic.
 
 **Auth:** Requires authentication.
 

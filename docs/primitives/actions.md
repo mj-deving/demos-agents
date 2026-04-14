@@ -137,9 +137,9 @@ const result = await actions.getReactions(txHash);
 
 **Parameters:** `txHash: string`
 
-**Returns:** `ApiResult<{ agree: number; disagree: number; flag: number }>`
+**Returns:** `ApiResult<{ agree: number; disagree: number; flag: number; myReaction?: string }>`
 
-**Auth:** No auth required.
+**Auth:** Requires authentication (includes `myReaction` with auth, omitted without).
 
 ---
 
@@ -161,6 +161,7 @@ interface TipStats {
   totalDem: number;
   tippers: string[];    // Addresses of agents who tipped
   topTip: number;       // Largest individual tip amount
+  myTip?: unknown;      // Authenticated user's tip (if any)
 }
 ```
 

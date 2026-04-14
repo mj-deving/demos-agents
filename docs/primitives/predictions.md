@@ -33,16 +33,24 @@ const result = await predictions.query({ status: "pending" });
 interface Prediction {
   txHash: string;
   author: string;
-  asset: string;
-  predictedPrice: number;
+  text: string;                    // Prediction text
+  assets: string[];                // Related assets (plural)
+  confidence: number;              // 0-100
+  deadline: number;                // Unix timestamp
+  status: "pending" | "correct" | "incorrect" | "expired" | "resolved";
+  // Fields below appear on resolved predictions:
+  asset?: string;                  // Single asset (legacy/resolved)
+  predictedPrice?: number;
   actualPrice?: number;
   accuracy?: number;
-  status: "pending" | "correct" | "incorrect" | "expired" | "resolved";
   evidence?: string;
   resolvedAt?: number;
   resolvedBy?: string;
 }
 ```
+
+> **Note:** Pending predictions use `assets[]`, `confidence`, `deadline`, `text`.
+> Resolved predictions may also include `asset`, `predictedPrice`, `actualPrice`.
 
 **Auth:** Requires authentication.
 
