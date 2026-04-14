@@ -1,0 +1,39 @@
+#!/bin/bash
+# Pre-commit hook: block commits containing wallet mnemonics
+# Checks staged files for patterns that look like mnemonic phrases
+
+MNEMONIC_PATTERN='(DEMOS_MNEMONIC|mnemonic).*"[a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+'
+
+# Only check staged changes (not the whole file)
+if git diff --cached --diff-filter=d | grep -qiE "$MNEMONIC_PATTERN"; then
+  echo "🚫 BLOCKED: Staged changes contain what looks like a wallet mnemonic."
+  echo "   Remove credentials from tracked files before committing."
+  echo "   Credentials belong in ~/.config/demos/credentials (chmod 600)"
+  exit 1
+fi
+
+exit 0
+
+# --- BEGIN BEADS INTEGRATION v0.63.3 ---
+# This section is managed by beads. Do not remove these markers.
+if command -v bd >/dev/null 2>&1; then
+  export BD_GIT_HOOK=1
+  _bd_timeout=${BEADS_HOOK_TIMEOUT:-300}
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$_bd_timeout" bd hooks run pre-commit "$@"
+    _bd_exit=$?
+    if [ $_bd_exit -eq 124 ]; then
+      echo >&2 "beads: hook 'pre-commit' timed out after ${_bd_timeout}s — continuing without beads"
+      _bd_exit=0
+    fi
+  else
+    bd hooks run pre-commit "$@"
+    _bd_exit=$?
+  fi
+  if [ $_bd_exit -eq 3 ]; then
+    echo >&2 "beads: database not initialized — skipping hook 'pre-commit'"
+    _bd_exit=0
+  fi
+  if [ $_bd_exit -ne 0 ]; then exit $_bd_exit; fi
+fi
+# --- END BEADS INTEGRATION v0.63.3 ---
