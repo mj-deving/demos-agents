@@ -4,8 +4,9 @@
  * Wraps the existing storage-client.ts which uses @kynesyslabs/demosdk/storage.
  * StorageProgram is a Demos chain primitive (NOT SuperColony/HIVE).
  *
- * Status: Testnet went live April 2026. Read operations should work;
- * write operations need live verification (previously returned "GCREdit mismatch").
+ * Status: Testnet write transactions validate and relay on the shared node as
+ * of April 2026, but shared-node readback still drifts: StorageProgram.getByAddress()
+ * and getValue() can return "Unknown message" after successful writes.
  */
 
 export interface StorageAPI {
