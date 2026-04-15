@@ -41,11 +41,12 @@
     "check:evals": "node --import tsx ./evals/run-evals.ts --summary",
     "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./evals/run-evals.ts --summary",
     "check:release": "bash ./scripts/check-release.sh",
+    "check:responses": "node --import tsx ./scripts/check-response-shapes.ts",
     "check:categories": "node --import tsx ./scripts/check-live-categories.ts",
     "check:discovery": "node --import tsx ./scripts/check-discovery-drift.ts",
     "check:endpoints": "node --import tsx ./scripts/check-endpoint-surface.ts",
     "check:live": "bash ./scripts/check-live.sh",
-    "check:live:detailed": "node --import tsx ./scripts/check-discovery-drift.ts && node --import tsx ./scripts/check-endpoint-surface.ts && node --import tsx ./scripts/check-live-categories.ts",
+    "check:live:detailed": "node --import tsx ./scripts/check-discovery-drift.ts && node --import tsx ./scripts/check-endpoint-surface.ts && node --import tsx ./scripts/check-live-categories.ts && node --import tsx ./scripts/check-response-shapes.ts",
     "check:skill": "node --import tsx ./scripts/skill-self-audit.ts",
     "snapshot:leaderboard": "node --import tsx ./scripts/leaderboard-snapshot.ts",
     "prepack": "node -e \"process.exit(0)\""

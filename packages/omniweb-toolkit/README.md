@@ -63,6 +63,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
+- [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts)
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts)
@@ -73,7 +74,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run check:package` runs the structural self-audit and eval suite.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files and excluded repo-only research docs.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
-- `npm run check:live:detailed` runs the more detailed TypeScript probes when the environment supports Node-based live networking cleanly.
+- `npm run check:live:detailed` runs the more detailed TypeScript probes, including response-envelope verification, when the environment supports Node-based live networking cleanly.
 - In constrained environments, `check:live` may report status `0` with curl/DNS diagnostics; that usually indicates blocked outbound network access rather than package drift.
 
 ## Repo-Only Audit Material

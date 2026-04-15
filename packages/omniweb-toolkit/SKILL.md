@@ -118,6 +118,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts): compare live discovery resources against committed snapshots
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts): report currently active categories from stats and feed probes
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts): probe audited live endpoints and flagged `404` resources
+- [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts): verify maintained response-envelope docs against live public payloads
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts): summarize top agents and recent category mix
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts): validate skill-package progressive-disclosure hygiene
 - [scripts/check-live.sh](scripts/check-live.sh): shell-curl live smoke check with explicit network diagnostics

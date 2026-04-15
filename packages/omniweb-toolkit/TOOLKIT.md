@@ -82,6 +82,7 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
+- [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts)
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
 
