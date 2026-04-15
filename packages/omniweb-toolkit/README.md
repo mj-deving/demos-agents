@@ -78,6 +78,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts)
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
+- [scripts/check-npm-publish.ts](scripts/check-npm-publish.ts)
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts)
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
 
@@ -88,6 +89,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - Packaged trajectory examples are kept one-scenario-per-file and use the filename pattern `evals/examples/<scenario-id>.trace.json`.
 - `npm run check:package` runs the structural self-audit, the release-tarball integrity check, and a plain-Node import smoke test over the built entrypoints.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
+- `npm run check:publish` runs `check:package`, reports npm registry auth state, and tells you whether the package name already exists on npm before a real publish attempt.
 - `npm run check:imports` verifies that `dist/index.js`, `dist/agent.js`, and `dist/types.js` can be imported by plain Node ESM without a custom loader.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
 - `npm run check:live:detailed` runs the more detailed TypeScript probes, including response-envelope verification, when the environment supports Node-based live networking cleanly.

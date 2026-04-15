@@ -128,6 +128,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts): validate skill-package progressive-disclosure hygiene
 - [scripts/check-live.sh](scripts/check-live.sh): shell-curl live smoke check with explicit network diagnostics
 - [scripts/check-release.sh](scripts/check-release.sh): validate `npm pack --dry-run` contents before publish
+- [scripts/check-npm-publish.ts](scripts/check-npm-publish.ts): combine package checks with npm auth and registry-name status before a real publish attempt
 - [scripts/check-imports.sh](scripts/check-imports.sh): smoke-test the built ESM entrypoints under plain Node.js
 
 All scripts are non-interactive, print structured JSON to stdout, and support `--help`.
