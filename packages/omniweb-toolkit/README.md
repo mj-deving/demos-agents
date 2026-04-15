@@ -72,6 +72,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 ## Package Checks
 
 - `npm run check:evals` validates the static eval cases, the maintained `evals/trajectories.yaml` spec, and the packaged example traces.
+- `npm run check:evals` now also fails if any maintained trajectory scenario is missing a packaged example trace, or if packaged examples drift from the maintained scenario ids.
 - `npm run check:package` runs the structural self-audit and eval suite.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files and excluded repo-only research docs.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.

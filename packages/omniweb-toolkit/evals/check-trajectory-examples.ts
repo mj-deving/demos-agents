@@ -9,6 +9,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { parse } from "yaml";
 
 const args = process.argv.slice(2);
 
@@ -16,7 +17,8 @@ if (args.includes("--help") || args.includes("-h")) {
   console.log(`Usage: npx tsx evals/check-trajectory-examples.ts
 
 Checks every packaged *.trace.json example in evals/examples/ by scoring it with
-evals/run-trajectories.ts.
+evals/run-trajectories.ts and verifying that the packaged example set covers
+the maintained scenarios in evals/trajectories.yaml.
 
 Output: JSON report listing each example trace and whether it passed
 Exit codes: 0 = all examples pass, 1 = one or more examples fail, 2 = invalid args`);
@@ -26,6 +28,14 @@ Exit codes: 0 = all examples pass, 1 = one or more examples fail, 2 = invalid ar
 const packageRoot = resolve(import.meta.dirname, "..");
 const examplesDir = resolve(packageRoot, "evals", "examples");
 const runnerPath = resolve(packageRoot, "evals", "run-trajectories.ts");
+const trajectoriesPath = resolve(packageRoot, "evals", "trajectories.yaml");
+const spec = parse(readFileSync(trajectoriesPath, "utf8")) as { scenarios?: Array<{ id?: string }> };
+const expectedScenarioIds = Array.isArray(spec.scenarios)
+  ? spec.scenarios
+      .map((scenario) => scenario.id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+      .sort()
+  : [];
 
 const traces = readdirSync(examplesDir)
   .filter((name) => name.endsWith(".trace.json"))
@@ -49,13 +59,46 @@ const results = traces.map((name) => {
   };
 });
 
-const ok = results.every((result) => result.ok);
+const packagedScenarioEntries = results.flatMap((result) =>
+  result.scenarioIds.map((scenarioId) => ({
+    scenarioId,
+    trace: result.trace,
+  })),
+);
+const packagedScenarioIds = packagedScenarioEntries
+  .map((entry) => entry.scenarioId)
+  .sort();
+const duplicateScenarioIds = Array.from(new Set(
+  packagedScenarioIds.filter((id, index) => packagedScenarioIds.indexOf(id) !== index),
+));
+const duplicateCoverage = duplicateScenarioIds.map((scenarioId) => ({
+  scenarioId,
+  traces: packagedScenarioEntries
+    .filter((entry) => entry.scenarioId === scenarioId)
+    .map((entry) => entry.trace),
+}));
+const missingScenarioIds = expectedScenarioIds.filter((id) => !packagedScenarioIds.includes(id));
+const unexpectedScenarioIds = packagedScenarioIds.filter((id) => !expectedScenarioIds.includes(id));
+const coverage = {
+  ok: missingScenarioIds.length === 0 && unexpectedScenarioIds.length === 0 && duplicateCoverage.length === 0,
+  expectedScenarioCount: expectedScenarioIds.length,
+  packagedScenarioCount: packagedScenarioIds.length,
+  expectedScenarioIds,
+  packagedScenarioIds,
+  missingScenarioIds,
+  unexpectedScenarioIds,
+  duplicateCoverage,
+};
+
+const ok = results.every((result) => result.ok) && coverage.ok;
 
 console.log(JSON.stringify({
   checkedAt: new Date().toISOString(),
   packageRoot,
+  trajectoriesPath,
   ok,
   count: results.length,
+  coverage,
   results,
 }, null, 2));
 
