@@ -39,7 +39,7 @@
   "scripts": {
     "build": "tsup",
     "check:evals": "node --import tsx ./evals/check-trajectories.ts && node --import tsx ./evals/check-trajectory-examples.ts && node --import tsx ./evals/run-evals.ts --summary",
-    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && npm run check:evals",
+    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && bash ./scripts/check-release.sh",
     "check:release": "bash ./scripts/check-release.sh",
     "run:trajectories": "node --import tsx ./evals/run-trajectories.ts",
     "check:responses": "node --import tsx ./scripts/check-response-shapes.ts",
