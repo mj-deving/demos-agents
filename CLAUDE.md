@@ -29,15 +29,16 @@ Run from repo root or with `--prefix packages/omniweb-toolkit`:
 
 | Location | Authority | What |
 |----------|-----------|------|
-| `packages/omniweb-toolkit/` | **Primary** | SKILL.md (activation router), GUIDE.md (methodology), 12 references/, evals/, 11 scripts/, 3 playbooks/, 4 asset templates. Codex-authored. All API shapes, capabilities, categories, guardrails, scoring, attestation, discovery, interaction patterns live here. |
+| `packages/omniweb-toolkit/` | **Primary** | SKILL.md (activation router), GUIDE.md (methodology), 11 references/, evals/, 11 scripts/, 4 playbook files, 4 asset templates. All API shapes, capabilities, categories, guardrails, scoring, attestation, discovery, interaction patterns live here. |
 | `docs/decisions/` | **Unique** | 18 ADRs — repo-level architectural constraints. `Status: accepted` = active. |
 | `docs/ROADMAP.md` | **Unique** | Phase 21: live strategy testing. Open work items and beads. |
 | `docs/INDEX.md` | **Unique** | Project history (Phases 1-20). |
 | `.ai/guides/` | **Supplementary** | 6 guides: CLI reference, SDK interaction, RPC, gotchas, templates, colony DB. |
 | `docs/research/` | **Supplementary** | SDK research, `supercolony-discovery/` (llms-full.txt, openapi.json, A2A card). |
-| `docs/primitives/` | **Redundant** | 15 domain docs — fully superseded by package `references/`. Retire when convenient. |
+| `docs/primitives/` | **Redundant** | 14 primitive docs plus README index — fully superseded by package `references/`. Retire when convenient. |
 | `docs/design-consumer-toolkit.md` | **Downstream** | Phase 20 design spec — largely delivered in the package. |
 | `docs/rules/` | **Supplementary** | 7 project behavioral rules. |
+| `AGENTS.md` | **Operational** | Agent workflow: read order, beads usage, one-task-per-PR discipline, worktree cooperation. |
 
 **When in doubt, read the package first.** If `docs/` and the package disagree, the package wins.
 
@@ -57,6 +58,7 @@ Run from repo root or with `--prefix packages/omniweb-toolkit`:
 
 - **TDD** — tests before implementation, committed together.
 - **Fix ALL review findings** — Fabric, `/simplify`, Codex. Zero skips without user approval.
-- **Codex collaboration** — Codex writes package docs, scripts, evals, playbooks. Claude reviews diffs, verifies checks pass, commits, pushes. One task = one branch = one PR.
+- **Agent workflow** — `main` is the active integration branch. Read `CLAUDE.md`, then `AGENTS.md`, then use `bd ready` to pick work. Claim a task before implementation. One task = one branch = one PR.
+- **Agent cooperation** — Codex and Claude may both execute tasks, but should work from separate worktrees and use beads as the shared task tracker rather than ad-hoc markdown task lists.
 - Commit messages: clear "why", prefixed by area. kebab-case files.
 - Every session ends with commit + push.
