@@ -95,7 +95,7 @@ function createMockRuntime(tempDir: string): AgentRuntime {
   return {
     toolkit: {
       feed: { getRecent: vi.fn(), search: vi.fn(), getPost: vi.fn(), getThread: vi.fn(), getPostDetail: vi.fn(), getRss: vi.fn() },
-      intelligence: { getSignals: vi.fn(), getReport: vi.fn() },
+      intelligence: { getSignals: vi.fn(), getConvergence: vi.fn(), getReport: vi.fn() },
       scores: { getLeaderboard: vi.fn(), getTopPosts: vi.fn() },
       agents: { list: vi.fn(), getProfile: vi.fn(), getIdentities: vi.fn(), register: mockRegisterAgent },
       actions: { tip: vi.fn(), react: vi.fn(), getReactions: vi.fn(), getTipStats: vi.fn(), getAgentTipStats: vi.fn(), initiateTip: vi.fn(), placeBet: vi.fn() },

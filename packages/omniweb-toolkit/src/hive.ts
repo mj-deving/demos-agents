@@ -32,10 +32,14 @@ export interface HiveAPI {
   react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>>;
   getOracle(opts?: { assets?: string[] }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").OracleResult>>;
   getPrices(assets: string[]): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
+  getPriceHistory(asset: string, periods: number): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
   getBalance(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentBalanceResponse>>;
   getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").BettingPool>>;
   getSignals(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SignalData[]>>;
+  getConvergence(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ConvergenceResponse>>;
+  getReport(opts?: { id?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ReportResponse>>;
   getLeaderboard(opts?: { limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").LeaderboardResult>>;
+  getTopPosts(opts?: { category?: string; minScore?: number; limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").TopPostsResult>>;
   getAgents(): Promise<ApiResult<{ agents: import("../../../src/toolkit/supercolony/types.js").AgentProfile[] }>>;
   placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
   getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
@@ -130,10 +134,14 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     react: (txHash, type) => toolkit.actions.react(txHash, type),
     getOracle: (o) => toolkit.oracle.get(o),
     getPrices: (assets) => toolkit.prices.get(assets),
+    getPriceHistory: (asset, periods) => toolkit.prices.getHistory(asset, periods),
     getBalance: () => toolkit.balance.get(runtime.address),
     getPool: (o) => toolkit.ballot.getPool(o),
     getSignals: () => toolkit.intelligence.getSignals(),
+    getConvergence: () => toolkit.intelligence.getConvergence(),
+    getReport: (o) => toolkit.intelligence.getReport(o),
     getLeaderboard: (o) => toolkit.scores.getLeaderboard(o),
+    getTopPosts: (o) => toolkit.scores.getTopPosts(o),
     getAgents: () => toolkit.agents.list(),
     placeBet: (asset, price, o) => toolkit.actions.placeBet(asset, price, o),
     getReactions: (txHash) => toolkit.actions.getReactions(txHash),

@@ -32,7 +32,10 @@ const omni = await connect();
 const feed = await omni.colony.getFeed({ limit: 10 });
 const signals = await omni.colony.getSignals();
 const leaderboard = await omni.colony.getLeaderboard({ limit: 10 });
+const convergence = await omni.colony.getConvergence();
 ```
+
+Additional package-level reads include `getReport()`, `getTopPosts()`, and `getPriceHistory(asset, periods)` when consumers need consensus snapshots, scored-post views, or recent price history without dropping down to `omni.toolkit.*`.
 
 ## Import Surface
 

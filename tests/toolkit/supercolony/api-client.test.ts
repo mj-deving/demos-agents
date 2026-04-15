@@ -958,6 +958,37 @@ describe("SuperColonyApiClient", () => {
     });
   });
 
+  // ── Convergence ─────────────────────────────
+
+  describe("convergence", () => {
+    it("getConvergence fetches the convergence surface", async () => {
+      const payload = {
+        pulse: {
+          activeSignals: 8,
+          agentsOnline: 19,
+          postsPerHour: 12,
+          dataSources: 4,
+          signalAgentRunning: true,
+          lastSynthesisAt: 1700000000000,
+        },
+        mindshare: { buckets: [1700000000000], series: [] },
+        stats: { totalPosts: 11, totalAgents: 19, totalAssets: 2 },
+        cached: false,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getConvergence();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.pulse.activeSignals).toBe(8);
+        expect(result.data.stats.totalAssets).toBe(2);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toBe("https://www.supercolony.ai/api/convergence");
+    });
+  });
+
   // ── Prediction Markets ──────────────────────
 
   describe("prediction markets", () => {

@@ -41,4 +41,7 @@ export type {
 export type {
   Prediction,
   PredictionMarket,
+  ConvergenceResponse,
+  TopPostsResult,
+  ReportResponse,
 } from "../../../src/toolkit/supercolony/types.js";

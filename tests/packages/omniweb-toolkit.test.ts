@@ -28,8 +28,15 @@ function stubToolkit(): Toolkit {
       getPostDetail: tag("feed", "getPostDetail"),
       getRss: tag("feed", "getRss"),
     },
-    intelligence: { getSignals: tag("intelligence", "getSignals"), getReport: tag("intelligence", "getReport") },
-    scores: { getLeaderboard: tag("scores", "getLeaderboard") },
+    intelligence: {
+      getSignals: tag("intelligence", "getSignals"),
+      getConvergence: tag("intelligence", "getConvergence"),
+      getReport: tag("intelligence", "getReport"),
+    },
+    scores: {
+      getLeaderboard: tag("scores", "getLeaderboard"),
+      getTopPosts: tag("scores", "getTopPosts"),
+    },
     agents: { list: tag("agents", "list"), getProfile: tag("agents", "getProfile"), getIdentities: tag("agents", "getIdentities") },
     actions: {
       tip: tag("actions", "tip"), react: tag("actions", "react"),
@@ -37,7 +44,7 @@ function stubToolkit(): Toolkit {
       getAgentTipStats: tag("actions", "getAgentTipStats"), placeBet: tag("actions", "placeBet"),
     },
     oracle: { get: tag("oracle", "get") },
-    prices: { get: tag("prices", "get") },
+    prices: { get: tag("prices", "get"), getHistory: tag("prices", "getHistory") },
     verification: { verifyDahr: tag("verification", "verifyDahr"), verifyTlsn: tag("verification", "verifyTlsn") },
     predictions: { query: tag("predictions", "query"), resolve: tag("predictions", "resolve"), markets: tag("predictions", "markets") },
     ballot: { getPool: tag("ballot", "getPool") },
@@ -193,6 +200,11 @@ describe("supercolony-toolkit package", () => {
       expect(mockToolkit.prices.get).toHaveBeenCalledWith(["BTC", "ETH"]);
     });
 
+    it("getPriceHistory() delegates to toolkit.prices.getHistory()", async () => {
+      await hive.getPriceHistory("BTC", 30);
+      expect(mockToolkit.prices.getHistory).toHaveBeenCalledWith("BTC", 30);
+    });
+
     it("getBalance() delegates to toolkit.balance.get() with runtime address", async () => {
       await hive.getBalance();
       expect(mockToolkit.balance.get).toHaveBeenCalledWith("0xTEST_ADDRESS");
@@ -208,9 +220,24 @@ describe("supercolony-toolkit package", () => {
       expect(mockToolkit.intelligence.getSignals).toHaveBeenCalled();
     });
 
+    it("getConvergence() delegates to toolkit.intelligence.getConvergence()", async () => {
+      await hive.getConvergence();
+      expect(mockToolkit.intelligence.getConvergence).toHaveBeenCalled();
+    });
+
+    it("getReport() delegates to toolkit.intelligence.getReport()", async () => {
+      await hive.getReport({ id: "daily-1" });
+      expect(mockToolkit.intelligence.getReport).toHaveBeenCalledWith({ id: "daily-1" });
+    });
+
     it("getLeaderboard() delegates to toolkit.scores.getLeaderboard()", async () => {
       await hive.getLeaderboard({ limit: 5 });
       expect(mockToolkit.scores.getLeaderboard).toHaveBeenCalledWith({ limit: 5 });
+    });
+
+    it("getTopPosts() delegates to toolkit.scores.getTopPosts()", async () => {
+      await hive.getTopPosts({ category: "ANALYSIS", limit: 3 });
+      expect(mockToolkit.scores.getTopPosts).toHaveBeenCalledWith({ category: "ANALYSIS", limit: 3 });
     });
 
     it("getAgents() delegates to toolkit.agents.list()", async () => {

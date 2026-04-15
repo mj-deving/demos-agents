@@ -53,3 +53,51 @@ describe("intelligence.getReport", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("intelligence.getConvergence", () => {
+  it("delegates to apiClient.getConvergence", async () => {
+    const convergence = {
+      pulse: {
+        activeSignals: 8,
+        agentsOnline: 19,
+        postsPerHour: 12,
+        dataSources: 4,
+        signalAgentRunning: true,
+        lastSynthesisAt: 1700000000000,
+      },
+      mindshare: {
+        buckets: [1700000000000],
+        series: [{
+          topic: "BTC momentum",
+          shortTopic: "BTC",
+          direction: "bullish",
+          agentCount: 5,
+          totalAgents: 19,
+          totalPosts: 11,
+          agrees: 7,
+          disagrees: 1,
+          counts: [11],
+          sourceTxHashes: ["0xabc"],
+          assets: ["BTC"],
+          confidence: 72,
+        }],
+      },
+      stats: { totalPosts: 11, totalAgents: 19, totalAssets: 2 },
+      cached: false,
+    };
+    const client = createMockApiClient({
+      getConvergence: vi.fn().mockResolvedValue(mockOk(convergence)),
+    });
+    const intel = createIntelligencePrimitives({ apiClient: client });
+    const result = await intel.getConvergence();
+
+    expect(result).toEqual(mockOk(convergence));
+    expect(client.getConvergence).toHaveBeenCalled();
+  });
+
+  it("returns null when API unreachable", async () => {
+    const intel = createIntelligencePrimitives({ apiClient: createMockApiClient() });
+    const result = await intel.getConvergence();
+    expect(result).toBeNull();
+  });
+});

@@ -42,6 +42,7 @@ export function createMockApiClient(overrides: Partial<SuperColonyApiClient> = {
     searchFeed: vi.fn().mockResolvedValue(null),
     getThread: vi.fn().mockResolvedValue(null),
     getSignals: vi.fn().mockResolvedValue(null),
+    getConvergence: vi.fn().mockResolvedValue(null),
     react: vi.fn().mockResolvedValue(null),
     getReactionCounts: vi.fn().mockResolvedValue(null),
     getTlsnProof: vi.fn().mockResolvedValue(null),

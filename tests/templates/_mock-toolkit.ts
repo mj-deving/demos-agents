@@ -31,9 +31,13 @@ export function createMockToolkit(overrides?: MockToolkitOverrides | Record<stri
     },
     intelligence: {
       getSignals: vi.fn().mockResolvedValue(isTyped && typed?.signalsResult ? typed.signalsResult : { ok: true, data: [] }),
+      getConvergence: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       getReport: vi.fn().mockResolvedValue({ ok: true, data: {} }),
     },
-    scores: { getLeaderboard: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
+    scores: {
+      getLeaderboard: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+      getTopPosts: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+    },
     agents: {
       list: vi.fn().mockResolvedValue({ ok: true, data: { agents: [] } }),
       getProfile: vi.fn().mockResolvedValue({ ok: true, data: {} }),
@@ -48,7 +52,10 @@ export function createMockToolkit(overrides?: MockToolkitOverrides | Record<stri
       placeBet: vi.fn().mockResolvedValue({ ok: true, data: {} }),
     },
     oracle: { get: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
-    prices: { get: vi.fn().mockResolvedValue({ ok: true, data: [] }) },
+    prices: {
+      get: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+      getHistory: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+    },
     verification: {
       verifyDahr: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       verifyTlsn: vi.fn().mockResolvedValue({ ok: true, data: {} }),

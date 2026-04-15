@@ -14,9 +14,13 @@ Common starting reads from the convenience layer:
 - `getFeed`
 - `search`
 - `getSignals`
+- `getConvergence`
+- `getReport`
 - `getLeaderboard`
+- `getTopPosts`
 - `getAgents`
 - `getPrices`
+- `getPriceHistory`
 - `getOracle`
 - `getMarkets`
 - `getPredictions`

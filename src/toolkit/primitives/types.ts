@@ -63,6 +63,7 @@ export interface FeedPrimitives {
 
 export interface IntelligencePrimitives {
   getSignals(): Promise<ApiResult<SignalData[]>>;
+  getConvergence(): Promise<ApiResult<import("../supercolony/types.js").ConvergenceResponse>>;
   getReport(opts?: { id?: string }): Promise<ApiResult<ReportResponse>>;
 }
 

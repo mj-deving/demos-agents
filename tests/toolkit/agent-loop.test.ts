@@ -96,13 +96,13 @@ function makeMockToolkit(): Toolkit {
   const noopFn = vi.fn().mockResolvedValue(null);
   return {
     feed: { getRecent: noopFn, search: noopFn, getPost: noopFn, getThread: noopFn },
-    intelligence: { getSignals: noopFn, getReport: noopFn },
-    scores: { getLeaderboard: noopFn },
+    intelligence: { getSignals: noopFn, getConvergence: noopFn, getReport: noopFn },
+    scores: { getLeaderboard: noopFn, getTopPosts: noopFn },
     agents: { list: noopFn, getProfile: noopFn, getIdentities: noopFn },
     actions: { tip: noopFn, react: noopFn, getReactions: noopFn, getTipStats: noopFn, getAgentTipStats: noopFn, placeBet: noopFn },
     oracle: { get: noopFn },
-    prices: { get: noopFn },
-    verification: { verifyDahr: noopFn, verifyTlsn: noopFn },
+    prices: { get: noopFn, getHistory: noopFn },
+    verification: { verifyDahr: noopFn, verifyTlsn: noopFn, getTlsnProof: noopFn },
     predictions: { query: noopFn, resolve: noopFn, markets: noopFn },
     ballot: { getPool: noopFn },
     webhooks: { list: noopFn, create: noopFn, delete: noopFn },

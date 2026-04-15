@@ -16,6 +16,10 @@ export function createIntelligencePrimitives(deps: IntelligenceDeps): Intelligen
       return deps.apiClient.getSignals();
     },
 
+    async getConvergence() {
+      return deps.apiClient.getConvergence();
+    },
+
     async getReport(opts) {
       return deps.apiClient.getReport(opts);
     },
