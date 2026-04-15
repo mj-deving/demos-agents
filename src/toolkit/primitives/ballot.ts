@@ -13,5 +13,13 @@ export function createBallotPrimitives(deps: { apiClient: SuperColonyApiClient }
       // asset defaults to "BTC" if not specified — the pool endpoint requires it
       return deps.apiClient.getBettingPool(opts?.asset ?? "BTC", opts?.horizon);
     },
+
+    async getHigherLowerPool(opts) {
+      return deps.apiClient.getHigherLowerPool(opts?.asset ?? "BTC", opts?.horizon);
+    },
+
+    async getBinaryPools(opts) {
+      return deps.apiClient.getBinaryPools(opts);
+    },
   };
 }

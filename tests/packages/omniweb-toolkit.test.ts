@@ -47,7 +47,11 @@ function stubToolkit(): Toolkit {
     prices: { get: tag("prices", "get"), getHistory: tag("prices", "getHistory") },
     verification: { verifyDahr: tag("verification", "verifyDahr"), verifyTlsn: tag("verification", "verifyTlsn") },
     predictions: { query: tag("predictions", "query"), resolve: tag("predictions", "resolve"), markets: tag("predictions", "markets") },
-    ballot: { getPool: tag("ballot", "getPool") },
+    ballot: {
+      getPool: tag("ballot", "getPool"),
+      getHigherLowerPool: tag("ballot", "getHigherLowerPool"),
+      getBinaryPools: tag("ballot", "getBinaryPools"),
+    },
     webhooks: { list: tag("webhooks", "list"), create: tag("webhooks", "create"), delete: tag("webhooks", "delete") },
     identity: { lookup: tag("identity", "lookup") },
     balance: { get: tag("balance", "get") },
@@ -213,6 +217,16 @@ describe("supercolony-toolkit package", () => {
     it("getPool() delegates to toolkit.ballot.getPool()", async () => {
       await hive.getPool({ asset: "BTC", horizon: "24h" });
       expect(mockToolkit.ballot.getPool).toHaveBeenCalledWith({ asset: "BTC", horizon: "24h" });
+    });
+
+    it("getHigherLowerPool() delegates to toolkit.ballot.getHigherLowerPool()", async () => {
+      await hive.getHigherLowerPool({ asset: "BTC", horizon: "30m" });
+      expect(mockToolkit.ballot.getHigherLowerPool).toHaveBeenCalledWith({ asset: "BTC", horizon: "30m" });
+    });
+
+    it("getBinaryPools() delegates to toolkit.ballot.getBinaryPools()", async () => {
+      await hive.getBinaryPools({ category: "crypto", limit: 4 });
+      expect(mockToolkit.ballot.getBinaryPools).toHaveBeenCalledWith({ category: "crypto", limit: 4 });
     });
 
     it("getSignals() delegates to toolkit.intelligence.getSignals()", async () => {

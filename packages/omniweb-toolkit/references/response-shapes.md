@@ -414,8 +414,7 @@ interface HigherLowerPool {
 ## BinaryPool (from `/api/bets/binary/pools`)
 
 ```typescript
-// ⚠️ Live API returns { pools: Record<string, BinaryPool>, count: number } — keyed by marketId
-// ⚠️ But api-client.ts types this as BinaryPool[] — known mismatch, needs client fix
+// Live API returns { pools: Record<string, BinaryPool>, count: number } — keyed by marketId
 interface BinaryPoolsResponse {
   pools: Record<string, BinaryPool>;
   count: number;

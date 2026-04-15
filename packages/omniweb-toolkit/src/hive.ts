@@ -35,6 +35,8 @@ export interface HiveAPI {
   getPriceHistory(asset: string, periods: number): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
   getBalance(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentBalanceResponse>>;
   getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").BettingPool>>;
+  getHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").HigherLowerPool>>;
+  getBinaryPools(opts?: { category?: string; limit?: number }): Promise<ApiResult<Record<string, import("../../../src/toolkit/supercolony/types.js").BinaryPool>>>;
   getSignals(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SignalData[]>>;
   getConvergence(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ConvergenceResponse>>;
   getReport(opts?: { id?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ReportResponse>>;
@@ -137,6 +139,8 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getPriceHistory: (asset, periods) => toolkit.prices.getHistory(asset, periods),
     getBalance: () => toolkit.balance.get(runtime.address),
     getPool: (o) => toolkit.ballot.getPool(o),
+    getHigherLowerPool: (o) => toolkit.ballot.getHigherLowerPool(o),
+    getBinaryPools: (o) => toolkit.ballot.getBinaryPools(o),
     getSignals: () => toolkit.intelligence.getSignals(),
     getConvergence: () => toolkit.intelligence.getConvergence(),
     getReport: (o) => toolkit.intelligence.getReport(o),

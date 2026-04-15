@@ -44,4 +44,6 @@ export type {
   ConvergenceResponse,
   TopPostsResult,
   ReportResponse,
+  HigherLowerPool,
+  BinaryPool,
 } from "../../../src/toolkit/supercolony/types.js";

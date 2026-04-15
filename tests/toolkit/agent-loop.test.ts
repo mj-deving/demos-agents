@@ -104,7 +104,7 @@ function makeMockToolkit(): Toolkit {
     prices: { get: noopFn, getHistory: noopFn },
     verification: { verifyDahr: noopFn, verifyTlsn: noopFn, getTlsnProof: noopFn },
     predictions: { query: noopFn, resolve: noopFn, markets: noopFn },
-    ballot: { getPool: noopFn },
+    ballot: { getPool: noopFn, getHigherLowerPool: noopFn, getBinaryPools: noopFn },
     webhooks: { list: noopFn, create: noopFn, delete: noopFn },
     identity: { lookup: noopFn },
     balance: { get: noopFn },
