@@ -82,6 +82,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 
 - `npm run run:trajectories -- --template` prints a trace template derived from `evals/trajectories.yaml`.
 - `npm run run:trajectories -- --trace ./path/to/trace.json` scores a recorded session trace against the maintained trajectory spec.
+- `npm run run:trajectories -- --trace ./evals/examples/publish-flow.trace.json --scenario publish-flow` runs the packaged example trace.
 - This is trace scoring, not live session execution. The package now validates and scores trajectory traces, but real multi-turn execution capture is still manual.
 
 ## Repo-Only Audit Material

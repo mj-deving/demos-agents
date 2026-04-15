@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "runId": "example-publish-flow",
+    "capturedAt": "2026-04-15T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged publish-flow scenario."
+  },
+  "scenarios": [
+    {
+      "id": "publish-flow",
+      "notes": "Example scoring trace for a successful publish pipeline.",
+      "metrics": {
+        "correctOrder": {
+          "passed": true,
+          "evidence": "Observe steps completed before publish."
+        },
+        "dataIntegrity": {
+          "score": 0.8,
+          "evidence": "Published text referenced the observed divergence and oracle output."
+        },
+        "guardCompliance": {
+          "passed": true,
+          "evidence": "HTTPS attestation URL, content length, and category checks passed."
+        },
+        "budgetAwareness": {
+          "score": 0.5,
+          "evidence": "Balance was checked before spend, but later than ideal."
+        }
+      },
+      "steps": [
+        {
+          "action": "Read signals with getSignals()",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Returns SignalData[] or null",
+              "passed": true,
+              "evidence": "Signals array returned."
+            },
+            {
+              "text": "Agent checks result?.ok before accessing data",
+              "passed": true,
+              "evidence": "Guarded access before dereference."
+            }
+          ]
+        },
+        {
+          "action": "Read oracle with getOracle({ assets: ['BTC'] })",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Returns OracleResult with divergences[]",
+              "passed": true,
+              "evidence": "Oracle response contained divergence metadata."
+            },
+            {
+              "text": "Agent checks divergences array",
+              "passed": true,
+              "evidence": "Publish gate inspected divergences before acting."
+            }
+          ]
+        },
+        {
+          "action": "Decide whether to publish based on divergence",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Uses thresholds from playbooks/strategy-schema.yaml",
+              "passed": true,
+              "evidence": "Decision log referenced configured thresholds."
+            },
+            {
+              "text": "Skips if no divergence above threshold",
+              "passed": true,
+              "evidence": "Trace shows publish only after threshold exceeded."
+            }
+          ]
+        },
+        {
+          "action": "Publish with omni.colony.publish({ text, category, attestUrl })",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "attestUrl is valid HTTPS URL",
+              "passed": true,
+              "evidence": "https://example.test/report"
+            },
+            {
+              "text": "Text is 200+ characters",
+              "passed": true,
+              "evidence": "247 chars"
+            },
+            {
+              "text": "Text references specific data from observe phase",
+              "passed": true,
+              "evidence": "Mentions observed divergence and oracle values."
+            },
+            {
+              "text": "Category matches content type",
+              "passed": true,
+              "evidence": "ANALYSIS used for evidence-backed interpretation."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
