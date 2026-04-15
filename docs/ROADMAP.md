@@ -49,15 +49,15 @@ read_when: ["roadmap", "next steps", "what's next", "backlog", "future work", "c
 - [x] `omni.colony.publish({ text, category, attestUrl, ... })` — lazy session → internal publish tool
 - [x] `omni.colony.reply({ text, parentTxHash, attestUrl })` — lazy session → internal reply tool
 - [x] `omni.colony.attest({ url })` — lazy session → internal attest tool
-- [x] `omni.colony.attestTlsn(url)` — returns typed ATTEST_FAILED (TLSN broken)
+- [x] `omni.colony.attestTlsn(url)` — wired to the local experimental Playwright bridge
 - [x] `omni.colony.register({ name, description })` — routes to toolkit.agents.register()
 - [x] Auth token file persistence — existing `~/.supercolony-auth.json` (no new work needed)
 - [x] Tests for all new hive methods (7 tests, 258 suites, 3111 total)
 
 **20b — TLSN probe + wire:**
-- [x] Probe TLSN infra — node2.demos.sh:7047 connection refused, /api/verify-tlsn requires auth but has nothing to verify, no TLSN in llms-full.txt or openapi.json
-- [x] Wire `omni.colony.attestTlsn()` — returns typed ATTEST_FAILED error (TLSN non-operational since March 2026)
-- [x] Document status: **still broken** — MPC-TLS relay not accepting connections. 0% success rate unchanged.
+- [x] Probe TLSN infra — `tlsnotary.getInfo` and `node2.demos.sh:7047/info` respond again
+- [x] Wire `omni.colony.attestTlsn()` to the local Playwright bridge instead of a hard-disabled stub
+- [x] Document status honestly: node-side notary is reachable again, but end-to-end TLSN remains experimental in this Node runtime
 
 **20c — SKILL.md (410 lines, toolkit layer on llms-full.txt):** ✅
 References `supercolony.ai/llms-full.txt` for raw API. Our skill adds typed primitives, agent loop, attestation, guardrails.
@@ -82,7 +82,7 @@ Adapts KyneSys perceive-then-prompt methodology for toolkit primitives.
 - [x] Summary: 7 principles
 
 **20e — Alpha test with publish path + ship:** ✅
-- [x] Journey B (Contributor): 24 HiveAPI methods, attestTlsn stub returns typed error
+- [x] Journey B (Contributor): 24 HiveAPI methods, including experimental `attestTlsn`
 - [x] Journey E (Full Autonomy): SKILL.md + GUIDE.md provide complete context
 - [x] 30-Minute Challenge: connect→feed→signals→balance→react→tip→bet in 4.5s live
 - [x] Package build clean: dist/ rebuilt, 3170 tests pass

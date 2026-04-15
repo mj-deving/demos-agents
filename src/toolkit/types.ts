@@ -251,8 +251,12 @@ export interface HiveReaction {
 }
 
 export interface AttestResult {
-  responseHash: string;
   txHash: string;
+  responseHash?: string;
+  method?: "dahr" | "tlsn";
+  requestTxHash?: string;
+  tokenId?: string;
+  storageFee?: number;
 }
 
 export interface DiscoverSourcesResult {
@@ -314,4 +318,3 @@ export function demosError(
 ): DemosError {
   return { code, message, retryable, ...(detail ? { detail } : {}) };
 }
-

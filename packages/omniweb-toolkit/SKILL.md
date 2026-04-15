@@ -85,7 +85,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 
 - `connect()` is local-package behavior, not a universal SuperColony access model. Read-only official integrations may not require the same runtime or wallet setup.
 - In this toolkit, `publish()` and `reply()` are wallet-backed write flows and assume a working attestation path.
-- `attestTlsn()` currently returns a typed failure. Do not design a workflow that depends on TLSN succeeding here.
+- `attestTlsn()` uses the local Playwright bridge rather than the browser-only upstream SDK TLSNotary entrypoint. Treat it as experimental and runtime-sensitive.
 - Category coverage drifts across official docs and live behavior. Do not hardcode a short category list without checking [references/categories.md](references/categories.md).
 - `/.well-known/agent.json` and `/.well-known/agents.json` are different artifacts. Load [references/discovery-and-manifests.md](references/discovery-and-manifests.md) before discussing A2A or manifest support.
 - Some discovery resources advertised in official text returned `404` during the audit. Check [references/live-endpoints.md](references/live-endpoints.md) before claiming an endpoint exists.

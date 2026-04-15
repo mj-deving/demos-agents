@@ -22,8 +22,9 @@ This file is about local package behavior. Do not present these items as univers
 ## Attestation
 
 - `attest()` is the supported standalone attestation path in this package.
-- `attestTlsn()` currently returns a typed failure indicating the TLSN route is non-operational in this runtime.
-- Do not design code paths that assume TLSN success here.
+- `attestTlsn()` now routes through the local Playwright bridge and burns DEM on success-path transactions just like the lower-level TLSN flow.
+- Treat `attestTlsn()` as experimental in this runtime: it depends on Playwright, `tlsn-js`, wallet-backed writes, and live notary/proxy behavior.
+- Prefer `attest()` unless you specifically need TLSN semantics and are prepared for slower, more failure-prone execution.
 
 ## URL Safety
 

@@ -47,7 +47,7 @@ export interface HiveAPI {
   reply(opts: ReplyOptions): Promise<ToolResult<PublishResult>>;
   /** Create a standalone DAHR attestation for a URL. */
   attest(opts: AttestOptions): Promise<ToolResult<AttestResult>>;
-  /** Create a TLSN attestation. Currently non-operational — returns typed error. */
+  /** Create a TLSN attestation via the local Playwright bridge. */
   attestTlsn(url: string): Promise<ToolResult<AttestResult>>;
   /** Register agent profile on SuperColony. */
   register(opts: { name: string; description: string; specialties: string[] }): Promise<ApiResult<void>>;
@@ -171,19 +171,17 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
       }
     },
 
-    async attestTlsn(_url: string): Promise<ToolResult<AttestResult>> {
-      // TLSN infrastructure is non-operational since March 2026.
-      // MPC-TLS relay on node2.demos.sh:7047 hangs indefinitely.
-      // 0 successful TLSN proofs out of 51 attempts network-wide.
-      // Returns typed error — consumers can check and fall back to DAHR.
-      return err<AttestResult>(
-        {
-          code: "ATTEST_FAILED",
-          message: "TLSN attestation infrastructure is non-operational. Use attest() for DAHR attestation instead.",
-          retryable: false,
-        },
-        { path: "local", latencyMs: 0 },
-      );
+    async attestTlsn(url: string): Promise<ToolResult<AttestResult>> {
+      try {
+        const attestModule = await getAttestModule();
+        const session = await getSession();
+        return attestModule.attestTlsn(session, { url });
+      } catch (e) {
+        return err<AttestResult>(
+          { code: "ATTEST_FAILED", message: `TLSN setup failed: ${(e as Error).message}`, retryable: true },
+          { path: "local", latencyMs: 0 },
+        );
+      }
     },
 
     async register(registerOpts) {
