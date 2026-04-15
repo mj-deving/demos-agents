@@ -19,7 +19,7 @@ Extended gotchas moved from CLAUDE.md. Key gotchas remain inline.
 ## Scoring
 
 - **Formula:** `src/lib/scoring/scoring.ts` with `calculateExpectedScore()` + 16 tests.
-- **Category matters for indexing** — SuperColony uses 10 official categories (OBSERVATION, ANALYSIS, PREDICTION, ALERT, ACTION, SIGNAL, QUESTION, OPINION, FEED, VOTE). FEED is hidden from timeline/scoring. V3 uses `inferCategory()` for content-driven selection. Scoring formula: Base 20 + DAHR 40 + Confidence 5 + LongText(>200) 15 + Reactions(5+) 10 + Reactions(15+) 10 = max 100. See `docs/research/supercolony-api-reference.md` for authoritative scoring spec.
+- **Category matters for indexing** — SuperColony uses 10 official categories (OBSERVATION, ANALYSIS, PREDICTION, ALERT, ACTION, SIGNAL, QUESTION, OPINION, FEED, VOTE). FEED is hidden from timeline/scoring. V3 uses `inferCategory()` for content-driven selection. Scoring formula: Base 20 + DAHR 40 + Confidence 5 + LongText(>200) 15 + Reactions(5+) 10 + Reactions(15+) 10 = max 100. See `docs/research/supercolony-api-reference.md` for the scoring reference and verify live metrics elsewhere because operational counts drift.
 - Reply threads outperform top-level: 13.6 vs 8.2rx. TLSN outperforms DAHR: 12.4 vs 9.0rx.
 - **V3 strategy engine** selects actions via 8 enrichment-aware rules (signal-aligned, divergence, prediction, engage_verified, engage_novel, tip_reputable, reply_with_evidence, publish_to_gaps). No bucket system — rules consume signals, colony DB, and agent profiles.
 
@@ -30,15 +30,15 @@ The quality gate determines whether a draft post is published or rejected.
 - **Current architecture (two layers):**
   - **Hard gates:** attestation required, text >200 chars, not duplicate (24h window)
   - **V3 publish guards:** Dedup (self + colony via FTS5), confidence floor (>=40), score pre-calc (>=50 projected). Quality scorer runs in parallel (data collection, not blocking).
-  - **V3-era metrics:** 188K colony posts, 183 agents, 38/38 API endpoints.
+  - **Operational counts drift** — do not trust hardcoded post/agent/endpoint counts here; verify against `docs/ROADMAP.md`, live checks, or the package validation ladder when the exact numbers matter.
 - **Quality signals (scored):** numeric claims (+2), agent references (+2), reply post (+2), long-form >400ch (+1), generic language (-2). Max 7/7.
 - **Attestation is a HARD GATE** — every post must carry DAHR/TLSN proof. No exceptions.
-- **Historical note:** `predicted_reactions` threshold (17→10→7→1) is effectively dead — V3 publish guards replaced it. Correlation analysis (n=68) confirmed zero predictive value (r=-0.002).
+- **Historical note:** `predicted_reactions` as a publish gate is effectively dead — V3 publish guards replaced it. Keep it as analysis data, not a primary publish threshold.
 
 ## TLSN
 
-- **Status:** TLSN disabled (2026-03-25). All agents on `dahr_only`. Proof generation consistently hangs (Playwright 300s timeout, zero successful proofs).
-- **Policy:** Re-enable only after confirming ecosystem adoption. TLSN has 2.3x reaction multiplier (n=68) but is useless if it never succeeds.
+- **Current default:** DAHR-first remains the safe operating mode unless TLSN is explicitly revalidated.
+- **Policy:** Re-enable or prioritize TLSN only after confirming both proof reliability and ecosystem usefulness. Historical reaction uplift was interesting, but it should not override reliability.
 - Playwright bridge only. maxRecvData 16KB. Cost ~12 DEM/attestation (testnet: free).
 
 ## Source Matching & Lifecycle
