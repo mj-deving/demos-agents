@@ -28,6 +28,7 @@ export default defineConfig({
     // Heavy / optional dependencies
     "@huggingface/transformers",
     "@anthropic-ai/sdk",
+    "playwright",
     // FS-dependent utility
     "proper-lockfile",
   ],

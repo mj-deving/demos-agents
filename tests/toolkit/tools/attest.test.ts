@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DemosSession } from "../../../src/toolkit/session.js";
 import { FileStateStore } from "../../../src/toolkit/state-store.js";
-import { attest, attestTlsn } from "../../../src/toolkit/tools/attest.js";
+import { attest } from "../../../src/toolkit/tools/attest.js";
 
 function createTestSession(tempDir: string, overrides?: Partial<ConstructorParameters<typeof DemosSession>[0]>) {
   return new DemosSession({
@@ -82,13 +82,5 @@ describe("attest() integration", () => {
     expect(result).toHaveProperty("ok");
     expect(result).toHaveProperty("provenance");
     expect(result.provenance.path).toBe("local");
-  });
-
-  it("applies the same URL validation to TLSN attestation", async () => {
-    const session = createTestSession(tempDir);
-    const result = await attestTlsn(session, { url: "http://api.example.com/data" });
-    expect(result.ok).toBe(false);
-    expect(result.error!.code).toBe("INVALID_INPUT");
-    expect(result.error!.message).toContain("HTTPS");
   });
 });

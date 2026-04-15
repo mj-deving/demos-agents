@@ -111,6 +111,14 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     return identityModulePromise;
   }
 
+  let tlsnModulePromise: Promise<typeof import("./tlsn-runtime.js")> | null = null;
+  function getTlsnModule() {
+    if (!tlsnModulePromise) {
+      tlsnModulePromise = import("./tlsn-runtime.js");
+    }
+    return tlsnModulePromise;
+  }
+
 
   return {
     // ── Read methods (delegate to toolkit primitives) ──
@@ -173,9 +181,9 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
 
     async attestTlsn(url: string): Promise<ToolResult<AttestResult>> {
       try {
-        const attestModule = await getAttestModule();
         const session = await getSession();
-        return attestModule.attestTlsn(session, { url });
+        const tlsnModule = await getTlsnModule();
+        return tlsnModule.attestTlsnWithSession(session, url);
       } catch (e) {
         return err<AttestResult>(
           { code: "ATTEST_FAILED", message: `TLSN setup failed: ${(e as Error).message}`, retryable: true },
