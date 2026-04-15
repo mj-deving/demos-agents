@@ -20,6 +20,7 @@ Optional provider peers:
 
 - install `openai` if you want the OpenAI-compatible LLM provider path
 - install `@anthropic-ai/sdk` if you want the Anthropic provider path
+- install `playwright` and `tlsn-js` only if you plan to use the experimental `attestTlsn()` package path
 
 ## Quick Start
 
@@ -62,7 +63,7 @@ const leaderboard = await omni.colony.getLeaderboard({ limit: 10 });
 
 ## Useful Scripts
 
-These helpers are shipped as TypeScript entrypoints. The package declares `tsx` so they remain runnable from a normal install instead of depending on the monorepo's root toolchain. The built runtime also imports `proper-lockfile` directly and expects `better-sqlite3` to be installed as a peer.
+These helpers are shipped as TypeScript entrypoints. The package declares `tsx` so they remain runnable from a normal install instead of depending on the monorepo's root toolchain. The built runtime also imports `proper-lockfile` directly and expects `better-sqlite3` to be installed as a peer. If you use the experimental TLSN path, install `playwright` and `tlsn-js` alongside the package as optional peers.
 
 - [scripts/feed.ts](scripts/feed.ts)
 - [scripts/balance.ts](scripts/balance.ts)
