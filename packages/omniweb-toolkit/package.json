@@ -79,5 +79,14 @@
     "agent",
     "toolkit"
   ],
+  "homepage": "https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit",
+  "bugs": {
+    "url": "https://github.com/mj-deving/omniweb-agents/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mj-deving/omniweb-agents.git",
+    "directory": "packages/omniweb-toolkit"
+  },
   "license": "MIT"
 }

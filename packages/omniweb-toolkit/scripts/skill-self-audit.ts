@@ -59,6 +59,10 @@ const packageJson = JSON.parse(packageJsonText) as {
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   exports?: Record<string, { import?: string; types?: string }>;
+  homepage?: string;
+  bugs?: { url?: string };
+  repository?: { type?: string; url?: string; directory?: string } | string;
+  license?: string;
 };
 const repoLock = existsRelative(repoRoot, "package-lock.json")
   ? JSON.parse(readFileSync(repoLockPath, "utf8")) as {
@@ -278,6 +282,22 @@ const checks = [
     name: "package_files_include_skill_assets",
     ok: ["agents/", "assets/", "references/", "scripts/"].every((entry) => packageJson.files?.includes(entry)),
     detail: "package.json files should include agents/, assets/, references/, and scripts/",
+  },
+  {
+    name: "package_publish_metadata_present",
+    ok:
+      typeof packageJson.homepage === "string" &&
+      packageJson.homepage.length > 0 &&
+      typeof packageJson.bugs?.url === "string" &&
+      packageJson.bugs.url.length > 0 &&
+      (
+        typeof packageJson.repository === "string"
+          ? packageJson.repository.length > 0
+          : typeof packageJson.repository?.url === "string" && packageJson.repository.url.length > 0
+      ) &&
+      typeof packageJson.license === "string" &&
+      packageJson.license.length > 0,
+    detail: "package.json should declare homepage, bugs.url, repository, and license for publish readiness",
   },
   {
     name: "shipped_typescript_scripts_have_runtime",
