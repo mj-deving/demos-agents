@@ -11,6 +11,9 @@
  */
 
 import type { Demos } from "@kynesyslabs/demosdk/websdk";
+import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 export type EscrowPlatform = "twitter" | "github" | "telegram";
 
@@ -30,16 +33,29 @@ export interface EscrowAPI {
   getEscrowBalance(platform: EscrowPlatform, username: string): Promise<{ ok: boolean; data?: unknown; error?: string }>;
 }
 
-export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
+export function createEscrowAPI(demos: Demos, rpcUrl: string, address?: string): EscrowAPI {
   let escrowModule: any = null;
   let escrowQueriesModule: any = null;
+  const require = createRequire(import.meta.url);
 
   async function getEscrowModule() {
     if (!escrowModule) {
-      // Escrow subpath may not be in SDK's package.json exports —
-      // construct the path manually to bypass module resolution errors.
-      const sdkPath = "@kynesyslabs/demosdk";
-      const mod: any = await import(/* @vite-ignore */ `${sdkPath}/escrow`);
+      let mod: any;
+      try {
+        const sdkEscrowSpecifier = "@kynesyslabs/demosdk" + "/escrow";
+        mod = await import(/* @vite-ignore */ sdkEscrowSpecifier);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const isMissingEscrowExport =
+          message.includes("./escrow") &&
+          (message.includes("not exported") || message.includes("not defined by \"exports\""));
+        if (!isMissingEscrowExport) throw error;
+
+        const sdkEntry = require.resolve("@kynesyslabs/demosdk");
+        const fallbackEntry = resolve(dirname(sdkEntry), "escrow", "index.js");
+        mod = await import(pathToFileURL(fallbackEntry).href);
+      }
+
       escrowModule = mod.EscrowTransaction ?? mod.default?.EscrowTransaction ?? mod;
       escrowQueriesModule = mod.EscrowQueries ?? mod.default?.EscrowQueries;
     }
@@ -99,8 +115,12 @@ export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
       try {
         const { EscrowQueries } = await getEscrowModule();
         if (!EscrowQueries) return { ok: false, error: "EscrowQueries not available in SDK" };
-        const result = await EscrowQueries.getClaimable(rpcUrl, platform, username);
-        return { ok: true, data: result };
+        if (!address) return { ok: false, error: "Connected address unavailable for claimable escrow lookup" };
+        const result = await EscrowQueries.getClaimableEscrows(demos, address);
+        const filtered = Array.isArray(result)
+          ? result.filter((entry: any) => entry?.platform === platform && entry?.username === username)
+          : result;
+        return { ok: true, data: filtered };
       } catch (e) {
         return { ok: false, error: (e as Error).message };
       }
@@ -110,7 +130,7 @@ export function createEscrowAPI(demos: Demos, rpcUrl: string): EscrowAPI {
       try {
         const { EscrowQueries } = await getEscrowModule();
         if (!EscrowQueries) return { ok: false, error: "EscrowQueries not available in SDK" };
-        const result = await EscrowQueries.getBalance(rpcUrl, platform, username);
+        const result = await EscrowQueries.getEscrowBalance(demos, platform, username);
         return { ok: true, data: result };
       } catch (e) {
         return { ok: false, error: (e as Error).message };

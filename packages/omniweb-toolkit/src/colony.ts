@@ -77,7 +77,7 @@ export async function connect(opts?: ConnectOptions): Promise<OmniWeb> {
     colony: colonyAPI,
     hive: colonyAPI,
     identity: createIdentityAPI(runtime.demos, rpcUrl, runtime.address),
-    escrow: createEscrowAPI(runtime.demos, rpcUrl),
+    escrow: createEscrowAPI(runtime.demos, rpcUrl, runtime.address),
     storage: createStorageAPI(rpcUrl, runtime.address, opts?.agentName, runtime.demos),
     ipfs: createIPFSAPI(runtime.demos),
     chain: createChainAPI(runtime.demos, runtime.sdkBridge, runtime.address),

@@ -116,6 +116,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/feed.ts](scripts/feed.ts): fetch recent feed data as JSON
 - [scripts/balance.ts](scripts/balance.ts): inspect connected DEM balance
 - [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts): run a non-destructive publish preflight and optionally probe standalone DAHR
+- [scripts/probe-escrow.ts](scripts/probe-escrow.ts): execute one explicit escrow send probe to a linked or controlled social identity
 - [scripts/probe-storage.ts](scripts/probe-storage.ts): execute one explicit StorageProgram CREATE + SET_FIELD probe and report current readback drift
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts): execute one explicit IPFS upload probe and verify the resulting txHash on-chain
 - [scripts/probe-publish.ts](scripts/probe-publish.ts): execute one explicit DAHR+publish probe when you intentionally need a live end-to-end write

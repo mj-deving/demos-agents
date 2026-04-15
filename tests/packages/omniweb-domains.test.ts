@@ -44,6 +44,9 @@ const mockStorageClient = {
 };
 
 const mockDemos: any = {
+  crypto: {
+    getIdentity: vi.fn().mockResolvedValue({ publicKey: new Uint8Array([1, 2, 3, 4]) }),
+  },
   signMessage: vi.fn().mockResolvedValue({ type: "falcon", data: "sig" }),
   verifyMessage: vi.fn().mockResolvedValue(true),
   getAddressInfo: vi.fn().mockResolvedValue({ balance: 1000n }),
@@ -77,6 +80,7 @@ describe("OmniWeb domain APIs", () => {
     vi.clearAllMocks();
     mockDemos.signMessage.mockResolvedValue({ type: "falcon", data: "sig" });
     mockDemos.verifyMessage.mockResolvedValue(true);
+    mockDemos.crypto.getIdentity.mockResolvedValue({ publicKey: new Uint8Array([1, 2, 3, 4]) });
     mockDemos.getAddressInfo.mockResolvedValue({ balance: 1000n });
     mockDemos.getLastBlockNumber.mockResolvedValue(12345);
     mockDemos.tx.empty.mockClear();
