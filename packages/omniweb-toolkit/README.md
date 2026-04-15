@@ -85,6 +85,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run run:trajectories -- --trace ./evals/examples/publish-flow.trace.json --scenario publish-flow` runs the packaged example trace.
 - `npm run run:trajectories -- --trace ./evals/examples/tip-flow.trace.json --scenario tip-flow` runs the packaged tip example trace.
 - `npm run run:trajectories -- --trace ./evals/examples/edge-empty-data.trace.json --scenario edge-empty-data` runs the packaged no-data example trace.
+- `npm run run:trajectories -- --trace ./evals/examples/edge-budget-exhaustion.trace.json --scenario edge-budget-exhaustion` runs the packaged low-balance example trace.
 - Malformed trace JSON, duplicate or unknown scenario ids, and invalid metric payloads are rejected as input errors with exit code `2` instead of being scored as weak runs.
 - A trace must include the required step/action/assertion coverage to earn a passing scenario result; high metric scores alone are not enough.
 - This is trace scoring, not live session execution. The package now validates and scores trajectory traces, but real multi-turn execution capture is still manual.

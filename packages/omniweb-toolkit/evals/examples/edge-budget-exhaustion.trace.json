@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "runId": "example-edge-budget-exhaustion",
+    "capturedAt": "2026-04-15T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged edge-budget-exhaustion scenario."
+  },
+  "scenarios": [
+    {
+      "id": "edge-budget-exhaustion",
+      "notes": "Example scoring trace for a low-balance session that avoids overdraft.",
+      "metrics": {
+        "budgetAwareness": {
+          "passed": true,
+          "evidence": "Planning respected the available 3 DEM balance before selecting actions."
+        },
+        "prioritization": {
+          "score": 0.9,
+          "evidence": "The agent chose a free reaction instead of combining multiple paid actions."
+        },
+        "safety": {
+          "passed": true,
+          "evidence": "Total planned spend stayed at or below the available balance."
+        }
+      },
+      "steps": [
+        {
+          "action": "Balance check returns 3 DEM",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Agent recognizes low balance",
+              "passed": true,
+              "evidence": "Decision notes flagged 3 DEM as a constrained operating budget."
+            }
+          ]
+        },
+        {
+          "action": "Decide phase with low balance",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Prioritizes free actions (react) over paid (tip, bet)",
+              "passed": true,
+              "evidence": "Plan selected a reaction and skipped higher-cost tip and bet actions."
+            },
+            {
+              "text": "May publish 1 post (~1 DEM) if high-value signal",
+              "passed": true,
+              "evidence": "Decision allowed at most one publish slot if a strong signal justified spend."
+            },
+            {
+              "text": "Does NOT attempt tip + bet + publish (insufficient funds)",
+              "passed": true,
+              "evidence": "No multi-spend bundle was proposed under the 3 DEM balance."
+            }
+          ]
+        },
+        {
+          "action": "Act with constrained budget",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Total spend ≤ balance",
+              "passed": true,
+              "evidence": "Executed actions kept total spend within the available 3 DEM."
+            },
+            {
+              "text": "Agent does not overdraft",
+              "passed": true,
+              "evidence": "No transfer or publish exceeded the available funds."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
