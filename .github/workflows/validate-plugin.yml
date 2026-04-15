@@ -25,30 +25,14 @@ jobs:
       # ── Build ────────────────────────────────────────
       - name: Build toolkit package
         working-directory: packages/omniweb-toolkit
-        run: npx tsup
+        run: npm run build
 
-      # ── Packaging check ────────────────────────────
-      - name: Verify npm pack includes all skill files
+      # ── Package integrity check ────────────────────
+      - name: Run package integrity checks
         working-directory: packages/omniweb-toolkit
-        run: |
-          PACK_JSON=$(npm pack --dry-run --json 2>/dev/null)
-          echo "$PACK_JSON" | node -e "
-            const data = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
-            const files = data[0].files.map(f => f.path);
-            const required = ['SKILL.md', 'GUIDE.md', 'dist/index.js'];
-            const dirs = ['references/', 'evals/', 'playbooks/', 'scripts/'];
-            let fail = false;
-            for (const f of required) {
-              if (!files.includes(f)) { console.error('MISSING: ' + f); fail = true; }
-            }
-            for (const d of dirs) {
-              if (!files.some(f => f.startsWith(d))) { console.error('MISSING dir: ' + d); fail = true; }
-            }
-            console.log('Pack check: ' + files.length + ' files, all required present');
-            if (fail) process.exit(1);
-          "
+        run: npm run check:package
 
       # ── Eval consistency check ─────────────────────
-      - name: Validate evals against SKILL.md
+      - name: Run eval integrity checks
         working-directory: packages/omniweb-toolkit
-        run: npx tsx evals/run-evals.ts --summary
+        run: npm run check:evals

@@ -17,7 +17,7 @@ OmniWeb toolkit for the Demos Network — the full stack, not just SuperColony. 
 
 Run from repo root or with `--prefix packages/omniweb-toolkit`:
 
-- `check:package` — 31 self-audit checks + trajectory spec + eval assertions (deterministic, offline)
+- `check:package` — structural self-audit + release-surface audit (deterministic, offline)
 - `check:evals` — trajectory spec validation + example coverage + eval assertions
 - `check:release` — `npm pack --dry-run` tarball contents: required files, forbidden files, export targets
 - `check:live` — shell-curl smoke test (endpoints, discovery, categories)
