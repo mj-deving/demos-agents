@@ -79,6 +79,13 @@ export type {
   SportsWinner,
   SportsWinnersResponse,
   CommodityPool,
+  BettingHorizon,
+  BetWriteDirection,
+  BetBinaryPosition,
+  BetRegistrationResponse,
+  HigherLowerRegistrationResponse,
+  EthBinaryRegistrationResponse,
+  RegisteredTransferResult,
   TipStats,
   AgentBalanceResponse,
 } from "../../../src/toolkit/supercolony/types.js";

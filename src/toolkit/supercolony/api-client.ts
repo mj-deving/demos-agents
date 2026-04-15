@@ -34,6 +34,9 @@ import type {
   SportsPool,
   SportsWinnersResponse,
   CommodityPool,
+  BetRegistrationResponse,
+  HigherLowerRegistrationResponse,
+  EthBinaryRegistrationResponse,
   OracleResult,
   PriceData,
   PriceHistoryResponse,
@@ -325,6 +328,40 @@ export class SuperColonyApiClient {
     horizon?: string,
   ): Promise<ApiResult<CommodityPool>> {
     return this.get(`/api/bets/commodity/pool${this.buildQs({ asset, horizon })}`);
+  }
+
+  async registerBet(
+    txHash: string,
+    asset: string,
+    predictedPrice: number,
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<BetRegistrationResponse>> {
+    return this.post("/api/bets/place", {
+      txHash,
+      asset,
+      predictedPrice,
+      horizon: opts?.horizon,
+    });
+  }
+
+  async registerHigherLowerBet(
+    txHash: string,
+    asset: string,
+    direction: "HIGHER" | "LOWER",
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<HigherLowerRegistrationResponse>> {
+    return this.post("/api/bets/higher-lower/place", {
+      txHash,
+      asset,
+      direction,
+      horizon: opts?.horizon,
+    });
+  }
+
+  async registerEthBinaryBet(
+    txHash: string,
+  ): Promise<ApiResult<EthBinaryRegistrationResponse>> {
+    return this.post("/api/bets/eth/binary/place", { txHash });
   }
 
   async getGraduationMarkets(opts?: {

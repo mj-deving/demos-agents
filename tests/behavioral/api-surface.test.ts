@@ -37,6 +37,7 @@ type HiveAPIKeys =
   | "getForecastScore" | "getHigherLowerPool" | "getLeaderboard"
   | "getMarkets" | "getOracle" | "getPool" | "getPostDetail" | "getPredictionIntelligence"
   | "getPredictionRecommendations" | "getPredictions" | "getPriceHistory" | "getPrices" | "getReactions" | "getReport"
+  | "registerBet" | "registerEthBinaryBet" | "registerHL"
   | "getSignals" | "getSportsMarkets" | "getSportsPool" | "getSportsWinners"
   | "getTipStats" | "getTopPosts" | "linkIdentity" | "placeBet" | "placeHL"
   | "publish" | "react" | "register" | "reply" | "search" | "tip";
@@ -70,10 +71,11 @@ const EXPECTED_SURFACE = {
     "getEthPool", "getEthWinners", "getFeed", "getForecastScore", "getHigherLowerPool",
     "getLeaderboard", "getMarkets", "getOracle", "getPool", "getPostDetail",
     "getPredictionIntelligence", "getPredictionRecommendations", "getPredictions",
-    "getPriceHistory", "getPrices", "getReactions", "getReport",
-    "getSignals", "getSportsMarkets", "getSportsPool", "getSportsWinners",
+    "getPriceHistory", "getPrices", "getReactions", "getReport", "getSignals",
+    "getSportsMarkets", "getSportsPool", "getSportsWinners",
     "getTipStats", "getTopPosts", "linkIdentity", "placeBet", "placeHL",
-    "publish", "react", "register", "reply", "search", "tip",
+    "publish", "react", "register", "registerBet", "registerEthBinaryBet",
+    "registerHL", "reply", "search", "tip",
   ],
   identity: ["createProof", "getIdentities", "link", "lookup"],
   escrow: ["claimEscrow", "getClaimable", "getEscrowBalance", "refundExpired", "sendToIdentity"],
@@ -100,8 +102,8 @@ describe("OmniWeb API Surface Snapshot", () => {
 
   // ── Per-domain surface snapshot assertions ──
 
-  it("HiveAPI (colony) has exactly 41 methods", () => {
-    expect(EXPECTED_SURFACE.colony).toHaveLength(41);
+  it("HiveAPI (colony) has exactly 44 methods", () => {
+    expect(EXPECTED_SURFACE.colony).toHaveLength(44);
     expect(EXPECTED_SURFACE.colony).toEqual([...EXPECTED_SURFACE.colony].sort());
   });
 
@@ -125,12 +127,12 @@ describe("OmniWeb API Surface Snapshot", () => {
     expect(EXPECTED_SURFACE.chain).toHaveLength(6);
   });
 
-  it("total OmniWeb surface is 64 methods across 6 domains", () => {
+  it("total OmniWeb surface is 67 methods across 6 domains", () => {
     const total = Object.values(EXPECTED_SURFACE).reduce(
       (sum, methods) => sum + methods.length,
       0,
     );
-    expect(total).toBe(64);
+    expect(total).toBe(67);
   });
 
   // ── Specific signature checks for money-moving paths ──

@@ -6,6 +6,14 @@ import type { SuperColonyApiClient } from "../supercolony/api-client.js";
 import type { ApiResult } from "../supercolony/types.js";
 import type { ActionsPrimitives } from "./types.js";
 import { simulateTransaction } from "../chain/tx-simulator.js";
+import {
+  buildBetMemo,
+  buildHigherLowerMemo,
+  normalizeAsset,
+  normalizeDirection,
+  normalizeHorizon,
+  normalizePredictedPrice,
+} from "../supercolony/bet-memos.js";
 
 interface ActionsDeps {
   apiClient: SuperColonyApiClient;
@@ -17,6 +25,25 @@ interface ActionsDeps {
 }
 
 export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
+  function registrationFailure(
+    txHash: string,
+    memo: string,
+    amount: number,
+    registration: ApiResult<unknown>,
+  ) {
+    const registrationError =
+      registration === null
+        ? "Registration endpoint unavailable after transfer"
+        : registration.ok
+          ? undefined
+          : `Registration failed (${registration.status}): ${registration.error}`;
+
+    return {
+      ok: true as const,
+      data: { txHash, memo, amount, registered: false, registrationError },
+    };
+  }
+
   return {
     async tip(postTxHash, amount): Promise<ApiResult<{ txHash: string; validated: boolean }>> {
       // Normalize amount: round to integer, clamp 1-10 DEM (API requires integer amounts)
@@ -92,35 +119,33 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
         return { ok: false, status: 0, error: "Chain transfer not available (no sdkBridge)" };
       }
 
-      // Input validation (Codex fix #2 — prevent malformed memos)
-      if (!asset || typeof asset !== "string" || asset.includes(":")) {
-        return { ok: false, status: 0, error: "Invalid asset — must be non-empty string without colons" };
-      }
-      if (!Number.isFinite(price) || price <= 0) {
-        return { ok: false, status: 0, error: "Invalid price — must be a positive finite number" };
-      }
-      const VALID_HORIZONS = ["10m", "30m", "4h", "24h"] as const;
-      const horizon = opts?.horizon ?? "30m";
-      if (!VALID_HORIZONS.includes(horizon as any)) {
-        return { ok: false, status: 0, error: `Invalid horizon "${horizon}" — must be one of: ${VALID_HORIZONS.join(", ")}` };
+      let normalizedAsset: string;
+      let normalizedPrice: number;
+      let horizon: import("../supercolony/types.js").BettingHorizon;
+      let memo: string;
+      try {
+        normalizedAsset = normalizeAsset(asset);
+        normalizedPrice = normalizePredictedPrice(price);
+        horizon = normalizeHorizon(opts?.horizon);
+        memo = buildBetMemo(normalizedAsset, normalizedPrice, { horizon });
+      } catch (err) {
+        return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
       }
 
       try {
         // Resolve pool address from API — each asset/horizon has its own pool
-        const poolResult = await deps.apiClient.getBettingPool(asset, horizon);
-        // Preserve null vs structured error distinction (Codex fix #3)
+        const poolResult = await deps.apiClient.getBettingPool(normalizedAsset, horizon);
         if (!poolResult) return null;
         if (!poolResult.ok) {
           return { ok: false, status: poolResult.status, error: `Failed to resolve betting pool: ${poolResult.error}` };
         }
 
-        // Validate pool address and echo-check (Codex fix #1 — don't trust API blindly)
         const poolAddress = poolResult.data.poolAddress;
         if (!poolAddress || typeof poolAddress !== "string" || poolAddress.length < 5) {
           return { ok: false, status: 0, error: "Pool returned invalid address" };
         }
-        if (poolResult.data.asset !== asset) {
-          return { ok: false, status: 0, error: `Pool asset mismatch: requested ${asset}, got ${poolResult.data.asset}` };
+        if (poolResult.data.asset !== normalizedAsset) {
+          return { ok: false, status: 0, error: `Pool asset mismatch: requested ${normalizedAsset}, got ${poolResult.data.asset}` };
         }
 
         // TX Simulation Gate — dry-run before spending real DEM on bet
@@ -143,13 +168,116 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
           }
         }
 
-        const memo = `HIVE_BET:${asset}:${price}:${horizon}`;
-        // 5 DEM to the pool address
         const result = await deps.transferDem(poolAddress, 5, memo);
-        return { ok: true, data: { txHash: result.txHash } };
+        const registration = await deps.apiClient.registerBet(
+          result.txHash,
+          normalizedAsset,
+          normalizedPrice,
+          { horizon },
+        );
+        if (registration === null || !registration.ok) {
+          return registrationFailure(result.txHash, memo, 5, registration);
+        }
+        return { ok: true, data: { txHash: result.txHash, memo, amount: 5, registered: true } };
       } catch (err) {
         return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
       }
+    },
+
+    async placeHL(asset, direction, opts) {
+      if (!deps.transferDem) {
+        return { ok: false, status: 0, error: "Chain transfer not available (no sdkBridge)" };
+      }
+
+      let normalizedAsset: string;
+      let normalizedDirection: import("../supercolony/types.js").BetWriteDirection;
+      let horizon: import("../supercolony/types.js").BettingHorizon;
+      let memo: string;
+      try {
+        normalizedAsset = normalizeAsset(asset);
+        normalizedDirection = normalizeDirection(direction);
+        horizon = normalizeHorizon(opts?.horizon);
+        memo = buildHigherLowerMemo(normalizedAsset, normalizedDirection, { horizon });
+      } catch (err) {
+        return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
+      }
+
+      const rawAmount = opts?.amount ?? 1;
+      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+        return { ok: false, status: 0, error: "Invalid amount — must be a positive finite number" };
+      }
+      const amount = Math.min(5, Math.max(0.1, rawAmount));
+
+      try {
+        const poolResult = await deps.apiClient.getHigherLowerPool(normalizedAsset, horizon);
+        if (!poolResult) return null;
+        if (!poolResult.ok) {
+          return { ok: false, status: poolResult.status, error: `Failed to resolve pool: ${poolResult.error}` };
+        }
+
+        const poolAddress = poolResult.data.poolAddress;
+        if (!poolAddress || typeof poolAddress !== "string" || poolAddress.length < 5) {
+          return { ok: false, status: 0, error: "Pool returned invalid address" };
+        }
+        if (poolResult.data.asset !== normalizedAsset) {
+          return { ok: false, status: 0, error: `Pool asset mismatch: requested ${normalizedAsset}, got ${poolResult.data.asset}` };
+        }
+
+        const result = await deps.transferDem(poolAddress, amount, memo);
+        const registration = await deps.apiClient.registerHigherLowerBet(
+          result.txHash,
+          normalizedAsset,
+          normalizedDirection,
+          { horizon },
+        );
+        if (registration === null || !registration.ok) {
+          return registrationFailure(result.txHash, memo, amount, registration);
+        }
+        return { ok: true, data: { txHash: result.txHash, memo, amount, registered: true } };
+      } catch (err) {
+        return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
+      }
+    },
+
+    async registerBet(txHash, asset, predictedPrice, opts) {
+      let normalizedAsset: string;
+      let normalizedPrice: number;
+      let horizon: import("../supercolony/types.js").BettingHorizon;
+      try {
+        normalizedAsset = normalizeAsset(asset);
+        normalizedPrice = normalizePredictedPrice(predictedPrice);
+        horizon = normalizeHorizon(opts?.horizon);
+      } catch (err) {
+        return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
+      }
+      if (!txHash || typeof txHash !== "string") {
+        return { ok: false, status: 0, error: "txHash is required" };
+      }
+      return deps.apiClient.registerBet(txHash, normalizedAsset, normalizedPrice, { horizon });
+    },
+
+    async registerHL(txHash, asset, direction, opts) {
+      let normalizedAsset: string;
+      let normalizedDirection: import("../supercolony/types.js").BetWriteDirection;
+      let horizon: import("../supercolony/types.js").BettingHorizon;
+      try {
+        normalizedAsset = normalizeAsset(asset);
+        normalizedDirection = normalizeDirection(direction);
+        horizon = normalizeHorizon(opts?.horizon);
+      } catch (err) {
+        return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
+      }
+      if (!txHash || typeof txHash !== "string") {
+        return { ok: false, status: 0, error: "txHash is required" };
+      }
+      return deps.apiClient.registerHigherLowerBet(txHash, normalizedAsset, normalizedDirection, { horizon });
+    },
+
+    async registerEthBinaryBet(txHash) {
+      if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+        return { ok: false, status: 0, error: "txHash must be a 0x-prefixed 32-byte hex string" };
+      }
+      return deps.apiClient.registerEthBinaryBet(txHash);
     },
   };
 }

@@ -53,7 +53,26 @@ export interface HiveAPI {
   getLeaderboard(opts?: { limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").LeaderboardResult>>;
   getTopPosts(opts?: { category?: string; minScore?: number; limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").TopPostsResult>>;
   getAgents(): Promise<ApiResult<{ agents: import("../../../src/toolkit/supercolony/types.js").AgentProfile[] }>>;
-  placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
+  placeBet(
+    asset: string,
+    price: number,
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").RegisteredTransferResult>>;
+  registerBet(
+    txHash: string,
+    asset: string,
+    predictedPrice: number,
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").BetRegistrationResponse>>;
+  registerHL(
+    txHash: string,
+    asset: string,
+    direction: "higher" | "lower",
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").HigherLowerRegistrationResponse>>;
+  registerEthBinaryBet(
+    txHash: string,
+  ): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").EthBinaryRegistrationResponse>>;
   getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
   getTipStats(txHash: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").TipStats>>;
 
@@ -79,7 +98,11 @@ export interface HiveAPI {
 
   // ── Higher/Lower prediction markets ──────────────
   /** Place a Higher/Lower bet on an asset's price direction. 0.1-5 DEM. */
-  placeHL(asset: string, direction: "higher" | "lower", opts?: { amount?: number; horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
+  placeHL(
+    asset: string,
+    direction: "higher" | "lower",
+    opts?: { amount?: number; horizon?: string },
+  ): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").RegisteredTransferResult>>;
 
   // ── Forecast scoring ─────────────────────────────
   /** Get composite forecast score for an agent (betting 40% + calibration 30% + polymarket 30%). Polymarket component pending — returns null until data available. */
@@ -168,6 +191,9 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getTopPosts: (o) => toolkit.scores.getTopPosts(o),
     getAgents: () => toolkit.agents.list(),
     placeBet: (asset, price, o) => toolkit.actions.placeBet(asset, price, o),
+    registerBet: (txHash, asset, predictedPrice, o) => toolkit.actions.registerBet(txHash, asset, predictedPrice, o),
+    registerHL: (txHash, asset, direction, o) => toolkit.actions.registerHL(txHash, asset, direction, o),
+    registerEthBinaryBet: (txHash) => toolkit.actions.registerEthBinaryBet(txHash),
     getReactions: (txHash) => toolkit.actions.getReactions(txHash),
     getTipStats: (txHash) => toolkit.actions.getTipStats(txHash),
 
@@ -243,48 +269,7 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     },
 
     // ── Higher/Lower prediction markets ──────────────
-    async placeHL(asset, direction, hlOpts) {
-      // Input validation (mirrors placeBet in actions.ts — money-moving path)
-      if (!asset || typeof asset !== "string" || asset.includes(":")) {
-        return { ok: false, status: 0, error: "Invalid asset — must be non-empty string without colons" };
-      }
-      if (direction !== "higher" && direction !== "lower") {
-        return { ok: false, status: 0, error: "Direction must be 'higher' or 'lower'" };
-      }
-      const VALID_HORIZONS = ["10m", "30m", "4h", "24h"] as const;
-      const horizon = hlOpts?.horizon ?? "30m";
-      if (!VALID_HORIZONS.includes(horizon as any)) {
-        return { ok: false, status: 0, error: `Invalid horizon "${horizon}" — must be one of: ${VALID_HORIZONS.join(", ")}` };
-      }
-      const rawAmount = hlOpts?.amount ?? 1;
-      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
-        return { ok: false, status: 0, error: "Invalid amount — must be a positive finite number" };
-      }
-      const amount = Math.min(5, Math.max(0.1, rawAmount));
-
-      try {
-        const poolResult = await toolkit.ballot.getPool({ asset, horizon });
-        if (!poolResult) return null;
-        if (!poolResult.ok) {
-          return { ok: false, status: poolResult.status, error: `Failed to resolve pool: ${poolResult.error}` };
-        }
-
-        // Pool echo-check + address validation (ported from placeBet)
-        const poolAddress = (poolResult.data as any).poolAddress;
-        if (!poolAddress || typeof poolAddress !== "string" || poolAddress.length < 5) {
-          return { ok: false, status: 0, error: "Pool returned invalid address" };
-        }
-        if ((poolResult.data as any).asset !== asset) {
-          return { ok: false, status: 0, error: `Pool asset mismatch: requested ${asset}, got ${(poolResult.data as any).asset}` };
-        }
-
-        const memo = `HIVE_HL:${asset}:${direction}:${horizon}`;
-        const result = await runtime.sdkBridge.transferDem(poolAddress, amount, memo);
-        return { ok: true, data: { txHash: result.txHash } };
-      } catch (e) {
-        return { ok: false, status: 0, error: (e as Error).message };
-      }
-    },
+    placeHL: (asset, direction, hlOpts) => toolkit.actions.placeHL(asset, direction, hlOpts),
 
     // ── Forecast scoring ─────────────────────────────
     async getForecastScore(address) {

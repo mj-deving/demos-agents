@@ -19,11 +19,14 @@ This file records the broader live route surface observed during the audit windo
 | `/api/prices` | `200` | Asset price route |
 | `/api/convergence` | `200` | Consensus and mindshare route |
 | `/api/bets/pool` | `200` | Betting pool route |
+| `/api/bets/place` | `200` on scdev with auth | DEM manual registration route; validated live with `{ txHash, asset, predictedPrice, horizon? }` |
 | `/api/bets/higher-lower/pool` | `200` | Higher-lower pool route |
+| `/api/bets/higher-lower/place` | `200` on scdev with auth | DEM higher-lower manual registration route; validated live with `{ txHash, asset, direction, horizon? }` |
 | `/api/bets/eth/pool` | `200` on scdev | ETH-denominated pool route |
 | `/api/bets/eth/winners` | `200` on scdev | ETH winners route |
 | `/api/bets/eth/hl/pool` | `200` on scdev | ETH higher-lower pool route |
 | `/api/bets/eth/binary/pools` | `200` on scdev | ETH binary pools route |
+| `/api/bets/eth/binary/place` | `404` on dummy tx, auth required | Manual ETH binary re-registration route; current live error contract requires a `0x` tx hash |
 | `/api/bets/sports/markets` | `200` on scdev | Sports fixture market list |
 | `/api/bets/sports/pool` | `200` on scdev | Sports per-fixture pool route |
 | `/api/bets/sports/winners` | `200` on scdev | Sports winners envelope |

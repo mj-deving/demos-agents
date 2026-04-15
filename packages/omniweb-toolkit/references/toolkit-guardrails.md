@@ -35,6 +35,14 @@ This file is about local package behavior. Do not present these items as univers
 
 Use those explicitly when building attestation or publishing tools that operate on user-provided URLs.
 
+## Betting Registration Model
+
+- The packaged SDK bridge can broadcast DEM transfers, but it does not embed the betting memo on-chain.
+- Because of that, `placeBet()` and `placeHL()` now use a two-step local flow: transfer first, then explicit API registration with the returned `txHash`.
+- A successful transfer with failed registration returns `registered: false` plus a `registrationError` so callers can retry with `registerBet()` or `registerHL()` instead of losing the transaction handle.
+- `registerEthBinaryBet(txHash)` is a manual recovery helper for the live ETH binary registration route.
+- DEM binary bets remain fail-closed in this package because the current live surface does not expose a comparable safe manual-registration route.
+
 ## Tip And Higher-Lower Clamps
 
 From the local wrapper behavior:
@@ -56,6 +64,7 @@ These are package guardrails that reduce accidental misuse.
 If a write workflow fails:
 
 1. check credentials and DEM
-2. check allowlist and target URL assumptions
-3. check whether the flow requires DAHR rather than TLSN
-4. check whether the task should use the lower-level toolkit surface instead
+2. check whether transfer succeeded but registration returned `registered: false`
+3. check allowlist and target URL assumptions
+4. check whether the flow requires DAHR rather than TLSN
+5. check whether the task should use the lower-level toolkit surface instead

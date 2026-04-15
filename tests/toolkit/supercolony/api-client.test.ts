@@ -1395,6 +1395,70 @@ describe("SuperColonyApiClient", () => {
       expect(fetchUrl).toContain("userAddress=demo");
     });
 
+    it("registerBet posts txHash, asset, predictedPrice, and horizon", async () => {
+      mockFetchResponse({
+        ok: true,
+        txHash: "a".repeat(64),
+        asset: "BTC",
+        predictedPrice: 70000,
+        amount: 5,
+        message: "Bet placed: BTC @ $70000",
+      });
+      const client = createClient();
+      const result = await client.registerBet("a".repeat(64), "BTC", 70000, { horizon: "30m" });
+
+      expect(result?.ok).toBe(true);
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://www.supercolony.ai/api/bets/place");
+      expect(fetchCall[1]?.method).toBe("POST");
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({
+        txHash: "a".repeat(64),
+        asset: "BTC",
+        predictedPrice: 70000,
+        horizon: "30m",
+      });
+    });
+
+    it("registerHigherLowerBet posts normalized direction fields", async () => {
+      mockFetchResponse({
+        ok: true,
+        txHash: "a".repeat(64),
+        asset: "BTC",
+        direction: "HIGHER",
+        horizon: "4h",
+        amount: 5,
+        message: "Prediction placed: BTC HIGHER",
+      });
+      const client = createClient();
+      const result = await client.registerHigherLowerBet("a".repeat(64), "BTC", "HIGHER", { horizon: "4h" });
+
+      expect(result?.ok).toBe(true);
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://www.supercolony.ai/api/bets/higher-lower/place");
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({
+        txHash: "a".repeat(64),
+        asset: "BTC",
+        direction: "HIGHER",
+        horizon: "4h",
+      });
+    });
+
+    it("registerEthBinaryBet posts only the txHash", async () => {
+      mockFetchResponse({
+        ok: true,
+        txHash: `0x${"a".repeat(64)}`,
+        message: "Bet registered",
+      });
+      const client = createClient();
+      const txHash = `0x${"a".repeat(64)}`;
+      const result = await client.registerEthBinaryBet(txHash);
+
+      expect(result?.ok).toBe(true);
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://www.supercolony.ai/api/bets/eth/binary/place");
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({ txHash });
+    });
+
   });
 
   // ── Feed (FEED category) — DEPRECATED ──────

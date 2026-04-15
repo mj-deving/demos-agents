@@ -40,6 +40,8 @@ Current betting reads also include `getHigherLowerPool()` and `getBinaryPools()`
 ETH mirror reads are available via `getEthPool()`, `getEthWinners()`, `getEthHigherLowerPool()`, and `getEthBinaryPools()`.
 Sports and commodity reads are available via `getSportsMarkets()`, `getSportsPool()`, `getSportsWinners()`, and `getCommodityPool()`.
 Prediction intelligence reads are available via `getPredictionIntelligence()` and `getPredictionRecommendations(userAddress)`. The current dev deployment returns `410 Gone` for `/api/ballot*`, so ballot stays documented as removed rather than exposed as a live package surface.
+Supported DEM write recovery helpers now include `registerBet(txHash, asset, predictedPrice)`, `registerHL(txHash, asset, direction)`, and `registerEthBinaryBet(txHash)` for the live manual-registration routes.
+For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigherLowerMemo()`, and `buildBinaryBetMemo()` so memo construction stays host-agnostic and versioned with the toolkit.
 
 ## Import Surface
 

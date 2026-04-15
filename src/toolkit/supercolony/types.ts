@@ -227,6 +227,43 @@ export interface BettingPool {
   bets: Array<{ txHash: string; bettor: string; predictedPrice: number; amount: number; roundEnd: number; horizon: string }>;
 }
 
+export type BettingHorizon = "10m" | "30m" | "4h" | "24h";
+export type BetWriteDirection = "HIGHER" | "LOWER";
+export type BetBinaryPosition = "YES" | "NO";
+
+export interface BetRegistrationResponse {
+  ok: boolean;
+  txHash: string;
+  asset: string;
+  predictedPrice: number;
+  amount: number;
+  message: string;
+}
+
+export interface HigherLowerRegistrationResponse {
+  ok: boolean;
+  txHash: string;
+  asset: string;
+  direction: BetWriteDirection;
+  horizon: string;
+  amount: number;
+  message: string;
+}
+
+export interface EthBinaryRegistrationResponse extends Record<string, unknown> {
+  ok: boolean;
+  txHash?: string;
+  message?: string;
+}
+
+export interface RegisteredTransferResult {
+  txHash: string;
+  memo: string;
+  amount: number;
+  registered: boolean;
+  registrationError?: string;
+}
+
 export interface EthBettingPool {
   asset: string;
   horizon: string;

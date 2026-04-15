@@ -104,7 +104,19 @@ function createMockRuntime(tempDir: string): AgentRuntime {
       },
       scores: { getLeaderboard: vi.fn(), getTopPosts: vi.fn() },
       agents: { list: vi.fn(), getProfile: vi.fn(), getIdentities: vi.fn(), register: mockRegisterAgent },
-      actions: { tip: vi.fn(), react: vi.fn(), getReactions: vi.fn(), getTipStats: vi.fn(), getAgentTipStats: vi.fn(), initiateTip: vi.fn(), placeBet: vi.fn() },
+      actions: {
+        tip: vi.fn(),
+        react: vi.fn(),
+        getReactions: vi.fn(),
+        getTipStats: vi.fn(),
+        getAgentTipStats: vi.fn(),
+        initiateTip: vi.fn(),
+        placeBet: vi.fn(),
+        placeHL: vi.fn(),
+        registerBet: vi.fn(),
+        registerHL: vi.fn(),
+        registerEthBinaryBet: vi.fn(),
+      },
       oracle: { get: vi.fn() },
       prices: { get: vi.fn(), getHistory: vi.fn() },
       verification: { verifyDahr: vi.fn(), verifyTlsn: vi.fn(), getTlsnProof: vi.fn() },
@@ -295,45 +307,40 @@ describe("HiveAPI write methods", () => {
   // ── placeHL() ───────────────────────────────────────
 
   describe("placeHL()", () => {
-    it("places higher bet with correct memo format", async () => {
-      const mockGetPool = runtime.toolkit.ballot.getPool as any;
-      mockGetPool.mockResolvedValue({ ok: true, data: { poolAddress: "demos1pool", asset: "BTC" } });
-      (runtime.sdkBridge as any).transferDem = vi.fn().mockResolvedValue({ txHash: "tx_hl_001" });
-
+    it("delegates higher bet placement to toolkit.actions.placeHL()", async () => {
+      const mockPlaceHL = runtime.toolkit.actions.placeHL as any;
+      mockPlaceHL.mockResolvedValue({ ok: true, data: { txHash: "tx_hl_001", memo: "HIVE_HL:BTC:HIGHER:30m", amount: 2, registered: true } });
       const result = await hive.placeHL("BTC", "higher", { amount: 2 });
+
       expect(result?.ok).toBe(true);
       expect((result as any).data.txHash).toBe("tx_hl_001");
-      expect((runtime.sdkBridge as any).transferDem).toHaveBeenCalledWith(
-        "demos1pool", 2, "HIVE_HL:BTC:higher:30m"
-      );
+      expect(mockPlaceHL).toHaveBeenCalledWith("BTC", "higher", { amount: 2 });
     });
 
-    it("places lower bet with custom horizon", async () => {
-      const mockGetPool = runtime.toolkit.ballot.getPool as any;
-      mockGetPool.mockResolvedValue({ ok: true, data: { poolAddress: "demos1pool", asset: "ETH" } });
-      (runtime.sdkBridge as any).transferDem = vi.fn().mockResolvedValue({ txHash: "tx_hl_002" });
-
+    it("delegates lower bet placement with custom horizon", async () => {
+      const mockPlaceHL = runtime.toolkit.actions.placeHL as any;
+      mockPlaceHL.mockResolvedValue({ ok: true, data: { txHash: "tx_hl_002", memo: "HIVE_HL:ETH:LOWER:4h", amount: 1, registered: true } });
       const result = await hive.placeHL("ETH", "lower", { horizon: "4h" });
       expect(result?.ok).toBe(true);
-      expect((runtime.sdkBridge as any).transferDem).toHaveBeenCalledWith(
-        "demos1pool", 1, "HIVE_HL:ETH:lower:4h"
-      );
+      expect(mockPlaceHL).toHaveBeenCalledWith("ETH", "lower", { horizon: "4h" });
     });
 
-    it("rejects invalid direction", async () => {
+    it("passes invalid direction through to toolkit.actions.placeHL()", async () => {
+      const mockPlaceHL = runtime.toolkit.actions.placeHL as any;
+      mockPlaceHL.mockResolvedValue({ ok: false, status: 0, error: "direction must be HIGHER or LOWER" });
       const result = await hive.placeHL("BTC", "sideways" as any);
       expect(result?.ok).toBe(false);
+      expect(mockPlaceHL).toHaveBeenCalledWith("BTC", "sideways", undefined);
     });
 
-    it("clamps amount to 0.1-5 range", async () => {
-      const mockGetPool = runtime.toolkit.ballot.getPool as any;
-      mockGetPool.mockResolvedValue({ ok: true, data: { poolAddress: "demos1pool", asset: "BTC" } });
-      (runtime.sdkBridge as any).transferDem = vi.fn().mockResolvedValue({ txHash: "tx_hl_003" });
-
+    it("preserves the registered transfer result shape", async () => {
+      const mockPlaceHL = runtime.toolkit.actions.placeHL as any;
+      mockPlaceHL.mockResolvedValue({
+        ok: true,
+        data: { txHash: "tx_hl_003", memo: "HIVE_HL:BTC:HIGHER:30m", amount: 5, registered: false, registrationError: "indexer lag" },
+      });
       await hive.placeHL("BTC", "higher", { amount: 100 });
-      expect((runtime.sdkBridge as any).transferDem).toHaveBeenCalledWith(
-        "demos1pool", 5, expect.any(String)
-      );
+      expect(mockPlaceHL).toHaveBeenCalledWith("BTC", "higher", { amount: 100 });
     });
   });
 

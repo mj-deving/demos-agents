@@ -151,15 +151,29 @@ describe("actions.getAgentTipStats", () => {
 describe("actions.placeBet", () => {
   it("resolves pool address then transfers 5 DEM with HIVE_BET memo", async () => {
     const pool = { asset: "BTC", horizon: "30m", totalBets: 3, totalDem: 15, poolAddress: "0xpool", roundEnd: 0, bets: [] };
-    const client = createMockApiClient({ getBettingPool: vi.fn().mockResolvedValue(mockOk(pool)) });
+    const client = createMockApiClient({
+      getBettingPool: vi.fn().mockResolvedValue(mockOk(pool)),
+      registerBet: vi.fn().mockResolvedValue(mockOk({
+        ok: true,
+        txHash: "0xbet1",
+        asset: "BTC",
+        predictedPrice: 70000,
+        amount: 5,
+        message: "Bet placed",
+      })),
+    });
     const transferDem = vi.fn().mockResolvedValue({ txHash: "0xbet1" });
     const actions = createActionsPrimitives({ apiClient: client, transferDem });
     const result = await actions.placeBet("BTC", 70000, { horizon: "30m" });
 
     expect(result).not.toBeNull();
     expect(result!.ok).toBe(true);
-    if (result!.ok) expect(result!.data.txHash).toBe("0xbet1");
+    if (result!.ok) {
+      expect(result!.data.txHash).toBe("0xbet1");
+      expect(result!.data.registered).toBe(true);
+    }
     expect(client.getBettingPool).toHaveBeenCalledWith("BTC", "30m");
+    expect(client.registerBet).toHaveBeenCalledWith("0xbet1", "BTC", 70000, { horizon: "30m" });
     expect(transferDem).toHaveBeenCalledWith("0xpool", 5, "HIVE_BET:BTC:70000:30m");
   });
 
@@ -201,6 +215,25 @@ describe("actions.placeBet", () => {
 
     expect(result).toBeNull();
     expect(transferDem).not.toHaveBeenCalled();
+  });
+
+  it("returns txHash with registered=false when registration fails after transfer", async () => {
+    const pool = { asset: "BTC", horizon: "30m", totalBets: 3, totalDem: 15, poolAddress: "0xpool", roundEnd: 0, bets: [] };
+    const client = createMockApiClient({
+      getBettingPool: vi.fn().mockResolvedValue(mockOk(pool)),
+      registerBet: vi.fn().mockResolvedValue(mockErr(500, "indexer lag")),
+    });
+    const transferDem = vi.fn().mockResolvedValue({ txHash: "0xbet1" });
+    const actions = createActionsPrimitives({ apiClient: client, transferDem });
+    const result = await actions.placeBet("BTC", 70000, { horizon: "30m" });
+
+    expect(result).not.toBeNull();
+    expect(result!.ok).toBe(true);
+    if (result!.ok) {
+      expect(result.data.txHash).toBe("0xbet1");
+      expect(result.data.registered).toBe(false);
+      expect(result.data.registrationError).toContain("indexer lag");
+    }
   });
 
   it("rejects asset containing colons", async () => {
@@ -256,5 +289,76 @@ describe("actions.placeBet", () => {
     expect(result!.ok).toBe(false);
     if (!result!.ok) expect(result!.error).toContain("invalid address");
     expect(transferDem).not.toHaveBeenCalled();
+  });
+});
+
+describe("actions.placeHL", () => {
+  it("transfers then registers higher-lower bets with normalized memo", async () => {
+    const pool = { asset: "BTC", horizon: "30m", totalHigher: 1, totalLower: 1, totalDem: 10, higherCount: 1, lowerCount: 1, roundEnd: 0, referencePrice: null, poolAddress: "0xpool", currentPrice: 70000 };
+    const client = createMockApiClient({
+      getHigherLowerPool: vi.fn().mockResolvedValue(mockOk(pool)),
+      registerHigherLowerBet: vi.fn().mockResolvedValue(mockOk({
+        ok: true,
+        txHash: "0xhl1",
+        asset: "BTC",
+        direction: "HIGHER",
+        horizon: "30m",
+        amount: 5,
+        message: "Prediction placed: BTC HIGHER",
+      })),
+    });
+    const transferDem = vi.fn().mockResolvedValue({ txHash: "0xhl1" });
+    const actions = createActionsPrimitives({ apiClient: client, transferDem });
+    const result = await actions.placeHL("BTC", "higher", { amount: 2, horizon: "30m" });
+
+    expect(result).not.toBeNull();
+    expect(result!.ok).toBe(true);
+    if (result!.ok) {
+      expect(result.data.txHash).toBe("0xhl1");
+      expect(result.data.memo).toBe("HIVE_HL:BTC:HIGHER:30m");
+      expect(result.data.registered).toBe(true);
+    }
+    expect(transferDem).toHaveBeenCalledWith("0xpool", 2, "HIVE_HL:BTC:HIGHER:30m");
+    expect(client.registerHigherLowerBet).toHaveBeenCalledWith("0xhl1", "BTC", "HIGHER", { horizon: "30m" });
+  });
+});
+
+describe("actions.register helpers", () => {
+  it("registerBet delegates to apiClient.registerBet", async () => {
+    const client = createMockApiClient({
+      registerBet: vi.fn().mockResolvedValue(mockOk({
+        ok: true,
+        txHash: "tx1",
+        asset: "BTC",
+        predictedPrice: 70000,
+        amount: 5,
+        message: "Bet placed",
+      })),
+    });
+    const actions = createActionsPrimitives({ apiClient: client });
+    const result = await actions.registerBet("tx1", "BTC", 70000, { horizon: "30m" });
+
+    expect(result).toEqual(mockOk({
+      ok: true,
+      txHash: "tx1",
+      asset: "BTC",
+      predictedPrice: 70000,
+      amount: 5,
+      message: "Bet placed",
+    }));
+    expect(client.registerBet).toHaveBeenCalledWith("tx1", "BTC", 70000, { horizon: "30m" });
+  });
+
+  it("registerEthBinaryBet rejects malformed tx hashes before hitting the API", async () => {
+    const client = createMockApiClient();
+    const actions = createActionsPrimitives({ apiClient: client });
+    const result = await actions.registerEthBinaryBet("not-a-hash");
+
+    expect(result).not.toBeNull();
+    expect(result!.ok).toBe(false);
+    if (!result!.ok) {
+      expect(result.error).toContain("0x-prefixed");
+    }
+    expect(client.registerEthBinaryBet).not.toHaveBeenCalled();
   });
 });

@@ -452,6 +452,49 @@ interface HigherLowerPool {
 }
 ```
 
+## BetRegistrationResponse (from `/api/bets/place`)
+
+```typescript
+interface BetRegistrationResponse {
+  ok: boolean;
+  txHash: string;                          // Demos tx hash
+  asset: string;
+  predictedPrice: number;
+  amount: number;                          // Live success sample returned 5
+  message: string;
+}
+```
+
+## HigherLowerRegistrationResponse (from `/api/bets/higher-lower/place`)
+
+```typescript
+interface HigherLowerRegistrationResponse {
+  ok: boolean;
+  txHash: string;
+  asset: string;
+  direction: "HIGHER" | "LOWER";
+  horizon: string;
+  amount: number;                          // Live success sample returned 5
+  message: string;
+}
+```
+
+## EthBinaryRegistrationResponse (from `/api/bets/eth/binary/place`)
+
+```typescript
+interface EthBinaryRegistrationResponse {
+  ok: boolean;
+  txHash?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+```
+
+Current live validation for this route only captured error envelopes:
+
+- `400` for malformed tx hashes without `0x`
+- `404` for well-formed but non-existent tx hashes
+
 ## EthHigherLowerPool (from `/api/bets/eth/hl/pool`)
 
 ```typescript

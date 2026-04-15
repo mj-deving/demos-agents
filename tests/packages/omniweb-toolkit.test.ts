@@ -44,6 +44,8 @@ function stubToolkit(): Toolkit {
       tip: tag("actions", "tip"), react: tag("actions", "react"),
       getReactions: tag("actions", "getReactions"), getTipStats: tag("actions", "getTipStats"),
       getAgentTipStats: tag("actions", "getAgentTipStats"), placeBet: tag("actions", "placeBet"),
+      placeHL: tag("actions", "placeHL"), registerBet: tag("actions", "registerBet"),
+      registerHL: tag("actions", "registerHL"), registerEthBinaryBet: tag("actions", "registerEthBinaryBet"),
     },
     oracle: { get: tag("oracle", "get") },
     prices: { get: tag("prices", "get"), getHistory: tag("prices", "getHistory") },
@@ -144,6 +146,22 @@ describe("supercolony-toolkit package", () => {
       expect(mod.createAgentRuntime).toHaveBeenCalledWith(
         expect.objectContaining({ envPath: "/custom/.env", agentName: "test-agent" }),
       );
+    });
+  });
+
+  describe("top-level memo helpers", () => {
+    it("exports deterministic betting memo builders", async () => {
+      const {
+        buildBetMemo,
+        buildHigherLowerMemo,
+        buildBinaryBetMemo,
+        VALID_BET_HORIZONS,
+      } = await import("../../packages/omniweb-toolkit/src/index.js");
+
+      expect(buildBetMemo("BTC", 70000, { horizon: "30m" })).toBe("HIVE_BET:BTC:70000:30m");
+      expect(buildHigherLowerMemo("ETH", "lower", { horizon: "4h" })).toBe("HIVE_HL:ETH:LOWER:4h");
+      expect(buildBinaryBetMemo("market-1", "yes")).toBe("HIVE_BINARY:market-1:YES");
+      expect(VALID_BET_HORIZONS).toEqual(["10m", "30m", "4h", "24h"]);
     });
   });
 
@@ -322,6 +340,27 @@ describe("supercolony-toolkit package", () => {
     it("placeBet() delegates to toolkit.actions.placeBet()", async () => {
       await hive.placeBet("BTC", 50000, { horizon: "24h" });
       expect(mockToolkit.actions.placeBet).toHaveBeenCalledWith("BTC", 50000, { horizon: "24h" });
+    });
+
+    it("placeHL() delegates to toolkit.actions.placeHL()", async () => {
+      await hive.placeHL("BTC", "higher", { amount: 2, horizon: "4h" });
+      expect(mockToolkit.actions.placeHL).toHaveBeenCalledWith("BTC", "higher", { amount: 2, horizon: "4h" });
+    });
+
+    it("registerBet() delegates to toolkit.actions.registerBet()", async () => {
+      await hive.registerBet("tx1", "BTC", 70000, { horizon: "30m" });
+      expect(mockToolkit.actions.registerBet).toHaveBeenCalledWith("tx1", "BTC", 70000, { horizon: "30m" });
+    });
+
+    it("registerHL() delegates to toolkit.actions.registerHL()", async () => {
+      await hive.registerHL("tx2", "ETH", "lower", { horizon: "4h" });
+      expect(mockToolkit.actions.registerHL).toHaveBeenCalledWith("tx2", "ETH", "lower", { horizon: "4h" });
+    });
+
+    it("registerEthBinaryBet() delegates to toolkit.actions.registerEthBinaryBet()", async () => {
+      const txHash = `0x${"a".repeat(64)}`;
+      await hive.registerEthBinaryBet(txHash);
+      expect(mockToolkit.actions.registerEthBinaryBet).toHaveBeenCalledWith(txHash);
     });
 
     it("getReactions() delegates to toolkit.actions.getReactions()", async () => {

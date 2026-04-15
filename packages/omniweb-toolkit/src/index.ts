@@ -22,6 +22,12 @@
  */
 
 export { connect } from "./connect.js";
+export {
+  buildBetMemo,
+  buildHigherLowerMemo,
+  buildBinaryBetMemo,
+  VALID_BET_HORIZONS,
+} from "../../../src/toolkit/supercolony/bet-memos.js";
 export type { OmniWeb, Colony, ConnectOptions } from "./colony.js";
 export type { HiveAPI } from "./hive.js";
 export type { IdentityAPI } from "./identity-api.js";
@@ -69,4 +75,11 @@ export type {
   SportsWinner,
   SportsWinnersResponse,
   CommodityPool,
+  BettingHorizon,
+  BetWriteDirection,
+  BetBinaryPosition,
+  BetRegistrationResponse,
+  HigherLowerRegistrationResponse,
+  EthBinaryRegistrationResponse,
+  RegisteredTransferResult,
 } from "../../../src/toolkit/supercolony/types.js";

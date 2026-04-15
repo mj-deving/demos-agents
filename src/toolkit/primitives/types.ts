@@ -89,7 +89,27 @@ export interface ActionsPrimitives {
   getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
   getTipStats(postTxHash: string): Promise<ApiResult<TipStats>>;
   getAgentTipStats(address: string): Promise<ApiResult<AgentTipStats>>;
-  placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<{ txHash: string }>>;
+  placeBet(asset: string, price: number, opts?: { horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").RegisteredTransferResult>>;
+  placeHL(
+    asset: string,
+    direction: "higher" | "lower",
+    opts?: { amount?: number; horizon?: string },
+  ): Promise<ApiResult<import("../supercolony/types.js").RegisteredTransferResult>>;
+  registerBet(
+    txHash: string,
+    asset: string,
+    predictedPrice: number,
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<import("../supercolony/types.js").BetRegistrationResponse>>;
+  registerHL(
+    txHash: string,
+    asset: string,
+    direction: "higher" | "lower",
+    opts?: { horizon?: string },
+  ): Promise<ApiResult<import("../supercolony/types.js").HigherLowerRegistrationResponse>>;
+  registerEthBinaryBet(
+    txHash: string,
+  ): Promise<ApiResult<import("../supercolony/types.js").EthBinaryRegistrationResponse>>;
   /** Initiate a tip via API (validates recipient before chain transfer) */
   initiateTip(postTxHash: string, amount: number): Promise<ApiResult<import("../supercolony/types.js").TipInitiateResponse>>;
 }
