@@ -17,18 +17,27 @@ import {
 } from "./_shared.js";
 
 type ExpectedStatus = "ok" | "not_found" | "auth_required";
+type Probe = {
+  path: string;
+  expected: ExpectedStatus;
+  expectedHttpStatus?: number;
+  method?: "GET" | "POST";
+  body?: unknown;
+};
 
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-endpoint-surface.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity] [--include-scdev-intelligence]
+  console.log(`Usage: npx tsx scripts/check-endpoint-surface.ts [--base-url URL] [--timeout-ms N] [--include-eth-bets] [--include-sports-commodity] [--include-intelligence] [--include-bet-registration]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
-  --include-scdev-eth  Include scdev ETH betting endpoints in the probe set
-  --include-scdev-sports-commodity  Include scdev sports and commodity betting endpoints
-  --include-scdev-intelligence  Include scdev prediction intelligence endpoints
+  --include-eth-bets  Include ETH betting endpoints in the probe set
+  --include-sports-commodity  Include sports and commodity betting endpoints
+  --include-intelligence  Include prediction intelligence endpoints
+  --include-bet-registration  Include manual bet-registration POST routes
+  Deprecated aliases: --include-scdev-eth, --include-scdev-sports-commodity, --include-scdev-intelligence
   --help, -h       Show this help
 
 Output: JSON report of endpoint classifications versus expected audit classifications
@@ -38,16 +47,17 @@ Exit codes: 0 = matches audit expectations, 1 = drift or fetch error, 2 = invali
 
 const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
-const includeScdevEth = hasFlag(args, "--include-scdev-eth");
-const includeScdevSportsCommodity = hasFlag(args, "--include-scdev-sports-commodity");
-const includeScdevIntelligence = hasFlag(args, "--include-scdev-intelligence");
+const includeEthBets = hasFlag(args, "--include-eth-bets") || hasFlag(args, "--include-scdev-eth");
+const includeSportsCommodity = hasFlag(args, "--include-sports-commodity") || hasFlag(args, "--include-scdev-sports-commodity");
+const includeIntelligence = hasFlag(args, "--include-intelligence") || hasFlag(args, "--include-scdev-intelligence");
+const includeBetRegistration = hasFlag(args, "--include-bet-registration");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
   process.exit(2);
 }
 
-const probes: Array<{ path: string; expected: ExpectedStatus }> = [
+const probes: Probe[] = [
   { path: "/llms-full.txt", expected: "ok" },
   { path: "/openapi.json", expected: "ok" },
   { path: "/.well-known/ai-plugin.json", expected: "ok" },
@@ -69,7 +79,7 @@ const probes: Array<{ path: string; expected: ExpectedStatus }> = [
   { path: "/api/mcp/tools", expected: "not_found" },
   { path: "/api/stream-spec", expected: "not_found" },
   { path: "/.well-known/mcp.json", expected: "not_found" },
-  ...(includeScdevEth
+  ...(includeEthBets
     ? [
         { path: "/api/bets/eth/pool?asset=BTC&horizon=30m", expected: "ok" as const },
         { path: "/api/bets/eth/winners?asset=BTC", expected: "ok" as const },
@@ -77,7 +87,7 @@ const probes: Array<{ path: string; expected: ExpectedStatus }> = [
         { path: "/api/bets/eth/binary/pools", expected: "ok" as const },
       ]
     : []),
-  ...(includeScdevSportsCommodity
+  ...(includeSportsCommodity
     ? [
         { path: "/api/bets/sports/markets?status=upcoming", expected: "ok" as const },
         { path: "/api/bets/sports/pool?fixtureId=nba_espn_401866757", expected: "ok" as const },
@@ -85,43 +95,92 @@ const probes: Array<{ path: string; expected: ExpectedStatus }> = [
         { path: "/api/bets/commodity/pool?asset=XAU&horizon=30m", expected: "ok" as const },
       ]
     : []),
-  ...(includeScdevIntelligence
+  ...(includeIntelligence
     ? [
         { path: "/api/predictions/intelligence?limit=5&stats=true", expected: "ok" as const },
         { path: "/api/predictions/recommend?userAddress=demo", expected: "ok" as const },
       ]
     : []),
+  ...(includeBetRegistration
+    ? [
+        {
+          path: "/api/bets/place",
+          expected: "ok" as const,
+          method: "POST" as const,
+          body: {
+            txHash: "a".repeat(64),
+            asset: "BTC",
+            predictedPrice: 70_000,
+            horizon: "30m",
+          },
+        },
+        {
+          path: "/api/bets/higher-lower/place",
+          expected: "ok" as const,
+          method: "POST" as const,
+          body: {
+            txHash: "a".repeat(64),
+            asset: "BTC",
+            direction: "HIGHER",
+            horizon: "30m",
+          },
+        },
+        {
+          path: "/api/bets/eth/binary/place",
+          expected: "not_found" as const,
+          expectedHttpStatus: 404,
+          method: "POST" as const,
+          body: {
+            txHash: `0x${"a".repeat(64)}`,
+          },
+        },
+      ]
+    : []),
 ];
 
-const responses = await Promise.all(
-  probes.map((probe) => fetchText(probe.path, { baseUrl, timeoutMs })),
-);
+void main();
 
-const results = probes.map((probe, index) => {
-  const response = responses[index];
-  const actual = classifyStatus(response.status);
-  const matches = !response.error && actual === probe.expected;
+async function main(): Promise<void> {
+  const responses = await Promise.all(
+    probes.map((probe) => fetchText(probe.path, {
+      baseUrl,
+      timeoutMs,
+      method: probe.method,
+      body: probe.body,
+    })),
+  );
 
-  return {
-    path: probe.path,
-    expected: probe.expected,
-    actual,
-    httpStatus: response.status,
-    match: matches,
-    error: response.error,
-  };
-});
+  const results = probes.map((probe, index) => {
+    const response = responses[index];
+    const actual = classifyStatus(response.status);
+    const matches = !response.error
+      && (probe.expectedHttpStatus !== undefined
+        ? response.status === probe.expectedHttpStatus
+        : actual === probe.expected);
 
-const ok = results.every((result) => result.match);
+    return {
+      path: probe.path,
+      method: probe.method ?? "GET",
+      expected: probe.expected,
+      expectedHttpStatus: probe.expectedHttpStatus,
+      actual,
+      httpStatus: response.status,
+      match: matches,
+      error: response.error,
+    };
+  });
 
-console.log(JSON.stringify({
-  checkedAt: new Date().toISOString(),
-  baseUrl,
-  ok,
-  results,
-}, null, 2));
+  const ok = results.every((result) => result.match);
 
-process.exit(ok ? 0 : 1);
+  console.log(JSON.stringify({
+    checkedAt: new Date().toISOString(),
+    baseUrl,
+    ok,
+    results,
+  }, null, 2));
+
+  process.exit(ok ? 0 : 1);
+}
 
 function classifyStatus(status: number): ExpectedStatus | "unexpected_status" | "network_error" {
   if (status === 0) return "network_error";

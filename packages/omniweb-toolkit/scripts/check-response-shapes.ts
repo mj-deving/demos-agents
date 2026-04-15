@@ -35,6 +35,7 @@ type ShapeCheck = {
 type EndpointResult = {
   name: string;
   path: string;
+  method: string;
   httpStatus: number;
   ok: boolean;
   parseOk: boolean;
@@ -45,14 +46,16 @@ type EndpointResult = {
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity] [--include-scdev-intelligence]
+  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-eth-bets] [--include-sports-commodity] [--include-intelligence] [--include-bet-registration]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
-  --include-scdev-eth  Include scdev ETH betting endpoints in the shape checks
-  --include-scdev-sports-commodity  Include scdev sports and commodity betting endpoints
-  --include-scdev-intelligence  Include scdev prediction intelligence endpoints
+  --include-eth-bets  Include ETH betting endpoints in the shape checks
+  --include-sports-commodity  Include sports and commodity betting endpoints
+  --include-intelligence  Include prediction intelligence endpoints
+  --include-bet-registration  Include manual bet-registration response shapes
+  Deprecated aliases: --include-scdev-eth, --include-scdev-sports-commodity, --include-scdev-intelligence
   --help, -h       Show this help
 
 Output: JSON report of live response envelopes versus the maintained response-shapes reference
@@ -62,9 +65,10 @@ Exit codes: 0 = shapes match, 1 = drift or fetch error, 2 = invalid args`);
 
 const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
-const includeScdevEth = hasFlag(args, "--include-scdev-eth");
-const includeScdevSportsCommodity = hasFlag(args, "--include-scdev-sports-commodity");
-const includeScdevIntelligence = hasFlag(args, "--include-scdev-intelligence");
+const includeEthBets = hasFlag(args, "--include-eth-bets") || hasFlag(args, "--include-scdev-eth");
+const includeSportsCommodity = hasFlag(args, "--include-sports-commodity") || hasFlag(args, "--include-scdev-sports-commodity");
+const includeIntelligence = hasFlag(args, "--include-intelligence") || hasFlag(args, "--include-scdev-intelligence");
+const includeBetRegistration = hasFlag(args, "--include-bet-registration");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
@@ -512,7 +516,7 @@ const endpoints = [
       return checks;
     },
   },
-  ...(includeScdevEth ? [
+  ...(includeEthBets ? [
     {
       name: "EthBettingPool",
       path: "/api/bets/eth/pool?asset=BTC&horizon=30m",
@@ -620,7 +624,7 @@ const endpoints = [
       },
     },
   ] : []),
-  ...(includeScdevSportsCommodity ? [
+  ...(includeSportsCommodity ? [
     {
       name: "SportsMarketsResponse",
       path: "/api/bets/sports/markets?status=upcoming",
@@ -774,7 +778,7 @@ const endpoints = [
       ],
     },
   ] : []),
-  ...(includeScdevIntelligence ? [
+  ...(includeIntelligence ? [
     {
       name: "PredictionIntelligenceResponse",
       path: "/api/predictions/intelligence?limit=5&stats=true",
@@ -885,6 +889,55 @@ const endpoints = [
 
         return checks;
       },
+    },
+  ] : []),
+  ...(includeBetRegistration ? [
+    {
+      name: "BetRegistrationResponse",
+      path: "/api/bets/place",
+      method: "POST" as const,
+      body: {
+        txHash: "a".repeat(64),
+        asset: "BTC",
+        predictedPrice: 70_000,
+        horizon: "30m",
+      },
+      validate: (json: JsonObject): ShapeCheck[] => [
+        validateShape("BetRegistrationResponse", json, {
+          required: {
+            ok: isBoolean,
+            txHash: isString,
+            asset: isString,
+            predictedPrice: isNumber,
+            amount: isNumber,
+            message: isString,
+          },
+        }),
+      ],
+    },
+    {
+      name: "HigherLowerRegistrationResponse",
+      path: "/api/bets/higher-lower/place",
+      method: "POST" as const,
+      body: {
+        txHash: "a".repeat(64),
+        asset: "BTC",
+        direction: "HIGHER",
+        horizon: "30m",
+      },
+      validate: (json: JsonObject): ShapeCheck[] => [
+        validateShape("HigherLowerRegistrationResponse", json, {
+          required: {
+            ok: isBoolean,
+            txHash: isString,
+            asset: isString,
+            direction: isString,
+            horizon: isString,
+            amount: isNumber,
+            message: isString,
+          },
+        }),
+      ],
     },
   ] : []),
   {
@@ -1061,6 +1114,8 @@ const responses = await Promise.all(
     baseUrl,
     timeoutMs,
     accept: "application/json",
+    method: endpoint.method,
+    body: endpoint.body,
   })),
 );
 
@@ -1070,6 +1125,7 @@ const results: EndpointResult[] = endpoints.map((endpoint, index) => {
     return {
       name: endpoint.name,
       path: endpoint.path,
+      method: endpoint.method ?? "GET",
       httpStatus: response.status,
       ok: false,
       parseOk: false,
@@ -1085,6 +1141,7 @@ const results: EndpointResult[] = endpoints.map((endpoint, index) => {
     return {
       name: endpoint.name,
       path: endpoint.path,
+      method: endpoint.method ?? "GET",
       httpStatus: response.status,
       ok: false,
       parseOk: false,
@@ -1109,6 +1166,7 @@ const results: EndpointResult[] = endpoints.map((endpoint, index) => {
   return {
     name: endpoint.name,
     path: endpoint.path,
+    method: endpoint.method ?? "GET",
     httpStatus: response.status,
     parseOk: true,
     ok: checks.every((check) => check.ok || check.skipped),

@@ -40,6 +40,8 @@ export interface FetchTextOptions {
   timeoutMs?: number;
   token?: string | null;
   accept?: string;
+  method?: "GET" | "POST";
+  body?: unknown;
 }
 
 export interface FetchTextResult {
@@ -86,6 +88,7 @@ export async function fetchText(
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
   const timeoutMs = options.timeoutMs ?? 15_000;
   const token = options.token ?? loadToken();
+  const method = options.method ?? "GET";
   const url = `${baseUrl}${path}`;
   const headers: Record<string, string> = {
     Accept: options.accept ?? "*/*",
@@ -94,9 +97,15 @@ export async function fetchText(
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
+  const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
 
   try {
     const response = await fetch(url, {
+      method,
+      body,
       headers,
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -107,7 +116,7 @@ export async function fetchText(
       body: await response.text(),
     };
   } catch (error) {
-    const curlFallback = fetchTextWithCurl(url, headers, timeoutMs);
+    const curlFallback = fetchTextWithCurl(url, headers, timeoutMs, method, body);
     if (curlFallback) {
       return curlFallback;
     }
@@ -126,6 +135,8 @@ function fetchTextWithCurl(
   url: string,
   headers: Record<string, string>,
   timeoutMs: number,
+  method: "GET" | "POST",
+  body?: string,
 ): FetchTextResult | null {
   if (!hasCurl()) {
     return null;
@@ -143,6 +154,18 @@ function fetchTextWithCurl(
 
   if (headers.Authorization) {
     args.push("-H", `Authorization: ${headers.Authorization}`);
+  }
+
+  if (body !== undefined) {
+    args.push("-H", "Content-Type: application/json");
+  }
+
+  if (method !== "GET") {
+    args.push("-X", method);
+  }
+
+  if (body !== undefined) {
+    args.push("--data-raw", body);
   }
 
   args.push("-w", "\n%{http_code}", url);
@@ -177,7 +200,7 @@ function fetchTextWithCurl(
     };
   }
 
-  const body = output.slice(0, newlineIndex);
+  const responseBody = output.slice(0, newlineIndex);
   const statusText = output.slice(newlineIndex + 1).trim();
   const status = Number(statusText);
 
@@ -195,7 +218,7 @@ function fetchTextWithCurl(
     ok: status >= 200 && status < 300,
     status,
     url,
-    body,
+    body: responseBody,
     error: result.status === 0 ? undefined : result.stderr.trim() || undefined,
   };
 }
