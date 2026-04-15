@@ -39,6 +39,8 @@ This repo now uses:
 - `main` as the integration branch
 - `bd` / beads as the live task tracker
 - separate worktrees for parallel agent execution
+- durable Beads memories for repo facts that should survive chat/session loss
+- one repo merge slot for serialized conflict-heavy landing work
 - one small task per branch and PR
 - PRs as the normal merge vehicle
 
@@ -55,6 +57,12 @@ Important commands:
 - `bd update <id> --claim` to claim a task
 - `bd note <id> "..."` to leave execution notes
 - `bd close <id> --reason "..."` when work is complete
+- `bd remember "..." --key <name>` to store durable repo facts
+- `bd memories` / `bd recall <key>` to retrieve stored repo facts
+- `bd worktree create <name>` to create a parallel worktree with shared Beads state
+- `bd merge-slot acquire` / `bd merge-slot release` for serialized hot-file landing work
+- `bd gate list` / `bd gate check` to inspect async waits
+- `bd history <id>` / `bd diff <from-ref> <to-ref>` when task state changes unexpectedly
 
 Rules:
 
@@ -63,8 +71,19 @@ Rules:
 - if new work is discovered, create or note a follow-up bead
 - if a task is blocked, record the blocker in beads
 - do not silently work on a task someone else has already claimed
+- use `bd remember` for stable repo facts that future agents will need; do not leave them only in chat
+- use `bd gate` when a task is effectively waiting on CI, PR merge, another bead, or a human decision
+- use `bd history <id>` or `bd diff <from-ref> <to-ref>` before assuming a bead changed “mysteriously”
 - beads content should be treated as public workflow metadata
 - never put secrets, credentials, tokens, or private operational notes into beads
+
+## Advanced Beads Defaults
+
+- Prefer `bd worktree create` for parallel agent work. Existing `.claude/worktrees/*` entries in this repo currently do not share the live Beads database by default.
+- Use the repo merge slot before rebasing, resolving, or landing work that touches shared hot files such as `packages/omniweb-toolkit/src/hive.ts`, `packages/omniweb-toolkit/src/index.ts`, `src/toolkit/supercolony/api-client.ts`, or the live validation scripts.
+- Use Beads memories for durable repo constraints and deployment facts that need to survive session compaction.
+- Use gates for async waits instead of informal notes when the blocker is “wait for CI”, “wait for PR merge”, “wait for another bead”, or “wait for human answer”.
+- Use `bd swarm` when an epic is clearly parallelizable and child beads can be worked independently.
 
 ## Branch / PR Discipline
 
@@ -125,6 +144,7 @@ Merge responsibility:
 When more than one agent is active:
 
 - use separate git worktrees
+- prefer `bd worktree create` so the worktree shares the live Beads state
 - keep code changes isolated per agent
 - keep task state shared through beads and GitHub
 - prefer disjoint file ownership when running in parallel
