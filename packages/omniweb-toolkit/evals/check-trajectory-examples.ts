@@ -79,8 +79,32 @@ const duplicateCoverage = duplicateScenarioIds.map((scenarioId) => ({
 }));
 const missingScenarioIds = expectedScenarioIds.filter((id) => !packagedScenarioIds.includes(id));
 const unexpectedScenarioIds = packagedScenarioIds.filter((id) => !expectedScenarioIds.includes(id));
+const structureIssues = results.flatMap((result) => {
+  const filename = result.trace.split("/").pop() ?? result.trace;
+  const expectedFilename = result.scenarioIds.length === 1 ? `${result.scenarioIds[0]}.trace.json` : null;
+  const issues: Array<{ trace: string; issue: string }> = [];
+
+  if (result.scenarioIds.length !== 1) {
+    issues.push({
+      trace: result.trace,
+      issue: `packaged example traces must contain exactly one scenario id, found ${result.scenarioIds.length}`,
+    });
+  }
+
+  if (expectedFilename && filename !== expectedFilename) {
+    issues.push({
+      trace: result.trace,
+      issue: `filename should be '${expectedFilename}' to match packaged scenario id '${result.scenarioIds[0]}'`,
+    });
+  }
+
+  return issues;
+});
 const coverage = {
-  ok: missingScenarioIds.length === 0 && unexpectedScenarioIds.length === 0 && duplicateCoverage.length === 0,
+  ok: missingScenarioIds.length === 0 &&
+    unexpectedScenarioIds.length === 0 &&
+    duplicateCoverage.length === 0 &&
+    structureIssues.length === 0,
   expectedScenarioCount: expectedScenarioIds.length,
   packagedScenarioCount: packagedScenarioIds.length,
   expectedScenarioIds,
@@ -88,6 +112,7 @@ const coverage = {
   missingScenarioIds,
   unexpectedScenarioIds,
   duplicateCoverage,
+  structureIssues,
 };
 
 const ok = results.every((result) => result.ok) && coverage.ok;
