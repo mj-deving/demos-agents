@@ -32,13 +32,14 @@ type ExactKeys<T, U> = [keyof T] extends [U] ? ([U] extends [keyof T] ? true : f
 
 type HiveAPIKeys =
   | "attest" | "attestTlsn" | "getAgents" | "getBalance" | "getBinaryPools"
-  | "getConvergence" | "getEthBinaryPools" | "getEthHigherLowerPool" | "getEthPool"
-  | "getEthWinners" | "getFeed" | "getForecastScore" | "getHigherLowerPool"
-  | "getLeaderboard" | "getMarkets" | "getOracle" | "getPool" | "getPostDetail"
-  | "getPredictions" | "getPriceHistory" | "getPrices" | "getReactions"
-  | "getReport" | "getSignals" | "getTipStats" | "getTopPosts"
-  | "linkIdentity" | "placeBet" | "placeHL" | "publish" | "react"
-  | "register" | "reply" | "search" | "tip";
+  | "getCommodityPool" | "getConvergence" | "getEthBinaryPools"
+  | "getEthHigherLowerPool" | "getEthPool" | "getEthWinners" | "getFeed"
+  | "getForecastScore" | "getHigherLowerPool" | "getLeaderboard"
+  | "getMarkets" | "getOracle" | "getPool" | "getPostDetail" | "getPredictions"
+  | "getPriceHistory" | "getPrices" | "getReactions" | "getReport"
+  | "getSignals" | "getSportsMarkets" | "getSportsPool" | "getSportsWinners"
+  | "getTipStats" | "getTopPosts" | "linkIdentity" | "placeBet" | "placeHL"
+  | "publish" | "react" | "register" | "reply" | "search" | "tip";
 
 type IdentityAPIKeys = "createProof" | "getIdentities" | "link" | "lookup";
 type EscrowAPIKeys = "claimEscrow" | "getClaimable" | "getEscrowBalance" | "refundExpired" | "sendToIdentity";
@@ -65,12 +66,13 @@ void _storageExact; void _ipfsExact; void _chainExact;
 const EXPECTED_SURFACE = {
   colony: [
     "attest", "attestTlsn", "getAgents", "getBalance", "getBinaryPools",
-    "getConvergence", "getEthBinaryPools", "getEthHigherLowerPool", "getEthPool",
-    "getEthWinners", "getFeed", "getForecastScore", "getHigherLowerPool",
+    "getCommodityPool", "getConvergence", "getEthBinaryPools", "getEthHigherLowerPool",
+    "getEthPool", "getEthWinners", "getFeed", "getForecastScore", "getHigherLowerPool",
     "getLeaderboard", "getMarkets", "getOracle", "getPool", "getPostDetail",
     "getPredictions", "getPriceHistory", "getPrices", "getReactions", "getReport",
-    "getSignals", "getTipStats", "getTopPosts", "linkIdentity", "placeBet",
-    "placeHL", "publish", "react", "register", "reply", "search", "tip",
+    "getSignals", "getSportsMarkets", "getSportsPool", "getSportsWinners",
+    "getTipStats", "getTopPosts", "linkIdentity", "placeBet", "placeHL",
+    "publish", "react", "register", "reply", "search", "tip",
   ],
   identity: ["createProof", "getIdentities", "link", "lookup"],
   escrow: ["claimEscrow", "getClaimable", "getEscrowBalance", "refundExpired", "sendToIdentity"],
@@ -97,8 +99,8 @@ describe("OmniWeb API Surface Snapshot", () => {
 
   // ── Per-domain surface snapshot assertions ──
 
-  it("HiveAPI (colony) has exactly 35 methods", () => {
-    expect(EXPECTED_SURFACE.colony).toHaveLength(35);
+  it("HiveAPI (colony) has exactly 39 methods", () => {
+    expect(EXPECTED_SURFACE.colony).toHaveLength(39);
     expect(EXPECTED_SURFACE.colony).toEqual([...EXPECTED_SURFACE.colony].sort());
   });
 
@@ -122,12 +124,12 @@ describe("OmniWeb API Surface Snapshot", () => {
     expect(EXPECTED_SURFACE.chain).toHaveLength(6);
   });
 
-  it("total OmniWeb surface is 58 methods across 6 domains", () => {
+  it("total OmniWeb surface is 62 methods across 6 domains", () => {
     const total = Object.values(EXPECTED_SURFACE).reduce(
       (sum, methods) => sum + methods.length,
       0,
     );
-    expect(total).toBe(58);
+    expect(total).toBe(62);
   });
 
   // ── Specific signature checks for money-moving paths ──

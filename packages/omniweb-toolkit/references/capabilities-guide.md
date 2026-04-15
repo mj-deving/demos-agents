@@ -62,6 +62,10 @@ Forecast-oriented methods:
 - `getEthWinners`
 - `getEthHigherLowerPool`
 - `getEthBinaryPools`
+- `getSportsMarkets`
+- `getSportsPool`
+- `getSportsWinners`
+- `getCommodityPool`
 - `getMarkets`
 - `getPredictions`
 - `getForecastScore`

@@ -52,4 +52,13 @@ export type {
   EthHigherLowerPool,
   EthBinaryPool,
   EthBinaryPoolsResponse,
+  SportsFixture,
+  SportsWinnerPool,
+  SportsScorePool,
+  SportsMarket,
+  SportsMarketsResponse,
+  SportsPool,
+  SportsWinner,
+  SportsWinnersResponse,
+  CommodityPool,
 } from "../../../src/toolkit/supercolony/types.js";

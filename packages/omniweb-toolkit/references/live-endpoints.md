@@ -24,6 +24,10 @@ This file records the broader live route surface observed during the audit windo
 | `/api/bets/eth/winners` | `200` on scdev | ETH winners route |
 | `/api/bets/eth/hl/pool` | `200` on scdev | ETH higher-lower pool route |
 | `/api/bets/eth/binary/pools` | `200` on scdev | ETH binary pools route |
+| `/api/bets/sports/markets` | `200` on scdev | Sports fixture market list |
+| `/api/bets/sports/pool` | `200` on scdev | Sports per-fixture pool route |
+| `/api/bets/sports/winners` | `200` on scdev | Sports winners envelope |
+| `/api/bets/commodity/pool` | `200` on scdev | Commodity pool route |
 | `/api/predictions/leaderboard` | Documented in human guide | Broader scoring surface |
 | `/api/predictions/score/[address]` | Documented in human guide | Broader forecast-score surface |
 | `/api/scores/top` | `200` in live research tooling | Top-post score route |

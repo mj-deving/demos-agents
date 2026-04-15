@@ -9,6 +9,10 @@ import {
   makeEthWinner,
   makeEthHigherLowerPool,
   makeEthBinaryPool,
+  makeSportsMarketsResponse,
+  makeSportsPool,
+  makeSportsWinnersResponse,
+  makeCommodityPool,
 } from "./_helpers.js";
 import { createBallotPrimitives } from "../../../src/toolkit/primitives/ballot.js";
 
@@ -142,5 +146,71 @@ describe("ballot.getEthBinaryPools", () => {
 
     expect(result).toEqual(mockOk(data));
     expect(client.getEthBinaryPools).toHaveBeenCalledWith();
+  });
+});
+
+describe("ballot.getSportsMarkets", () => {
+  it("delegates to apiClient.getSportsMarkets with status", async () => {
+    const data = makeSportsMarketsResponse();
+    const client = createMockApiClient({ getSportsMarkets: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    const result = await ballot.getSportsMarkets({ status: "live" });
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getSportsMarkets).toHaveBeenCalledWith({ status: "live" });
+  });
+
+  it("defaults status to upcoming when no opts are provided", async () => {
+    const data = makeSportsMarketsResponse();
+    const client = createMockApiClient({ getSportsMarkets: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    await ballot.getSportsMarkets();
+
+    expect(client.getSportsMarkets).toHaveBeenCalledWith({ status: "upcoming" });
+  });
+});
+
+describe("ballot.getSportsPool", () => {
+  it("delegates to apiClient.getSportsPool with fixtureId", async () => {
+    const data = makeSportsPool();
+    const client = createMockApiClient({ getSportsPool: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    const result = await ballot.getSportsPool("nba_espn_401866757");
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getSportsPool).toHaveBeenCalledWith("nba_espn_401866757");
+  });
+});
+
+describe("ballot.getSportsWinners", () => {
+  it("delegates to apiClient.getSportsWinners with fixtureId", async () => {
+    const data = makeSportsWinnersResponse();
+    const client = createMockApiClient({ getSportsWinners: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    const result = await ballot.getSportsWinners("nba_espn_401866757");
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getSportsWinners).toHaveBeenCalledWith("nba_espn_401866757");
+  });
+});
+
+describe("ballot.getCommodityPool", () => {
+  it("delegates to apiClient.getCommodityPool with asset and horizon", async () => {
+    const data = makeCommodityPool();
+    const client = createMockApiClient({ getCommodityPool: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    const result = await ballot.getCommodityPool({ asset: "XAU", horizon: "30m" });
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getCommodityPool).toHaveBeenCalledWith("XAU", "30m");
+  });
+
+  it("defaults asset to XAU when no opts are provided", async () => {
+    const data = makeCommodityPool();
+    const client = createMockApiClient({ getCommodityPool: vi.fn().mockResolvedValue(mockOk(data)) });
+    const ballot = createBallotPrimitives({ apiClient: client });
+    await ballot.getCommodityPool();
+
+    expect(client.getCommodityPool).toHaveBeenCalledWith("XAU", undefined);
   });
 });

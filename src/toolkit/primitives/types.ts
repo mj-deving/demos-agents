@@ -130,6 +130,14 @@ export interface BallotPrimitives {
   getEthHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").EthHigherLowerPool>>;
   /** ETH binary pools keyed by market id with enablement metadata. */
   getEthBinaryPools(): Promise<ApiResult<import("../supercolony/types.js").EthBinaryPoolsResponse>>;
+  /** Sports fixture markets and aggregate sports pool address. */
+  getSportsMarkets(opts?: { status?: string }): Promise<ApiResult<import("../supercolony/types.js").SportsMarketsResponse>>;
+  /** Sports pool state for a specific fixture. */
+  getSportsPool(fixtureId: string): Promise<ApiResult<import("../supercolony/types.js").SportsPool>>;
+  /** Sports winners envelope for a specific fixture. */
+  getSportsWinners(fixtureId: string): Promise<ApiResult<import("../supercolony/types.js").SportsWinnersResponse>>;
+  /** Commodity-denominated betting pool. */
+  getCommodityPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").CommodityPool>>;
 }
 
 export interface WebhooksPrimitives {

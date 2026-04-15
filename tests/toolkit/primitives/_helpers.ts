@@ -17,6 +17,10 @@ import type {
   EthWinner,
   EthHigherLowerPool,
   EthBinaryPool,
+  SportsMarketsResponse,
+  SportsPool,
+  SportsWinnersResponse,
+  CommodityPool,
 } from "../../../src/toolkit/supercolony/types.js";
 import type { DataSource } from "../../../src/toolkit/data-source.js";
 import type { ScanPost } from "../../../src/toolkit/types.js";
@@ -68,6 +72,10 @@ export function createMockApiClient(overrides: Partial<SuperColonyApiClient> = {
     getEthWinners: vi.fn().mockResolvedValue(null),
     getEthHigherLowerPool: vi.fn().mockResolvedValue(null),
     getEthBinaryPools: vi.fn().mockResolvedValue(null),
+    getSportsMarkets: vi.fn().mockResolvedValue(null),
+    getSportsPool: vi.fn().mockResolvedValue(null),
+    getSportsWinners: vi.fn().mockResolvedValue(null),
+    getCommodityPool: vi.fn().mockResolvedValue(null),
     getBallotPerformance: vi.fn().mockResolvedValue(null),
     getFeeds: vi.fn().mockResolvedValue(null),
     ...overrides,
@@ -250,6 +258,75 @@ export function makeEthBinaryPool(overrides: Partial<EthBinaryPool> = {}): EthBi
     polymarketNo: 0.42,
     endDate: "2026-04-30T00:00:00.000Z",
     status: "active",
+    ...overrides,
+  };
+}
+
+export function makeSportsPool(overrides: Partial<SportsPool> = {}): SportsPool {
+  return {
+    fixtureId: "nba_espn_401866757",
+    fixture: {
+      id: "nba_espn_401866757",
+      sport: "nba",
+      league: "NBA",
+      homeTeam: "Philadelphia 76ers",
+      awayTeam: "Orlando Magic",
+      homeScore: null,
+      awayScore: null,
+      status: "scheduled",
+      startTime: 1776295800000,
+      endTime: null,
+      metadata: "{\"source\":\"espn\"}",
+    },
+    winnerPool: {
+      home: 0,
+      draw: 0,
+      away: 0,
+      totalDem: 0,
+      totalBets: 0,
+      homeBets: 0,
+      drawBets: 0,
+      awayBets: 0,
+    },
+    scorePool: {
+      totalDem: 0,
+      totalBets: 0,
+      predictions: [],
+    },
+    poolAddress: "0xsportspool",
+    ...overrides,
+  };
+}
+
+export function makeSportsMarketsResponse(overrides: Partial<SportsMarketsResponse> = {}): SportsMarketsResponse {
+  return {
+    markets: [makeSportsPool()],
+    poolAddress: "0xsportspoolroot",
+    ...overrides,
+  };
+}
+
+export function makeSportsWinnersResponse(overrides: Partial<SportsWinnersResponse> = {}): SportsWinnersResponse {
+  return {
+    winners: [],
+    count: 0,
+    ...overrides,
+  };
+}
+
+export function makeCommodityPool(overrides: Partial<CommodityPool> = {}): CommodityPool {
+  return {
+    totalDem: 0,
+    totalBets: 0,
+    asset: "XAU",
+    name: "Gold",
+    category: "Precious Metals",
+    unit: "troy oz",
+    horizon: "30m",
+    poolAddress: "0xcommoditypool",
+    roundEnd: 1776285000000,
+    currentPrice: 4817,
+    bets: [],
     ...overrides,
   };
 }

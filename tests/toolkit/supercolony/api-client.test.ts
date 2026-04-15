@@ -620,6 +620,124 @@ describe("SuperColonyApiClient", () => {
       const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
       expect(fetchUrl).toContain("/api/bets/eth/binary/pools");
     });
+
+    it("getSportsMarkets returns the sports markets envelope", async () => {
+      const payload = {
+        markets: [{
+          fixtureId: "nba_espn_401866757",
+          fixture: {
+            id: "nba_espn_401866757",
+            sport: "nba",
+            league: "NBA",
+            homeTeam: "Philadelphia 76ers",
+            awayTeam: "Orlando Magic",
+            homeScore: null,
+            awayScore: null,
+            status: "scheduled",
+            startTime: 1776295800000,
+            endTime: null,
+            metadata: "{\"source\":\"espn\"}",
+          },
+          winnerPool: { home: 0, draw: 0, away: 0, totalDem: 0, totalBets: 0, homeBets: 0, drawBets: 0, awayBets: 0 },
+          scorePool: { totalDem: 0, totalBets: 0, predictions: [] },
+        }],
+        poolAddress: "0x8e39a7b63da4fc41e6680042a379fbeaf1623368ff8205ba2b2c8bd6918e7c42",
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getSportsMarkets({ status: "upcoming" });
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.markets[0].fixture.league).toBe("NBA");
+        expect(result.data.poolAddress).toBe(payload.poolAddress);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/sports/markets");
+      expect(fetchUrl).toContain("status=upcoming");
+    });
+
+    it("getSportsPool returns the sports pool state", async () => {
+      const payload = {
+        fixtureId: "nba_espn_401866757",
+        fixture: {
+          id: "nba_espn_401866757",
+          sport: "nba",
+          league: "NBA",
+          homeTeam: "Philadelphia 76ers",
+          awayTeam: "Orlando Magic",
+          homeScore: null,
+          awayScore: null,
+          status: "scheduled",
+          startTime: 1776295800000,
+          endTime: null,
+          metadata: "{\"source\":\"espn\"}",
+        },
+        winnerPool: { home: 0, draw: 0, away: 0, totalDem: 0, totalBets: 0, homeBets: 0, drawBets: 0, awayBets: 0 },
+        scorePool: { totalDem: 0, totalBets: 0, predictions: [] },
+        poolAddress: "0x8e39a7b63da4fc41e6680042a379fbeaf1623368ff8205ba2b2c8bd6918e7c42",
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getSportsPool("nba_espn_401866757");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.fixtureId).toBe("nba_espn_401866757");
+        expect(result.data.poolAddress).toBe(payload.poolAddress);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/sports/pool");
+      expect(fetchUrl).toContain("fixtureId=nba_espn_401866757");
+    });
+
+    it("getSportsWinners returns the sports winners envelope", async () => {
+      const payload = {
+        winners: [],
+        count: 0,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getSportsWinners("nba_espn_401866757");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.count).toBe(0);
+        expect(result.data.winners).toEqual([]);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/sports/winners");
+      expect(fetchUrl).toContain("fixtureId=nba_espn_401866757");
+    });
+
+    it("getCommodityPool returns the commodity pool envelope", async () => {
+      const payload = {
+        totalDem: 0,
+        totalBets: 0,
+        asset: "XAU",
+        name: "Gold",
+        category: "Precious Metals",
+        unit: "troy oz",
+        horizon: "30m",
+        poolAddress: "0x8e39a7b63da4fc41e6680042a379fbeaf1623368ff8205ba2b2c8bd6918e7c42",
+        roundEnd: 1776285000000,
+        currentPrice: 4817,
+        bets: [],
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getCommodityPool("XAU", "30m");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.name).toBe("Gold");
+        expect(result.data.currentPrice).toBe(4817);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/commodity/pool");
+      expect(fetchUrl).toContain("asset=XAU");
+      expect(fetchUrl).toContain("horizon=30m");
+    });
   });
 
   // ── URL Construction ──────────────────────────

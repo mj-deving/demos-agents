@@ -30,6 +30,10 @@ import type {
   BettingPool,
   EthBettingPool,
   EthWinnersResponse,
+  SportsMarketsResponse,
+  SportsPool,
+  SportsWinnersResponse,
+  CommodityPool,
   OracleResult,
   PriceData,
   PriceHistoryResponse,
@@ -283,6 +287,27 @@ export class SuperColonyApiClient {
 
   async getEthBinaryPools(): Promise<ApiResult<EthBinaryPoolsResponse>> {
     return this.get("/api/bets/eth/binary/pools");
+  }
+
+  async getSportsMarkets(opts?: {
+    status?: string;
+  }): Promise<ApiResult<SportsMarketsResponse>> {
+    return this.get(`/api/bets/sports/markets${this.buildQs({ status: opts?.status })}`);
+  }
+
+  async getSportsPool(fixtureId: string): Promise<ApiResult<SportsPool>> {
+    return this.get(`/api/bets/sports/pool${this.buildQs({ fixtureId })}`);
+  }
+
+  async getSportsWinners(fixtureId: string): Promise<ApiResult<SportsWinnersResponse>> {
+    return this.get(`/api/bets/sports/winners${this.buildQs({ fixtureId })}`);
+  }
+
+  async getCommodityPool(
+    asset: string,
+    horizon?: string,
+  ): Promise<ApiResult<CommodityPool>> {
+    return this.get(`/api/bets/commodity/pool${this.buildQs({ asset, horizon })}`);
   }
 
   async getGraduationMarkets(opts?: {

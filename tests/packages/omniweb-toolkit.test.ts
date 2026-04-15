@@ -55,6 +55,10 @@ function stubToolkit(): Toolkit {
       getEthWinners: tag("ballot", "getEthWinners"),
       getEthHigherLowerPool: tag("ballot", "getEthHigherLowerPool"),
       getEthBinaryPools: tag("ballot", "getEthBinaryPools"),
+      getSportsMarkets: tag("ballot", "getSportsMarkets"),
+      getSportsPool: tag("ballot", "getSportsPool"),
+      getSportsWinners: tag("ballot", "getSportsWinners"),
+      getCommodityPool: tag("ballot", "getCommodityPool"),
     },
     webhooks: { list: tag("webhooks", "list"), create: tag("webhooks", "create"), delete: tag("webhooks", "delete") },
     identity: { lookup: tag("identity", "lookup") },
@@ -251,6 +255,26 @@ describe("supercolony-toolkit package", () => {
     it("getEthBinaryPools() delegates to toolkit.ballot.getEthBinaryPools()", async () => {
       await hive.getEthBinaryPools();
       expect(mockToolkit.ballot.getEthBinaryPools).toHaveBeenCalledWith();
+    });
+
+    it("getSportsMarkets() delegates to toolkit.ballot.getSportsMarkets()", async () => {
+      await hive.getSportsMarkets({ status: "live" });
+      expect(mockToolkit.ballot.getSportsMarkets).toHaveBeenCalledWith({ status: "live" });
+    });
+
+    it("getSportsPool() delegates to toolkit.ballot.getSportsPool()", async () => {
+      await hive.getSportsPool("nba_espn_401866757");
+      expect(mockToolkit.ballot.getSportsPool).toHaveBeenCalledWith("nba_espn_401866757");
+    });
+
+    it("getSportsWinners() delegates to toolkit.ballot.getSportsWinners()", async () => {
+      await hive.getSportsWinners("nba_espn_401866757");
+      expect(mockToolkit.ballot.getSportsWinners).toHaveBeenCalledWith("nba_espn_401866757");
+    });
+
+    it("getCommodityPool() delegates to toolkit.ballot.getCommodityPool()", async () => {
+      await hive.getCommodityPool({ asset: "XAU", horizon: "30m" });
+      expect(mockToolkit.ballot.getCommodityPool).toHaveBeenCalledWith({ asset: "XAU", horizon: "30m" });
     });
 
     it("getSignals() delegates to toolkit.intelligence.getSignals()", async () => {

@@ -259,6 +259,74 @@ export interface EthWinnersResponse {
   count: number;
 }
 
+export interface SportsFixture {
+  id: string;
+  sport: string;
+  league: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;
+  startTime: number;
+  endTime: number | null;
+  metadata: string;
+}
+
+export interface SportsWinnerPool {
+  home: number;
+  draw: number;
+  away: number;
+  totalDem: number;
+  totalBets: number;
+  homeBets: number;
+  drawBets: number;
+  awayBets: number;
+}
+
+export interface SportsScorePool {
+  totalDem: number;
+  totalBets: number;
+  predictions: Array<Record<string, unknown>>;
+}
+
+export interface SportsMarket {
+  fixtureId: string;
+  fixture: SportsFixture;
+  winnerPool: SportsWinnerPool;
+  scorePool: SportsScorePool;
+}
+
+export interface SportsMarketsResponse {
+  markets: SportsMarket[];
+  poolAddress: string;
+}
+
+export interface SportsPool extends SportsMarket {
+  poolAddress: string;
+}
+
+export interface SportsWinner extends Record<string, unknown> {}
+
+export interface SportsWinnersResponse {
+  winners: SportsWinner[];
+  count: number;
+}
+
+export interface CommodityPool {
+  totalDem: number;
+  totalBets: number;
+  asset: string;
+  name: string;
+  category: string;
+  unit: string;
+  horizon: string;
+  poolAddress: string;
+  roundEnd: number;
+  currentPrice: number;
+  bets: Array<Record<string, unknown>>;
+}
+
 // ── Oracle ──────────────────────────────────────────
 
 export interface OracleDivergence {
@@ -522,7 +590,8 @@ export interface ConvergenceResponse {
     }>;
   };
   stats: { totalPosts: number; totalAgents: number; totalAssets: number };
-  cached: boolean;
+  cached?: boolean;
+  signals?: unknown[];
 }
 
 

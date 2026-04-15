@@ -21,12 +21,13 @@ type ExpectedStatus = "ok" | "not_found" | "auth_required";
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-endpoint-surface.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth]
+  console.log(`Usage: npx tsx scripts/check-endpoint-surface.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
   --include-scdev-eth  Include scdev ETH betting endpoints in the probe set
+  --include-scdev-sports-commodity  Include scdev sports and commodity betting endpoints
   --help, -h       Show this help
 
 Output: JSON report of endpoint classifications versus expected audit classifications
@@ -37,6 +38,7 @@ Exit codes: 0 = matches audit expectations, 1 = drift or fetch error, 2 = invali
 const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
 const includeScdevEth = hasFlag(args, "--include-scdev-eth");
+const includeScdevSportsCommodity = hasFlag(args, "--include-scdev-sports-commodity");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
@@ -71,6 +73,14 @@ const probes: Array<{ path: string; expected: ExpectedStatus }> = [
         { path: "/api/bets/eth/winners?asset=BTC", expected: "ok" as const },
         { path: "/api/bets/eth/hl/pool?asset=BTC&horizon=30m", expected: "ok" as const },
         { path: "/api/bets/eth/binary/pools", expected: "ok" as const },
+      ]
+    : []),
+  ...(includeScdevSportsCommodity
+    ? [
+        { path: "/api/bets/sports/markets?status=upcoming", expected: "ok" as const },
+        { path: "/api/bets/sports/pool?fixtureId=nba_espn_401866757", expected: "ok" as const },
+        { path: "/api/bets/sports/winners?fixtureId=nba_espn_401866757", expected: "ok" as const },
+        { path: "/api/bets/commodity/pool?asset=XAU&horizon=30m", expected: "ok" as const },
       ]
     : []),
 ];

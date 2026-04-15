@@ -45,12 +45,13 @@ type EndpointResult = {
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth]
+  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
   --include-scdev-eth  Include scdev ETH betting endpoints in the shape checks
+  --include-scdev-sports-commodity  Include scdev sports and commodity betting endpoints
   --help, -h       Show this help
 
 Output: JSON report of live response envelopes versus the maintained response-shapes reference
@@ -61,6 +62,7 @@ Exit codes: 0 = shapes match, 1 = drift or fetch error, 2 = invalid args`);
 const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
 const includeScdevEth = hasFlag(args, "--include-scdev-eth");
+const includeScdevSportsCommodity = hasFlag(args, "--include-scdev-sports-commodity");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
@@ -229,7 +231,10 @@ const endpoints = [
             pulse: isObject,
             mindshare: isObject,
             stats: isObject,
+          },
+          optional: {
             cached: isBoolean,
+            signals: isArray,
           },
         }),
       ];
@@ -611,6 +616,160 @@ const endpoints = [
 
         return checks;
       },
+    },
+  ] : []),
+  ...(includeScdevSportsCommodity ? [
+    {
+      name: "SportsMarketsResponse",
+      path: "/api/bets/sports/markets?status=upcoming",
+      validate: (json: JsonObject): ShapeCheck[] => {
+        const checks = [
+          validateShape("SportsMarketsResponse", json, {
+            required: {
+              markets: isArray,
+              poolAddress: isString,
+            },
+          }),
+        ];
+
+        const firstMarket = getArrayItem(json.markets);
+        checks.push(validateShapeFromMaybeObject("SportsMarket", firstMarket, {
+          required: {
+            fixtureId: isString,
+            fixture: isObject,
+            winnerPool: isObject,
+            scorePool: isObject,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("SportsFixture", getNestedObject(firstMarket, "fixture"), {
+          required: {
+            id: isString,
+            sport: isString,
+            league: isString,
+            homeTeam: isString,
+            awayTeam: isString,
+            homeScore: isNullableNumber,
+            awayScore: isNullableNumber,
+            status: isString,
+            startTime: isNumber,
+            endTime: isNullableNumber,
+            metadata: isString,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("SportsWinnerPool", getNestedObject(firstMarket, "winnerPool"), {
+          required: {
+            home: isNumber,
+            draw: isNumber,
+            away: isNumber,
+            totalDem: isNumber,
+            totalBets: isNumber,
+            homeBets: isNumber,
+            drawBets: isNumber,
+            awayBets: isNumber,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("SportsScorePool", getNestedObject(firstMarket, "scorePool"), {
+          required: {
+            totalDem: isNumber,
+            totalBets: isNumber,
+            predictions: isArray,
+          },
+        }));
+
+        return checks;
+      },
+    },
+    {
+      name: "SportsPool",
+      path: "/api/bets/sports/pool?fixtureId=nba_espn_401866757",
+      validate: (json: JsonObject): ShapeCheck[] => {
+        const checks = [
+          validateShape("SportsPool", json, {
+            required: {
+              fixtureId: isString,
+              fixture: isObject,
+              winnerPool: isObject,
+              scorePool: isObject,
+              poolAddress: isString,
+            },
+          }),
+        ];
+
+        checks.push(validateShapeFromMaybeObject("SportsPool.fixture", getNestedObject(json, "fixture"), {
+          required: {
+            id: isString,
+            sport: isString,
+            league: isString,
+            homeTeam: isString,
+            awayTeam: isString,
+            homeScore: isNullableNumber,
+            awayScore: isNullableNumber,
+            status: isString,
+            startTime: isNumber,
+            endTime: isNullableNumber,
+            metadata: isString,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("SportsPool.winnerPool", getNestedObject(json, "winnerPool"), {
+          required: {
+            home: isNumber,
+            draw: isNumber,
+            away: isNumber,
+            totalDem: isNumber,
+            totalBets: isNumber,
+            homeBets: isNumber,
+            drawBets: isNumber,
+            awayBets: isNumber,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("SportsPool.scorePool", getNestedObject(json, "scorePool"), {
+          required: {
+            totalDem: isNumber,
+            totalBets: isNumber,
+            predictions: isArray,
+          },
+        }));
+
+        return checks;
+      },
+    },
+    {
+      name: "SportsWinnersResponse",
+      path: "/api/bets/sports/winners?fixtureId=nba_espn_401866757",
+      validate: (json: JsonObject): ShapeCheck[] => [
+        validateShape("SportsWinnersResponse", json, {
+          required: {
+            winners: isArray,
+            count: isNumber,
+          },
+        }),
+      ],
+    },
+    {
+      name: "CommodityPool",
+      path: "/api/bets/commodity/pool?asset=XAU&horizon=30m",
+      validate: (json: JsonObject): ShapeCheck[] => [
+        validateShape("CommodityPool", json, {
+          required: {
+            totalDem: isNumber,
+            totalBets: isNumber,
+            asset: isString,
+            name: isString,
+            category: isString,
+            unit: isString,
+            horizon: isString,
+            poolAddress: isString,
+            roundEnd: isNumber,
+            currentPrice: isNumber,
+            bets: isArray,
+          },
+        }),
+      ],
     },
   ] : []),
   {

@@ -201,7 +201,8 @@ interface ConvergenceResponse {
     totalAgents: number;
     totalAssets: number;
   };
-  cached: boolean;
+  cached?: boolean;                       // omitted in current scdev sample
+  signals?: unknown[];                    // additional live scdev field
 }
 ```
 
@@ -513,6 +514,88 @@ interface EthBinaryPool {
   polymarketNo: number;
   endDate: string;
   status: string;
+}
+```
+
+## SportsMarketsResponse (from `/api/bets/sports/markets`)
+
+```typescript
+interface SportsMarketsResponse {
+  markets: SportsMarket[];
+  poolAddress: string;
+}
+
+interface SportsMarket {
+  fixtureId: string;
+  fixture: SportsFixture;
+  winnerPool: SportsWinnerPool;
+  scorePool: SportsScorePool;
+}
+
+interface SportsFixture {
+  id: string;
+  sport: string;                           // "nba", "football"
+  league: string;                          // "NBA", "Premier League"
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;                          // "scheduled", "live"
+  startTime: number;                       // Unix ms
+  endTime: number | null;                  // Unix ms
+  metadata: string;                        // JSON string from ESPN source
+}
+
+interface SportsWinnerPool {
+  home: number;
+  draw: number;
+  away: number;
+  totalDem: number;
+  totalBets: number;
+  homeBets: number;
+  drawBets: number;
+  awayBets: number;
+}
+
+interface SportsScorePool {
+  totalDem: number;
+  totalBets: number;
+  predictions: Array<Record<string, unknown>>; // live sample empty at audit time
+}
+```
+
+## SportsPool (from `/api/bets/sports/pool`)
+
+```typescript
+interface SportsPool extends SportsMarket {
+  poolAddress: string;
+}
+```
+
+## SportsWinnersResponse (from `/api/bets/sports/winners`)
+
+```typescript
+interface SportsWinnersResponse {
+  winners: Array<Record<string, unknown>>; // live sample empty at audit time
+  count: number;
+}
+```
+
+## CommodityPool (from `/api/bets/commodity/pool`)
+
+```typescript
+interface CommodityPool {
+  totalDem: number;
+  totalBets: number;
+  asset: string;                           // "XAU"
+  name: string;                            // "Gold"
+  category: string;                        // "Precious Metals"
+  unit: string;                            // "troy oz"
+  horizon: string;
+  poolAddress: string;
+  roundEnd: number;                        // Unix ms
+  currentPrice: number;
+  bets: Array<Record<string, unknown>>;    // live sample empty at audit time
 }
 ```
 
