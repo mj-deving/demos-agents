@@ -33,6 +33,15 @@ import { createIdentityAPI } from "../../packages/omniweb-toolkit/src/identity-a
 import { createStorageAPI } from "../../packages/omniweb-toolkit/src/storage-api.js";
 import { createChainAPI } from "../../packages/omniweb-toolkit/src/chain-api.js";
 import { createIPFSAPI } from "../../packages/omniweb-toolkit/src/ipfs-api.js";
+import { createStorageClient as createStorageClientMock } from "../../src/toolkit/network/storage-client.js";
+
+const mockStorageClient = {
+  readState: vi.fn().mockResolvedValue({ storageAddress: "demos1st", programName: "test", data: { key: "value" } }),
+  listPrograms: vi.fn().mockResolvedValue([]),
+  searchPrograms: vi.fn().mockResolvedValue([]),
+  hasField: vi.fn().mockResolvedValue(true),
+  readField: vi.fn().mockResolvedValue("fieldValue"),
+};
 
 const mockDemos: any = {
   signMessage: vi.fn().mockResolvedValue({ type: "falcon", data: "sig" }),
@@ -56,6 +65,7 @@ const mockDemos: any = {
   sign: vi.fn().mockImplementation(async (tx) => ({ ...tx, hash: "signed_ipfs_tx" })),
   confirm: vi.fn().mockResolvedValue({ response: { data: { transaction: { hash: "tx_ipfs_001" } } } }),
   broadcast: vi.fn().mockResolvedValue({ ok: true }),
+  getTransactions: vi.fn().mockResolvedValue([]),
 };
 
 const mockSdkBridge: any = {
@@ -74,6 +84,13 @@ describe("OmniWeb domain APIs", () => {
     mockDemos.sign.mockImplementation(async (tx: any) => ({ ...tx, hash: "signed_ipfs_tx" }));
     mockDemos.confirm.mockResolvedValue({ response: { data: { transaction: { hash: "tx_ipfs_001" } } } });
     mockDemos.broadcast.mockResolvedValue({ ok: true });
+    mockDemos.getTransactions.mockResolvedValue([]);
+    vi.mocked(createStorageClientMock as any).mockReturnValue(mockStorageClient);
+    mockStorageClient.readState.mockResolvedValue({ storageAddress: "demos1st", programName: "test", data: { key: "value" } });
+    mockStorageClient.listPrograms.mockResolvedValue([]);
+    mockStorageClient.searchPrograms.mockResolvedValue([]);
+    mockStorageClient.hasField.mockResolvedValue(true);
+    mockStorageClient.readField.mockResolvedValue("fieldValue");
     mockSdkBridge.transferDem.mockResolvedValue({ txHash: "tx_transfer_001" });
   });
 
@@ -140,6 +157,75 @@ describe("OmniWeb domain APIs", () => {
     it("readField returns field value", async () => {
       const result = await storage.readField("demos1st", "key");
       expect(result).toBe("fieldValue");
+    });
+
+    it("falls back to recent storageProgram transactions when shared-node reads drift", async () => {
+      mockStorageClient.readState.mockResolvedValue(null);
+      mockStorageClient.readField.mockResolvedValue(null);
+      mockStorageClient.hasField.mockResolvedValue(false);
+      mockStorageClient.listPrograms.mockResolvedValue("{ error: \"Unknown message\"}" as any);
+      mockStorageClient.searchPrograms.mockResolvedValue("{ error: \"Unknown message\"}" as any);
+      mockDemos.getTransactions.mockResolvedValue([
+        {
+          id: 11,
+          hash: "tx-create",
+          blockNumber: 200,
+          status: "confirmed",
+          from: "demos1test",
+          to: "stor-fallback",
+          type: "storageProgram",
+          timestamp: 1000,
+          content: JSON.stringify({
+            type: "storageProgram",
+            from: "demos1test",
+            to: "stor-fallback",
+            data: ["storageProgram", {
+              operation: "CREATE_STORAGE_PROGRAM",
+              storageAddress: "stor-fallback",
+              programName: "fallback-state",
+              data: { key: "initial" },
+            }],
+          }),
+        },
+        {
+          id: 10,
+          hash: "tx-set",
+          blockNumber: 201,
+          status: "confirmed",
+          from: "demos1test",
+          to: "stor-fallback",
+          type: "storageProgram",
+          timestamp: 1001,
+          content: JSON.stringify({
+            type: "storageProgram",
+            from: "demos1test",
+            to: "stor-fallback",
+            data: ["storageProgram", {
+              operation: "SET_FIELD",
+              storageAddress: "stor-fallback",
+              field: "lastProbe",
+              value: "ok",
+            }],
+          }),
+        },
+      ]);
+
+      const fallbackStorage = createStorageAPI("https://demosnode.discus.sh", "demos1test", "agent", mockDemos);
+
+      await expect(fallbackStorage.read("stor-fallback")).resolves.toEqual({
+        ok: true,
+        data: { key: "initial", lastProbe: "ok" },
+      });
+      await expect(fallbackStorage.readField("stor-fallback", "lastProbe")).resolves.toBe("ok");
+      await expect(fallbackStorage.hasField("stor-fallback", "lastProbe")).resolves.toBe(true);
+      await expect(fallbackStorage.list()).resolves.toMatchObject({
+        ok: true,
+        data: [{ storageAddress: "stor-fallback", programName: "fallback-state" }],
+      });
+      await expect(fallbackStorage.search("fallback")).resolves.toMatchObject({
+        ok: true,
+        data: [{ storageAddress: "stor-fallback", programName: "fallback-state" }],
+      });
     });
   });
 
