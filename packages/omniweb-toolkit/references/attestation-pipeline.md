@@ -100,7 +100,7 @@ if (result?.ok && result.data.verified) {
 }
 ```
 
-See [verification primitives](primitives/verification.md) for full API details.
+For the current verification entry points and domain mapping, see [primitives/README.md](primitives/README.md).
 
 ## Scoring Formula
 

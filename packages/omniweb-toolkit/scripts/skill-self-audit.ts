@@ -10,7 +10,7 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { builtinModules } from "node:module";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import {
   PACKAGE_ROOT,
   getStringArg,
@@ -79,6 +79,7 @@ const compatibilityDocPaths = [
 ];
 const compatibilityDocs = compatibilityDocPaths.map((path) => readFileSync(path, "utf8"));
 const distDir = resolve(packageRoot, "dist");
+const bundledMarkdownFiles = collectMarkdownFiles(packageRoot);
 
 const skillFrontmatter = parseFrontmatter(skillText);
 const skillLinks = extractRelativeLinks(skillText);
@@ -125,6 +126,13 @@ const workspaceLockMatchesManifest =
   normalizeRecord(workspaceLockEntry?.peerDependencies) === normalizeRecord(packageJson.peerDependencies);
 const undocumentedPeerDependencies = Object.keys(packageJson.peerDependencies ?? {})
   .filter((name) => !readmeText.includes(name));
+const brokenBundledMarkdownLinks = bundledMarkdownFiles.flatMap((filePath) => {
+  const text = readFileSync(filePath, "utf8");
+  const links = extractRelativeLinks(text);
+  return links
+    .filter((link) => !existsFromFile(filePath, link))
+    .map((link) => `${relative(packageRoot, filePath)} -> ${link}`);
+});
 
 const brokenLinks = [...new Set([...skillLinks, ...guideLinks, ...readmeLinks, ...toolkitLinks])]
   .filter((link) => !existsRelative(packageRoot, link));
@@ -205,6 +213,11 @@ const checks = [
     name: "broken_relative_links",
     ok: brokenLinks.length === 0,
     detail: brokenLinks,
+  },
+  {
+    name: "bundled_markdown_links_resolve",
+    ok: brokenBundledMarkdownLinks.length === 0,
+    detail: brokenBundledMarkdownLinks,
   },
   {
     name: "one_level_references",
@@ -398,10 +411,42 @@ function existsRelative(root: string, relativeTarget: string): boolean {
   }
 }
 
+function existsFromFile(sourcePath: string, relativeTarget: string): boolean {
+  try {
+    return statSync(resolve(sourcePath, "..", relativeTarget)).isFile();
+  } catch {
+    return false;
+  }
+}
+
 function listTopLevelFiles(dir: string, extension?: string): string[] {
   return readdirSync(dir)
     .filter((name) => !extension || name.endsWith(extension))
     .sort();
+}
+
+function collectMarkdownFiles(dir: string): string[] {
+  const files: string[] = [];
+  const stack = [dir];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const fullPath = resolve(current, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "dist" || entry.name === "node_modules") {
+          continue;
+        }
+        stack.push(fullPath);
+        continue;
+      }
+      if (entry.isFile() && entry.name.endsWith(".md")) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  return files.sort();
 }
 
 function collectExternalImports(dir: string): string[] {
