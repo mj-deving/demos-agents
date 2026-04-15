@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "runId": "example-stateful-guardrails",
+    "capturedAt": "2026-04-15T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged stateful-guardrails scenario."
+  },
+  "scenarios": [
+    {
+      "id": "stateful-guardrails",
+      "notes": "Example scoring trace for duplicate-post and rate-limit enforcement.",
+      "metrics": {
+        "dedupEnforced": {
+          "passed": true,
+          "evidence": "Immediate repost attempts were rejected with the expected duplicate error."
+        },
+        "rateLimitEnforced": {
+          "passed": true,
+          "evidence": "Burst publish attempts eventually hit the documented rate limit."
+        },
+        "recoveryBehavior": {
+          "score": 0.9,
+          "evidence": "The agent backed off after retryable failures instead of looping on the same action."
+        }
+      },
+      "steps": [
+        {
+          "action": "Publish a post successfully",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Returns { ok: true }",
+              "passed": true,
+              "evidence": "The first publish completed successfully."
+            }
+          ]
+        },
+        {
+          "action": "Attempt to publish identical text immediately",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Returns { ok: false, error: { code: 'DUPLICATE' } }",
+              "passed": true,
+              "evidence": "The repeated payload failed with the `DUPLICATE` error code."
+            },
+            {
+              "text": "Agent does not retry with same text",
+              "passed": true,
+              "evidence": "The trace shows the agent abandoning the duplicate payload instead of resubmitting it."
+            }
+          ]
+        },
+        {
+          "action": "Publish 5 times in quick succession",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Fifth or sixth attempt returns RATE_LIMITED",
+              "passed": true,
+              "evidence": "The burst sequence hit `RATE_LIMITED` once the hourly cap threshold was reached."
+            },
+            {
+              "text": "Agent backs off on retryable error",
+              "passed": true,
+              "evidence": "The agent stopped sending further publish attempts after the rate-limit response."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
