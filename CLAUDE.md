@@ -29,6 +29,7 @@ Run from repo root or with `--prefix packages/omniweb-toolkit`:
 
 | Location | Authority | What |
 |----------|-----------|------|
+| `AGENTS.md` | **Workflow** | Current beads, branch, PR, worktree, and merge policy for coding agents. |
 | `packages/omniweb-toolkit/` | **Primary** | SKILL.md (activation router), GUIDE.md (methodology), 12 references/, evals/, 11 scripts/, 3 playbooks/, 4 asset templates. Codex-authored. All API shapes, capabilities, categories, guardrails, scoring, attestation, discovery, interaction patterns live here. |
 | `docs/decisions/` | **Unique** | 18 ADRs — repo-level architectural constraints. `Status: accepted` = active. |
 | `docs/ROADMAP.md` | **Unique** | Phase 21: live strategy testing. Open work items and beads. |
@@ -57,6 +58,8 @@ Run from repo root or with `--prefix packages/omniweb-toolkit`:
 
 - **TDD** — tests before implementation, committed together.
 - **Fix ALL review findings** — Fabric, `/simplify`, Codex. Zero skips without user approval.
-- **Codex collaboration** — Codex writes package docs, scripts, evals, playbooks. Claude reviews diffs, verifies checks pass, commits, pushes. One task = one branch = one PR.
+- **Agent workflow** — Codex and Claude share beads as the live task ledger. Claim a bead, sync from `main`, create one scoped branch, make one coherent change, run the smallest meaningful validation, and open one PR.
+- **PR-first delivery** — PRs are the normal merge unit and audit trail, not a request for manual human review. Prefer protected `main`, green CI, and auto-merge over direct pushes to `main`.
+- **Parallel agents** — Use separate worktrees. If two tasks would touch the same files heavily, serialize them instead of racing.
 - Commit messages: clear "why", prefixed by area. kebab-case files.
 - Every session ends with commit + push.
