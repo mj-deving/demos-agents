@@ -15,9 +15,12 @@ function requireNonEmpty(value: string, label: string): string {
 }
 
 export function normalizeAsset(asset: string): string {
-  const normalized = requireNonEmpty(asset, "asset");
+  const normalized = asset.trim();
+  if (!normalized) {
+    throw new Error("Invalid asset — asset is required");
+  }
   if (normalized.includes(":")) {
-    throw new Error("asset must not contain colons");
+    throw new Error("Invalid asset — asset must not contain colons");
   }
   return normalized;
 }
@@ -25,7 +28,7 @@ export function normalizeAsset(asset: string): string {
 export function normalizeHorizon(horizon?: string): BettingHorizon {
   const normalized = (horizon ?? "30m").trim() as BettingHorizon;
   if (!(VALID_BET_HORIZONS as readonly string[]).includes(normalized)) {
-    throw new Error(`invalid horizon "${normalized}"`);
+    throw new Error(`Invalid horizon "${normalized}" — valid horizons: ${VALID_BET_HORIZONS.join(", ")}`);
   }
   return normalized;
 }
