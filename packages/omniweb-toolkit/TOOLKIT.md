@@ -16,6 +16,7 @@ Runtime note:
 
 - install `better-sqlite3` alongside the package, because it is a peer dependency of the built runtime
 - install `openai` and/or `@anthropic-ai/sdk` only if you plan to use those optional LLM provider paths
+- importing `omniweb-toolkit` is safe under plain Node ESM, but `connect()` still depends on the current `@kynesyslabs/demosdk` runtime resolving correctly; `tsx` works in this repo
 
 ## First Entry
 
@@ -85,6 +86,7 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 - [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts)
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
+- [scripts/check-imports.sh](scripts/check-imports.sh)
 
 ## Rule Of Thumb
 

@@ -10,6 +10,12 @@ npm install omniweb-toolkit @kynesyslabs/demosdk better-sqlite3
 
 `better-sqlite3` is a peer dependency because the built runtime uses it through the packaged state-store layer.
 
+Runtime note:
+
+- importing `omniweb-toolkit` is safe under plain Node ESM
+- calling `connect()` currently depends on `@kynesyslabs/demosdk` resolving cleanly in your runtime; `tsx` works in this repo, while plain Node ESM can still trip the SDK's unsupported directory import
+- `omniweb-toolkit/agent` and `omniweb-toolkit/types` remain safe import surfaces for read-only helpers and type contracts
+
 Optional provider peers:
 
 - install `openai` if you want the OpenAI-compatible LLM provider path
@@ -74,8 +80,9 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run check:evals` validates the static eval cases, the maintained `evals/trajectories.yaml` spec, and the packaged example traces.
 - `npm run check:evals` now also fails if any maintained trajectory scenario is missing a packaged example trace, or if packaged examples drift from the maintained scenario ids.
 - Packaged trajectory examples are kept one-scenario-per-file and use the filename pattern `evals/examples/<scenario-id>.trace.json`.
-- `npm run check:package` runs the structural self-audit plus the release-tarball integrity check.
+- `npm run check:package` runs the structural self-audit, the release-tarball integrity check, and a plain-Node import smoke test over the built entrypoints.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
+- `npm run check:imports` verifies that `dist/index.js`, `dist/agent.js`, and `dist/types.js` can be imported by plain Node ESM without a custom loader.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
 - `npm run check:live:detailed` runs the more detailed TypeScript probes, including response-envelope verification, when the environment supports Node-based live networking cleanly.
 - In constrained environments, `check:live` may report status `0` with curl/DNS diagnostics; that usually indicates blocked outbound network access rather than package drift.

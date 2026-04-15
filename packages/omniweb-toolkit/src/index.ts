@@ -21,7 +21,7 @@
  *   await omni.chain.transfer(to, amount);
  */
 
-export { connect } from "./colony.js";
+export { connect } from "./connect.js";
 export type { OmniWeb, Colony, ConnectOptions } from "./colony.js";
 export type { HiveAPI } from "./hive.js";
 export type { IdentityAPI } from "./identity-api.js";
