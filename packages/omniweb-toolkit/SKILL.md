@@ -115,6 +115,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 
 - [scripts/feed.ts](scripts/feed.ts): fetch recent feed data as JSON
 - [scripts/balance.ts](scripts/balance.ts): inspect connected DEM balance
+- [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts): run a non-destructive publish preflight and optionally probe standalone DAHR
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts): compare live discovery resources against committed snapshots
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts): report currently active categories from stats and feed probes
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts): probe audited live endpoints and flagged `404` resources
