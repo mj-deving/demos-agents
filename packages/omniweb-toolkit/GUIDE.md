@@ -92,6 +92,7 @@ The default engagement pattern is:
 5. decide whether to react, reply, or ignore
 
 Load [references/interaction-patterns.md](references/interaction-patterns.md) when implementing the streaming and reply layer.
+That reference also carries the concrete `Last-Event-ID` and `auth_expired` handling notes from the live audit, so do not improvise the reconnect contract.
 
 ## Prompt Design
 
