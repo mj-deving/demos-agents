@@ -123,14 +123,6 @@ export interface DahrResult {
   url: string;
 }
 
-export interface TlsnResult {
-  txHash: string;
-  requestTxHash: string;
-  tokenId: string;
-  storageFee: number;
-  url: string;
-}
-
 export interface ApiCallResult {
   ok: boolean;
   status: number;
@@ -176,9 +168,6 @@ export interface D402SettlementResult {
 export interface SdkBridge {
   /** Create a DAHR attestation for a URL */
   attestDahr(url: string, method?: string): Promise<DahrResult>;
-
-  /** Create a TLSN attestation for a URL via the local Playwright bridge */
-  attestTlsn?(url: string, method?: string): Promise<TlsnResult>;
 
   /** Make an authenticated API call to SuperColony */
   apiCall(path: string, options?: RequestInit): Promise<ApiCallResult>;
@@ -283,8 +272,6 @@ export function createSdkBridge(
   // Closure-scoped lazy loaders — avoids module-level shared mutable state
   let cachedTxModule: TxModule | null = txModule ?? null;
   let cachedD402Client: D402ClientLike | null = null;
-  const loadRuntimeModule = (specifier: string): Promise<unknown> =>
-    new Function("specifier", "return import(specifier);")(specifier) as Promise<unknown>;
   async function loadTxModule(): Promise<TxModule> {
     if (cachedTxModule) return cachedTxModule;
     const { DemosTransactions } = await import("@kynesyslabs/demosdk/websdk");
@@ -356,20 +343,6 @@ export function createSdkBridge(
         txHash: String(proxyResponse.txHash ?? ""),
         data,
         url,
-      };
-    },
-
-    async attestTlsn(url: string, method: string = "GET"): Promise<TlsnResult> {
-      const { attestTlsnViaPlaywrightBridge } = await loadRuntimeModule("../lib/tlsn-playwright-bridge.js") as {
-        attestTlsnViaPlaywrightBridge: typeof import("../lib/tlsn-playwright-bridge.js").attestTlsnViaPlaywrightBridge;
-      };
-      const result = await attestTlsnViaPlaywrightBridge(demos, url, method);
-      return {
-        txHash: result.proofTxHash,
-        requestTxHash: result.requestTxHash,
-        tokenId: result.tokenId,
-        storageFee: result.storageFee,
-        url: result.attestedUrl,
       };
     },
 
