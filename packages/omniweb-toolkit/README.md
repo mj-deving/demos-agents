@@ -68,6 +68,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/feed.ts](scripts/feed.ts)
 - [scripts/balance.ts](scripts/balance.ts)
 - [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts)
+- [scripts/probe-publish.ts](scripts/probe-publish.ts)
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
