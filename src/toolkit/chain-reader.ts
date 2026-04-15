@@ -40,6 +40,25 @@ export interface ChainReaderRpc {
   }>>;
 }
 
+function isChainTxByHash(value: unknown): value is ChainTxByHash {
+  if (!value || typeof value !== "object") return false;
+  const tx = value as Partial<ChainTxByHash>;
+  return typeof tx.hash === "string"
+    && typeof tx.blockNumber === "number"
+    && typeof tx.status === "string";
+}
+
+async function findRecentTransactionByHash(
+  rpc: ChainReaderRpc,
+  txHash: string,
+  limit: number = 100,
+): Promise<ChainRawTransaction | null> {
+  if (!rpc.getTransactions) return null;
+  const txs = await rpc.getTransactions("latest", limit);
+  if (!Array.isArray(txs)) return null;
+  return txs.find((tx) => tx?.hash === txHash) ?? null;
+}
+
 function decodeRawHiveTransaction(rawTx: ChainRawTransaction): { content: Record<string, unknown>; hive: Record<string, unknown> | null } {
   const content = typeof rawTx.content === "string"
     ? safeParse(rawTx.content) as Record<string, unknown>
@@ -71,12 +90,22 @@ export async function verifyTransaction(
   if (!rpc.getTxByHash) return null;
 
   const tx = await rpc.getTxByHash(txHash);
-  if (!tx) return { confirmed: false };
-  const confirmed = tx.blockNumber > 0 && tx.status === "confirmed";
+  if (isChainTxByHash(tx)) {
+    const confirmed = tx.blockNumber > 0 && tx.status === "confirmed";
+    return {
+      confirmed,
+      blockNumber: tx.blockNumber,
+      from: tx.content?.from,
+    };
+  }
+
+  const fallback = await findRecentTransactionByHash(rpc, txHash);
+  if (!fallback) return { confirmed: false };
+  const confirmed = fallback.blockNumber > 0 && fallback.status === "confirmed";
   return {
     confirmed,
-    blockNumber: tx.blockNumber,
-    from: tx.content?.from,
+    blockNumber: fallback.blockNumber,
+    from: fallback.from,
   };
 }
 
@@ -123,8 +152,12 @@ export async function resolvePostAuthor(rpc: ChainReaderRpc, txHash: string): Pr
   try {
     if (!rpc.getTxByHash) return null;
     const tx = await rpc.getTxByHash(txHash);
-    if (!tx?.content?.from) return null;
-    return String(tx.content.from);
+    if (isChainTxByHash(tx) && tx.content?.from) {
+      return String(tx.content.from);
+    }
+    const fallback = await findRecentTransactionByHash(rpc, txHash);
+    if (!fallback?.from) return null;
+    return String(fallback.from);
   } catch {
     return null;
   }

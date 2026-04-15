@@ -197,6 +197,31 @@ describe("ChainTransaction bridge methods", () => {
     expect(result!.confirmed).toBe(false);
   });
 
+  it("verifyTransaction falls back to recent getTransactions when getTxByHash is malformed", async () => {
+    const demos = mockDemos({
+      getTxByHash: vi.fn(async () => "error"),
+      getTransactions: vi.fn(async () => [
+        {
+          id: 944768,
+          hash: "0xipfs",
+          blockNumber: 2096819,
+          status: "confirmed",
+          from: "demos1ipfs",
+          to: "demos1ipfs",
+          type: "ipfs",
+          content: "{\"type\":\"ipfs\"}",
+          timestamp: 1700000000,
+        },
+      ]),
+    });
+    const bridge = createSdkBridge(demos as any, undefined, AUTH_PENDING_TOKEN, undefined, mockTxModule);
+    const result = await bridge.verifyTransaction("0xipfs");
+    expect(result).not.toBeNull();
+    expect(result!.confirmed).toBe(true);
+    expect(result!.blockNumber).toBe(2096819);
+    expect(result!.from).toBe("demos1ipfs");
+  });
+
   it("resolvePostAuthor returns null when getTxByHash not available", async () => {
     const demos = mockDemos({ getTxByHash: undefined });
     const bridge = createSdkBridge(demos as any, undefined, AUTH_PENDING_TOKEN, undefined, mockTxModule);
@@ -209,6 +234,28 @@ describe("ChainTransaction bridge methods", () => {
     const bridge = createSdkBridge(demos as any, undefined, AUTH_PENDING_TOKEN, undefined, mockTxModule);
     const result = await bridge.resolvePostAuthor("0xfail");
     expect(result).toBeNull();
+  });
+
+  it("resolvePostAuthor falls back to recent getTransactions when getTxByHash is malformed", async () => {
+    const demos = mockDemos({
+      getTxByHash: vi.fn(async () => "error"),
+      getTransactions: vi.fn(async () => [
+        {
+          id: 944768,
+          hash: "0xipfs",
+          blockNumber: 2096819,
+          status: "confirmed",
+          from: "demos1ipfs",
+          to: "demos1ipfs",
+          type: "ipfs",
+          content: "{\"type\":\"ipfs\"}",
+          timestamp: 1700000000,
+        },
+      ]),
+    });
+    const bridge = createSdkBridge(demos as any, undefined, AUTH_PENDING_TOKEN, undefined, mockTxModule);
+    const result = await bridge.resolvePostAuthor("0xipfs");
+    expect(result).toBe("demos1ipfs");
   });
 
   it("getHivePosts returns empty when getTransactions not available", async () => {
