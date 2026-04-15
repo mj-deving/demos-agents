@@ -14,6 +14,7 @@ import { resolve } from "node:path";
 import { parse } from "yaml";
 
 type JsonRecord = Record<string, unknown>;
+type StepStatus = "pass" | "fail" | "skip";
 
 interface TrajectorySpec {
   description?: string;
@@ -50,7 +51,7 @@ interface ScenarioTrace {
 
 interface StepTrace {
   action?: string;
-  status?: "pass" | "fail" | "skip";
+  status?: StepStatus;
   assertions?: AssertionTrace[];
   notes?: string;
 }
@@ -65,6 +66,16 @@ interface MetricTrace {
   passed?: boolean;
   score?: number;
   evidence?: string;
+}
+
+interface ValidationIssue {
+  path: string;
+  message: string;
+}
+
+interface TraceValidation {
+  ok: boolean;
+  issues: ValidationIssue[];
 }
 
 const args = process.argv.slice(2);
@@ -131,7 +142,43 @@ if (!tracePath) {
   process.exit(2);
 }
 
-const trace = JSON.parse(readFileSync(resolve(tracePath), "utf8")) as TraceDoc;
+const traceFile = readTraceFile(tracePath);
+if (!traceFile.ok) {
+  console.log(JSON.stringify({
+    checkedAt: new Date().toISOString(),
+    trajectoriesPath,
+    tracePath: resolve(tracePath),
+    scenarioFilter: scenarioFilter ?? null,
+    ok: false,
+    error: "invalid_trace_json",
+    validation: {
+      ok: false,
+      issues: [
+        {
+          path: "trace",
+          message: traceFile.message,
+        },
+      ],
+    },
+  }, null, 2));
+  process.exit(2);
+}
+
+const trace = traceFile.trace;
+const validation = validateTrace(trace, scenarios);
+if (!validation.ok) {
+  console.log(JSON.stringify({
+    checkedAt: new Date().toISOString(),
+    trajectoriesPath,
+    tracePath: resolve(tracePath),
+    scenarioFilter: scenarioFilter ?? null,
+    ok: false,
+    error: "invalid_trace_input",
+    validation,
+  }, null, 2));
+  process.exit(2);
+}
+
 const traceScenarios = Array.isArray(trace.scenarios) ? trace.scenarios : [];
 const thresholds = isRecord(spec.scoring?.thresholds) ? spec.scoring!.thresholds! : { pass: 70, warn: 50, fail: 0 };
 
@@ -155,6 +202,7 @@ console.log(JSON.stringify({
   overallScore,
   overallStatus,
   thresholds,
+  validation,
   results,
 }, null, 2));
 
@@ -272,6 +320,215 @@ function buildTemplate(scenarios: ScenarioSpec[]): TraceDoc {
         })),
       })),
     })),
+  };
+}
+
+function readTraceFile(tracePath: string): { ok: true; trace: TraceDoc } | { ok: false; message: string } {
+  try {
+    return {
+      ok: true,
+      trace: JSON.parse(readFileSync(resolve(tracePath), "utf8")) as TraceDoc,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function validateTrace(trace: TraceDoc, specScenarios: ScenarioSpec[]): TraceValidation {
+  const issues: ValidationIssue[] = [];
+  const validStatuses: StepStatus[] = ["pass", "fail", "skip"];
+  const specById = new Map(
+    specScenarios
+      .filter((scenario): scenario is ScenarioSpec & { id: string } => typeof scenario.id === "string" && scenario.id.length > 0)
+      .map((scenario) => [scenario.id, scenario]),
+  );
+
+  if (!isRecord(trace)) {
+    return {
+      ok: false,
+      issues: [
+        {
+          path: "trace",
+          message: "trace document must be a JSON object",
+        },
+      ],
+    };
+  }
+
+  if (!Array.isArray(trace.scenarios)) {
+    return {
+      ok: false,
+      issues: [
+        {
+          path: "trace.scenarios",
+          message: "trace.scenarios must be an array",
+        },
+      ],
+    };
+  }
+
+  if (trace.scenarios.length === 0) {
+    issues.push({
+      path: "trace.scenarios",
+      message: "trace.scenarios must include at least one scenario entry",
+    });
+  }
+
+  const seenScenarioIds = new Set<string>();
+
+  trace.scenarios.forEach((scenario, scenarioIndex) => {
+    const scenarioPath = `trace.scenarios[${scenarioIndex}]`;
+
+    if (!isRecord(scenario)) {
+      issues.push({
+        path: scenarioPath,
+        message: "scenario entry must be an object",
+      });
+      return;
+    }
+
+    if (typeof scenario.id !== "string" || scenario.id.length === 0) {
+      issues.push({
+        path: `${scenarioPath}.id`,
+        message: "scenario id must be a non-empty string",
+      });
+      return;
+    }
+
+    if (seenScenarioIds.has(scenario.id)) {
+      issues.push({
+        path: `${scenarioPath}.id`,
+        message: `duplicate scenario id '${scenario.id}'`,
+      });
+    } else {
+      seenScenarioIds.add(scenario.id);
+    }
+
+    const specScenario = specById.get(scenario.id);
+    if (!specScenario) {
+      issues.push({
+        path: `${scenarioPath}.id`,
+        message: `scenario id '${scenario.id}' is not defined in evals/trajectories.yaml`,
+      });
+      return;
+    }
+
+    if (scenario.metrics !== undefined && !isRecord(scenario.metrics)) {
+      issues.push({
+        path: `${scenarioPath}.metrics`,
+        message: "metrics must be an object when provided",
+      });
+    } else if (isRecord(scenario.metrics)) {
+      const expectedMetrics = new Set(Object.keys(isRecord(specScenario.scoring) ? specScenario.scoring as Record<string, number> : {}));
+      for (const [metricName, metricValue] of Object.entries(scenario.metrics)) {
+        const metricPath = `${scenarioPath}.metrics.${metricName}`;
+        if (!expectedMetrics.has(metricName)) {
+          issues.push({
+            path: metricPath,
+            message: `unknown metric '${metricName}' for scenario '${scenario.id}'`,
+          });
+          continue;
+        }
+        if (!isRecord(metricValue)) {
+          issues.push({
+            path: metricPath,
+            message: "metric entry must be an object",
+          });
+          continue;
+        }
+        if (metricValue.passed !== undefined && typeof metricValue.passed !== "boolean") {
+          issues.push({
+            path: `${metricPath}.passed`,
+            message: "passed must be a boolean when provided",
+          });
+        }
+        if (metricValue.score !== undefined && (typeof metricValue.score !== "number" || !Number.isFinite(metricValue.score))) {
+          issues.push({
+            path: `${metricPath}.score`,
+            message: "score must be a finite number when provided",
+          });
+        }
+        if (metricValue.evidence !== undefined && typeof metricValue.evidence !== "string") {
+          issues.push({
+            path: `${metricPath}.evidence`,
+            message: "evidence must be a string when provided",
+          });
+        }
+      }
+    }
+
+    if (scenario.steps !== undefined && !Array.isArray(scenario.steps)) {
+      issues.push({
+        path: `${scenarioPath}.steps`,
+        message: "steps must be an array when provided",
+      });
+    } else if (Array.isArray(scenario.steps)) {
+      scenario.steps.forEach((step, stepIndex) => {
+        const stepPath = `${scenarioPath}.steps[${stepIndex}]`;
+        if (!isRecord(step)) {
+          issues.push({
+            path: stepPath,
+            message: "step entry must be an object",
+          });
+          return;
+        }
+        if (step.action !== undefined && typeof step.action !== "string") {
+          issues.push({
+            path: `${stepPath}.action`,
+            message: "action must be a string when provided",
+          });
+        }
+        if (step.status !== undefined && !validStatuses.includes(step.status as StepStatus)) {
+          issues.push({
+            path: `${stepPath}.status`,
+            message: "status must be one of pass, fail, or skip when provided",
+          });
+        }
+        if (step.assertions !== undefined && !Array.isArray(step.assertions)) {
+          issues.push({
+            path: `${stepPath}.assertions`,
+            message: "assertions must be an array when provided",
+          });
+        } else if (Array.isArray(step.assertions)) {
+          step.assertions.forEach((assertion, assertionIndex) => {
+            const assertionPath = `${stepPath}.assertions[${assertionIndex}]`;
+            if (!isRecord(assertion)) {
+              issues.push({
+                path: assertionPath,
+                message: "assertion entry must be an object",
+              });
+              return;
+            }
+            if (assertion.text !== undefined && typeof assertion.text !== "string") {
+              issues.push({
+                path: `${assertionPath}.text`,
+                message: "text must be a string when provided",
+              });
+            }
+            if (assertion.passed !== undefined && typeof assertion.passed !== "boolean") {
+              issues.push({
+                path: `${assertionPath}.passed`,
+                message: "passed must be a boolean when provided",
+              });
+            }
+            if (assertion.evidence !== undefined && typeof assertion.evidence !== "string") {
+              issues.push({
+                path: `${assertionPath}.evidence`,
+                message: "evidence must be a string when provided",
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return {
+    ok: issues.length === 0,
+    issues,
   };
 }
 

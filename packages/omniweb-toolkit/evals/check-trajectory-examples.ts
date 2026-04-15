@@ -84,8 +84,10 @@ function runTrace(tracePath: string, scenarioId: string) {
     exitCode: command.status,
     summary: isRecord(parsed)
       ? {
+          error: parsed.error ?? null,
           overallScore: parsed.overallScore ?? null,
           overallStatus: parsed.overallStatus ?? null,
+          validationOk: isRecord(parsed.validation) ? parsed.validation.ok ?? null : null,
         }
       : null,
     stderr: command.stderr.trim() || null,
