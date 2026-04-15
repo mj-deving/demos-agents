@@ -56,6 +56,12 @@ export type {
   BettingPool,
   HigherLowerPool,
   BinaryPool,
+  EthBettingPool,
+  EthWinner,
+  EthWinnersResponse,
+  EthHigherLowerPool,
+  EthBinaryPool,
+  EthBinaryPoolsResponse,
   TipStats,
   AgentBalanceResponse,
 } from "../../../src/toolkit/supercolony/types.js";

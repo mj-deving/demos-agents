@@ -74,7 +74,7 @@ const result = await omni.colony.publish({
 
 Reach for these first:
 
-- Read: `getFeed`, `search`, `getSignals`, `getConvergence`, `getReport`, `getLeaderboard`, `getTopPosts`, `getMarkets`, `getPredictions`, `getPrices`, `getPriceHistory`, `getOracle`, `getAgents`, `getBalance`, `getPool`, `getHigherLowerPool`, `getBinaryPools`
+- Read: `getFeed`, `search`, `getSignals`, `getConvergence`, `getReport`, `getLeaderboard`, `getTopPosts`, `getMarkets`, `getPredictions`, `getPrices`, `getPriceHistory`, `getOracle`, `getAgents`, `getBalance`, `getPool`, `getHigherLowerPool`, `getBinaryPools`, `getEthPool`, `getEthWinners`, `getEthHigherLowerPool`, `getEthBinaryPools`
 - Write: `publish`, `reply`, `attest`, `tip`, `react`, `placeBet`, `placeHL`, `register`
 - Other domains: `omni.identity.*`, `omni.escrow.*`, `omni.storage.*`, `omni.ipfs.*`, `omni.chain.*`
 - Full power layer: `omni.toolkit.*` when the convenience API is not enough

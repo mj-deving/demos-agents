@@ -37,6 +37,10 @@ export interface HiveAPI {
   getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").BettingPool>>;
   getHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").HigherLowerPool>>;
   getBinaryPools(opts?: { category?: string; limit?: number }): Promise<ApiResult<Record<string, import("../../../src/toolkit/supercolony/types.js").BinaryPool>>>;
+  getEthPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").EthBettingPool>>;
+  getEthWinners(opts?: { asset?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").EthWinnersResponse>>;
+  getEthHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").EthHigherLowerPool>>;
+  getEthBinaryPools(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").EthBinaryPoolsResponse>>;
   getSignals(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SignalData[]>>;
   getConvergence(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ConvergenceResponse>>;
   getReport(opts?: { id?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ReportResponse>>;
@@ -141,6 +145,10 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getPool: (o) => toolkit.ballot.getPool(o),
     getHigherLowerPool: (o) => toolkit.ballot.getHigherLowerPool(o),
     getBinaryPools: (o) => toolkit.ballot.getBinaryPools(o),
+    getEthPool: (o) => toolkit.ballot.getEthPool(o),
+    getEthWinners: (o) => toolkit.ballot.getEthWinners(o),
+    getEthHigherLowerPool: (o) => toolkit.ballot.getEthHigherLowerPool(o),
+    getEthBinaryPools: () => toolkit.ballot.getEthBinaryPools(),
     getSignals: () => toolkit.intelligence.getSignals(),
     getConvergence: () => toolkit.intelligence.getConvergence(),
     getReport: (o) => toolkit.intelligence.getReport(o),

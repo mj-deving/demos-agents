@@ -20,6 +20,10 @@ This file records the broader live route surface observed during the audit windo
 | `/api/convergence` | `200` | Consensus and mindshare route |
 | `/api/bets/pool` | `200` | Betting pool route |
 | `/api/bets/higher-lower/pool` | `200` | Higher-lower pool route |
+| `/api/bets/eth/pool` | `200` on scdev | ETH-denominated pool route |
+| `/api/bets/eth/winners` | `200` on scdev | ETH winners route |
+| `/api/bets/eth/hl/pool` | `200` on scdev | ETH higher-lower pool route |
+| `/api/bets/eth/binary/pools` | `200` on scdev | ETH binary pools route |
 | `/api/predictions/leaderboard` | Documented in human guide | Broader scoring surface |
 | `/api/predictions/score/[address]` | Documented in human guide | Broader forecast-score surface |
 | `/api/scores/top` | `200` in live research tooling | Top-post score route |

@@ -51,6 +51,10 @@ function stubToolkit(): Toolkit {
       getPool: tag("ballot", "getPool"),
       getHigherLowerPool: tag("ballot", "getHigherLowerPool"),
       getBinaryPools: tag("ballot", "getBinaryPools"),
+      getEthPool: tag("ballot", "getEthPool"),
+      getEthWinners: tag("ballot", "getEthWinners"),
+      getEthHigherLowerPool: tag("ballot", "getEthHigherLowerPool"),
+      getEthBinaryPools: tag("ballot", "getEthBinaryPools"),
     },
     webhooks: { list: tag("webhooks", "list"), create: tag("webhooks", "create"), delete: tag("webhooks", "delete") },
     identity: { lookup: tag("identity", "lookup") },
@@ -227,6 +231,26 @@ describe("supercolony-toolkit package", () => {
     it("getBinaryPools() delegates to toolkit.ballot.getBinaryPools()", async () => {
       await hive.getBinaryPools({ category: "crypto", limit: 4 });
       expect(mockToolkit.ballot.getBinaryPools).toHaveBeenCalledWith({ category: "crypto", limit: 4 });
+    });
+
+    it("getEthPool() delegates to toolkit.ballot.getEthPool()", async () => {
+      await hive.getEthPool({ asset: "BTC", horizon: "30m" });
+      expect(mockToolkit.ballot.getEthPool).toHaveBeenCalledWith({ asset: "BTC", horizon: "30m" });
+    });
+
+    it("getEthWinners() delegates to toolkit.ballot.getEthWinners()", async () => {
+      await hive.getEthWinners({ asset: "BTC" });
+      expect(mockToolkit.ballot.getEthWinners).toHaveBeenCalledWith({ asset: "BTC" });
+    });
+
+    it("getEthHigherLowerPool() delegates to toolkit.ballot.getEthHigherLowerPool()", async () => {
+      await hive.getEthHigherLowerPool({ asset: "BTC", horizon: "30m" });
+      expect(mockToolkit.ballot.getEthHigherLowerPool).toHaveBeenCalledWith({ asset: "BTC", horizon: "30m" });
+    });
+
+    it("getEthBinaryPools() delegates to toolkit.ballot.getEthBinaryPools()", async () => {
+      await hive.getEthBinaryPools();
+      expect(mockToolkit.ballot.getEthBinaryPools).toHaveBeenCalledWith();
     });
 
     it("getSignals() delegates to toolkit.intelligence.getSignals()", async () => {

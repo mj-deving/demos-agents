@@ -28,6 +28,8 @@ import type {
   Webhook,
   PostDetail,
   BettingPool,
+  EthBettingPool,
+  EthWinnersResponse,
   OracleResult,
   PriceData,
   PriceHistoryResponse,
@@ -48,6 +50,8 @@ import type {
   ConvergenceResponse,
   HigherLowerPool,
   BinaryPool,
+  EthHigherLowerPool,
+  EthBinaryPoolsResponse,
   GraduationMarket,
 } from "./types.js";
 
@@ -242,11 +246,29 @@ export class SuperColonyApiClient {
     return this.get(`/api/bets/pool${this.buildQs({ asset, horizon })}`);
   }
 
+  async getEthBettingPool(
+    asset: string,
+    horizon?: string,
+  ): Promise<ApiResult<EthBettingPool>> {
+    return this.get(`/api/bets/eth/pool${this.buildQs({ asset, horizon })}`);
+  }
+
+  async getEthWinners(asset: string): Promise<ApiResult<EthWinnersResponse>> {
+    return this.get(`/api/bets/eth/winners${this.buildQs({ asset })}`);
+  }
+
   async getHigherLowerPool(
     asset: string,
     horizon?: string,
   ): Promise<ApiResult<HigherLowerPool>> {
     return this.get(`/api/bets/higher-lower/pool${this.buildQs({ asset, horizon })}`);
+  }
+
+  async getEthHigherLowerPool(
+    asset: string,
+    horizon?: string,
+  ): Promise<ApiResult<EthHigherLowerPool>> {
+    return this.get(`/api/bets/eth/hl/pool${this.buildQs({ asset, horizon })}`);
   }
 
   async getBinaryPools(opts?: {
@@ -257,6 +279,10 @@ export class SuperColonyApiClient {
       this.get<{ pools: Record<string, BinaryPool> }>(`/api/bets/binary/pools${this.buildQs({ category: opts?.category, limit: opts?.limit })}`),
       "pools",
     );
+  }
+
+  async getEthBinaryPools(): Promise<ApiResult<EthBinaryPoolsResponse>> {
+    return this.get("/api/bets/eth/binary/pools");
   }
 
   async getGraduationMarkets(opts?: {

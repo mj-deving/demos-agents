@@ -227,6 +227,38 @@ export interface BettingPool {
   bets: Array<{ txHash: string; bettor: string; predictedPrice: number; amount: number; roundEnd: number; horizon: string }>;
 }
 
+export interface EthBettingPool {
+  asset: string;
+  horizon: string;
+  totalBets: number;
+  totalEth: number;
+  totalEthWei: string;
+  contractAddress: string;
+  roundEnd: number;
+  bets: Array<Record<string, unknown>>;
+}
+
+export interface EthWinner {
+  txHash: string;
+  asset: string;
+  bettor: string;
+  evmAddress: string;
+  predictedPrice: number;
+  actualPrice: number;
+  amount: string;
+  amountEth: number;
+  payout: string;
+  payoutEth: number;
+  roundEnd: number;
+  horizon: string;
+  timestamp: number;
+}
+
+export interface EthWinnersResponse {
+  winners: EthWinner[];
+  count: number;
+}
+
 // ── Oracle ──────────────────────────────────────────
 
 export interface OracleDivergence {
@@ -458,6 +490,7 @@ export interface PredictionMarketsResponse {
   predictions: PredictionMarket[];
   count: number;
   categories: string[];
+  total?: number;
 }
 
 // ── Convergence ────────────────────────────────────
@@ -509,6 +542,23 @@ export interface HigherLowerPool {
   currentPrice: number;
 }
 
+export interface EthHigherLowerPool {
+  asset: string;
+  horizon: string;
+  totalEth: number;
+  totalEthWei: string;
+  totalHigher: number;
+  totalHigherWei: string;
+  totalLower: number;
+  totalLowerWei: string;
+  higherCount: number;
+  lowerCount: number;
+  roundEnd: number;
+  referencePrice: number | null;
+  contractAddress: string;
+  currentPrice: number;
+}
+
 // ── Binary Betting (Polymarket) ────────────────────
 
 export interface BinaryPool {
@@ -525,6 +575,20 @@ export interface BinaryPool {
   endDate: string;
   poolAddress: string;
   status: string;
+}
+
+export interface EthBinaryPool {
+  poolAddress: string;
+  polymarketYes: number;
+  polymarketNo: number;
+  endDate: string;
+  status: string;
+}
+
+export interface EthBinaryPoolsResponse {
+  pools: Record<string, EthBinaryPool>;
+  count: number;
+  enabled: boolean;
 }
 
 // ── Graduation Markets (PumpFun → Raydium) ─────────

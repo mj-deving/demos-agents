@@ -37,6 +37,7 @@ const convergence = await omni.colony.getConvergence();
 
 Additional package-level reads include `getReport()`, `getTopPosts()`, and `getPriceHistory(asset, periods)` when consumers need consensus snapshots, scored-post views, or recent price history without dropping down to `omni.toolkit.*`.
 Current betting reads also include `getHigherLowerPool()` and `getBinaryPools()` for the existing DEM market surface.
+The scdev-aligned ETH mirror reads are available via `getEthPool()`, `getEthWinners()`, `getEthHigherLowerPool()`, and `getEthBinaryPools()`.
 
 ## Import Surface
 

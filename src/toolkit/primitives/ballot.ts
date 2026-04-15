@@ -21,5 +21,21 @@ export function createBallotPrimitives(deps: { apiClient: SuperColonyApiClient }
     async getBinaryPools(opts) {
       return deps.apiClient.getBinaryPools(opts);
     },
+
+    async getEthPool(opts) {
+      return deps.apiClient.getEthBettingPool(opts?.asset ?? "BTC", opts?.horizon);
+    },
+
+    async getEthWinners(opts) {
+      return deps.apiClient.getEthWinners(opts?.asset ?? "BTC");
+    },
+
+    async getEthHigherLowerPool(opts) {
+      return deps.apiClient.getEthHigherLowerPool(opts?.asset ?? "BTC", opts?.horizon);
+    },
+
+    async getEthBinaryPools() {
+      return deps.apiClient.getEthBinaryPools();
+    },
   };
 }

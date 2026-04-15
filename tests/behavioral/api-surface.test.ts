@@ -31,10 +31,12 @@ import type { OmniWeb } from "../../packages/omniweb-toolkit/src/colony.js";
 type ExactKeys<T, U> = [keyof T] extends [U] ? ([U] extends [keyof T] ? true : false) : false;
 
 type HiveAPIKeys =
-  | "attest" | "attestTlsn" | "getAgents" | "getBalance" | "getFeed"
-  | "getBinaryPools" | "getForecastScore" | "getHigherLowerPool" | "getLeaderboard"
-  | "getMarkets" | "getOracle" | "getPool" | "getPredictions" | "getPrices"
-  | "getReactions" | "getSignals" | "getTipStats"
+  | "attest" | "attestTlsn" | "getAgents" | "getBalance" | "getBinaryPools"
+  | "getConvergence" | "getEthBinaryPools" | "getEthHigherLowerPool" | "getEthPool"
+  | "getEthWinners" | "getFeed" | "getForecastScore" | "getHigherLowerPool"
+  | "getLeaderboard" | "getMarkets" | "getOracle" | "getPool" | "getPostDetail"
+  | "getPredictions" | "getPriceHistory" | "getPrices" | "getReactions"
+  | "getReport" | "getSignals" | "getTipStats" | "getTopPosts"
   | "linkIdentity" | "placeBet" | "placeHL" | "publish" | "react"
   | "register" | "reply" | "search" | "tip";
 
@@ -62,11 +64,13 @@ void _storageExact; void _ipfsExact; void _chainExact;
  */
 const EXPECTED_SURFACE = {
   colony: [
-    "attest", "attestTlsn", "getAgents", "getBalance", "getBinaryPools", "getFeed",
-    "getForecastScore", "getHigherLowerPool", "getLeaderboard", "getMarkets", "getOracle", "getPool",
-    "getPredictions", "getPrices", "getReactions", "getSignals", "getTipStats",
-    "linkIdentity", "placeBet", "placeHL", "publish", "react",
-    "register", "reply", "search", "tip",
+    "attest", "attestTlsn", "getAgents", "getBalance", "getBinaryPools",
+    "getConvergence", "getEthBinaryPools", "getEthHigherLowerPool", "getEthPool",
+    "getEthWinners", "getFeed", "getForecastScore", "getHigherLowerPool",
+    "getLeaderboard", "getMarkets", "getOracle", "getPool", "getPostDetail",
+    "getPredictions", "getPriceHistory", "getPrices", "getReactions", "getReport",
+    "getSignals", "getTipStats", "getTopPosts", "linkIdentity", "placeBet",
+    "placeHL", "publish", "react", "register", "reply", "search", "tip",
   ],
   identity: ["createProof", "getIdentities", "link", "lookup"],
   escrow: ["claimEscrow", "getClaimable", "getEscrowBalance", "refundExpired", "sendToIdentity"],
@@ -93,8 +97,8 @@ describe("OmniWeb API Surface Snapshot", () => {
 
   // ── Per-domain surface snapshot assertions ──
 
-  it("HiveAPI (colony) has exactly 26 methods", () => {
-    expect(EXPECTED_SURFACE.colony).toHaveLength(26);
+  it("HiveAPI (colony) has exactly 35 methods", () => {
+    expect(EXPECTED_SURFACE.colony).toHaveLength(35);
     expect(EXPECTED_SURFACE.colony).toEqual([...EXPECTED_SURFACE.colony].sort());
   });
 
@@ -118,12 +122,12 @@ describe("OmniWeb API Surface Snapshot", () => {
     expect(EXPECTED_SURFACE.chain).toHaveLength(6);
   });
 
-  it("total OmniWeb surface is 49 methods across 6 domains", () => {
+  it("total OmniWeb surface is 58 methods across 6 domains", () => {
     const total = Object.values(EXPECTED_SURFACE).reduce(
       (sum, methods) => sum + methods.length,
       0,
     );
-    expect(total).toBe(49);
+    expect(total).toBe(58);
   });
 
   // ── Specific signature checks for money-moving paths ──

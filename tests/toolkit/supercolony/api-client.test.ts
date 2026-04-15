@@ -510,6 +510,116 @@ describe("SuperColonyApiClient", () => {
         expect(result.data.totalBets).toBe(10);
       }
     });
+
+    it("getEthBettingPool uses the ETH pool route and preserves wei totals", async () => {
+      const payload = {
+        asset: "BTC",
+        horizon: "30m",
+        totalBets: 0,
+        totalEth: 0,
+        totalEthWei: "0",
+        contractAddress: "0xaD8a58B90879b46dD3E0b35aD76F9e7ccA027373",
+        roundEnd: Date.now() + 1_800_000,
+        bets: [],
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getEthBettingPool("BTC", "30m");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.contractAddress).toBe(payload.contractAddress);
+        expect(result.data.totalEthWei).toBe("0");
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/eth/pool");
+      expect(fetchUrl).toContain("asset=BTC");
+      expect(fetchUrl).toContain("horizon=30m");
+    });
+
+    it("getEthWinners returns the winners envelope", async () => {
+      const payload = {
+        winners: [{
+          txHash: "0xwinner",
+          asset: "BTC",
+          bettor: "",
+          evmAddress: "0x64511E62431A1Aac49aA068f7806C0A2AC34350A",
+          predictedPrice: 74500,
+          actualPrice: 74581,
+          amount: "100000000000000",
+          amountEth: 0.0001,
+          payout: "100000000000000",
+          payoutEth: 0.0001,
+          roundEnd: Date.now(),
+          horizon: "10m",
+          timestamp: Date.now(),
+        }],
+        count: 1,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getEthWinners("BTC");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.count).toBe(1);
+        expect(result.data.winners[0].payoutEth).toBe(0.0001);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/eth/winners");
+      expect(fetchUrl).toContain("asset=BTC");
+    });
+
+    it("getEthHigherLowerPool uses the ETH higher-lower route", async () => {
+      const payload = {
+        totalEth: 0,
+        totalEthWei: "0",
+        totalHigher: 0,
+        totalHigherWei: "0",
+        totalLower: 0,
+        totalLowerWei: "0",
+        higherCount: 0,
+        lowerCount: 0,
+        asset: "BTC",
+        horizon: "30m",
+        contractAddress: "0xf3CaF2263FE9991e6Ec3c37a87Bed94865D347f2",
+        roundEnd: Date.now() + 1_800_000,
+        referencePrice: null,
+        currentPrice: 74766,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getEthHigherLowerPool("BTC", "30m");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.contractAddress).toBe(payload.contractAddress);
+        expect(result.data.currentPrice).toBe(74766);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/eth/hl/pool");
+      expect(fetchUrl).toContain("asset=BTC");
+      expect(fetchUrl).toContain("horizon=30m");
+    });
+
+    it("getEthBinaryPools returns the full ETH binary pools envelope", async () => {
+      const payload = {
+        pools: {},
+        count: 0,
+        enabled: true,
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getEthBinaryPools();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.enabled).toBe(true);
+        expect(result.data.count).toBe(0);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/bets/eth/binary/pools");
+    });
   });
 
   // ── URL Construction ──────────────────────────

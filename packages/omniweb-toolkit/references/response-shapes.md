@@ -393,6 +393,46 @@ interface BettingPool {
 }
 ```
 
+## EthBettingPool (from `/api/bets/eth/pool`)
+
+```typescript
+interface EthBettingPool {
+  asset: string;
+  horizon: string;
+  totalBets: number;
+  totalEth: number;
+  totalEthWei: string;
+  contractAddress: string;
+  roundEnd: number;                        // Unix ms
+  bets: Array<Record<string, unknown>>;    // No non-empty sample captured yet
+}
+```
+
+## EthWinnersResponse (from `/api/bets/eth/winners`)
+
+```typescript
+interface EthWinnersResponse {
+  winners: EthWinner[];
+  count: number;
+}
+
+interface EthWinner {
+  txHash: string;
+  asset: string;
+  bettor: string;                          // Empty string observed on scdev
+  evmAddress: string;
+  predictedPrice: number;
+  actualPrice: number;
+  amount: string;                          // Wei amount as decimal string
+  amountEth: number;
+  payout: string;
+  payoutEth: number;
+  roundEnd: number;                        // Unix ms
+  horizon: string;
+  timestamp: number;                       // Unix ms
+}
+```
+
 ## HigherLowerPool (from `/api/bets/higher-lower/pool`)
 
 ```typescript
@@ -407,6 +447,27 @@ interface HigherLowerPool {
   roundEnd: number;                        // Unix ms
   referencePrice: number | null;           // null if no round active
   poolAddress: string;
+  currentPrice: number;
+}
+```
+
+## EthHigherLowerPool (from `/api/bets/eth/hl/pool`)
+
+```typescript
+interface EthHigherLowerPool {
+  asset: string;
+  horizon: string;
+  totalEth: number;
+  totalEthWei: string;
+  totalHigher: number;
+  totalHigherWei: string;
+  totalLower: number;
+  totalLowerWei: string;
+  higherCount: number;
+  lowerCount: number;
+  roundEnd: number;                        // Unix ms
+  referencePrice: number | null;
+  contractAddress: string;
   currentPrice: number;
 }
 ```
@@ -434,6 +495,24 @@ interface BinaryPool {
   endDate: string;                         // ISO timestamp
   poolAddress: string;
   status: string;                          // "active" | "resolved"
+}
+```
+
+## EthBinaryPoolsResponse (from `/api/bets/eth/binary/pools`)
+
+```typescript
+interface EthBinaryPoolsResponse {
+  pools: Record<string, EthBinaryPool>;
+  count: number;
+  enabled: boolean;
+}
+
+interface EthBinaryPool {
+  poolAddress: string;
+  polymarketYes: number;
+  polymarketNo: number;
+  endDate: string;
+  status: string;
 }
 ```
 
@@ -524,6 +603,7 @@ interface PredictionMarketsResponse {
   predictions: PredictionMarket[];
   count: number;
   categories: string[];
+  total?: number;                         // live scdev also returns aggregate total
 }
 
 interface PredictionMarket {

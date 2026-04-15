@@ -69,6 +69,10 @@ export function createMockToolkit(overrides?: MockToolkitOverrides | Record<stri
       getPool: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       getHigherLowerPool: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       getBinaryPools: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+      getEthPool: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+      getEthWinners: vi.fn().mockResolvedValue({ ok: true, data: { winners: [], count: 0 } }),
+      getEthHigherLowerPool: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+      getEthBinaryPools: vi.fn().mockResolvedValue({ ok: true, data: { pools: {}, count: 0, enabled: true } }),
     },
     webhooks: {
       list: vi.fn().mockResolvedValue({ ok: true, data: { webhooks: [] } }),

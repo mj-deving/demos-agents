@@ -5,7 +5,19 @@
 
 import { vi } from "vitest";
 import type { SuperColonyApiClient } from "../../../src/toolkit/supercolony/api-client.js";
-import type { ApiResult, PriceData, SignalData, BettingPool, AgentProfile, HigherLowerPool, BinaryPool } from "../../../src/toolkit/supercolony/types.js";
+import type {
+  ApiResult,
+  PriceData,
+  SignalData,
+  BettingPool,
+  AgentProfile,
+  HigherLowerPool,
+  BinaryPool,
+  EthBettingPool,
+  EthWinner,
+  EthHigherLowerPool,
+  EthBinaryPool,
+} from "../../../src/toolkit/supercolony/types.js";
 import type { DataSource } from "../../../src/toolkit/data-source.js";
 import type { ScanPost } from "../../../src/toolkit/types.js";
 
@@ -52,6 +64,10 @@ export function createMockApiClient(overrides: Partial<SuperColonyApiClient> = {
     getPredictionMarkets: vi.fn().mockResolvedValue(null),
     getHigherLowerPool: vi.fn().mockResolvedValue(null),
     getBinaryPools: vi.fn().mockResolvedValue(null),
+    getEthBettingPool: vi.fn().mockResolvedValue(null),
+    getEthWinners: vi.fn().mockResolvedValue(null),
+    getEthHigherLowerPool: vi.fn().mockResolvedValue(null),
+    getEthBinaryPools: vi.fn().mockResolvedValue(null),
     getBallotPerformance: vi.fn().mockResolvedValue(null),
     getFeeds: vi.fn().mockResolvedValue(null),
     ...overrides,
@@ -169,6 +185,70 @@ export function makeBinaryPool(overrides: Partial<BinaryPool> = {}): BinaryPool 
     polymarketNo: 0.42,
     endDate: "2026-04-30T00:00:00.000Z",
     poolAddress: "0xbinarypool",
+    status: "active",
+    ...overrides,
+  };
+}
+
+export function makeEthBettingPool(overrides: Partial<EthBettingPool> = {}): EthBettingPool {
+  return {
+    asset: "BTC",
+    horizon: "30m",
+    totalBets: 0,
+    totalEth: 0,
+    totalEthWei: "0",
+    contractAddress: "0xethpool",
+    roundEnd: 1700000000000 + 1800_000,
+    bets: [],
+    ...overrides,
+  };
+}
+
+export function makeEthWinner(overrides: Partial<EthWinner> = {}): EthWinner {
+  return {
+    txHash: "0xethwin",
+    asset: "BTC",
+    bettor: "",
+    evmAddress: "0x64511E62431A1Aac49aA068f7806C0A2AC34350A",
+    predictedPrice: 74500,
+    actualPrice: 74581,
+    amount: "100000000000000",
+    amountEth: 0.0001,
+    payout: "100000000000000",
+    payoutEth: 0.0001,
+    roundEnd: 1700000000000,
+    horizon: "10m",
+    timestamp: 1700000000000,
+    ...overrides,
+  };
+}
+
+export function makeEthHigherLowerPool(overrides: Partial<EthHigherLowerPool> = {}): EthHigherLowerPool {
+  return {
+    asset: "BTC",
+    horizon: "30m",
+    totalEth: 0,
+    totalEthWei: "0",
+    totalHigher: 0,
+    totalHigherWei: "0",
+    totalLower: 0,
+    totalLowerWei: "0",
+    higherCount: 0,
+    lowerCount: 0,
+    roundEnd: 1700000000000 + 1800_000,
+    referencePrice: null,
+    contractAddress: "0xethhlpool",
+    currentPrice: 74766,
+    ...overrides,
+  };
+}
+
+export function makeEthBinaryPool(overrides: Partial<EthBinaryPool> = {}): EthBinaryPool {
+  return {
+    poolAddress: "0xethbinarypool",
+    polymarketYes: 0.58,
+    polymarketNo: 0.42,
+    endDate: "2026-04-30T00:00:00.000Z",
     status: "active",
     ...overrides,
   };

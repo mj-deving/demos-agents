@@ -45,11 +45,12 @@ type EndpointResult = {
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N]
+  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
+  --include-scdev-eth  Include scdev ETH betting endpoints in the shape checks
   --help, -h       Show this help
 
 Output: JSON report of live response envelopes versus the maintained response-shapes reference
@@ -59,6 +60,7 @@ Exit codes: 0 = shapes match, 1 = drift or fetch error, 2 = invalid args`);
 
 const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
+const includeScdevEth = hasFlag(args, "--include-scdev-eth");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
@@ -503,6 +505,114 @@ const endpoints = [
       return checks;
     },
   },
+  ...(includeScdevEth ? [
+    {
+      name: "EthBettingPool",
+      path: "/api/bets/eth/pool?asset=BTC&horizon=30m",
+      validate: (json: JsonObject): ShapeCheck[] => [
+        validateShape("EthBettingPool", json, {
+          required: {
+            totalEth: isNumber,
+            totalEthWei: isString,
+            totalBets: isNumber,
+            asset: isString,
+            horizon: isString,
+            contractAddress: isString,
+            roundEnd: isNumber,
+            bets: isArray,
+          },
+        }),
+      ],
+    },
+    {
+      name: "EthWinnersResponse",
+      path: "/api/bets/eth/winners?asset=BTC",
+      validate: (json: JsonObject): ShapeCheck[] => {
+        const checks = [
+          validateShape("EthWinnersResponse", json, {
+            required: {
+              winners: isArray,
+              count: isNumber,
+            },
+          }),
+        ];
+
+        const firstWinner = getArrayItem(json.winners);
+        checks.push(validateShapeFromMaybeObject("EthWinner", firstWinner, {
+          required: {
+            txHash: isString,
+            asset: isString,
+            bettor: isString,
+            evmAddress: isString,
+            predictedPrice: isNumber,
+            actualPrice: isNumber,
+            amount: isString,
+            amountEth: isNumber,
+            payout: isString,
+            payoutEth: isNumber,
+            roundEnd: isNumber,
+            horizon: isString,
+            timestamp: isNumber,
+          },
+        }));
+
+        return checks;
+      },
+    },
+    {
+      name: "EthHigherLowerPool",
+      path: "/api/bets/eth/hl/pool?asset=BTC&horizon=30m",
+      validate: (json: JsonObject): ShapeCheck[] => [
+        validateShape("EthHigherLowerPool", json, {
+          required: {
+            totalEth: isNumber,
+            totalEthWei: isString,
+            totalHigher: isNumber,
+            totalHigherWei: isString,
+            totalLower: isNumber,
+            totalLowerWei: isString,
+            higherCount: isNumber,
+            lowerCount: isNumber,
+            asset: isString,
+            horizon: isString,
+            contractAddress: isString,
+            roundEnd: isNumber,
+            referencePrice: isNullableNumber,
+            currentPrice: isNumber,
+          },
+        }),
+      ],
+    },
+    {
+      name: "EthBinaryPoolsResponse",
+      path: "/api/bets/eth/binary/pools",
+      validate: (json: JsonObject): ShapeCheck[] => {
+        const checks = [
+          validateShape("EthBinaryPoolsResponse", json, {
+            required: {
+              pools: isObject,
+              count: isNumber,
+              enabled: isBoolean,
+            },
+          }),
+        ];
+
+        const pools = getNestedObject(json, "pools");
+        const firstPool = pools ? getFirstRecordValue(pools) : undefined;
+        checks.push(validateShapeFromMaybeObject("EthBinaryPool", firstPool, {
+          required: {
+            poolAddress: isString,
+            polymarketYes: isNumber,
+            polymarketNo: isNumber,
+            endDate: isString,
+            status: isString,
+          },
+        }));
+
+        return checks;
+      },
+    },
+  ] : []),
   {
     name: "PricesResponse",
     path: "/api/prices?assets=BTC",
@@ -625,6 +735,9 @@ const endpoints = [
             predictions: isArray,
             count: isNumber,
             categories: isStringArray,
+          },
+          optional: {
+            total: isNumber,
           },
         }),
       ];

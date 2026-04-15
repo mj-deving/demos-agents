@@ -122,6 +122,14 @@ export interface BallotPrimitives {
   getHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").HigherLowerPool>>;
   /** DEM binary pools keyed by marketId. Uses /api/bets/binary/pools. */
   getBinaryPools(opts?: { category?: string; limit?: number }): Promise<ApiResult<Record<string, import("../supercolony/types.js").BinaryPool>>>;
+  /** ETH-denominated betting pool. Uses /api/bets/eth/pool. */
+  getEthPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").EthBettingPool>>;
+  /** Recent ETH winners. Uses /api/bets/eth/winners. */
+  getEthWinners(opts?: { asset?: string }): Promise<ApiResult<import("../supercolony/types.js").EthWinnersResponse>>;
+  /** ETH-denominated higher-lower pool. Uses /api/bets/eth/hl/pool. */
+  getEthHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").EthHigherLowerPool>>;
+  /** ETH binary pools keyed by market id with enablement metadata. */
+  getEthBinaryPools(): Promise<ApiResult<import("../supercolony/types.js").EthBinaryPoolsResponse>>;
 }
 
 export interface WebhooksPrimitives {
