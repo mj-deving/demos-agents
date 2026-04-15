@@ -599,6 +599,87 @@ interface CommodityPool {
 }
 ```
 
+## PredictionIntelligenceResponse (from `/api/predictions/intelligence`)
+
+```typescript
+interface PredictionIntelligenceResponse {
+  scores: PredictionIntelligenceScore[];
+  total: number;
+  lastScoredAt: number;                    // Unix ms
+  engineVersion: string;                   // "1.0.0"
+  stats?: PredictionIntelligenceStats;
+}
+
+interface PredictionIntelligenceScore {
+  marketId: string;
+  question: string;
+  category: string;
+  currentPrice: number;
+  eloProb: number | null;
+  gbsProb: number | null;
+  mirofishProb: number | null;
+  ensembleProb: number;
+  edge: number;
+  edgeSide: string;                        // "YES" | "NO"
+  ev: number;
+  kellyFraction: number;
+  kellySize: number;
+  strategies: string[];
+  scoredAt: number;                        // Unix ms
+}
+
+interface PredictionIntelligenceStats {
+  totalMarketsScored: number;
+  marketsWithEdge: number;
+  recommendationsGenerated: number;
+  resolvedMarkets: number;
+  weights: {
+    elo: { brierScore: number; weight: number; samples: number };
+    gbs: { brierScore: number; weight: number; samples: number };
+    mirofish: { brierScore: number; weight: number; samples: number };
+    warmup: boolean;
+    updatedAt: number;
+  };
+  lastScoredAt: number;
+  engineVersion: string;
+  pipelineDurationMs: number;
+}
+```
+
+## PredictionRecommendationsResponse (from `/api/predictions/recommend`)
+
+```typescript
+interface PredictionRecommendationsResponse {
+  recommendations: PredictionRecommendation[];
+  total: number;
+  bankroll: number;
+  openExposure: number;
+  varHeadroom: number;
+  lastScoredAt: number;                    // Unix ms
+  engineVersion: string;
+}
+
+interface PredictionRecommendation {
+  marketId: string;
+  question: string;
+  category: string;
+  side: string;                            // "YES" | "NO"
+  ensembleProb: number;
+  marketPrice: number;
+  edge: number;
+  ev: number;
+  kellyFraction: number;
+  suggestedBet: number;
+  confidenceTier: string;                  // "moderate", etc.
+  strategies: string[];
+  betPayload: {
+    marketId: string;
+    direction: string;
+    amount: number;
+  };
+}
+```
+
 ## PriceData (from `/api/prices`)
 
 ```typescript

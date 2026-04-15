@@ -1287,6 +1287,114 @@ describe("SuperColonyApiClient", () => {
       expect(fetchUrl).not.toContain("minutes=");
     });
 
+    it("getPredictionIntelligence includes limit and stats params", async () => {
+      const payload = {
+        scores: [{
+          marketId: "1747257",
+          question: "Will Trump say Alien Dot Gov in April?",
+          category: "crypto",
+          currentPrice: 0.08,
+          eloProb: 0,
+          gbsProb: null,
+          mirofishProb: 0,
+          ensembleProb: 0,
+          edge: 0.08,
+          edgeSide: "NO",
+          ev: 0.0869,
+          kellyFraction: 1,
+          kellySize: 200,
+          strategies: ["S06"],
+          scoredAt: 1776285510379,
+        }],
+        total: 1,
+        lastScoredAt: 1776285510379,
+        engineVersion: "1.0.0",
+        stats: {
+          totalMarketsScored: 2324,
+          marketsWithEdge: 601,
+          recommendationsGenerated: 0,
+          resolvedMarkets: 0,
+          weights: {
+            elo: { brierScore: 0.25, weight: 0.5, samples: 0 },
+            gbs: { brierScore: 0.25, weight: 0, samples: 0 },
+            mirofish: { brierScore: 0.25, weight: 0.5, samples: 0 },
+            warmup: true,
+            updatedAt: 1776285510378,
+          },
+          lastScoredAt: 1776285510383,
+          engineVersion: "1.0.0",
+          pipelineDurationMs: 26157,
+        },
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getPredictionIntelligence({ limit: 5, stats: true });
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.scores[0].marketId).toBe("1747257");
+        expect(result.data.stats?.weights.elo.weight).toBe(0.5);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/predictions/intelligence");
+      expect(fetchUrl).toContain("limit=5");
+      expect(fetchUrl).toContain("stats=true");
+    });
+
+    it("getPredictionIntelligence returns 401 errors as structured results", async () => {
+      mockFetchResponse({ message: "unauthorized" }, 401, false);
+      const client = createClient();
+      const result = await client.getPredictionIntelligence({ limit: 5, stats: true });
+
+      expect(result).not.toBeNull();
+      expect(result?.ok).toBe(false);
+      if (result && !result.ok) {
+        expect(result.status).toBe(401);
+      }
+    });
+
+    it("getPredictionRecommendations includes userAddress param", async () => {
+      const payload = {
+        recommendations: [{
+          marketId: "1651775",
+          question: "Red Wings vs. Panthers: O/U 6.5",
+          category: "sports",
+          side: "NO",
+          ensembleProb: 0.2426,
+          marketPrice: 0.515,
+          edge: 0.2424,
+          ev: 0.4706,
+          kellyFraction: 0.4997,
+          suggestedBet: 99.95,
+          confidenceTier: "moderate",
+          strategies: ["S06", "S16"],
+          betPayload: {
+            marketId: "1651775",
+            direction: "NO",
+            amount: 99.95,
+          },
+        }],
+        total: 1,
+        bankroll: 1000,
+        openExposure: 0,
+        varHeadroom: 1000,
+        lastScoredAt: 1776285510379,
+        engineVersion: "1.0.0",
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getPredictionRecommendations("demo");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.recommendations[0].betPayload.direction).toBe("NO");
+        expect(result.data.bankroll).toBe(1000);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/predictions/recommend");
+      expect(fetchUrl).toContain("userAddress=demo");
+    });
+
   });
 
   // ── Feed (FEED category) — DEPRECATED ──────

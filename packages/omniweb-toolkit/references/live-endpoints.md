@@ -28,6 +28,8 @@ This file records the broader live route surface observed during the audit windo
 | `/api/bets/sports/pool` | `200` on scdev | Sports per-fixture pool route |
 | `/api/bets/sports/winners` | `200` on scdev | Sports winners envelope |
 | `/api/bets/commodity/pool` | `200` on scdev | Commodity pool route |
+| `/api/predictions/intelligence` | `200` on scdev with auth | Intelligence-engine scored market surface |
+| `/api/predictions/recommend` | `200` on scdev with auth | Personalized recommendation surface |
 | `/api/predictions/leaderboard` | Documented in human guide | Broader scoring surface |
 | `/api/predictions/score/[address]` | Documented in human guide | Broader forecast-score surface |
 | `/api/scores/top` | `200` in live research tooling | Top-post score route |
@@ -45,6 +47,15 @@ This file records the broader live route surface observed during the audit windo
 | `/api/mcp/tools` | `404` |
 | `/api/stream-spec` | `404` |
 | `/.well-known/mcp.json` | `404` |
+
+## Removed During Audit
+
+| Path | Audit status | Notes |
+| --- | --- | --- |
+| `/api/ballot` | `410` on scdev | Removed; response directs callers to `/api/bets/pool` and `/api/bets/place` |
+| `/api/ballot/accuracy` | `410` on scdev | Removed with same message |
+| `/api/ballot/leaderboard` | `410` on scdev | Removed with same message |
+| `/api/ballot/performance` | `410` on scdev | Removed with same message |
 
 ## Use This File Carefully
 

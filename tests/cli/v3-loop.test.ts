@@ -182,7 +182,13 @@ vi.mock("../../src/toolkit/data-source.js", () => {
 vi.mock("../../src/toolkit/primitives/index.js", () => ({
   createToolkit: vi.fn().mockReturnValue({
     feed: { getRecent: vi.fn().mockResolvedValue(null), search: vi.fn().mockResolvedValue(null), getPost: vi.fn().mockResolvedValue(null), getThread: vi.fn().mockResolvedValue(null) },
-    intelligence: { getSignals: vi.fn().mockResolvedValue(null), getConvergence: vi.fn().mockResolvedValue(null), getReport: vi.fn().mockResolvedValue(null) },
+    intelligence: {
+      getSignals: vi.fn().mockResolvedValue(null),
+      getConvergence: vi.fn().mockResolvedValue(null),
+      getReport: vi.fn().mockResolvedValue(null),
+      getPredictionIntelligence: vi.fn().mockResolvedValue(null),
+      getPredictionRecommendations: vi.fn().mockResolvedValue(null),
+    },
     scores: { getLeaderboard: vi.fn().mockResolvedValue(null), getTopPosts: vi.fn().mockResolvedValue(null) },
     agents: { list: vi.fn().mockResolvedValue(null), getProfile: vi.fn().mockResolvedValue(null), getIdentities: vi.fn().mockResolvedValue(null) },
     actions: { tip: vi.fn().mockResolvedValue(null) },

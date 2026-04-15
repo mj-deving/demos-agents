@@ -33,6 +33,8 @@ export function createMockToolkit(overrides?: MockToolkitOverrides | Record<stri
       getSignals: vi.fn().mockResolvedValue(isTyped && typed?.signalsResult ? typed.signalsResult : { ok: true, data: [] }),
       getConvergence: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       getReport: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+      getPredictionIntelligence: vi.fn().mockResolvedValue({ ok: true, data: { scores: [], total: 0, lastScoredAt: 0, engineVersion: "1.0.0", stats: {} } }),
+      getPredictionRecommendations: vi.fn().mockResolvedValue({ ok: true, data: { recommendations: [], total: 0, bankroll: 0, openExposure: 0, varHeadroom: 0, lastScoredAt: 0, engineVersion: "1.0.0" } }),
     },
     scores: {
       getLeaderboard: vi.fn().mockResolvedValue({ ok: true, data: {} }),

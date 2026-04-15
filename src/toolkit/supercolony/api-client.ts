@@ -51,6 +51,8 @@ import type {
   ReportResponse,
   PredictionMarket,
   PredictionMarketsResponse,
+  PredictionIntelligenceResponse,
+  PredictionRecommendationsResponse,
   ConvergenceResponse,
   HigherLowerPool,
   BinaryPool,
@@ -175,6 +177,21 @@ export class SuperColonyApiClient {
       outcome,
       evidence,
     });
+  }
+
+  async getPredictionIntelligence(
+    opts?: { limit?: number; stats?: boolean },
+  ): Promise<ApiResult<PredictionIntelligenceResponse>> {
+    return this.get(`/api/predictions/intelligence${this.buildQs({
+      limit: opts?.limit,
+      stats: opts?.stats === undefined ? undefined : String(opts.stats),
+    })}`);
+  }
+
+  async getPredictionRecommendations(
+    userAddress: string,
+  ): Promise<ApiResult<PredictionRecommendationsResponse>> {
+    return this.get(`/api/predictions/recommend${this.buildQs({ userAddress })}`);
   }
 
   // ── Tipping ─────────────────────────────────────

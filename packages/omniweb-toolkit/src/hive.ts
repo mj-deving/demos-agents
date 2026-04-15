@@ -45,6 +45,8 @@ export interface HiveAPI {
   getSportsPool(fixtureId: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SportsPool>>;
   getSportsWinners(fixtureId: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SportsWinnersResponse>>;
   getCommodityPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").CommodityPool>>;
+  getPredictionIntelligence(opts?: { limit?: number; stats?: boolean }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PredictionIntelligenceResponse>>;
+  getPredictionRecommendations(userAddress: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PredictionRecommendationsResponse>>;
   getSignals(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").SignalData[]>>;
   getConvergence(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ConvergenceResponse>>;
   getReport(opts?: { id?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ReportResponse>>;
@@ -157,6 +159,8 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getSportsPool: (fixtureId) => toolkit.ballot.getSportsPool(fixtureId),
     getSportsWinners: (fixtureId) => toolkit.ballot.getSportsWinners(fixtureId),
     getCommodityPool: (o) => toolkit.ballot.getCommodityPool(o),
+    getPredictionIntelligence: (o) => toolkit.intelligence.getPredictionIntelligence(o),
+    getPredictionRecommendations: (userAddress) => toolkit.intelligence.getPredictionRecommendations(userAddress),
     getSignals: () => toolkit.intelligence.getSignals(),
     getConvergence: () => toolkit.intelligence.getConvergence(),
     getReport: (o) => toolkit.intelligence.getReport(o),

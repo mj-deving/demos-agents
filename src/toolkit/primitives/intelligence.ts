@@ -23,5 +23,13 @@ export function createIntelligencePrimitives(deps: IntelligenceDeps): Intelligen
     async getReport(opts) {
       return deps.apiClient.getReport(opts);
     },
+
+    async getPredictionIntelligence(opts) {
+      return deps.apiClient.getPredictionIntelligence(opts);
+    },
+
+    async getPredictionRecommendations(userAddress) {
+      return deps.apiClient.getPredictionRecommendations(userAddress);
+    },
   };
 }

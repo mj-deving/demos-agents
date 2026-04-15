@@ -561,6 +561,89 @@ export interface PredictionMarketsResponse {
   total?: number;
 }
 
+export interface PredictionIntelligenceScore {
+  marketId: string;
+  question: string;
+  category: string;
+  currentPrice: number;
+  eloProb: number | null;
+  gbsProb: number | null;
+  mirofishProb: number | null;
+  ensembleProb: number;
+  edge: number;
+  edgeSide: string;
+  ev: number;
+  kellyFraction: number;
+  kellySize: number;
+  strategies: string[];
+  scoredAt: number;
+}
+
+export interface PredictionWeightStat {
+  brierScore: number;
+  weight: number;
+  samples: number;
+}
+
+export interface PredictionIntelligenceWeights {
+  elo: PredictionWeightStat;
+  gbs: PredictionWeightStat;
+  mirofish: PredictionWeightStat;
+  warmup: boolean;
+  updatedAt: number;
+}
+
+export interface PredictionIntelligenceStats {
+  totalMarketsScored: number;
+  marketsWithEdge: number;
+  recommendationsGenerated: number;
+  resolvedMarkets: number;
+  weights: PredictionIntelligenceWeights;
+  lastScoredAt: number;
+  engineVersion: string;
+  pipelineDurationMs: number;
+}
+
+export interface PredictionIntelligenceResponse {
+  scores: PredictionIntelligenceScore[];
+  total: number;
+  lastScoredAt: number;
+  engineVersion: string;
+  stats?: PredictionIntelligenceStats;
+}
+
+export interface PredictionRecommendationBetPayload {
+  marketId: string;
+  direction: string;
+  amount: number;
+}
+
+export interface PredictionRecommendation {
+  marketId: string;
+  question: string;
+  category: string;
+  side: string;
+  ensembleProb: number;
+  marketPrice: number;
+  edge: number;
+  ev: number;
+  kellyFraction: number;
+  suggestedBet: number;
+  confidenceTier: string;
+  strategies: string[];
+  betPayload: PredictionRecommendationBetPayload;
+}
+
+export interface PredictionRecommendationsResponse {
+  recommendations: PredictionRecommendation[];
+  total: number;
+  bankroll: number;
+  openExposure: number;
+  varHeadroom: number;
+  lastScoredAt: number;
+  engineVersion: string;
+}
+
 // ── Convergence ────────────────────────────────────
 
 export interface ConvergenceResponse {

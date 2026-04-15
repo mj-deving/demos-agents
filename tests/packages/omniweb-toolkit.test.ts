@@ -32,6 +32,8 @@ function stubToolkit(): Toolkit {
       getSignals: tag("intelligence", "getSignals"),
       getConvergence: tag("intelligence", "getConvergence"),
       getReport: tag("intelligence", "getReport"),
+      getPredictionIntelligence: tag("intelligence", "getPredictionIntelligence"),
+      getPredictionRecommendations: tag("intelligence", "getPredictionRecommendations"),
     },
     scores: {
       getLeaderboard: tag("scores", "getLeaderboard"),
@@ -290,6 +292,16 @@ describe("supercolony-toolkit package", () => {
     it("getReport() delegates to toolkit.intelligence.getReport()", async () => {
       await hive.getReport({ id: "daily-1" });
       expect(mockToolkit.intelligence.getReport).toHaveBeenCalledWith({ id: "daily-1" });
+    });
+
+    it("getPredictionIntelligence() delegates to toolkit.intelligence.getPredictionIntelligence()", async () => {
+      await hive.getPredictionIntelligence({ limit: 5, stats: true });
+      expect(mockToolkit.intelligence.getPredictionIntelligence).toHaveBeenCalledWith({ limit: 5, stats: true });
+    });
+
+    it("getPredictionRecommendations() delegates to toolkit.intelligence.getPredictionRecommendations()", async () => {
+      await hive.getPredictionRecommendations("demo");
+      expect(mockToolkit.intelligence.getPredictionRecommendations).toHaveBeenCalledWith("demo");
     });
 
     it("getLeaderboard() delegates to toolkit.scores.getLeaderboard()", async () => {

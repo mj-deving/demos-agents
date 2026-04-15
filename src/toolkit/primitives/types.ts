@@ -65,6 +65,8 @@ export interface IntelligencePrimitives {
   getSignals(): Promise<ApiResult<SignalData[]>>;
   getConvergence(): Promise<ApiResult<import("../supercolony/types.js").ConvergenceResponse>>;
   getReport(opts?: { id?: string }): Promise<ApiResult<ReportResponse>>;
+  getPredictionIntelligence(opts?: { limit?: number; stats?: boolean }): Promise<ApiResult<import("../supercolony/types.js").PredictionIntelligenceResponse>>;
+  getPredictionRecommendations(userAddress: string): Promise<ApiResult<import("../supercolony/types.js").PredictionRecommendationsResponse>>;
 }
 
 export interface ScoresPrimitives {

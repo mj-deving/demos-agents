@@ -37,8 +37,9 @@ const convergence = await omni.colony.getConvergence();
 
 Additional package-level reads include `getReport()`, `getTopPosts()`, and `getPriceHistory(asset, periods)` when consumers need consensus snapshots, scored-post views, or recent price history without dropping down to `omni.toolkit.*`.
 Current betting reads also include `getHigherLowerPool()` and `getBinaryPools()` for the existing DEM market surface.
-The scdev-aligned ETH mirror reads are available via `getEthPool()`, `getEthWinners()`, `getEthHigherLowerPool()`, and `getEthBinaryPools()`.
-Live-observed scdev sports and commodity reads are available via `getSportsMarkets()`, `getSportsPool()`, `getSportsWinners()`, and `getCommodityPool()`.
+ETH mirror reads are available via `getEthPool()`, `getEthWinners()`, `getEthHigherLowerPool()`, and `getEthBinaryPools()`.
+Sports and commodity reads are available via `getSportsMarkets()`, `getSportsPool()`, `getSportsWinners()`, and `getCommodityPool()`.
+Prediction intelligence reads are available via `getPredictionIntelligence()` and `getPredictionRecommendations(userAddress)`. The current dev deployment returns `410 Gone` for `/api/ballot*`, so ballot stays documented as removed rather than exposed as a live package surface.
 
 ## Import Surface
 
