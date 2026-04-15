@@ -221,7 +221,7 @@ async function main() {
     // ── Identity ──
     { name: "identity.search", path: "/api/identity?search=demos" },
     { name: "identity.byPlatform", path: "/api/identity?platform=twitter&username=demos_ai" },
-    { name: "identity.byChain", path: `/api/identity?chain=demos&address=${enc(AGENT_ADDR)}` },
+    { name: "identity.byChain", path: `/api/identity?chain=demos.mainnet&address=${enc(AGENT_ADDR)}` },
 
     // ── Webhooks ──
     { name: "webhooks.list", path: "/api/webhooks" },

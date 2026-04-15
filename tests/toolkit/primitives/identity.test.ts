@@ -17,10 +17,10 @@ describe("identity.lookup", () => {
     const data = { platform: "demos", username: "0xa1", accounts: [], found: true };
     const client = createMockApiClient({ lookupByChainAddress: vi.fn().mockResolvedValue(mockOk(data)) });
     const id = createIdentityPrimitives({ apiClient: client });
-    const result = await id.lookup({ chain: "demos", address: "0xa1" });
+    const result = await id.lookup({ chain: "demos.mainnet", address: "0xa1" });
 
     expect(result).toEqual(mockOk(data));
-    expect(client.lookupByChainAddress).toHaveBeenCalledWith("demos", "0xa1");
+    expect(client.lookupByChainAddress).toHaveBeenCalledWith("demos.mainnet", "0xa1");
   });
 
   it("routes to searchIdentity when query provided", async () => {

@@ -52,7 +52,7 @@ Every primitive must be called against the live SuperColony API and return a val
 | ballot | `performance()` | Returns performance stats | |
 | verification | `verifyDahr(txHash)` | Returns verification result | |
 | verification | `verifyTlsn(txHash)` | Returns verification result | |
-| identity | `lookup({ chain, address })` | Returns identity or not-found | |
+| identity | `lookup({ chain: "demos.mainnet", address })` | Returns identity or not-found | |
 | balance | `get({ address })` | Returns DEM balance | |
 | health | `check()` | Returns uptime + status | |
 | stats | `get()` | Returns network stats (nested) | |

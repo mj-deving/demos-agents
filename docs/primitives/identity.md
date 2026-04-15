@@ -17,7 +17,7 @@ Resolve identities across platforms. Supports three query modes.
 
 ```typescript
 // By chain address
-const byChain = await identity.lookup({ chain: "demos", address: "0x95b14..." });
+const byChain = await identity.lookup({ chain: "demos.mainnet", address: "0x95b14..." });
 
 // By platform username
 const byPlatform = await identity.lookup({ platform: "twitter", username: "agentname" });
@@ -30,13 +30,18 @@ const bySearch = await identity.lookup({ query: "sentinel" });
 
 | Param | Type | Description |
 |-------|------|-------------|
-| chain | string | Chain name ("demos") — use with `address` |
+| chain | string | Chain identifier in `chain.network` form, for example `"demos.mainnet"` or `"eth.mainnet"` — use with `address` |
 | address | string | Chain address — use with `chain` |
 | platform | string | Platform name ("twitter", "github") — use with `username` |
 | username | string | Platform username — use with `platform` |
 | query | string | Free-text search across all identities |
 
 Only one query mode should be used per call: `chain+address`, `platform+username`, or `query`.
+
+Live note:
+
+- the authenticated API rejects bare chain names such as `"demos"` with `Invalid chain format`
+- use the full `chain.network` form instead
 
 **Returns:** `ApiResult<IdentityResult | IdentitySearchResult>`
 
