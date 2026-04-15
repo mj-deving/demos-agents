@@ -144,8 +144,9 @@ export function getApiUrl(): string {
  * Also applies RPC_URL and SUPERCOLONY_API overrides from the file.
  */
 export function loadMnemonic(envPath: string, agentName?: string): string {
-  const legacy = resolve(envPath.replace(/^~/, homedir()));
-  const isExplicit = envPath !== ".env" && existsSync(legacy);
+  const requestedPath = envPath.trim() || ".env";
+  const legacy = resolve(requestedPath.replace(/^~/, homedir()));
+  const isExplicit = requestedPath !== ".env" && existsSync(legacy);
 
   // Explicit --env flag always wins
   if (isExplicit) {

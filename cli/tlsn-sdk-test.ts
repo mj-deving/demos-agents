@@ -7,7 +7,7 @@
  * - If this succeeds, the problem was our sendRequest() call
  *
  * Usage:
- *   npx tsx tools/tlsn-sdk-test.ts --env ~/.config/demos/credentials
+ *   npx tsx cli/tlsn-sdk-test.ts --env ~/.config/demos/credentials
  */
 
 import { parseArgs } from "node:util";
@@ -35,6 +35,7 @@ const timeoutSec = parseInt(String(flags.timeout || "300"), 10);
 console.log("═══ TLSN SDK Path Test ═══════════════════════════");
 console.log(`  Target URL:  ${targetUrl}`);
 console.log(`  Timeout:     ${timeoutSec}s`);
+console.log(`  Env:         ${String(flags.env || "(auto)")}`);
 console.log(`  Test:        Static Prover.notarize() (SDK attestQuick path)`);
 console.log(`  Purpose:     If this fails, it's server-side (not our code)`);
 console.log();
@@ -45,7 +46,7 @@ const t0 = Date.now();
 const elapsed = () => ((Date.now() - t0) / 1000).toFixed(1) + "s";
 
 console.log("[1/4] Connecting wallet...");
-const wallet = await connectWallet(String(flags.env || ""));
+const wallet = await connectWallet(String(flags.env || ".env"));
 const demos = wallet.demos;
 console.log(`  ✓ Wallet connected (${elapsed()})`);
 

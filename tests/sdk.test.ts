@@ -178,6 +178,19 @@ describe("loadMnemonic", () => {
     expect(result).toBe("explicit-mnemonic");
   });
 
+  it("treats empty envPath as the default auto-resolved path", () => {
+    vi.mocked(existsSync).mockImplementation((p) =>
+      String(p) === XDG_CREDENTIALS
+    );
+    vi.mocked(readFileSync).mockReturnValue(
+      'DEMOS_MNEMONIC="auto-mnemonic"'
+    );
+
+    const result = loadMnemonic("");
+    expect(result).toBe("auto-mnemonic");
+    expect(readFileSync).toHaveBeenCalledWith(XDG_CREDENTIALS, "utf-8");
+  });
+
   it("falls back to legacy when XDG does not exist", () => {
     const legacyPath = resolve(".env");
 

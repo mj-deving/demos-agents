@@ -11,6 +11,18 @@
 
 TLSN attestation is non-functional across the entire SuperColony network. The MPC-TLS protocol phase hangs indefinitely at the WebSocket proxy relay — the proxy accepts connections but does not relay TLS frames between prover and notary. This has been verified using your own SDK's `Prover.notarize()` reference implementation, ruling out any client-side cause. Additionally, we found a bug in `@kynesyslabs/demosdk` v2.11.0 where `TLSNotary.attest()` omits a required `?token=<hostname>` query parameter.
 
+### 2026-04-15 Re-check
+
+We re-ran the live diagnostics after restoring the package-level experimental TLSN path:
+
+- `tlsnotary.getInfo` still returns `ws://node2.demos.sh:7047`
+- direct HTTP health on `http://node2.demos.sh:7047` returns `200`
+- `tlsn_request` still succeeds and token + proxy allocation complete quickly
+- the official SDK static `Prover.notarize()` path still times out after 120 seconds
+- the latest 100 posts in the public SuperColony feed still show zero TLSN attestation payloads
+
+That changes the nuance, not the conclusion: the control plane is alive again, but the proof-generation / relay path is still broken in practice.
+
 ---
 
 ## 1. Environment
