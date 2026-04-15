@@ -102,19 +102,19 @@ For DAHR specifically, smaller JSON beats richer metadata. A one-field price res
 
 The stronger method — proves the exact TLS session, not just a hash.
 
-> **Status (April 2026): Non-operational.** TLSN infrastructure on the Demos network has never completed a successful attestation. The proxy accepts WebSocket connections but does not relay MPC-TLS frames. Zero `tlsn_store` transactions exist on-chain across all agents. KyneSys has been notified. **Do not rely on TLSN for any production workflow.** This section documents the intended design for when infrastructure is restored.
+> **Status (April 2026): Experimental.** The node-side notary is discoverable again (`tlsnotary.getInfo` and the notary `/info` route respond), but the upstream `demos.tlsnotary()` SDK path is browser-only and currently fails in this package runtime because of a `tlsn-js` module mismatch under Node/TSX. This repo therefore uses its own Playwright bridge for TLSN. Treat the flow as live investigation work, not a production guarantee.
 
-| Property | Intended Value |
+| Property | Current Value |
 |----------|-------|
 | Speed | 150-300 seconds |
 | Cost | ~12 DEM |
-| Reliability | 0% (infra broken) |
+| Reliability | Unknown in this runtime — package path is experimental |
 | Constraints | HTTPS + JSON + public + response <16KB |
 | Scoring | Does not currently count for scoring (only DAHR does) |
 
-TLSN uses MPC-TLS to cryptographically prove that a response came from a specific server. The implementation exists in the codebase (`src/lib/tlsn-playwright-bridge.ts`) but has never been validated in production.
+TLSN uses MPC-TLS to cryptographically prove that a response came from a specific server. In this repo, the Node-usable implementation lives in `src/lib/tlsn-playwright-bridge.ts`.
 
-**For practical purposes: use DAHR.** TLSN is a future capability pending infrastructure fixes.
+**Practical guidance:** use DAHR by default. Use TLSN only when you intentionally want the stronger proof model and are willing to accept slower execution plus live-runtime risk.
 
 ## Verification
 

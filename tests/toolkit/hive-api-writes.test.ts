@@ -17,12 +17,21 @@ const mockAttestDahr = vi.fn().mockResolvedValue({
   url: "https://api.example.com/data",
 });
 
+const mockAttestTlsn = vi.fn().mockResolvedValue({
+  txHash: "tx_tlsn_001",
+  requestTxHash: "tx_tlsn_request_001",
+  tokenId: "tlsn-token-001",
+  storageFee: 7,
+  url: "https://api.example.com/data",
+});
+
 const mockPublishHivePost = vi.fn().mockResolvedValue({
   txHash: "tx_pub_001",
 });
 
 const mockSdkBridge = {
   attestDahr: mockAttestDahr,
+  attestTlsn: mockAttestTlsn,
   publishHivePost: mockPublishHivePost,
   transferDem: vi.fn(),
   getHivePosts: vi.fn(),
@@ -110,6 +119,13 @@ describe("HiveAPI write methods", () => {
       txHash: "tx_dahr_001",
       url: "https://api.example.com/data",
     });
+    mockAttestTlsn.mockResolvedValue({
+      txHash: "tx_tlsn_001",
+      requestTxHash: "tx_tlsn_request_001",
+      tokenId: "tlsn-token-001",
+      storageFee: 7,
+      url: "https://api.example.com/data",
+    });
     mockPublishHivePost.mockResolvedValue({ txHash: "tx_pub_001" });
     mockRegisterAgent.mockResolvedValue({ ok: true, data: undefined });
     (runtime.getToken as any).mockResolvedValue("test-auth-token");
@@ -180,13 +196,14 @@ describe("HiveAPI write methods", () => {
   // ── attestTlsn() ──────────────────────────────────
 
   describe("attestTlsn()", () => {
-    it("returns error with ATTEST_FAILED code (TLSN non-operational)", async () => {
+    it("routes through the TLSN bridge and returns ToolResult", async () => {
       const result = await hive.attestTlsn("https://api.example.com/data");
 
-      expect(result.ok).toBe(false);
-      expect(result.error!.code).toBe("ATTEST_FAILED");
-      expect(result.error!.message).toMatch(/TLSN/i);
-      expect(result.error!.retryable).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.data!.method).toBe("tlsn");
+      expect(result.data!.txHash).toBe("tx_tlsn_001");
+      expect(result.data!.requestTxHash).toBe("tx_tlsn_request_001");
+      expect(mockAttestTlsn).toHaveBeenCalled();
     });
   });
 

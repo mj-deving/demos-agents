@@ -8,6 +8,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSdkBridge } from "../../src/toolkit/sdk-bridge.js";
 import type { SdkBridge } from "../../src/toolkit/sdk-bridge.js";
 
+const mockAttestTlsnViaPlaywrightBridge = vi.fn(async (demos: unknown, url: string) => ({
+  requestedUrl: url,
+  attestedUrl: url,
+  requestTxHash: "mock-tlsn-request-hash",
+  proofTxHash: "mock-tlsn-proof-hash",
+  tokenId: "mock-token-id",
+  storageFee: 6,
+  presentation: { version: "mock" },
+}));
+
+vi.mock("../../src/lib/tlsn-playwright-bridge.js", () => ({
+  attestTlsnViaPlaywrightBridge: mockAttestTlsnViaPlaywrightBridge,
+}));
+
 // Mock DemosTransactions (static methods)
 const mockDemosTransactions = {
   store: vi.fn(async () => ({ type: "store", data: "encoded" })),
@@ -121,6 +135,16 @@ describe("SDK Bridge Adapter", () => {
       }));
       bridge = createSdkBridge(demos as any, "https://www.supercolony.ai", "token");
       await expect(bridge.attestDahr("https://example.com")).rejects.toThrow("Unauthorized");
+    });
+  });
+
+  describe("attestTlsn", () => {
+    it("lazy-loads the Playwright bridge and returns TLSN result", async () => {
+      const result = await bridge.attestTlsn!("https://api.example.com/price");
+      expect(result.txHash).toBe("mock-tlsn-proof-hash");
+      expect(result.requestTxHash).toBe("mock-tlsn-request-hash");
+      expect(result.tokenId).toBe("mock-token-id");
+      expect(mockAttestTlsnViaPlaywrightBridge).toHaveBeenCalledWith(demos, "https://api.example.com/price", "GET");
     });
   });
 
