@@ -21,6 +21,8 @@ import type {
   SportsPool,
   SportsWinnersResponse,
   CommodityPool,
+  PredictionIntelligenceResponse,
+  PredictionRecommendationsResponse,
 } from "../../../src/toolkit/supercolony/types.js";
 import type { DataSource } from "../../../src/toolkit/data-source.js";
 import type { ScanPost } from "../../../src/toolkit/types.js";
@@ -59,6 +61,8 @@ export function createMockApiClient(overrides: Partial<SuperColonyApiClient> = {
     getThread: vi.fn().mockResolvedValue(null),
     getSignals: vi.fn().mockResolvedValue(null),
     getConvergence: vi.fn().mockResolvedValue(null),
+    getPredictionIntelligence: vi.fn().mockResolvedValue(null),
+    getPredictionRecommendations: vi.fn().mockResolvedValue(null),
     react: vi.fn().mockResolvedValue(null),
     getReactionCounts: vi.fn().mockResolvedValue(null),
     getTlsnProof: vi.fn().mockResolvedValue(null),
@@ -327,6 +331,83 @@ export function makeCommodityPool(overrides: Partial<CommodityPool> = {}): Commo
     roundEnd: 1776285000000,
     currentPrice: 4817,
     bets: [],
+    ...overrides,
+  };
+}
+
+export function makePredictionIntelligenceResponse(
+  overrides: Partial<PredictionIntelligenceResponse> = {},
+): PredictionIntelligenceResponse {
+  return {
+    scores: [{
+      marketId: "1747257",
+      question: "Will Trump say Alien Dot Gov in April?",
+      category: "crypto",
+      currentPrice: 0.08,
+      eloProb: 0,
+      gbsProb: null,
+      mirofishProb: 0,
+      ensembleProb: 0,
+      edge: 0.08,
+      edgeSide: "NO",
+      ev: 0.0869,
+      kellyFraction: 1,
+      kellySize: 200,
+      strategies: ["S06"],
+      scoredAt: 1776285510379,
+    }],
+    total: 1,
+    lastScoredAt: 1776285510379,
+    engineVersion: "1.0.0",
+    stats: {
+      totalMarketsScored: 2324,
+      marketsWithEdge: 601,
+      recommendationsGenerated: 0,
+      resolvedMarkets: 0,
+      weights: {
+        elo: { brierScore: 0.25, weight: 0.5, samples: 0 },
+        gbs: { brierScore: 0.25, weight: 0, samples: 0 },
+        mirofish: { brierScore: 0.25, weight: 0.5, samples: 0 },
+        warmup: true,
+        updatedAt: 1776285510378,
+      },
+      lastScoredAt: 1776285510383,
+      engineVersion: "1.0.0",
+      pipelineDurationMs: 26157,
+    },
+    ...overrides,
+  };
+}
+
+export function makePredictionRecommendationsResponse(
+  overrides: Partial<PredictionRecommendationsResponse> = {},
+): PredictionRecommendationsResponse {
+  return {
+    recommendations: [{
+      marketId: "1651775",
+      question: "Red Wings vs. Panthers: O/U 6.5",
+      category: "sports",
+      side: "NO",
+      ensembleProb: 0.2426,
+      marketPrice: 0.515,
+      edge: 0.2424,
+      ev: 0.4706,
+      kellyFraction: 0.4997,
+      suggestedBet: 99.95,
+      confidenceTier: "moderate",
+      strategies: ["S06", "S16"],
+      betPayload: {
+        marketId: "1651775",
+        direction: "NO",
+        amount: 99.95,
+      },
+    }],
+    total: 1,
+    bankroll: 1000,
+    openExposure: 0,
+    varHeadroom: 1000,
+    lastScoredAt: 1776285510379,
+    engineVersion: "1.0.0",
     ...overrides,
   };
 }

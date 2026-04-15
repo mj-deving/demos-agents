@@ -21,13 +21,14 @@ type ExpectedStatus = "ok" | "not_found" | "auth_required";
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-endpoint-surface.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity]
+  console.log(`Usage: npx tsx scripts/check-endpoint-surface.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity] [--include-scdev-intelligence]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
   --include-scdev-eth  Include scdev ETH betting endpoints in the probe set
   --include-scdev-sports-commodity  Include scdev sports and commodity betting endpoints
+  --include-scdev-intelligence  Include scdev prediction intelligence endpoints
   --help, -h       Show this help
 
 Output: JSON report of endpoint classifications versus expected audit classifications
@@ -39,6 +40,7 @@ const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
 const includeScdevEth = hasFlag(args, "--include-scdev-eth");
 const includeScdevSportsCommodity = hasFlag(args, "--include-scdev-sports-commodity");
+const includeScdevIntelligence = hasFlag(args, "--include-scdev-intelligence");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
@@ -81,6 +83,12 @@ const probes: Array<{ path: string; expected: ExpectedStatus }> = [
         { path: "/api/bets/sports/pool?fixtureId=nba_espn_401866757", expected: "ok" as const },
         { path: "/api/bets/sports/winners?fixtureId=nba_espn_401866757", expected: "ok" as const },
         { path: "/api/bets/commodity/pool?asset=XAU&horizon=30m", expected: "ok" as const },
+      ]
+    : []),
+  ...(includeScdevIntelligence
+    ? [
+        { path: "/api/predictions/intelligence?limit=5&stats=true", expected: "ok" as const },
+        { path: "/api/predictions/recommend?userAddress=demo", expected: "ok" as const },
       ]
     : []),
 ];

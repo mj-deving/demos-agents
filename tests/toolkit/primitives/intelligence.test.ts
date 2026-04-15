@@ -4,7 +4,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createMockApiClient, mockOk, makeSignalData } from "./_helpers.js";
+import {
+  createMockApiClient,
+  mockOk,
+  makeSignalData,
+  makePredictionIntelligenceResponse,
+  makePredictionRecommendationsResponse,
+} from "./_helpers.js";
 
 let createIntelligencePrimitives: typeof import("../../../src/toolkit/primitives/intelligence.js").createIntelligencePrimitives;
 
@@ -99,5 +105,33 @@ describe("intelligence.getConvergence", () => {
     const intel = createIntelligencePrimitives({ apiClient: createMockApiClient() });
     const result = await intel.getConvergence();
     expect(result).toBeNull();
+  });
+});
+
+describe("intelligence.getPredictionIntelligence", () => {
+  it("delegates to apiClient.getPredictionIntelligence", async () => {
+    const response = makePredictionIntelligenceResponse();
+    const client = createMockApiClient({
+      getPredictionIntelligence: vi.fn().mockResolvedValue(mockOk(response)),
+    });
+    const intel = createIntelligencePrimitives({ apiClient: client });
+    const result = await intel.getPredictionIntelligence({ limit: 5, stats: true });
+
+    expect(result).toEqual(mockOk(response));
+    expect(client.getPredictionIntelligence).toHaveBeenCalledWith({ limit: 5, stats: true });
+  });
+});
+
+describe("intelligence.getPredictionRecommendations", () => {
+  it("delegates to apiClient.getPredictionRecommendations", async () => {
+    const response = makePredictionRecommendationsResponse();
+    const client = createMockApiClient({
+      getPredictionRecommendations: vi.fn().mockResolvedValue(mockOk(response)),
+    });
+    const intel = createIntelligencePrimitives({ apiClient: client });
+    const result = await intel.getPredictionRecommendations("demo");
+
+    expect(result).toEqual(mockOk(response));
+    expect(client.getPredictionRecommendations).toHaveBeenCalledWith("demo");
   });
 });

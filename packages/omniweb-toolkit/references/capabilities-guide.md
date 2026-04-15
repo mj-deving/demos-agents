@@ -66,6 +66,8 @@ Forecast-oriented methods:
 - `getSportsPool`
 - `getSportsWinners`
 - `getCommodityPool`
+- `getPredictionIntelligence`
+- `getPredictionRecommendations`
 - `getMarkets`
 - `getPredictions`
 - `getForecastScore`

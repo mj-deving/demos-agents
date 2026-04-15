@@ -45,13 +45,14 @@ type EndpointResult = {
 const args = process.argv.slice(2);
 
 if (hasFlag(args, "--help", "-h")) {
-  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity]
+  console.log(`Usage: npx tsx scripts/check-response-shapes.ts [--base-url URL] [--timeout-ms N] [--include-scdev-eth] [--include-scdev-sports-commodity] [--include-scdev-intelligence]
 
 Options:
   --base-url URL   SuperColony base URL (default: ${DEFAULT_BASE_URL})
   --timeout-ms N   Request timeout in milliseconds (default: 15000)
   --include-scdev-eth  Include scdev ETH betting endpoints in the shape checks
   --include-scdev-sports-commodity  Include scdev sports and commodity betting endpoints
+  --include-scdev-intelligence  Include scdev prediction intelligence endpoints
   --help, -h       Show this help
 
 Output: JSON report of live response envelopes versus the maintained response-shapes reference
@@ -63,6 +64,7 @@ const baseUrl = getStringArg(args, "--base-url") ?? DEFAULT_BASE_URL;
 const timeoutMs = getNumberArg(args, "--timeout-ms") ?? 15_000;
 const includeScdevEth = hasFlag(args, "--include-scdev-eth");
 const includeScdevSportsCommodity = hasFlag(args, "--include-scdev-sports-commodity");
+const includeScdevIntelligence = hasFlag(args, "--include-scdev-intelligence");
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
   console.error("Error: --timeout-ms must be a positive number");
@@ -770,6 +772,119 @@ const endpoints = [
           },
         }),
       ],
+    },
+  ] : []),
+  ...(includeScdevIntelligence ? [
+    {
+      name: "PredictionIntelligenceResponse",
+      path: "/api/predictions/intelligence?limit=5&stats=true",
+      validate: (json: JsonObject): ShapeCheck[] => {
+        const checks = [
+          validateShape("PredictionIntelligenceResponse", json, {
+            required: {
+              scores: isArray,
+              total: isNumber,
+              lastScoredAt: isNumber,
+              engineVersion: isString,
+              stats: isObject,
+            },
+          }),
+        ];
+
+        const firstScore = getArrayItem(json.scores);
+        checks.push(validateShapeFromMaybeObject("PredictionIntelligenceScore", firstScore, {
+          required: {
+            marketId: isString,
+            question: isString,
+            category: isString,
+            currentPrice: isNumber,
+            eloProb: isNullableNumber,
+            gbsProb: isNullableNumber,
+            mirofishProb: isNullableNumber,
+            ensembleProb: isNumber,
+            edge: isNumber,
+            edgeSide: isString,
+            ev: isNumber,
+            kellyFraction: isNumber,
+            kellySize: isNumber,
+            strategies: isStringArray,
+            scoredAt: isNumber,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("PredictionIntelligenceStats", getNestedObject(json, "stats"), {
+          required: {
+            totalMarketsScored: isNumber,
+            marketsWithEdge: isNumber,
+            recommendationsGenerated: isNumber,
+            resolvedMarkets: isNumber,
+            weights: isObject,
+            lastScoredAt: isNumber,
+            engineVersion: isString,
+            pipelineDurationMs: isNumber,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("PredictionIntelligenceWeights", getNestedObject(getNestedObject(json, "stats"), "weights"), {
+          required: {
+            elo: isObject,
+            gbs: isObject,
+            mirofish: isObject,
+            warmup: isBoolean,
+            updatedAt: isNumber,
+          },
+        }));
+
+        return checks;
+      },
+    },
+    {
+      name: "PredictionRecommendationsResponse",
+      path: "/api/predictions/recommend?userAddress=demo",
+      validate: (json: JsonObject): ShapeCheck[] => {
+        const checks = [
+          validateShape("PredictionRecommendationsResponse", json, {
+            required: {
+              recommendations: isArray,
+              total: isNumber,
+              bankroll: isNumber,
+              openExposure: isNumber,
+              varHeadroom: isNumber,
+              lastScoredAt: isNumber,
+              engineVersion: isString,
+            },
+          }),
+        ];
+
+        const firstRecommendation = getArrayItem(json.recommendations);
+        checks.push(validateShapeFromMaybeObject("PredictionRecommendation", firstRecommendation, {
+          required: {
+            marketId: isString,
+            question: isString,
+            category: isString,
+            side: isString,
+            ensembleProb: isNumber,
+            marketPrice: isNumber,
+            edge: isNumber,
+            ev: isNumber,
+            kellyFraction: isNumber,
+            suggestedBet: isNumber,
+            confidenceTier: isString,
+            strategies: isStringArray,
+            betPayload: isObject,
+          },
+        }));
+
+        checks.push(validateShapeFromMaybeObject("PredictionRecommendation.betPayload", getNestedObject(firstRecommendation, "betPayload"), {
+          required: {
+            marketId: isString,
+            direction: isString,
+            amount: isNumber,
+          },
+        }));
+
+        return checks;
+      },
     },
   ] : []),
   {
