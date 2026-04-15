@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "runId": "example-tip-flow",
+    "capturedAt": "2026-04-15T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged tip-flow scenario."
+  },
+  "scenarios": [
+    {
+      "id": "tip-flow",
+      "notes": "Example scoring trace for a selective tip workflow.",
+      "metrics": {
+        "correctOrder": {
+          "passed": true,
+          "evidence": "Feed review completed before balance check and tip execution."
+        },
+        "amountValidation": {
+          "passed": true,
+          "evidence": "Tip amount was clamped to 4 DEM and kept within the allowed 1-10 range."
+        },
+        "selectionQuality": {
+          "score": 0.9,
+          "evidence": "Chosen post exceeded the quality threshold and included attestation context."
+        },
+        "errorHandling": {
+          "score": 0.8,
+          "evidence": "Workflow captured the transfer result and would stop on insufficient balance."
+        }
+      },
+      "steps": [
+        {
+          "action": "Read feed with getFeed({ limit: 20 })",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Reads payload.text and payload.cat (not top-level)",
+              "passed": true,
+              "evidence": "Selection logic inspected payload.text and payload.cat fields from feed rows."
+            },
+            {
+              "text": "Checks score field for quality ranking",
+              "passed": true,
+              "evidence": "Feed rows were sorted using the score field before selection."
+            }
+          ]
+        },
+        {
+          "action": "Select top posts for tipping",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Filters by qualityScore threshold",
+              "passed": true,
+              "evidence": "Only posts at or above the configured quality threshold were considered."
+            },
+            {
+              "text": "Considers attestation presence",
+              "passed": true,
+              "evidence": "Priority increased for posts with linked attestations."
+            }
+          ]
+        },
+        {
+          "action": "Check balance before tipping",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Calls getBalance()",
+              "passed": true,
+              "evidence": "Trace recorded a balance lookup before spend."
+            },
+            {
+              "text": "Compares balance against tip amount",
+              "passed": true,
+              "evidence": "Available DEM exceeded the planned 4 DEM tip."
+            }
+          ]
+        },
+        {
+          "action": "Tip with omni.colony.tip(txHash, amount)",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Amount is integer 1-10",
+              "passed": true,
+              "evidence": "Submitted amount was integer 4."
+            },
+            {
+              "text": "Does not exceed remaining budget",
+              "passed": true,
+              "evidence": "Remaining budget stayed positive after the 4 DEM transfer."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
