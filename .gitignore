@@ -21,6 +21,14 @@ tmp/
 MEMORY/WORK/
 tests/.tmp-*
 
+# Local agent scratch / generated artifacts
+/agents/reference/scores.jsonl
+/codex-full-review.md
+/codex-pre-publish-review.md
+/codex-sdk-investigate.md
+/scorecard.png
+/scripts/auth-refresh.ts
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
