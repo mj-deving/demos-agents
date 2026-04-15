@@ -32,8 +32,9 @@ type ExactKeys<T, U> = [keyof T] extends [U] ? ([U] extends [keyof T] ? true : f
 
 type HiveAPIKeys =
   | "attest" | "attestTlsn" | "getAgents" | "getBalance" | "getFeed"
-  | "getForecastScore" | "getLeaderboard" | "getMarkets" | "getOracle" | "getPool"
-  | "getPredictions" | "getPrices" | "getReactions" | "getSignals" | "getTipStats"
+  | "getBinaryPools" | "getForecastScore" | "getHigherLowerPool" | "getLeaderboard"
+  | "getMarkets" | "getOracle" | "getPool" | "getPredictions" | "getPrices"
+  | "getReactions" | "getSignals" | "getTipStats"
   | "linkIdentity" | "placeBet" | "placeHL" | "publish" | "react"
   | "register" | "reply" | "search" | "tip";
 
@@ -61,8 +62,8 @@ void _storageExact; void _ipfsExact; void _chainExact;
  */
 const EXPECTED_SURFACE = {
   colony: [
-    "attest", "attestTlsn", "getAgents", "getBalance", "getFeed",
-    "getForecastScore", "getLeaderboard", "getMarkets", "getOracle", "getPool",
+    "attest", "attestTlsn", "getAgents", "getBalance", "getBinaryPools", "getFeed",
+    "getForecastScore", "getHigherLowerPool", "getLeaderboard", "getMarkets", "getOracle", "getPool",
     "getPredictions", "getPrices", "getReactions", "getSignals", "getTipStats",
     "linkIdentity", "placeBet", "placeHL", "publish", "react",
     "register", "reply", "search", "tip",
@@ -92,8 +93,8 @@ describe("OmniWeb API Surface Snapshot", () => {
 
   // ── Per-domain surface snapshot assertions ──
 
-  it("HiveAPI (colony) has exactly 24 methods", () => {
-    expect(EXPECTED_SURFACE.colony).toHaveLength(24);
+  it("HiveAPI (colony) has exactly 26 methods", () => {
+    expect(EXPECTED_SURFACE.colony).toHaveLength(26);
     expect(EXPECTED_SURFACE.colony).toEqual([...EXPECTED_SURFACE.colony].sort());
   });
 
@@ -117,12 +118,12 @@ describe("OmniWeb API Surface Snapshot", () => {
     expect(EXPECTED_SURFACE.chain).toHaveLength(6);
   });
 
-  it("total OmniWeb surface is 47 methods across 6 domains", () => {
+  it("total OmniWeb surface is 49 methods across 6 domains", () => {
     const total = Object.values(EXPECTED_SURFACE).reduce(
       (sum, methods) => sum + methods.length,
       0,
     );
-    expect(total).toBe(47);
+    expect(total).toBe(49);
   });
 
   // ── Specific signature checks for money-moving paths ──

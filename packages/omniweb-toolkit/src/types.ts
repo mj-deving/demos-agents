@@ -54,6 +54,8 @@ export type {
   TopPostsResult,
   ReportResponse,
   BettingPool,
+  HigherLowerPool,
+  BinaryPool,
   TipStats,
   AgentBalanceResponse,
 } from "../../../src/toolkit/supercolony/types.js";

@@ -5,7 +5,7 @@
 
 import { vi } from "vitest";
 import type { SuperColonyApiClient } from "../../../src/toolkit/supercolony/api-client.js";
-import type { ApiResult, PriceData, SignalData, BettingPool, AgentProfile } from "../../../src/toolkit/supercolony/types.js";
+import type { ApiResult, PriceData, SignalData, BettingPool, AgentProfile, HigherLowerPool, BinaryPool } from "../../../src/toolkit/supercolony/types.js";
 import type { DataSource } from "../../../src/toolkit/data-source.js";
 import type { ScanPost } from "../../../src/toolkit/types.js";
 
@@ -50,6 +50,8 @@ export function createMockApiClient(overrides: Partial<SuperColonyApiClient> = {
     getAgentBalance: vi.fn().mockResolvedValue(null),
     getReport: vi.fn().mockResolvedValue(null),
     getPredictionMarkets: vi.fn().mockResolvedValue(null),
+    getHigherLowerPool: vi.fn().mockResolvedValue(null),
+    getBinaryPools: vi.fn().mockResolvedValue(null),
     getBallotPerformance: vi.fn().mockResolvedValue(null),
     getFeeds: vi.fn().mockResolvedValue(null),
     ...overrides,
@@ -132,6 +134,42 @@ export function makeBettingPool(overrides: Partial<BettingPool> = {}): BettingPo
     poolAddress: "0xpool",
     roundEnd: 1700000000000 + 3600_000,
     bets: [],
+    ...overrides,
+  };
+}
+
+export function makeHigherLowerPool(overrides: Partial<HigherLowerPool> = {}): HigherLowerPool {
+  return {
+    asset: "BTC",
+    horizon: "30m",
+    totalHigher: 3,
+    totalLower: 2,
+    totalDem: 25,
+    higherCount: 3,
+    lowerCount: 2,
+    roundEnd: 1700000000000 + 1800_000,
+    referencePrice: 65000,
+    poolAddress: "0xhlpool",
+    currentPrice: 65100,
+    ...overrides,
+  };
+}
+
+export function makeBinaryPool(overrides: Partial<BinaryPool> = {}): BinaryPool {
+  return {
+    marketId: "market-1",
+    totalYes: 15,
+    totalNo: 10,
+    totalDem: 25,
+    yesBetsCount: 3,
+    noBetsCount: 2,
+    yesMultiplier: 1.7,
+    noMultiplier: 2.1,
+    polymarketYes: 0.58,
+    polymarketNo: 0.42,
+    endDate: "2026-04-30T00:00:00.000Z",
+    poolAddress: "0xbinarypool",
+    status: "active",
     ...overrides,
   };
 }

@@ -118,6 +118,10 @@ export interface PredictionsPrimitives {
 export interface BallotPrimitives {
   /** Active betting pool. Uses /api/bets/pool. */
   getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<BettingPool>>;
+  /** Active higher-lower pool. Uses /api/bets/higher-lower/pool. */
+  getHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../supercolony/types.js").HigherLowerPool>>;
+  /** DEM binary pools keyed by marketId. Uses /api/bets/binary/pools. */
+  getBinaryPools(opts?: { category?: string; limit?: number }): Promise<ApiResult<Record<string, import("../supercolony/types.js").BinaryPool>>>;
 }
 
 export interface WebhooksPrimitives {

@@ -56,6 +56,8 @@ Forecast-oriented methods:
 - `placeBet`
 - `placeHL`
 - `getPool`
+- `getHigherLowerPool`
+- `getBinaryPools`
 - `getMarkets`
 - `getPredictions`
 - `getForecastScore`

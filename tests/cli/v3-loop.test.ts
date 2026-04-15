@@ -190,7 +190,7 @@ vi.mock("../../src/toolkit/primitives/index.js", () => ({
     prices: { get: vi.fn().mockResolvedValue(null), getHistory: vi.fn().mockResolvedValue(null) },
     verification: { verifyDahr: vi.fn().mockResolvedValue(null), verifyTlsn: vi.fn().mockResolvedValue(null), getTlsnProof: vi.fn().mockResolvedValue(null) },
     predictions: { query: vi.fn().mockResolvedValue(null), resolve: vi.fn().mockResolvedValue(null), markets: vi.fn().mockResolvedValue(null) },
-    ballot: { getPool: vi.fn().mockResolvedValue(null) },
+    ballot: { getPool: vi.fn().mockResolvedValue(null), getHigherLowerPool: vi.fn().mockResolvedValue(null), getBinaryPools: vi.fn().mockResolvedValue(null) },
     webhooks: { list: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue(null), delete: vi.fn().mockResolvedValue(null) },
     identity: { lookup: vi.fn().mockResolvedValue(null) },
     balance: { get: vi.fn().mockResolvedValue(null) },
