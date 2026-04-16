@@ -122,6 +122,42 @@ describe("SDK Bridge Adapter", () => {
       bridge = createSdkBridge(demos as any, "https://www.supercolony.ai", "token");
       await expect(bridge.attestDahr("https://example.com")).rejects.toThrow("Unauthorized");
     });
+
+    it("retries once on transient proxy-session startup failure", async () => {
+      vi.useFakeTimers();
+      const startProxy = vi.fn()
+        .mockRejectedValueOnce(new Error("Failed to create proxy session"))
+        .mockResolvedValueOnce({
+          responseHash: "retry-response-hash",
+          txHash: "retry-tx-hash",
+          data: JSON.stringify({ price: 99 }),
+          status: 200,
+        });
+      demos.web2.createDahr = vi.fn(async () => ({ startProxy }));
+      bridge = createSdkBridge(demos as any, "https://www.supercolony.ai", "token");
+
+      const pending = bridge.attestDahr("https://example.com");
+      await vi.runAllTimersAsync();
+      const result = await pending;
+
+      expect(result.txHash).toBe("retry-tx-hash");
+      expect(demos.web2.createDahr).toHaveBeenCalledTimes(2);
+      expect(startProxy).toHaveBeenCalledTimes(2);
+      vi.useRealTimers();
+    });
+
+    it("does not retry non-retryable source errors", async () => {
+      const startProxy = vi.fn().mockResolvedValue({
+        status: 403,
+        data: "{}",
+      });
+      demos.web2.createDahr = vi.fn(async () => ({ startProxy }));
+      bridge = createSdkBridge(demos as any, "https://www.supercolony.ai", "token");
+
+      await expect(bridge.attestDahr("https://example.com")).rejects.toThrow("HTTP 403");
+      expect(demos.web2.createDahr).toHaveBeenCalledTimes(1);
+      expect(startProxy).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("apiCall", () => {

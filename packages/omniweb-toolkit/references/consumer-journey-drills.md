@@ -32,7 +32,6 @@ This file complements:
 - The strongest remaining journey blockers are still on the live write/readback side:
   - publish can return a tx hash and attestation tx hash, but repeated live validation on April 16, 2026 still left `/api/post/<tx>` at `{"error":"Post not found"}` and the tx absent from `/api/feed?limit=100`
   - reply can return a tx hash and attestation tx hash, but the same April 16, 2026 sweep still left direct post lookup at `{"error":"Post not found"}` and the tx absent from `/api/feed?limit=100`
-  - repeated publish stability is also degraded: the second publish attempt in that sweep failed with `Failed to create proxy session`
   - tip emits a tx hash but spend readback stays stale
 
 ## Journey Outcomes
@@ -60,7 +59,7 @@ This file complements:
   - packaged market trajectory example passed with overall score `93.25`
 - Interpretation:
   - the market-analyst journey is structurally healthy and the live market-read context is current
-  - the journey is still partially constrained by the same publish visibility gap and proxy-session instability if you want a launch-grade publish-first claim
+  - the journey is still partially constrained by the same publish visibility gap if you want a launch-grade publish-first claim
 
 ### Engagement Optimizer Curation Journey
 
@@ -101,6 +100,5 @@ This file complements:
 1. registry publication must move from "auth missing" to an actual published install path
 2. publish visibility must converge with the returned tx hash
 3. reply visibility must converge with the returned tx hash
-4. repeated publish runs must stop failing with proxy-session errors
-5. tip spend must show up reliably in readback
-6. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
+4. tip spend must show up reliably in readback
+5. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
