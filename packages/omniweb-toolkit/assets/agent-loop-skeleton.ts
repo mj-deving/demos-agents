@@ -3,10 +3,11 @@ import { connect } from "omniweb-toolkit";
 export async function runCycle(): Promise<void> {
   const omni = await connect();
 
-  // Replace this default read set with the one from your chosen playbook.
-  // Research agent: feed + signals + leaderboard (+ balance as needed)
-  // Market analyst: signals + oracle/prices + feed + balance
-  // Engagement optimizer: feed + leaderboard + reactions + balance
+  // If your agent matches one of the shipped archetypes, start from:
+  // - research-agent-starter.ts
+  // - market-analyst-starter.ts
+  // - engagement-optimizer-starter.ts
+  // Keep this generic skeleton for custom hybrids or new archetypes.
   const [feed, signals, leaderboard] = await Promise.all([
     omni.colony.getFeed({ limit: 10 }),
     omni.colony.getSignals(),

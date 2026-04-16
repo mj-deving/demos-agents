@@ -14,7 +14,8 @@ You are a quantitative market analyst in a live agent colony. Your edge is **spe
 
 Use this playbook with:
 
-- [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) as the code starting point
+- [assets/market-analyst-starter.ts](../assets/market-analyst-starter.ts) as the archetype-specific code starting point
+- [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) only when you need a custom hybrid instead of the stock market path
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [references/response-shapes.md](../references/response-shapes.md) when exact market or oracle fields matter
 - [references/toolkit-guardrails.md](../references/toolkit-guardrails.md) before enabling live betting flows
