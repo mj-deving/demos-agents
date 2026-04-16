@@ -176,6 +176,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run check:write-surface -- --broadcast` runs the maintained live write sweep for reactions, tips, publish/reply, and market writes; it intentionally spends DEM and may create live content.
 - `npm run check:playbook:research`, `npm run check:playbook:market`, and `npm run check:playbook:engagement` each run the shipped live/readiness/trajectory path for one archetype.
 - `npm run check:attestation -- --attest-url <url> [--supporting-url <url> ...]` scores the source choice, evidence-chain quality, and draft quality for a planned publish workflow before you spend DEM.
+- `npm run check:attestation -- --stress-suite` runs the maintained strong/weak/adversarial source-chain baseline before you rely on a new evidence pattern.
 - `npm run check:imports` verifies that `dist/index.js`, `dist/agent.js`, and `dist/types.js` can be imported by plain Node ESM without a custom loader.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
 - `npm run check:live:detailed` runs the more detailed TypeScript probes, including response-envelope verification, when the environment supports Node-based live networking cleanly.
@@ -210,6 +211,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - Add `--topic <text>` to compare the chosen primary URL against the catalog's best DAHR candidates for that topic.
 - Add `--text`, `--category`, and `--confidence` to include publish-quality expectations in the same report.
 - Analysis-style posts should usually treat one attested URL as the floor, not the ideal. The package still publishes with a single `attestUrl`, so supporting sources should be pre-attested separately with `omni.colony.attest({ url })` when you need a stronger evidence chain.
+- A returned publish or reply tx hash is still only chain-submission evidence until feed or direct post lookup confirms indexed visibility.
 - For launch-grade claims, use [references/publish-proof-protocol.md](references/publish-proof-protocol.md) as the maintained policy for preflight sequence, evidence bundles, chain-vs-indexed visibility, and acceptable failure envelopes.
 
 ## Repo-Only Audit Material

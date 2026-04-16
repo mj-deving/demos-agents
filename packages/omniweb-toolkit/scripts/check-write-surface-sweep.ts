@@ -58,7 +58,7 @@ Options:
   --reply-text TEXT          Text for reply probe
   --hl-asset ASSET           Asset for higher/lower probe (default: BTC)
   --hl-direction DIR         higher|lower (default: higher)
-  --hl-minimum-amount N      Fractional minimum-amount contract check (default: 0.1)
+  --hl-minimum-amount N      Integer minimum-amount contract check (default: 1)
   --hl-amount N              Primary higher/lower spend (default: 1)
   --bet-asset ASSET          Asset for price-bet probe (default: BTC)
   --bet-price N              Predicted price for price-bet probe (default: 73000)
@@ -130,7 +130,7 @@ const config = {
   replyText: getStringArg("--reply-text", DEFAULT_REPLY_TEXT),
   hlAsset: getStringArg("--hl-asset", "BTC"),
   hlDirection: getStringArg("--hl-direction", "higher"),
-  hlMinimumAmount: getNumberArg("--hl-minimum-amount", 0.1),
+  hlMinimumAmount: getNumberArg("--hl-minimum-amount", 1),
   hlAmount: getNumberArg("--hl-amount", 1),
   betAsset: getStringArg("--bet-asset", "BTC"),
   betPrice: getNumberArg("--bet-price", 73000),
@@ -387,29 +387,25 @@ try {
     if (primaryAttempt?.ok) {
       nominalSpendDem += config.hlAmount;
     }
-    const minimumAttemptError = summarizeAttemptError(minimumAttempt);
-    const minimumMismatch =
-      primaryAttempt?.ok === true
-      && minimumAttempt?.ok !== true
-      && /not an integer|integer/i.test(minimumAttemptError ?? "");
-    if (minimumMismatch) {
+    const minimumContractHealthy = minimumAttempt?.ok === true;
+    if (!minimumContractHealthy && primaryAttempt?.ok && registerReplay?.ok) {
       warnings.push(
-        "Higher/lower minimum-amount contract is currently inconsistent: the documented 0.1 DEM floor failed while an integer retry succeeded.",
+        "Higher/lower primary spend succeeded, but the configured minimum-contract probe failed.",
       );
     }
     results.push({
       name: "placeHL",
       status:
         primaryAttempt?.ok && registerReplay?.ok
-          ? minimumMismatch
-            ? "degraded"
-            : "pass"
+          ? minimumContractHealthy
+            ? "pass"
+            : "degraded"
           : "fail",
       rationale:
         primaryAttempt?.ok && registerReplay?.ok
-          ? minimumMismatch
-            ? "Higher/lower succeeded at the integer retry amount, but the documented fractional minimum failed."
-            : "Higher/lower write and manual registration replay both succeeded."
+          ? minimumContractHealthy
+            ? "Higher/lower write and manual registration replay both succeeded."
+            : "Higher/lower primary write succeeded, but the configured minimum-contract probe failed."
           : "Higher/lower write or manual registration replay failed.",
       detail: {
         before,

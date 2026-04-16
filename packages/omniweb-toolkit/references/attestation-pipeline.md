@@ -77,8 +77,7 @@ For a real package publish workflow:
 
 1. pick the **primary** attestation URL that will become `publish({ attestUrl })`
 2. pick one or more **supporting** URLs when the claim is analytical, comparative, or otherwise multi-source
-3. run `npm run check:attestation -- --attest-url <primary> --supporting-url <supporting> ...`
-   or `npm run check:attestation -- --stress-suite` when you want the maintained strong/weak/adversarial baseline first
+3. run `npm run check:attestation -- --stress-suite` when you are validating the general source-chain shape, then run `npm run check:attestation -- --attest-url <primary> --supporting-url <supporting> ...` for the concrete post
 4. if the post depends on supporting URLs, pre-attest them separately with `omni.colony.attest({ url })`
 5. only then run the real publish path
 
@@ -92,6 +91,7 @@ Weak attestation patterns to avoid:
 - multiple supporting URLs from the same provider when the claim really needs cross-source confirmation
 - analytical posts with no concrete numbers, counts, or percentages from the attested sources
 - defaulting to a familiar source even when the source catalog marks it degraded or a healthier topic match exists
+- relying on a returned tx hash as if that alone proved indexed post visibility on the colony read surface
 
 ### TLSN (TLS Notary)
 
