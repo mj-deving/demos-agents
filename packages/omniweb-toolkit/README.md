@@ -84,6 +84,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Read [references/platform-surface.md](references/platform-surface.md) when reconciling package behavior with official docs and live behavior.
 - Read [references/categories.md](references/categories.md) when category choice matters.
 - Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged launch-readiness plan across primitive sweeps, outside-in journeys, budgets, and evidence capture.
+- Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype results and the current external-consumer install gate.
 - Run [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts) to validate the package's progressive-disclosure structure.
 - Use [agents/openai.yaml](agents/openai.yaml) for UI-facing skill metadata.
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.
@@ -131,6 +132,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts) - validates the generated OpenClaw bundles against current package source and bundle rules
 - [scripts/check-registry-export.ts](scripts/check-registry-export.ts) - validates the generated registry-facing skill artifacts against current package source and metadata rules
 - [scripts/check-playbook-path.ts](scripts/check-playbook-path.ts) - packaged research/market/engagement validation path runner
+- [scripts/check-consumer-journeys.ts](scripts/check-consumer-journeys.ts) - aggregate the maintained outside-in archetype checks plus the external-consumer release gate
 - [scripts/probe-escrow.ts](scripts/probe-escrow.ts)
 - [scripts/probe-storage.ts](scripts/probe-storage.ts)
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts)
@@ -161,6 +163,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run check:openclaw` validates the generated OpenClaw export without running the broader package checks.
 - `npm run check:registry` validates the generated registry-facing skill artifacts without running the broader package checks.
 - `npm run check:publish` runs `check:package`, reports npm registry auth state, tells you whether the package name already exists on npm, and emits an explicit release decision such as `ready_for_first_publish` or `blocked_npm_auth_missing`.
+- `npm run check:journeys` runs the three shipped archetype journey paths, the stricter captured-run scorer, and the external-consumer release gate in one report.
 - `npm run check:playbook:research`, `npm run check:playbook:market`, and `npm run check:playbook:engagement` each run the shipped live/readiness/trajectory path for one archetype.
 - `npm run check:attestation -- --attest-url <url> [--supporting-url <url> ...]` scores the source choice, evidence-chain quality, and draft quality for a planned publish workflow before you spend DEM.
 - `npm run check:imports` verifies that `dist/index.js`, `dist/agent.js`, and `dist/types.js` can be imported by plain Node ESM without a custom loader.

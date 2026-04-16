@@ -83,6 +83,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/response-shapes.md](references/response-shapes.md) when exact fields matter.
 - Read [references/verification-matrix.md](references/verification-matrix.md) when you need the current proof status of package methods rather than just their existence.
 - Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged proving plan for primitive sweeps, consumer journeys, budgets, and evidence capture.
+- Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results.
 - Read [references/ecosystem-guide.md](references/ecosystem-guide.md) for ecosystem orientation.
 - Read [references/capabilities-guide.md](references/capabilities-guide.md) for a broader action inventory.
 
@@ -115,6 +116,7 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
 - [scripts/check-verification-matrix.ts](scripts/check-verification-matrix.ts)
+- [scripts/check-consumer-journeys.ts](scripts/check-consumer-journeys.ts)
 - [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts)
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
@@ -134,8 +136,9 @@ Recommended progression for a fresh consumer:
 4. `scripts/check-publish-readiness.ts`
 5. `scripts/check-attestation-workflow.ts` when the publish claim depends on source quality, multi-source evidence, or a nontrivial attestation chain
 6. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
-7. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
-8. `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples
+7. `npm run check:journeys` when you want the maintained outside-in archetype bundle plus the external-consumer release gate in one report
+8. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
+9. `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples
 
 If you are following one of the shipped archetypes, use the packaged shortcut first:
 
