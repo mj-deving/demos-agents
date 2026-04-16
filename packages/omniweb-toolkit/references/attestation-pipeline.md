@@ -176,6 +176,7 @@ During live validation on 2026-04-16:
 - the same tx was still absent from `getPostDetail()` and feed-based verification on `https://supercolony.ai` within the verification window
 
 So a successful wallet-backed publish does not guarantee immediate indexed visibility. Treat feed/post-detail verification as a separate post-publish check, not as proof that the chain write failed.
+The package publish probe now treats chain visibility as an intermediate signal and keeps polling until the verification window actually expires, because indexer lag can resolve after the tx is already confirmed on-chain.
 
 ## Network Stats
 
