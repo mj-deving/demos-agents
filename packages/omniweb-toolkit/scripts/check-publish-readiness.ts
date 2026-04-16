@@ -17,6 +17,49 @@
 
 import { loadConnect, loadPackageExport } from "./_shared.ts";
 
+type PublishDraft = {
+  text: string;
+  category: string;
+  attestUrl: string;
+};
+
+type ValidationError = {
+  code: string;
+  message: string;
+  retryable?: boolean;
+};
+
+type UrlValidationResult =
+  | { valid: true; reason?: undefined }
+  | { valid: false; reason?: string };
+
+type SessionStateStore = unknown;
+
+type SessionFactoryResult = {
+  stateStore: SessionStateStore;
+  walletAddress: string;
+};
+
+type PublishReadinessSupport = {
+  validateInput: (schema: unknown, input: PublishDraft) => ValidationError | null;
+  PublishDraftSchema: unknown;
+  validateUrl: (url: string, options: { allowInsecure: boolean }) => Promise<UrlValidationResult>;
+  checkAndRecordDedup: (
+    stateStore: SessionStateStore,
+    walletAddress: string,
+    text: string,
+    recordHit: boolean,
+  ) => Promise<ValidationError | null>;
+  getWriteRateRemaining: (
+    stateStore: SessionStateStore,
+    walletAddress: string,
+  ) => Promise<{ hourlyRemaining: number; dailyRemaining: number }>;
+  createSessionFromRuntime: (
+    runtime: any,
+    options: { stateDir?: string; allowInsecureUrls?: boolean },
+  ) => Promise<SessionFactoryResult>;
+};
+
 const DEFAULT_ATTEST_URL = "https://blockchain.info/ticker";
 const DEFAULT_TEXT =
   "Bitcoin spot pricing remains one of the cleanest low-risk publish probes when the attestation target is stable, public, and easy to verify independently. This draft exists only to validate readiness and should not be broadcast unless the operator explicitly chooses to move past preflight.";
@@ -194,33 +237,37 @@ try {
   process.exit(1);
 }
 
-async function loadPublishReadinessSupport(): Promise<Pick<
-  typeof import("../src/publish-readiness-support.ts"),
-  | "validateInput"
-  | "PublishDraftSchema"
-  | "validateUrl"
-  | "checkAndRecordDedup"
-  | "getWriteRateRemaining"
-  | "createSessionFromRuntime"
->> {
-  const validateInput = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["validateInput"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "validateInput");
-  const PublishDraftSchema = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["PublishDraftSchema"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "PublishDraftSchema");
-  const validateUrl = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["validateUrl"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "validateUrl");
-  const checkAndRecordDedup = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["checkAndRecordDedup"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "checkAndRecordDedup");
-  const getWriteRateRemaining = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["getWriteRateRemaining"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "getWriteRateRemaining");
-  const createSessionFromRuntime = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["createSessionFromRuntime"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "createSessionFromRuntime");
+async function loadPublishReadinessSupport(): Promise<PublishReadinessSupport> {
+  const validateInput = await loadPackageExport<PublishReadinessSupport["validateInput"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "validateInput",
+  );
+  const PublishDraftSchema = await loadPackageExport<PublishReadinessSupport["PublishDraftSchema"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "PublishDraftSchema",
+  );
+  const validateUrl = await loadPackageExport<PublishReadinessSupport["validateUrl"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "validateUrl",
+  );
+  const checkAndRecordDedup = await loadPackageExport<PublishReadinessSupport["checkAndRecordDedup"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "checkAndRecordDedup",
+  );
+  const getWriteRateRemaining = await loadPackageExport<PublishReadinessSupport["getWriteRateRemaining"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "getWriteRateRemaining",
+  );
+  const createSessionFromRuntime = await loadPackageExport<PublishReadinessSupport["createSessionFromRuntime"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "createSessionFromRuntime",
+  );
   return {
     validateInput,
     PublishDraftSchema,

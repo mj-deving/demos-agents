@@ -2,7 +2,6 @@
 
 import { resolve } from "node:path";
 
-import type { SourceRecordV2 } from "../src/attestation-workflow-support.ts";
 import {
   REPO_ROOT,
   getNumberArg,
@@ -20,8 +19,58 @@ type CheckResult = {
   detail: string;
 };
 
+type SourceRecord = {
+  id: string;
+  name: string;
+  provider: string;
+  status: string;
+  trustTier: string;
+  responseFormat: string;
+  dahr_safe?: boolean;
+  tlsn_safe?: boolean;
+  note?: string | null;
+  url: string;
+  rating: {
+    overall: number;
+  };
+};
+
+type SourceView = {
+  sources: SourceRecord[];
+};
+
+type TopicCandidate = {
+  source: SourceRecord;
+  url: string;
+  score: number;
+};
+
+type AttestationWorkflowSupport = {
+  checkPublishQuality: (
+    draft: { text: string; category: string },
+    options: { minTextLength: number },
+  ) => { pass: boolean; reason?: string };
+  inferProvider: (url: string) => string | null;
+  loadAgentSourceView: (
+    agent: AgentName,
+    catalogPath: string,
+    overridePath: string,
+    mode: string,
+  ) => SourceView;
+  selectSourceForTopicV2: (
+    topic: string,
+    sourceView: SourceView,
+    mode: string,
+    limit: number,
+  ) => TopicCandidate[];
+  validateUrl: (
+    url: string,
+    options: { allowInsecure: boolean },
+  ) => Promise<{ valid: boolean; reason?: string }>;
+};
+
 type CatalogMatch = {
-  source: SourceRecordV2;
+  source: SourceRecord;
   score: number;
   hostMatches: boolean;
   providerMatches: boolean;
@@ -244,29 +293,32 @@ console.log(JSON.stringify({
 
 process.exit(blockers.length === 0 ? 0 : 1);
 
-async function loadAttestationWorkflowSupport(): Promise<Pick<
-  typeof import("../src/attestation-workflow-support.ts"),
-  | "checkPublishQuality"
-  | "inferProvider"
-  | "loadAgentSourceView"
-  | "selectSourceForTopicV2"
-  | "validateUrl"
->> {
-  const checkPublishQuality = await loadPackageExport<
-    typeof import("../src/attestation-workflow-support.ts")["checkPublishQuality"]
-  >("../dist/attestation-workflow-support.js", "../src/attestation-workflow-support.ts", "checkPublishQuality");
-  const inferProvider = await loadPackageExport<
-    typeof import("../src/attestation-workflow-support.ts")["inferProvider"]
-  >("../dist/attestation-workflow-support.js", "../src/attestation-workflow-support.ts", "inferProvider");
-  const loadAgentSourceView = await loadPackageExport<
-    typeof import("../src/attestation-workflow-support.ts")["loadAgentSourceView"]
-  >("../dist/attestation-workflow-support.js", "../src/attestation-workflow-support.ts", "loadAgentSourceView");
-  const selectSourceForTopicV2 = await loadPackageExport<
-    typeof import("../src/attestation-workflow-support.ts")["selectSourceForTopicV2"]
-  >("../dist/attestation-workflow-support.js", "../src/attestation-workflow-support.ts", "selectSourceForTopicV2");
-  const validateUrl = await loadPackageExport<
-    typeof import("../src/attestation-workflow-support.ts")["validateUrl"]
-  >("../dist/attestation-workflow-support.js", "../src/attestation-workflow-support.ts", "validateUrl");
+async function loadAttestationWorkflowSupport(): Promise<AttestationWorkflowSupport> {
+  const checkPublishQuality = await loadPackageExport<AttestationWorkflowSupport["checkPublishQuality"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "checkPublishQuality",
+  );
+  const inferProvider = await loadPackageExport<AttestationWorkflowSupport["inferProvider"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "inferProvider",
+  );
+  const loadAgentSourceView = await loadPackageExport<AttestationWorkflowSupport["loadAgentSourceView"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "loadAgentSourceView",
+  );
+  const selectSourceForTopicV2 = await loadPackageExport<AttestationWorkflowSupport["selectSourceForTopicV2"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "selectSourceForTopicV2",
+  );
+  const validateUrl = await loadPackageExport<AttestationWorkflowSupport["validateUrl"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "validateUrl",
+  );
   return {
     checkPublishQuality,
     inferProvider,
@@ -472,7 +524,7 @@ function buildRecommendations(input: {
 async function assessUrl(
   url: string,
   allowInsecure: boolean,
-  sourceView: ReturnType<typeof loadAgentSourceView>,
+  sourceView: SourceView,
 ): Promise<SourceAssessment> {
   const parsed = tryParseUrl(url);
   const catalogMatches = parsed ? rankCatalogMatches(url, sourceView.sources) : [];
@@ -556,7 +608,7 @@ async function assessUrl(
   };
 }
 
-function rankCatalogMatches(url: string, sources: SourceRecordV2[]): CatalogMatch[] {
+function rankCatalogMatches(url: string, sources: SourceRecord[]): CatalogMatch[] {
   const parsed = tryParseUrl(url);
   if (!parsed) return [];
 

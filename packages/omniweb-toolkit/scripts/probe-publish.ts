@@ -12,6 +12,33 @@
 
 import { loadConnect, loadPackageExport } from "./_shared.ts";
 
+type PublishDraft = {
+  text: string;
+  category: string;
+  attestUrl: string;
+  confidence: number;
+};
+
+type PublishReadinessSupport = {
+  validateInput: (schema: unknown, input: PublishDraft) => {
+    code: string;
+    message: string;
+    retryable?: boolean;
+  } | null;
+  PublishDraftSchema: unknown;
+};
+
+type VerifyPublishVisibility = (
+  omni: any,
+  txHash: string | undefined,
+  expectedText: string,
+  options: { timeoutMs: number; pollMs: number; limit: number },
+) => Promise<{
+  attempted: boolean;
+  visible?: boolean;
+  indexedVisible?: boolean;
+}>;
+
 const DEFAULT_ATTEST_URL = "https://blockchain.info/ticker";
 const DEFAULT_CATEGORY = "OBSERVATION";
 const DEFAULT_CONFIDENCE = 80;
@@ -169,22 +196,21 @@ try {
   process.exit(1);
 }
 
-async function loadPublishReadinessSupport(): Promise<Pick<
-  typeof import("../src/publish-readiness-support.ts"),
-  "validateInput" | "PublishDraftSchema"
->> {
-  const validateInput = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["validateInput"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "validateInput");
-  const PublishDraftSchema = await loadPackageExport<
-    typeof import("../src/publish-readiness-support.ts")["PublishDraftSchema"]
-  >("../dist/publish-readiness-support.js", "../src/publish-readiness-support.ts", "PublishDraftSchema");
+async function loadPublishReadinessSupport(): Promise<PublishReadinessSupport> {
+  const validateInput = await loadPackageExport<PublishReadinessSupport["validateInput"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "validateInput",
+  );
+  const PublishDraftSchema = await loadPackageExport<PublishReadinessSupport["PublishDraftSchema"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "PublishDraftSchema",
+  );
   return { validateInput, PublishDraftSchema };
 }
 
-async function loadVerifyPublishVisibility(): Promise<
-  typeof import("../src/publish-visibility.ts")["verifyPublishVisibility"]
-> {
+async function loadVerifyPublishVisibility(): Promise<VerifyPublishVisibility> {
   return loadPackageExport(
     "../dist/publish-visibility.js",
     "../src/publish-visibility.ts",
