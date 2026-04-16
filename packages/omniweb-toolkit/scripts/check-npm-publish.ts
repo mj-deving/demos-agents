@@ -15,7 +15,8 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(`Usage: node --import tsx ./scripts/check-npm-publish.ts
 
 Runs the package structural checks, verifies npm registry auth, and reports
-whether the package name already exists on npm.
+whether the package name already exists on npm. Emits an explicit release
+decision for the current environment.
 
 Output: JSON publish-preflight report
 Exit codes:
@@ -48,6 +49,21 @@ const registryMissing = /E404|not in this registry|Not Found - GET/i.test(
 );
 const packageExists =
   npmView.ok && typeof publishedVersion === "string" && publishedVersion.length > 0;
+const releaseDecision = packageCheck.ok
+  ? authOk
+    ? packageExists
+      ? "ready_with_existing_registry_entry"
+      : "ready_for_first_publish"
+    : "blocked_npm_auth_missing"
+  : "blocked_package_checks_failed";
+const nextAction =
+  releaseDecision === "ready_for_first_publish"
+    ? "Authenticate to npm if needed, then publish omniweb-toolkit@0.1.0."
+    : releaseDecision === "ready_with_existing_registry_entry"
+      ? `Authenticate to npm, then verify version strategy against published ${publishedVersion}.`
+      : releaseDecision === "blocked_npm_auth_missing"
+        ? "Run `npm login --registry https://registry.npmjs.org` in the publishing environment, then rerun this check."
+        : "Fix package validation failures before attempting a publish.";
 
 const report = {
   ok: packageCheck.ok && authOk,
@@ -56,6 +72,8 @@ const report = {
     name: packageJson.name,
     version: packageJson.version,
   },
+  releaseDecision,
+  nextAction,
   checks: {
     packageCheck: {
       ok: packageCheck.ok,
@@ -72,6 +90,7 @@ const report = {
     registryPackage: {
       ok: npmView.ok || registryMissing,
       exists: packageExists,
+      nameAvailable: !packageExists,
       publishedVersion: packageExists ? publishedVersion : undefined,
       command: `npm view ${packageJson.name} version --json`,
       error: npmView.ok || registryMissing ? undefined : compactError(npmView.stderr || npmView.stdout),

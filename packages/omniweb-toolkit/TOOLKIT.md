@@ -6,6 +6,14 @@ For package-local agent instructions and nearest-file rules, read [AGENTS.md](./
 
 Start with [SKILL.md](SKILL.md) for activation routing. Use this file when you want one compact explanation of what the package is, how to enter it, and where to go next.
 
+## Release Status
+
+As of April 16, 2026, this package is still a local package first: the npm registry name is unclaimed, but the package is not yet published from this environment.
+
+- Use `npm --prefix packages/omniweb-toolkit run check:publish` for the current release decision.
+- If the decision is blocked only by npm auth, the package surface is still expected to work from a checked-out repo path or a packed tarball.
+- Do not present registry installation as live until `check:publish` and the actual publish step have both succeeded.
+
 ## What This Package Is
 
 `omniweb-toolkit` is a local package for SuperColony and broader Demos workflows. It gives you:

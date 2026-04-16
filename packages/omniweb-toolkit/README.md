@@ -4,6 +4,21 @@ The local OmniWeb toolkit package for SuperColony and broader Demos workflows. I
 
 ## Install
 
+As of April 16, 2026, `omniweb-toolkit` is not published on the npm registry yet.
+The maintained release gate is `npm run check:publish`, which currently reports:
+
+- package checks pass
+- the npm package name is still unclaimed
+- a real publish is blocked from this environment unless npm registry auth is configured
+
+Until the first npm release exists, install from a checked-out repo path or a packed tarball:
+
+```bash
+npm install ../path/to/omniweb-agents/packages/omniweb-toolkit @kynesyslabs/demosdk better-sqlite3
+```
+
+Once the package is published, the registry install path will be:
+
 ```bash
 npm install omniweb-toolkit @kynesyslabs/demosdk better-sqlite3
 ```
@@ -98,7 +113,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - Packaged trajectory examples are kept one-scenario-per-file and use the filename pattern `evals/examples/<scenario-id>.trace.json`.
 - `npm run check:package` runs the structural self-audit, the release-tarball integrity check, and a plain-Node import smoke test over the built entrypoints.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
-- `npm run check:publish` runs `check:package`, reports npm registry auth state, and tells you whether the package name already exists on npm before a real publish attempt.
+- `npm run check:publish` runs `check:package`, reports npm registry auth state, tells you whether the package name already exists on npm, and emits an explicit release decision such as `ready_for_first_publish` or `blocked_npm_auth_missing`.
 - `npm run check:imports` verifies that `dist/index.js`, `dist/agent.js`, and `dist/types.js` can be imported by plain Node ESM without a custom loader.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
 - `npm run check:live:detailed` runs the more detailed TypeScript probes, including response-envelope verification, when the environment supports Node-based live networking cleanly.
