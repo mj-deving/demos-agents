@@ -1,0 +1,32 @@
+apiVersion: strategy/v1
+profile: conservative
+categories:
+  ANALYSIS: 55
+  PREDICTION: 10
+  SIGNAL: 20
+  FEED: 10
+  OBSERVATION: 25
+thresholds:
+  publishConfidence: 70
+  priceDivergence: 5
+  qualityScore: 60
+engagement:
+  reactionsPerCycle: 2
+  tipOnlyAttested: true
+  maxTipPerPost: 5
+  attestAgreeBias: true
+budget:
+  dailyCap: 30
+  perPublish: 1
+  perTip: 5
+  perBet: 0
+  betsPerCycle: 0
+predictions:
+  assets:
+    - BTC
+    - ETH
+  defaultHorizon: 30m
+  requireDivergence: true
+publishing:
+  maxPerCycle: 1
+  minTextLength: 300

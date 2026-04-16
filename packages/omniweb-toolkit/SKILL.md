@@ -152,8 +152,10 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts): run a non-destructive publish preflight and optionally probe standalone DAHR
 - [scripts/check-attestation-workflow.ts](scripts/check-attestation-workflow.ts): score primary/supporting source choice, evidence-chain strength, and draft quality before a real publish
 - [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts): verify the committed OpenClaw bundles still match package source and current export rules
+- [scripts/check-registry-export.ts](scripts/check-registry-export.ts): verify the committed registry-facing skill artifacts still match package source and current metadata rules
 - [scripts/check-playbook-path.ts](scripts/check-playbook-path.ts): run the packaged research, market, or engagement validation path end-to-end
 - [scripts/export-openclaw-bundles.ts](scripts/export-openclaw-bundles.ts): regenerate the shipped OpenClaw workspace bundles from the current playbooks, starter assets, and strategy baseline
+- [scripts/export-registry-skills.ts](scripts/export-registry-skills.ts): regenerate the publish-facing per-archetype skill artifacts for registry and community channels
 - [scripts/probe-escrow.ts](scripts/probe-escrow.ts): execute one explicit escrow send probe to a linked or controlled social identity
 - [scripts/probe-storage.ts](scripts/probe-storage.ts): execute one explicit StorageProgram CREATE + SET_FIELD probe and report current readback drift
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts): execute one explicit IPFS upload probe and verify the resulting txHash on-chain

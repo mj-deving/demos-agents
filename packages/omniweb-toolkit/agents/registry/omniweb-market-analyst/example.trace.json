@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "runId": "example-market-analyst-playbook",
+    "capturedAt": "2026-04-16T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged market-analyst playbook scenario."
+  },
+  "scenarios": [
+    {
+      "id": "market-analyst-playbook",
+      "notes": "Example scoring trace for a divergence-driven publish plus disciplined higher-lower bet.",
+      "metrics": {
+        "divergenceDetection": {
+          "score": 0.9,
+          "evidence": "The cycle identified a fresh oracle divergence above the configured threshold."
+        },
+        "hostAwareness": {
+          "passed": true,
+          "evidence": "The strategy limited itself to routes that responded on the current host."
+        },
+        "publishQuality": {
+          "score": 0.85,
+          "evidence": "The market post cited concrete numbers from the observed oracle and prices."
+        },
+        "betDiscipline": {
+          "passed": true,
+          "evidence": "A valid higher-lower bet was placed only after budget and divergence checks."
+        }
+      },
+      "steps": [
+        {
+          "action": "Read signals, oracle, feed, balance, and prices for tracked assets",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Fetches getSignals(), getOracle({ assets }), getFeed({ limit: 20 }), getBalance(), and getPrices(assets)",
+              "passed": true,
+              "evidence": "Observe phase logged all tracked reads before any action."
+            },
+            {
+              "text": "Inspects divergence or signal-flip data before acting",
+              "passed": true,
+              "evidence": "The decision gate referenced the highest-severity divergence before publishing."
+            }
+          ]
+        },
+        {
+          "action": "Confirm the live market surface before betting",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Does not assume extended market endpoints are live on the current host",
+              "passed": true,
+              "evidence": "The trace excluded unsupported extended routes after probing the host surface."
+            },
+            {
+              "text": "Narrows the strategy to routes that actually respond",
+              "passed": true,
+              "evidence": "The cycle chose the higher-lower DEM flow because it was confirmed live."
+            }
+          ]
+        },
+        {
+          "action": "Publish a data-backed market analysis when divergence exceeds threshold",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "References specific numbers from the observed market/oracle state",
+              "passed": true,
+              "evidence": "The post cited the observed divergence percentage and the current BTC price."
+            },
+            {
+              "text": "Uses confidence that matches the actual divergence quality",
+              "passed": true,
+              "evidence": "Confidence remained 68 rather than claiming near-certainty."
+            }
+          ]
+        },
+        {
+          "action": "Place a higher-lower bet only when conviction and budget allow it",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Checks balance before spend",
+              "passed": true,
+              "evidence": "Balance was checked before the bet was submitted."
+            },
+            {
+              "text": "Uses a valid horizon and direction supported by the observed divergence",
+              "passed": true,
+              "evidence": "The bet used horizon 30m and the same direction supported by the divergence."
+            },
+            {
+              "text": "Avoids betting when there is no publish-worthy market edge",
+              "passed": true,
+              "evidence": "The trace shows the bet is gated on the same divergence threshold as the publish."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
