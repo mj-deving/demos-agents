@@ -14,6 +14,7 @@ import { apiCall, info } from "../network/sdk.js";
 // ── Constants ──────────────────────────────────────
 
 const AUTH_CACHE_PATH = resolve(homedir(), ".supercolony-auth.json");
+const AUTH_REFRESH_MARGIN_MS = 60 * 60 * 1000;
 
 // ── Types ──────────────────────────────────────────
 
@@ -32,7 +33,7 @@ interface AuthChallengeResponse {
 
 interface AuthVerifyResponse {
   token?: string;
-  expiresAt?: string;
+  expiresAt?: string | number;
 }
 
 function getErrorDetail(err: unknown): string {
@@ -41,6 +42,52 @@ function getErrorDetail(err: unknown): string {
     if (typeof cause.code === "string" && cause.code) return cause.code;
   }
   return err instanceof Error ? err.message : String(err);
+}
+
+function normalizeExpiresAt(value: unknown): string | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) {
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      return new Date(numeric).toISOString();
+    }
+    return null;
+  }
+
+  const parsed = new Date(trimmed).getTime();
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return new Date(parsed).toISOString();
+}
+
+function readCacheEntry(
+  address: string,
+  entry: { token?: unknown; expiresAt?: unknown } | null | undefined,
+): { token: string; expiresAt: string; address: string } | null {
+  if (!entry || typeof entry.token !== "string") {
+    return null;
+  }
+
+  const normalizedExpiresAt = normalizeExpiresAt(entry.expiresAt);
+  if (!normalizedExpiresAt) {
+    return null;
+  }
+
+  const expiry = new Date(normalizedExpiresAt).getTime();
+  if (!Number.isFinite(expiry) || Date.now() > expiry - AUTH_REFRESH_MARGIN_MS) {
+    return null;
+  }
+
+  return { token: entry.token, expiresAt: normalizedExpiresAt, address };
 }
 
 // ── Cache I/O ──────────────────────────────────────
@@ -56,21 +103,14 @@ export function loadAuthCache(address?: string): { token: string; expiresAt: str
 
     // Try namespaced lookup first (works for both mixed and new format)
     if (address) {
-      const entry = raw[address] as AuthCacheEntry | undefined;
-      if (entry?.token && entry?.expiresAt) {
-        const expiry = new Date(entry.expiresAt).getTime();
-        if (Number.isFinite(expiry) && Date.now() <= expiry - 5 * 60 * 1000) {
-          return { token: entry.token, expiresAt: entry.expiresAt, address };
-        }
-      }
+      const entry = readCacheEntry(address, raw[address] as AuthCacheEntry | undefined);
+      if (entry) return entry;
     }
 
     // Fall back to legacy top-level fields (pure legacy or mixed format)
     if (raw.token && raw.address && raw.expiresAt) {
       if (address && raw.address !== address) return null;
-      const expiry = new Date(raw.expiresAt).getTime();
-      if (!Number.isFinite(expiry) || Date.now() > expiry - 5 * 60 * 1000) return null;
-      return { token: raw.token, expiresAt: raw.expiresAt, address: raw.address };
+      return readCacheEntry(String(raw.address), raw as AuthCacheEntry);
     }
 
     return null;
@@ -79,7 +119,12 @@ export function loadAuthCache(address?: string): { token: string; expiresAt: str
   }
 }
 
-function saveAuthCache(address: string, token: string, expiresAt: string): void {
+function saveAuthCache(address: string, token: string, expiresAt: string | number): void {
+  const normalizedExpiresAt = normalizeExpiresAt(expiresAt);
+  if (!normalizedExpiresAt) {
+    throw new Error("Cannot persist auth cache without a valid expiresAt timestamp");
+  }
+
   let data: AuthCacheFile = {};
   if (existsSync(AUTH_CACHE_PATH)) {
     try {
@@ -87,22 +132,31 @@ function saveAuthCache(address: string, token: string, expiresAt: string): void 
       // Preserve ALL existing namespaced entries (skip legacy top-level keys)
       for (const [k, v] of Object.entries(raw)) {
         if (k !== "token" && k !== "address" && k !== "expiresAt" && typeof v === "object" && v !== null) {
-          data[k] = v as AuthCacheEntry;
+          const normalizedEntry = readCacheEntry(k, v as AuthCacheEntry);
+          if (normalizedEntry) {
+            data[k] = { token: normalizedEntry.token, expiresAt: normalizedEntry.expiresAt };
+          }
         }
       }
       // Also migrate legacy entry if present and not already in map
       if (raw.token && raw.address && !data[raw.address]) {
-        data[raw.address] = { token: raw.token, expiresAt: raw.expiresAt };
+        const normalizedLegacy = readCacheEntry(String(raw.address), raw as AuthCacheEntry);
+        if (normalizedLegacy) {
+          data[raw.address] = {
+            token: normalizedLegacy.token,
+            expiresAt: normalizedLegacy.expiresAt,
+          };
+        }
       }
     } catch { /* start fresh */ }
   }
-  data[address] = { token, expiresAt };
+  data[address] = { token, expiresAt: normalizedExpiresAt };
   // Write both legacy flat format (for skills/supercolony compat) and namespaced map
   const output: Record<string, unknown> = {
     // Legacy fields — consumed by skills/supercolony/scripts/supercolony.ts
     token,
     address,
-    expiresAt,
+    expiresAt: normalizedExpiresAt,
     // Namespaced entries — consumed by tools/lib/auth.ts loadAuthCache
     ...data,
   };
@@ -179,10 +233,11 @@ export async function ensureAuth(
   }
 
   const token = verifyRes.data.token;
-  const expiresAt = verifyRes.data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = verifyRes.data.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
   saveAuthCache(address, token, expiresAt);
-  info(`Authenticated. Token expires: ${expiresAt}`);
+  const normalizedExpiresAt = normalizeExpiresAt(expiresAt) ?? String(expiresAt);
+  info(`Authenticated. Token expires: ${normalizedExpiresAt}`);
 
   return token;
 }

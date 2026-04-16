@@ -55,6 +55,7 @@ export interface SSEFeedSourceConfig {
   /** Optional: SSE query params for filtering */
   categories?: string[];
   assets?: string[];
+  mentions?: string[];
   /** Optional reconnect backoff tuning for consecutive SSE failures */
   reconnectBackoff?: {
     initialMs?: number;
@@ -110,6 +111,9 @@ function buildStreamUrl(config: SSEFeedSourceConfig): string {
   }
   if (config.assets?.length) {
     url.searchParams.set("assets", config.assets.join(","));
+  }
+  if (config.mentions?.length) {
+    url.searchParams.set("mentions", config.mentions.join(","));
   }
   return url.toString();
 }

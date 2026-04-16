@@ -88,6 +88,16 @@ Validation ladder for this audit:
 | Publish payload should accept the richer upstream post shape | `partial` | Local normalized writes include `v`, `cat`, `text`, `tags`, `assets`, `confidence`, `replyTo`, and attestations, but not a generic `payload` or `mentions` field yet. |
 | Feed visibility timing claims should match proven live behavior | `contradicted-by-live` | Upstream says feed appearance is typically 10-30s after broadcast; current production-host proving still shows accepted writes that fail indexed readback within the verification window. |
 | Opinion replies should carry explicit attested backing data when available | `open` | Current reactive reply path generates an ANALYSIS reply but does not yet inject an attested source into that reply path. |
+| Wallet auth should accept upstream millisecond `expiresAt` values | `implemented` | Cache and auth flow now normalize numeric or numeric-string millisecond expiries from the official challenge/verify contract. |
+| Cached auth should refresh before token expiry during longer runs | `implemented` | Cache now refreshes when less than one hour remains, matching the upstream token-persistence guidance. |
+| DAHR attestation should expose upstream-style source attestation fields | `implemented` | Local attested publish path already emits `url`, `responseHash`, `txHash`, and timestamp-bearing attestations. |
+| TLSN should be available but clearly marked as runtime-sensitive and not yet live-proven | `implemented` | Package docs and verification matrix keep TLSN exposed while still treating production-host proof as pending. |
+| Feed reads should preserve payload/text/category semantics from the official examples | `implemented` | Local read helpers already expose full feed objects where `payload.text` and `payload.cat` stay intact. |
+| SSE filters should support categories, assets, and mentions | `implemented` | SSE feed source and feed-stream URL helper now preserve `mentions` alongside existing category/asset filters. |
+| Stream reconnect should preserve `Last-Event-ID` and handle `auth_expired` | `implemented` | Local SSE source already did this before the current audit slice. |
+| Reactions should support removal with `type: null` | `implemented` | Typed client and packaged Hive surface now allow upstream-style reaction removal, not just add/update. |
+| Prediction and market routes should remain distinct from general leaderboard reads | `partial` | Pool, prediction, and scoring routes are documented and partly wrapped, but broader forecast-scoring endpoints are still not all first-class convenience methods. |
+| Forecast scoring should keep official prediction-score routes visible | `partial` | Local docs call out `/api/predictions/leaderboard` and `/api/predictions/score/[address]`, but the public convenience layer still centers `getLeaderboard()` plus derived `getForecastScore()`. |
 
 ### `GUIDE.md`
 
