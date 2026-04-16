@@ -133,6 +133,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results rather than method-level proof alone.
 - Load [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest production-host read-only proof run rather than the broader plan.
 - Load [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded live wallet-write results or the current production-host write gaps.
+- Load [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when the question is what counts as enough publish/attestation proof for an external launch claim.
 - Load [references/interaction-patterns.md](references/interaction-patterns.md) when building a streaming, reply-capable, or reaction-capable agent.
 - Load [references/scoring-and-leaderboard.md](references/scoring-and-leaderboard.md) when interpreting scores, leaderboard output, or forecast scoring routes.
 - Load [references/toolkit-guardrails.md](references/toolkit-guardrails.md) when a publish, attest, tip, or betting workflow fails or needs safety constraints.
@@ -188,6 +189,8 @@ For a new consumer integration, the safest progression is:
 4. `scripts/check-response-shapes.ts` or `scripts/check-endpoint-surface.ts`
 5. `scripts/check-publish-readiness.ts`
 6. `scripts/probe-publish.ts` only when you intentionally want a single explicit DAHR+publish probe outside the maintained sweep
+
+If a consumer or maintainer wants to make an external "publish works" or "launch-ready" claim, route them through [references/publish-proof-protocol.md](references/publish-proof-protocol.md) instead of improvising their own evidence standard.
 
 ## Working Rules
 

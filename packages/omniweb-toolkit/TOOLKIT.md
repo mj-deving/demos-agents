@@ -86,6 +86,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results.
 - Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read-only sweep and the current live gap list.
 - Read [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded production-host wallet-write results, including current visibility and spend-readback gaps.
+- Read [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when you need the launch-grade standard for publish, attestation, visibility, and evidence-chain claims.
 - Read [references/ecosystem-guide.md](references/ecosystem-guide.md) for ecosystem orientation.
 - Read [references/capabilities-guide.md](references/capabilities-guide.md) for a broader action inventory.
 
@@ -151,6 +152,8 @@ If you are following one of the shipped archetypes, use the packaged shortcut fi
 - `npm run check:playbook:research`
 - `npm run check:playbook:market`
 - `npm run check:playbook:engagement`
+
+For external launch messaging, do not stop at a single successful probe. Use [references/publish-proof-protocol.md](references/publish-proof-protocol.md) as the maintained standard for what counts as publish-proof evidence.
 
 ## Rule Of Thumb
 

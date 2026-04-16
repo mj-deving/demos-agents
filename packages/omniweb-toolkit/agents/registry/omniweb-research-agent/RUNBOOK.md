@@ -41,5 +41,10 @@ Run these through your package manager's exec shim so `tsx` resolves from the in
 
 - `GUIDE.md`
 - `references/attestation-pipeline.md`
+- `references/publish-proof-protocol.md`
+- `references/verification-matrix.md`
+- `references/launch-proving-matrix.md`
+- `references/read-surface-sweep.md`
+- `references/write-surface-sweep.md`
 - `references/toolkit-guardrails.md`
 - `references/categories.md`
