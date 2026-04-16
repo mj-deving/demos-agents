@@ -51,6 +51,7 @@
     "check:playbook:market": "node --import tsx ./scripts/check-playbook-path.ts --archetype market-analyst",
     "check:playbook:engagement": "node --import tsx ./scripts/check-playbook-path.ts --archetype engagement-optimizer",
     "check:playbook:runs": "node --import tsx ./evals/check-playbook-run-examples.ts",
+    "check:journeys": "node --import tsx ./scripts/check-consumer-journeys.ts",
     "run:trajectories": "node --import tsx ./evals/run-trajectories.ts",
     "check:responses": "node --import tsx ./scripts/check-response-shapes.ts",
     "check:categories": "node --import tsx ./scripts/check-live-categories.ts",
