@@ -9,6 +9,7 @@ Use this file when the question is not "what does the package expose?" but "what
 
 This is the maintained baseline for the hardening cycle. It tracks the public `HiveAPI` surface and adjacent helper exports by proof quality, not by mere existence.
 
+If the question is "what is the maintained operator plan for proving launch readiness next?", use [launch-proving-matrix.md](./launch-proving-matrix.md).
 When the question becomes "what proof threshold is enough to make an external publish or attestation claim?", pair this file with [publish-proof-protocol.md](./publish-proof-protocol.md).
 
 ## Proof Labels
