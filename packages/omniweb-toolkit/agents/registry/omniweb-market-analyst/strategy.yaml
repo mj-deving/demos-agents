@@ -1,0 +1,32 @@
+apiVersion: strategy/v1
+profile: balanced
+categories:
+  ANALYSIS: 45
+  PREDICTION: 30
+  SIGNAL: 15
+  FEED: 10
+thresholds:
+  publishConfidence: 55
+  priceDivergence: 2
+  qualityScore: 60
+engagement:
+  reactionsPerCycle: 3
+  tipOnlyAttested: true
+  maxTipPerPost: 3
+  attestAgreeBias: true
+budget:
+  dailyCap: 60
+  perPublish: 1
+  perTip: 3
+  perBet: 5
+  betsPerCycle: 2
+predictions:
+  assets:
+    - BTC
+    - ETH
+    - SOL
+  defaultHorizon: 30m
+  requireDivergence: true
+publishing:
+  maxPerCycle: 1
+  minTextLength: 200

@@ -42,7 +42,7 @@ omniweb-agents/
 ├── tsconfig.json                        # Root TypeScript config
 ├── vitest.config.ts                     # Test runner config
 │
-├── packages/omniweb-toolkit/        # Consumer package (omniweb-toolkit)
+├── packages/omniweb-toolkit/        # Consumer package + skill/export surface
 │   ├── SKILL.md                         #   Agent integration skill (463 lines) — SOURCE OF TRUTH
 │   ├── GUIDE.md                         #   Perceive-then-prompt methodology (444 lines)
 │   ├── TOOLKIT.md                       #   Quick-start bridge
@@ -59,6 +59,10 @@ omniweb-agents/
 │   │   ├── chain-api.ts                 #     Core chain ops
 │   │   ├── session-factory.ts           #     AgentRuntime → DemosSession
 │   │   └── index.ts, agent.ts, types.ts #     Barrel + agent loop + types
+│   ├── agents/
+│   │   ├── openai.yaml                  #   UI-facing skill metadata
+│   │   ├── openclaw/                    #   Generated local workspace bundles per archetype
+│   │   └── registry/                    #   Generated publish-facing skill artifacts per archetype
 │   └── docs/                            #   Shipped with npm package
 │       ├── ecosystem-guide.md           #     What is SuperColony
 │       ├── capabilities-guide.md        #     What you can do
@@ -133,7 +137,7 @@ omniweb-agents/
 │   ├── project-structure.md             #   This file
 │   ├── design-consumer-toolkit.md       #   Active design spec (Phase 20)
 │   ├── architecture-plumbing-vs-strategy.md  # Toolkit/strategy boundary (ADR-0002)
-│   ├── decisions/                       #   18 ADRs (all accepted)
+│   ├── decisions/                       #   19 ADRs (all accepted)
 │   ├── primitives/                      #   14 domain docs + README index
 │   ├── rules/                           #   7 project behavioral rules
 │   ├── research/                        #   SDK refs, API refs, discovery layer
@@ -187,6 +191,17 @@ External agents integrate via three files shipped in the npm package:
 3. **`GUIDE.md`** — Perceive-then-prompt methodology (444 lines)
 
 These live at `packages/omniweb-toolkit/` and ship with `npm install omniweb-toolkit`.
+
+## External Distribution Model
+
+Per ADR-0022, the external distribution model is:
+
+- this repo is the canonical source of truth
+- `omniweb-toolkit` is the runtime package
+- OpenClaw workspace bundles under `packages/omniweb-toolkit/agents/openclaw/` are the current local/operator export
+- registry/community skill artifacts under `packages/omniweb-toolkit/agents/registry/` are the current publish-facing export target
+- future registry/community skill artifacts should be generated per archetype rather than hand-maintained in separate source repos
+- public docs should publish from versioned repo content to a docs site, not a wiki-first surface
 
 ## Build & Publish
 

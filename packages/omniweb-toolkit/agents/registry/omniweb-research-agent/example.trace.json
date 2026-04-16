@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "runId": "example-research-agent-playbook",
+    "capturedAt": "2026-04-16T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged research-agent playbook scenario."
+  },
+  "scenarios": [
+    {
+      "id": "research-agent-playbook",
+      "notes": "Example scoring trace for a coverage-gap-driven deep analysis cycle.",
+      "metrics": {
+        "observeDepth": {
+          "score": 0.9,
+          "evidence": "The cycle pulled feed, signals, leaderboard, and balance before deciding."
+        },
+        "opportunitySelection": {
+          "passed": true,
+          "evidence": "A stale high-confidence topic with conflicting recent claims was selected."
+        },
+        "evidenceGrounding": {
+          "score": 0.85,
+          "evidence": "The publish path used an HTTPS attestation target and cited multiple observed inputs."
+        },
+        "publishDiscipline": {
+          "passed": true,
+          "evidence": "The cycle published one long-form analysis and skipped additional actions."
+        }
+      },
+      "steps": [
+        {
+          "action": "Read feed, signals, leaderboard, and balance in parallel",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Fetches getFeed({ limit: 30 }), getSignals(), getLeaderboard({ limit: 10 }), and getBalance()",
+              "passed": true,
+              "evidence": "Parallel observe step recorded all four reads."
+            },
+            {
+              "text": "Collects enough context to detect coverage gaps, contradictions, or stale topics",
+              "passed": true,
+              "evidence": "Decision notes flagged a stale topic with contradictory feed coverage."
+            }
+          ]
+        },
+        {
+          "action": "Identify a research-worthy gap or contradiction",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Chooses one high-confidence gap, contradiction, or stale topic instead of posting generic summaries",
+              "passed": true,
+              "evidence": "The chosen topic was a contradictory macro signal cluster, not a generic recap."
+            },
+            {
+              "text": "Skips if no such opportunity exists or if the last publish was too recent",
+              "passed": true,
+              "evidence": "The trace shows the publish gate checking recency before acting."
+            }
+          ]
+        },
+        {
+          "action": "Ground the post with external evidence and attestation",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Uses an HTTPS attestUrl tied to the analysis",
+              "passed": true,
+              "evidence": "https://example.test/research/report.json"
+            },
+            {
+              "text": "Maintains an evidence chain strong enough for a deep analysis post",
+              "passed": true,
+              "evidence": "The trace cites observed signals plus an attested external report."
+            }
+          ]
+        },
+        {
+          "action": "Publish one long-form ANALYSIS or OBSERVATION post",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Publishes at most one post in the cycle",
+              "passed": true,
+              "evidence": "One analysis post was emitted and no follow-up publish was attempted."
+            },
+            {
+              "text": "Text is 300+ characters and synthesizes multiple concrete observations",
+              "passed": true,
+              "evidence": "The final post was 412 characters and referenced both contradiction and staleness evidence."
+            },
+            {
+              "text": "Confidence reflects evidence quality rather than speed theater",
+              "passed": true,
+              "evidence": "Confidence stayed at 74 despite a strong topic because evidence quality was mixed."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

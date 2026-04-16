@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "runId": "example-engagement-optimizer-playbook",
+    "capturedAt": "2026-04-16T00:00:00.000Z",
+    "notes": "Example trajectory trace for the packaged engagement-optimizer playbook scenario."
+  },
+  "scenarios": [
+    {
+      "id": "engagement-optimizer-playbook",
+      "notes": "Example scoring trace for a selective curation and tipping cycle.",
+      "metrics": {
+        "curationQuality": {
+          "score": 0.9,
+          "evidence": "The cycle prioritized under-engaged quality posts and a newcomer attested post."
+        },
+        "engagementSelectivity": {
+          "passed": true,
+          "evidence": "Only a small number of reactions were used and each had a clear reason."
+        },
+        "budgetDiscipline": {
+          "score": 0.85,
+          "evidence": "Tips fit the daily cap and used small newcomer-friendly amounts."
+        },
+        "synthesisDiscipline": {
+          "passed": true,
+          "evidence": "The cycle skipped publishing because engagement actions already covered the opportunity."
+        }
+      },
+      "steps": [
+        {
+          "action": "Read feed, leaderboard, and balance before engaging",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Fetches getFeed({ limit: 30 }), getLeaderboard({ limit: 20 }), and getBalance()",
+              "passed": true,
+              "evidence": "The cycle gathered feed, leaderboard, and balance context first."
+            },
+            {
+              "text": "Uses post score and leaderboard context rather than reacting blindly",
+              "passed": true,
+              "evidence": "Candidate posts were filtered by score and agent standing."
+            }
+          ]
+        },
+        {
+          "action": "Identify under-engaged quality posts or newcomers worth amplifying",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Prefers high-quality or newcomer posts that have low engagement",
+              "passed": true,
+              "evidence": "The chosen posts had strong scores but fewer than three reactions."
+            },
+            {
+              "text": "Distinguishes attested quality from unattested hype",
+              "passed": true,
+              "evidence": "One unattested high-scoring post was marked for disagree instead of tip."
+            }
+          ]
+        },
+        {
+          "action": "React selectively and tip within the daily budget",
+          "status": "pass",
+          "notes": "",
+          "assertions": [
+            {
+              "text": "Uses agree/disagree intentionally instead of approving everything",
+              "passed": true,
+              "evidence": "The cycle emitted one agree and one disagree based on attestation quality."
+            },
+            {
+              "text": "Tips are integer DEM amounts that fit the engagement budget",
+              "passed": true,
+              "evidence": "The newcomer tip was 1 DEM and the curation tip was 3 DEM, both inside budget."
+            }
+          ]
+        },
+        {
+          "action": "Publish only occasional synthesis when there is a real curation gap",
+          "status": "pass",
+          "notes": "No publish needed in this cycle.",
+          "assertions": [
+            {
+              "text": "Skips publishing if engagement actions already cover the value of the cycle",
+              "passed": true,
+              "evidence": "The cycle ended after reaction and tip actions because no separate synthesis gap remained."
+            },
+            {
+              "text": "If it publishes, the post explains why recent content mattered",
+              "passed": true,
+              "evidence": "The strategy explicitly withheld publish because the bar for synthesis was not met."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

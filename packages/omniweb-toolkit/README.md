@@ -73,6 +73,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - `assets/`: output templates, archetype starters, and the generic skeleton
 - `agents/`: UI-facing skill metadata
 - `agents/openclaw/`: exported OpenClaw workspace bundles for the shipped archetypes
+- `agents/registry/`: generated per-archetype publish-facing skill artifacts for registry/community channels
 - `playbooks/`: agent archetypes
 - `docs/`: published compatibility stubs for older doc paths
 
@@ -88,6 +89,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.
 - Use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) when you want a generic hybrid scaffold instead.
 - Use [agents/openclaw/README.md](agents/openclaw/README.md) when you want a ready-made OpenClaw workspace bundle instead of assembling skills and config by hand.
+- Use [agents/registry/README.md](agents/registry/README.md) when you want the smaller per-archetype artifact shape intended for ClawHub or thin public skill repos.
 
 ## OpenClaw Bundles
 
@@ -102,6 +104,23 @@ Each bundle includes:
 
 These bundles are generated from package source, not hand-maintained. Regenerate them with `npm run export:openclaw` and validate them with `npm run check:openclaw`.
 
+## Registry Skill Artifacts
+
+The package now also ships generated registry-facing skill artifacts under [agents/registry/](agents/registry/README.md).
+
+These are intentionally smaller than the local OpenClaw workspace bundles:
+
+- one folder per public archetype slug
+- no workspace-level `openclaw.json`
+- no local `package.json` pinned back to the monorepo checkout
+- install and validation instructions centered on the published package path
+
+Current status:
+
+- the artifacts are structurally ready now
+- a real public publish path for them still depends on the first npm release of `omniweb-toolkit`
+- until that npm release exists, use the local OpenClaw bundles for real installs and treat `agents/registry/` as the release-shaped artifact set for future external channels
+
 ## Useful Scripts
 
 These helpers are shipped as TypeScript entrypoints. The package declares `tsx` so they remain runnable from a normal install instead of depending on the monorepo's root toolchain. The built runtime also imports `proper-lockfile` directly and expects `better-sqlite3` to be installed as a peer. If you use the experimental TLSN path, install `playwright` and `tlsn-js` alongside the package as optional peers.
@@ -110,6 +129,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/balance.ts](scripts/balance.ts)
 - [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts)
 - [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts) - validates the generated OpenClaw bundles against current package source and bundle rules
+- [scripts/check-registry-export.ts](scripts/check-registry-export.ts) - validates the generated registry-facing skill artifacts against current package source and metadata rules
 - [scripts/check-playbook-path.ts](scripts/check-playbook-path.ts) - packaged research/market/engagement validation path runner
 - [scripts/probe-escrow.ts](scripts/probe-escrow.ts)
 - [scripts/probe-storage.ts](scripts/probe-storage.ts)
@@ -122,6 +142,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
 - [scripts/export-openclaw-bundles.ts](scripts/export-openclaw-bundles.ts)
+- [scripts/export-registry-skills.ts](scripts/export-registry-skills.ts)
 - [scripts/check-npm-publish.ts](scripts/check-npm-publish.ts)
 - [scripts/leaderboard-snapshot.ts](scripts/leaderboard-snapshot.ts)
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
@@ -133,10 +154,12 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - Packaged trajectory examples are kept one-scenario-per-file and use the filename pattern `evals/examples/<scenario-id>.trace.json`.
 - Packaged captured playbook run examples are kept one-archetype-per-file and use the filename pattern `evals/playbook-runs/<archetype>.run.json`.
 - `npm run check:package` runs the structural self-audit, the release-tarball integrity check, and a plain-Node import smoke test over the built entrypoints.
-- `npm run check:package` now also verifies that the committed OpenClaw bundles still match the maintained playbooks, starter assets, and strategy baseline.
+- `npm run check:package` now also verifies that the committed OpenClaw bundles and registry-facing skill artifacts still match the maintained playbooks, starter assets, and strategy baseline.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
 - `npm run export:openclaw` regenerates `agents/openclaw/` from the current playbooks and starter assets.
+- `npm run export:registry` regenerates `agents/registry/` from the current playbooks and starter assets.
 - `npm run check:openclaw` validates the generated OpenClaw export without running the broader package checks.
+- `npm run check:registry` validates the generated registry-facing skill artifacts without running the broader package checks.
 - `npm run check:publish` runs `check:package`, reports npm registry auth state, tells you whether the package name already exists on npm, and emits an explicit release decision such as `ready_for_first_publish` or `blocked_npm_auth_missing`.
 - `npm run check:playbook:research`, `npm run check:playbook:market`, and `npm run check:playbook:engagement` each run the shipped live/readiness/trajectory path for one archetype.
 - `npm run check:attestation -- --attest-url <url> [--supporting-url <url> ...]` scores the source choice, evidence-chain quality, and draft quality for a planned publish workflow before you spend DEM.
