@@ -7,17 +7,26 @@ This file is the workflow companion to `CLAUDE.md`.
 - `CLAUDE.md` is the baseline source for architecture, principles, and repo-wide rules.
 - `AGENTS.md` is the baseline source for execution workflow, branch discipline, PR discipline, and beads usage.
 
+## Nearest-File Rule
+
+Use the closest `AGENTS.md` to the files you are changing as the local instruction layer.
+
+- Root `AGENTS.md` defines repo-wide workflow and coordination rules.
+- Nested `AGENTS.md` files may add subproject-specific rules and commands.
+- User instructions still override repo files.
+
 ## Mandatory Read Order
 
 Before starting work:
 
 1. read `CLAUDE.md`
 2. read `AGENTS.md`
-3. read the relevant package docs for the area being changed
-4. inspect `bd ready`
-5. inspect open GitHub PRs if recent work may overlap
+3. if a nearer nested `AGENTS.md` exists for the area you are changing, read it next
+4. read the relevant package docs for the area being changed
+5. inspect `bd ready`
+6. inspect open GitHub PRs if recent work may overlap
 
-There is currently no repo `MEMORY.md`.
+There is currently no repo `MEMORY.md`. Local agent memory files outside the repo are not authoritative current state.
 
 ## Coordination Model
 
@@ -176,6 +185,7 @@ For trajectory work:
 - do not duplicate official platform facts when the package should layer on them
 - keep repo-only research separate from shipped package docs
 - if publish-facing behavior changes, update docs and checks in the same PR when possible
+- keep cross-agent operational rules in `AGENTS.md`, not in agent-specific overlay files
 
 ## Untracked / Local Artifacts
 
