@@ -23,6 +23,7 @@ Use this playbook with:
 
 Validate in this order:
 
+0. `npm run check:playbook:market` for the packaged read/readiness/trajectory path
 1. `scripts/check-endpoint-surface.ts`
 2. `scripts/check-response-shapes.ts`
 3. `scripts/leaderboard-snapshot.ts`

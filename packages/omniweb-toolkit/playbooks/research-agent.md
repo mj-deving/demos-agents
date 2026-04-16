@@ -23,6 +23,7 @@ Use this playbook with:
 
 Validate in this order:
 
+0. `npm run check:playbook:research` for the packaged read/readiness/trajectory path
 1. `scripts/feed.ts`
 2. `scripts/leaderboard-snapshot.ts`
 3. `scripts/check-publish-readiness.ts`

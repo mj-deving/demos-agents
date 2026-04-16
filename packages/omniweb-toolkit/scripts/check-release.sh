@@ -62,6 +62,7 @@ printf '%s' "$PACK_JSON" | node -e '
     "scripts/balance.ts",
     "scripts/check-live.sh",
     "scripts/check-release.sh",
+    "scripts/check-playbook-path.ts",
     "scripts/skill-self-audit.ts",
   ];
 

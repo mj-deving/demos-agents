@@ -128,6 +128,12 @@ Recommended progression for a fresh consumer:
 5. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
 6. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
 
+If you are following one of the shipped archetypes, use the packaged shortcut first:
+
+- `npm run check:playbook:research`
+- `npm run check:playbook:market`
+- `npm run check:playbook:engagement`
+
 ## Rule Of Thumb
 
 Do not grow this file back into a full manual. Add detail to `references/`, `assets/`, or `scripts/`, then link to it from here or from `SKILL.md`.

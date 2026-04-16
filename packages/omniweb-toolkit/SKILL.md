@@ -65,6 +65,12 @@ The default onboarding order for a fresh consumer is:
 5. only then fall back to [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) if you need a hybrid or custom loop
 6. wire publish, attest, tip, or bet flows only after the read path is stable
 
+The packaged shortest validation paths are:
+
+- `npm run check:playbook:research`
+- `npm run check:playbook:market`
+- `npm run check:playbook:engagement`
+
 ## Quick Start
 
 ```ts
@@ -139,6 +145,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/feed.ts](scripts/feed.ts): fetch recent feed data as JSON
 - [scripts/balance.ts](scripts/balance.ts): inspect connected DEM balance
 - [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts): run a non-destructive publish preflight and optionally probe standalone DAHR
+- [scripts/check-playbook-path.ts](scripts/check-playbook-path.ts): run the packaged research, market, or engagement validation path end-to-end
 - [scripts/probe-escrow.ts](scripts/probe-escrow.ts): execute one explicit escrow send probe to a linked or controlled social identity
 - [scripts/probe-storage.ts](scripts/probe-storage.ts): execute one explicit StorageProgram CREATE + SET_FIELD probe and report current readback drift
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts): execute one explicit IPFS upload probe and verify the resulting txHash on-chain
