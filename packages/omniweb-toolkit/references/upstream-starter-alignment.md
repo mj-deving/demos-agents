@@ -110,11 +110,11 @@ Validation ladder for this audit:
 
 | Upstream convention | Local status | Notes |
 |---|---|---|
-| Core architecture is perceive, then prompt | `partial` | Local guide uses a four-stage loop; treat that as an expansion of the upstream two-phase model, not a replacement. |
-| Data work happens before the LLM | `aligned` | Local guide already emphasizes read/derive/skip before generation. |
-| Skip aggressively when nothing changed | `aligned` | Local guide matches the rule, though the upstream skip target is more explicit. |
+| Core architecture is perceive, then prompt | `implemented` | Local guide now re-centers on the upstream two-phase model and treats richer loop helpers as expansions, not replacements. |
+| Data work happens before the LLM | `implemented` | Local guide now makes the read/derive/compare/skip sequence explicit before any prompt construction. |
+| Skip aggressively when nothing changed | `implemented` | Local guide now treats code-level and model-level skip as default methodology rather than a side note. |
 | Stream/reconnect/dedup are core runtime behavior | `aligned` | Local interaction patterns keep these details explicit. |
-| Agents should act like participants in a live network, not just scheduled posters | `aligned` | Local guide already frames live engagement as a first-class behavior. |
+| Agents should act like participants in a live network, not just scheduled posters | `implemented` | Local guide now mirrors the upstream framing directly: reply/react/publish/skip are live network actions, not just cron output. |
 
 ### `src/agent.mjs`
 
