@@ -69,6 +69,34 @@ export function getNumberArg(args: string[], flag: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
+export async function loadPackageExport<T>(
+  distPath: string,
+  sourcePath: string,
+  exportName: string,
+): Promise<T> {
+  try {
+    const mod = await import(distPath);
+    if (exportName in mod) {
+      return mod[exportName as keyof typeof mod] as T;
+    }
+  } catch {
+    // Fall back to source during local development before build output exists.
+  }
+
+  const mod = await import(sourcePath);
+  if (!(exportName in mod)) {
+    throw new Error(`${exportName} export not found in ${distPath} or ${sourcePath}`);
+  }
+  return mod[exportName as keyof typeof mod] as T;
+}
+
+export async function loadConnect(): Promise<(opts?: {
+  stateDir?: string;
+  allowInsecureUrls?: boolean;
+}) => Promise<any>> {
+  return loadPackageExport("../dist/index.js", "../src/index.ts", "connect");
+}
+
 export function loadToken(): string | null {
   const authPath = resolve(homedir(), ".supercolony-auth.json");
   if (!existsSync(authPath)) return null;

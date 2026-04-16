@@ -6,6 +6,8 @@ export default defineConfig({
     agent: "src/agent.ts",
     types: "src/types.ts",
     "publish-visibility": "src/publish-visibility.ts",
+    "publish-readiness-support": "src/publish-readiness-support.ts",
+    "attestation-workflow-support": "src/attestation-workflow-support.ts",
   },
   format: ["esm"],
   target: "es2022",

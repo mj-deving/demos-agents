@@ -10,8 +10,34 @@
  * failure, 2 on invalid args.
  */
 
-import { validateInput, PublishDraftSchema } from "../../../src/toolkit/schemas.js";
-import { verifyPublishVisibility } from "../src/publish-visibility.ts";
+import { loadConnect, loadPackageExport } from "./_shared.ts";
+
+type PublishDraft = {
+  text: string;
+  category: string;
+  attestUrl: string;
+  confidence: number;
+};
+
+type PublishReadinessSupport = {
+  validateInput: (schema: unknown, input: PublishDraft) => {
+    code: string;
+    message: string;
+    retryable?: boolean;
+  } | null;
+  PublishDraftSchema: unknown;
+};
+
+type VerifyPublishVisibility = (
+  omni: any,
+  txHash: string | undefined,
+  expectedText: string,
+  options: { timeoutMs: number; pollMs: number; limit: number },
+) => Promise<{
+  attempted: boolean;
+  visible?: boolean;
+  indexedVisible?: boolean;
+}>;
 
 const DEFAULT_ATTEST_URL = "https://blockchain.info/ticker";
 const DEFAULT_CATEGORY = "OBSERVATION";
@@ -83,6 +109,7 @@ const verifyFeed = !args.includes("--no-verify-feed");
 const allowInsecureUrls = args.includes("--allow-insecure");
 const broadcast = args.includes("--broadcast");
 
+const { validateInput, PublishDraftSchema } = await loadPublishReadinessSupport();
 const schemaError = validateInput(PublishDraftSchema, draft);
 if (schemaError) {
   console.error(JSON.stringify({
@@ -142,6 +169,7 @@ try {
     process.exit(1);
   }
 
+  const verifyPublishVisibility = await loadVerifyPublishVisibility();
   const feedVerification = verifyFeed
     ? await verifyPublishVisibility(omni, result.data?.txHash, draft.text, {
         timeoutMs: feedTimeoutMs,
@@ -168,22 +196,24 @@ try {
   process.exit(1);
 }
 
-async function loadConnect(): Promise<(opts?: {
-  stateDir?: string;
-  allowInsecureUrls?: boolean;
-}) => Promise<any>> {
-  try {
-    const mod = await import("../dist/index.js");
-    if (typeof mod.connect === "function") {
-      return mod.connect;
-    }
-  } catch {
-    // Fall back to source during local development before build output exists.
-  }
+async function loadPublishReadinessSupport(): Promise<PublishReadinessSupport> {
+  const validateInput = await loadPackageExport<PublishReadinessSupport["validateInput"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "validateInput",
+  );
+  const PublishDraftSchema = await loadPackageExport<PublishReadinessSupport["PublishDraftSchema"]>(
+    "../dist/publish-readiness-support.js",
+    "../src/publish-readiness-support.ts",
+    "PublishDraftSchema",
+  );
+  return { validateInput, PublishDraftSchema };
+}
 
-  const mod = await import("../src/index.ts");
-  if (typeof mod.connect !== "function") {
-    throw new Error("connect() export not found in dist/index.js or src/index.ts");
-  }
-  return mod.connect;
+async function loadVerifyPublishVisibility(): Promise<VerifyPublishVisibility> {
+  return loadPackageExport(
+    "../dist/publish-visibility.js",
+    "../src/publish-visibility.ts",
+    "verifyPublishVisibility",
+  );
 }

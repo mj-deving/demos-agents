@@ -2,19 +2,12 @@
 
 import { resolve } from "node:path";
 
-import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.js";
-import {
-  inferProvider,
-  loadAgentSourceView,
-  type SourceRecordV2,
-} from "../../../src/toolkit/sources/catalog.js";
-import { selectSourceForTopicV2 } from "../../../src/toolkit/sources/policy.js";
-import { validateUrl } from "../../../src/toolkit/url-validator.js";
 import {
   REPO_ROOT,
   getNumberArg,
   getStringArg,
   hasFlag,
+  loadPackageExport,
 } from "./_shared.js";
 
 type AgentName = "sentinel" | "crawler" | "pioneer";
@@ -26,8 +19,58 @@ type CheckResult = {
   detail: string;
 };
 
+type SourceRecord = {
+  id: string;
+  name: string;
+  provider: string;
+  status: string;
+  trustTier: string;
+  responseFormat: string;
+  dahr_safe?: boolean;
+  tlsn_safe?: boolean;
+  note?: string | null;
+  url: string;
+  rating: {
+    overall: number;
+  };
+};
+
+type SourceView = {
+  sources: SourceRecord[];
+};
+
+type TopicCandidate = {
+  source: SourceRecord;
+  url: string;
+  score: number;
+};
+
+type AttestationWorkflowSupport = {
+  checkPublishQuality: (
+    draft: { text: string; category: string },
+    options: { minTextLength: number },
+  ) => { pass: boolean; reason?: string };
+  inferProvider: (url: string) => string | null;
+  loadAgentSourceView: (
+    agent: AgentName,
+    catalogPath: string,
+    overridePath: string,
+    mode: string,
+  ) => SourceView;
+  selectSourceForTopicV2: (
+    topic: string,
+    sourceView: SourceView,
+    mode: string,
+    limit: number,
+  ) => TopicCandidate[];
+  validateUrl: (
+    url: string,
+    options: { allowInsecure: boolean },
+  ) => Promise<{ valid: boolean; reason?: string }>;
+};
+
 type CatalogMatch = {
-  source: SourceRecordV2;
+  source: SourceRecord;
   score: number;
   hostMatches: boolean;
   providerMatches: boolean;
@@ -136,6 +179,13 @@ for (const flag of ["--attest-url", "--topic", "--text", "--category", "--confid
 }
 
 const catalogPath = resolve(REPO_ROOT, "config", "sources", "catalog.json");
+const {
+  checkPublishQuality,
+  inferProvider,
+  loadAgentSourceView,
+  selectSourceForTopicV2,
+  validateUrl,
+} = await loadAttestationWorkflowSupport();
 const sourceView = loadAgentSourceView(agent, catalogPath, catalogPath, "catalog-only");
 const allUrls = [attestUrl, ...supportingUrls];
 const uniqueHosts = new Set<string>();
@@ -242,6 +292,41 @@ console.log(JSON.stringify({
 }, null, 2));
 
 process.exit(blockers.length === 0 ? 0 : 1);
+
+async function loadAttestationWorkflowSupport(): Promise<AttestationWorkflowSupport> {
+  const checkPublishQuality = await loadPackageExport<AttestationWorkflowSupport["checkPublishQuality"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "checkPublishQuality",
+  );
+  const inferProvider = await loadPackageExport<AttestationWorkflowSupport["inferProvider"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "inferProvider",
+  );
+  const loadAgentSourceView = await loadPackageExport<AttestationWorkflowSupport["loadAgentSourceView"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "loadAgentSourceView",
+  );
+  const selectSourceForTopicV2 = await loadPackageExport<AttestationWorkflowSupport["selectSourceForTopicV2"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "selectSourceForTopicV2",
+  );
+  const validateUrl = await loadPackageExport<AttestationWorkflowSupport["validateUrl"]>(
+    "../dist/attestation-workflow-support.js",
+    "../src/attestation-workflow-support.ts",
+    "validateUrl",
+  );
+  return {
+    checkPublishQuality,
+    inferProvider,
+    loadAgentSourceView,
+    selectSourceForTopicV2,
+    validateUrl,
+  };
+}
 
 function buildEvidenceChecks(input: {
   category: string;
@@ -439,7 +524,7 @@ function buildRecommendations(input: {
 async function assessUrl(
   url: string,
   allowInsecure: boolean,
-  sourceView: ReturnType<typeof loadAgentSourceView>,
+  sourceView: SourceView,
 ): Promise<SourceAssessment> {
   const parsed = tryParseUrl(url);
   const catalogMatches = parsed ? rankCatalogMatches(url, sourceView.sources) : [];
@@ -523,7 +608,7 @@ async function assessUrl(
   };
 }
 
-function rankCatalogMatches(url: string, sources: SourceRecordV2[]): CatalogMatch[] {
+function rankCatalogMatches(url: string, sources: SourceRecord[]): CatalogMatch[] {
   const parsed = tryParseUrl(url);
   if (!parsed) return [];
 
