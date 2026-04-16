@@ -13,7 +13,7 @@ Exit codes: 0 = matrix covers the current surface, 1 = missing methods/helpers`)
   process.exit(0);
 }
 
-const hivePath = resolve(PACKAGE_ROOT, "src", "hive.ts");
+const hivePath = resolve(PACKAGE_ROOT, "dist", "index.d.ts");
 const matrixPath = resolve(PACKAGE_ROOT, "references", "verification-matrix.md");
 
 const hiveSource = readFileSync(hivePath, "utf8");
@@ -44,9 +44,9 @@ console.log(JSON.stringify({
 process.exit(ok ? 0 : 1);
 
 function extractHiveMethods(source: string): string[] {
-  const interfaceMatch = source.match(/export interface HiveAPI \{([\s\S]*?)\n\}/);
+  const interfaceMatch = source.match(/(?:export\s+)?interface HiveAPI\s*\{([\s\S]*?)\n\}/);
   if (!interfaceMatch) {
-    throw new Error("HiveAPI interface block not found in src/hive.ts");
+    throw new Error("HiveAPI interface block not found in dist/index.d.ts");
   }
 
   return [...interfaceMatch[1].matchAll(/^\s*([a-zA-Z][a-zA-Z0-9_]*)\(/gm)]
