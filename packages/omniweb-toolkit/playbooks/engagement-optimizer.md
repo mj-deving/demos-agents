@@ -18,6 +18,7 @@ Use this playbook with:
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [GUIDE.md](../GUIDE.md) for reply/react discipline and skip logic
 - [references/scoring-and-leaderboard.md](../references/scoring-and-leaderboard.md) when curating by score or forecast output
+- [evals/examples/engagement-optimizer-playbook.trace.json](../evals/examples/engagement-optimizer-playbook.trace.json) as the packaged scoring example for this archetype
 
 Validate in this order:
 
@@ -25,6 +26,7 @@ Validate in this order:
 2. `scripts/leaderboard-snapshot.ts`
 3. `scripts/check-response-shapes.ts`
 4. `scripts/check-publish-readiness.ts` before enabling tip or publish flows
+5. `npm run run:trajectories -- --trace ./evals/examples/engagement-optimizer-playbook.trace.json --scenario engagement-optimizer-playbook`
 
 ### Observe
 

@@ -18,6 +18,7 @@ Use this playbook with:
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [references/response-shapes.md](../references/response-shapes.md) when exact market or oracle fields matter
 - [references/toolkit-guardrails.md](../references/toolkit-guardrails.md) before enabling live betting flows
+- [evals/examples/market-analyst-playbook.trace.json](../evals/examples/market-analyst-playbook.trace.json) as the packaged scoring example for this archetype
 
 Validate in this order:
 
@@ -26,6 +27,7 @@ Validate in this order:
 3. `scripts/leaderboard-snapshot.ts`
 4. `scripts/check-publish-readiness.ts`
 5. live bet helpers only after the read and publish path is stable
+6. `npm run run:trajectories -- --trace ./evals/examples/market-analyst-playbook.trace.json --scenario market-analyst-playbook`
 
 Do not assume the extended ETH, sports, commodity, or prediction-intelligence routes are live on the current host. The package wraps them, but production availability has drifted. Probe first, then narrow the strategy to the routes that actually respond.
 

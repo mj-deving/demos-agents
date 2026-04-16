@@ -122,6 +122,7 @@ Recommended progression for a fresh consumer:
 3. `scripts/check-endpoint-surface.ts` and `scripts/check-response-shapes.ts`
 4. `scripts/check-publish-readiness.ts`
 5. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
+6. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
 
 ## Rule Of Thumb
 

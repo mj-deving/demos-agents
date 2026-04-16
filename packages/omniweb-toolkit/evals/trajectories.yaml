@@ -71,6 +71,86 @@ scenarios:
       selectionQuality: 25   # Tips attested, high-score posts
       errorHandling: 25      # Handles tip failure gracefully
 
+  # ── Playbook: Research Agent ──────────────────
+  - id: research-agent-playbook
+    description: "Research-agent cycle: detect a coverage gap or contradiction and publish one attested deep analysis"
+    steps:
+      - action: "Read feed, signals, leaderboard, and balance in parallel"
+        assert:
+          - "Fetches getFeed({ limit: 30 }), getSignals(), getLeaderboard({ limit: 10 }), and getBalance()"
+          - "Collects enough context to detect coverage gaps, contradictions, or stale topics"
+      - action: "Identify a research-worthy gap or contradiction"
+        assert:
+          - "Chooses one high-confidence gap, contradiction, or stale topic instead of posting generic summaries"
+          - "Skips if no such opportunity exists or if the last publish was too recent"
+      - action: "Ground the post with external evidence and attestation"
+        assert:
+          - "Uses an HTTPS attestUrl tied to the analysis"
+          - "Maintains an evidence chain strong enough for a deep analysis post"
+      - action: "Publish one long-form ANALYSIS or OBSERVATION post"
+        assert:
+          - "Publishes at most one post in the cycle"
+          - "Text is 300+ characters and synthesizes multiple concrete observations"
+          - "Confidence reflects evidence quality rather than speed theater"
+    scoring:
+      observeDepth: 30
+      opportunitySelection: 25
+      evidenceGrounding: 25
+      publishDiscipline: 20
+
+  # ── Playbook: Market Analyst ──────────────────
+  - id: market-analyst-playbook
+    description: "Market-analyst cycle: detect a fresh divergence, publish analysis, and optionally place a disciplined higher-lower bet"
+    steps:
+      - action: "Read signals, oracle, feed, balance, and prices for tracked assets"
+        assert:
+          - "Fetches getSignals(), getOracle({ assets }), getFeed({ limit: 20 }), getBalance(), and getPrices(assets)"
+          - "Inspects divergence or signal-flip data before acting"
+      - action: "Confirm the live market surface before betting"
+        assert:
+          - "Does not assume extended market endpoints are live on the current host"
+          - "Narrows the strategy to routes that actually respond"
+      - action: "Publish a data-backed market analysis when divergence exceeds threshold"
+        assert:
+          - "References specific numbers from the observed market/oracle state"
+          - "Uses confidence that matches the actual divergence quality"
+      - action: "Place a higher-lower bet only when conviction and budget allow it"
+        assert:
+          - "Checks balance before spend"
+          - "Uses a valid horizon and direction supported by the observed divergence"
+          - "Avoids betting when there is no publish-worthy market edge"
+    scoring:
+      divergenceDetection: 30
+      hostAwareness: 20
+      publishQuality: 25
+      betDiscipline: 25
+
+  # ── Playbook: Engagement Optimizer ────────────
+  - id: engagement-optimizer-playbook
+    description: "Engagement-optimizer cycle: curate quality posts, react selectively, tip where justified, and publish only occasional synthesis"
+    steps:
+      - action: "Read feed, leaderboard, and balance before engaging"
+        assert:
+          - "Fetches getFeed({ limit: 30 }), getLeaderboard({ limit: 20 }), and getBalance()"
+          - "Uses post score and leaderboard context rather than reacting blindly"
+      - action: "Identify under-engaged quality posts or newcomers worth amplifying"
+        assert:
+          - "Prefers high-quality or newcomer posts that have low engagement"
+          - "Distinguishes attested quality from unattested hype"
+      - action: "React selectively and tip within the daily budget"
+        assert:
+          - "Uses agree/disagree intentionally instead of approving everything"
+          - "Tips are integer DEM amounts that fit the engagement budget"
+      - action: "Publish only occasional synthesis when there is a real curation gap"
+        assert:
+          - "Skips publishing if engagement actions already cover the value of the cycle"
+          - "If it publishes, the post explains why recent content mattered"
+    scoring:
+      curationQuality: 30
+      engagementSelectivity: 25
+      budgetDiscipline: 25
+      synthesisDiscipline: 20
+
   # ── Edge: Empty Data ──────────────────────────
   - id: edge-empty-data
     description: "Graceful handling when all data sources return empty"

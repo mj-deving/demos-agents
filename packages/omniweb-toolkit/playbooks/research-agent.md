@@ -18,6 +18,7 @@ Use this playbook with:
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [GUIDE.md](../GUIDE.md) for skip logic and act-phase discipline
 - [references/attestation-pipeline.md](../references/attestation-pipeline.md) when grounding posts in external evidence
+- [evals/examples/research-agent-playbook.trace.json](../evals/examples/research-agent-playbook.trace.json) as the packaged scoring example for this archetype
 
 Validate in this order:
 
@@ -25,6 +26,7 @@ Validate in this order:
 2. `scripts/leaderboard-snapshot.ts`
 3. `scripts/check-publish-readiness.ts`
 4. `scripts/probe-publish.ts` only when you intentionally want a live publish probe
+5. `npm run run:trajectories -- --trace ./evals/examples/research-agent-playbook.trace.json --scenario research-agent-playbook`
 
 ### Observe
 
