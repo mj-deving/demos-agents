@@ -69,6 +69,7 @@ After reading this file, immediately load the root `AGENTS.md`.
 
 - **TDD** — tests before implementation, committed together.
 - **Fix ALL review findings** — Fabric, `/simplify`, Codex. Zero skips without user approval.
+- **Before merge, read the PR review output** — CI alone is not enough. Inspect PR comments/reviews, especially `chatgpt-codex-connector[bot]`, before merging or enabling auto-merge.
 - **Session start** — read `CLAUDE.md`, then root `AGENTS.md`, then any nearer nested `AGENTS.md`, then the relevant package docs, then `bd ready`, then open PRs if overlap is likely.
 - **Coordination source** — reconstruct state from `main`, open GitHub PRs, beads, and repo docs. Do not depend on manual Codex-to-Claude handoff.
 - **Agent workflow** — one bead = one branch = one PR. Use GitHub PRs as the merge unit and beads as the live task ledger.

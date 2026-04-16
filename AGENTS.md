@@ -130,22 +130,32 @@ Default expectation:
 1. agent makes a scoped change
 2. agent runs relevant checks
 3. agent opens a PR
-4. CI passes
-5. the PR is merged or auto-merged to `main`
+4. agent inspects Codex review output and addresses findings before merge
+5. CI passes
+6. the PR is merged or auto-merged to `main`
+
+Before merging a PR:
+
+- inspect PR comments and review threads, not just CI
+- explicitly check for comments from `chatgpt-codex-connector[bot]`
+- if Codex review is still pending, wait for it or trigger it with `@codex review`
+- do not merge while unresolved Codex findings remain unless the user explicitly accepts them
+- preferred CLI check: `gh pr view <num> --comments`
 
 Preferred repo settings:
 
 - protect `main`
 - disable direct pushes to `main`
 - require the CI checks you actually trust
+- if Codex auto-review is enabled, make sure the merge flow waits for it before enabling auto-merge
 - do not require human approval if the goal is zero manual review
 - prefer squash merge for small scoped branches
 - enable auto-merge
 
 Merge responsibility:
 
-- the agent that opened a PR may merge it once checks are green and conflicts are clear
-- any agent may merge a green PR when acting as the current maintainer
+- the agent that opened a PR may merge it once checks are green, Codex review has been inspected, and conflicts are clear
+- any agent may merge a green PR when acting as the current maintainer, but it must still inspect Codex review output first
 - the human should only need to intervene for ambiguous product decisions, broken CI, or merge conflicts
 
 ## Worktree Cooperation
