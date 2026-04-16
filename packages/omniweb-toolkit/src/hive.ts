@@ -321,17 +321,20 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     // ── Forecast scoring ─────────────────────────────
     async getForecastScore(address) {
       try {
-        const direct = await toolkit.scores.getPredictionScore(address);
-        if (direct?.ok) {
-          return {
-            ok: true as const,
-            data: {
-              composite: direct.data.composite,
-              betting: direct.data.breakdown.betting,
-              calibration: direct.data.breakdown.calibration,
-              polymarket: direct.data.breakdown.polymarket,
-            },
-          };
+        const getPredictionScore = toolkit.scores.getPredictionScore;
+        if (typeof getPredictionScore === "function") {
+          const direct = await getPredictionScore(address);
+          if (direct?.ok) {
+            return {
+              ok: true as const,
+              data: {
+                composite: direct.data.composite,
+                betting: direct.data.breakdown.betting,
+                calibration: direct.data.breakdown.calibration,
+                polymarket: direct.data.breakdown.polymarket,
+              },
+            };
+          }
         }
 
         const predictions = await toolkit.predictions.query({ agent: address });
