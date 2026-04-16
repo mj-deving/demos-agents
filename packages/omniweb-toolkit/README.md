@@ -85,6 +85,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Read [references/categories.md](references/categories.md) when category choice matters.
 - Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged launch-readiness plan across primitive sweeps, outside-in journeys, budgets, and evidence capture.
 - Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype results and the current external-consumer install gate.
+- Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read proof and the current unresolved read gap.
 - Run [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts) to validate the package's progressive-disclosure structure.
 - Use [agents/openai.yaml](agents/openai.yaml) for UI-facing skill metadata.
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.
@@ -138,6 +139,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts)
 - [scripts/probe-publish.ts](scripts/probe-publish.ts) - live DAHR+publish probe with bounded visibility checks via recent feed plus direct post lookup
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
+- [scripts/check-read-surface-sweep.ts](scripts/check-read-surface-sweep.ts) - run the maintained production-host read-only sweep and classify production versus dev-only endpoints
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
 - [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts)
@@ -158,6 +160,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run check:package` runs the structural self-audit, the release-tarball integrity check, and a plain-Node import smoke test over the built entrypoints.
 - `npm run check:package` now also verifies that the committed OpenClaw bundles and registry-facing skill artifacts still match the maintained playbooks, starter assets, and strategy baseline.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
+- `npm run check:read-surface -- --include-dev-only` runs the maintained live read-only sweep against the current production host and reports any remaining production-read gaps separately from expected dev-only misses.
 - `npm run export:openclaw` regenerates `agents/openclaw/` from the current playbooks and starter assets.
 - `npm run export:registry` regenerates `agents/registry/` from the current playbooks and starter assets.
 - `npm run check:openclaw` validates the generated OpenClaw export without running the broader package checks.

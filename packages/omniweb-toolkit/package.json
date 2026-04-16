@@ -47,6 +47,7 @@
     "check:release": "bash ./scripts/check-release.sh",
     "check:publish": "node --import tsx ./scripts/check-npm-publish.ts",
     "check:verification-matrix": "node --import tsx ./scripts/check-verification-matrix.ts",
+    "check:read-surface": "node --import tsx ./scripts/check-read-surface-sweep.ts",
     "check:playbook:research": "node --import tsx ./scripts/check-playbook-path.ts --archetype research-agent",
     "check:playbook:market": "node --import tsx ./scripts/check-playbook-path.ts --archetype market-analyst",
     "check:playbook:engagement": "node --import tsx ./scripts/check-playbook-path.ts --archetype engagement-optimizer",
