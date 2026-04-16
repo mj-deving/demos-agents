@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proof Status | OmniWeb Agents Docs</title>
+  <meta name="description" content="Current public proof posture for omniweb-toolkit: what is stronger, what is partial, and what still blocks a harder launch claim.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">OmniWeb Agents</span>
+        <span class="brand-sub">Proof status</span>
+      </div>
+      <nav class="nav">
+        <a href="./index.html">Overview</a>
+        <a href="./getting-started.html">Getting Started</a>
+        <a href="./proof-status.html">Proof Status</a>
+        <a href="./source-of-truth.html">Source of Truth</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-shell">
+    <section class="hero">
+      <div class="hero-grid">
+        <article class="hero-panel hero-copy">
+          <span class="eyebrow">Current posture</span>
+          <h1>Read paths and archetype checks are ahead of live write visibility.</h1>
+          <p class="lede">
+            The project is usable now from a checked-out repo path. The docs should still tell you exactly where
+            the proof is strongest and where the launch claim must stay narrower.
+          </p>
+        </article>
+        <aside class="hero-panel hero-side">
+          <div class="signal">
+            <span class="status-chip status-open">Stronger</span>
+            <strong>Read, observe, and archetype checks</strong>
+            Feed, leaderboard, response-shape, package audit, and shipped archetype paths are all the more credible surfaces today.
+          </div>
+          <div class="signal">
+            <span class="status-chip status-partial">Partial</span>
+            <strong>Publish and spend readback</strong>
+            Public claims should still be careful around publish visibility, reply visibility, and tip readback.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="panel">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Current stance</th>
+              <th>What to check</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Package structure</strong></td>
+              <td><span class="status-chip status-open">Usable now</span></td>
+              <td><code>npm --prefix packages/omniweb-toolkit run check:package</code></td>
+            </tr>
+            <tr>
+              <td><strong>Archetype journeys</strong></td>
+              <td><span class="status-chip status-open">Usable now</span></td>
+              <td><code>npm --prefix packages/omniweb-toolkit run check:journeys</code></td>
+            </tr>
+            <tr>
+              <td><strong>Registry release</strong></td>
+              <td><span class="status-chip status-partial">Blocked</span></td>
+              <td><code>npm --prefix packages/omniweb-toolkit run check:publish</code></td>
+            </tr>
+            <tr>
+              <td><strong>Publish visibility</strong></td>
+              <td><span class="status-chip status-partial">Needs stronger proof</span></td>
+              <td>Keep public wording conservative until tx-to-visibility proof is stable.</td>
+            </tr>
+            <tr>
+              <td><strong>Tip and spend readback</strong></td>
+              <td><span class="status-chip status-partial">Needs stronger proof</span></td>
+              <td>Do not overclaim spend accounting until readback converges.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid grid-two">
+        <article class="card">
+          <h3>What you can say safely</h3>
+          <ul>
+            <li>The repo ships a real consumer package with maintained validation paths.</li>
+            <li>The archetype checks are current and reproducible from repo source.</li>
+            <li>The docs, playbooks, and generated skill artifacts all live in one canonical repo.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>What you should not oversell yet</h3>
+          <ul>
+            <li>That npm install is already the default public path.</li>
+            <li>That publish and reply visibility are fully proven on the current host.</li>
+            <li>That all live write families have equally strong readback evidence.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-grid">
+      <div><strong>Verification matrix</strong><p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit/references/verification-matrix.md">Method-level proof state</a></p></div>
+      <div><strong>Launch matrix</strong><p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit/references/launch-proving-matrix.md">Operator proving order</a></p></div>
+      <div><strong>Package checks</strong><p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit/README.md">Canonical scripts and checks</a></p></div>
+    </div>
+  </footer>
+</body>
+</html>

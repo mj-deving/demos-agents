@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Source of Truth | OmniWeb Agents Docs</title>
+  <meta name="description" content="How the public docs surface maps back to canonical repo docs and how Pages deployment works.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">OmniWeb Agents</span>
+        <span class="brand-sub">Source of truth</span>
+      </div>
+      <nav class="nav">
+        <a href="./index.html">Overview</a>
+        <a href="./getting-started.html">Getting Started</a>
+        <a href="./proof-status.html">Proof Status</a>
+        <a href="./source-of-truth.html">Source of Truth</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-shell">
+    <section class="hero">
+      <div class="hero-grid">
+        <article class="hero-panel hero-copy">
+          <span class="eyebrow">Update workflow</span>
+          <h1>Public docs are a curated surface, not a second source of truth.</h1>
+          <p class="lede">
+            The canonical technical detail remains in the repo. This site is the outside-facing entry layer that links back
+            to the package docs, repo docs, and decisions that actually govern the project.
+          </p>
+        </article>
+        <aside class="hero-panel hero-side">
+          <div class="signal">
+            <span class="status-chip status-open">Canonical</span>
+            <strong>Repo docs</strong>
+            <code>packages/omniweb-toolkit/</code> and <code>docs/</code> remain the authoritative sources.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid grid-two">
+        <article class="card">
+          <h3>Canonical layers</h3>
+          <ul>
+            <li><strong>Package docs:</strong> public package surface, scripts, references, playbooks</li>
+            <li><strong>Repo docs:</strong> architecture, research, ADRs, project structure</li>
+            <li><strong>This site:</strong> landing page, install path, proof framing, and jump points</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>What to edit first</h3>
+          <ul>
+            <li>Edit <code>packages/omniweb-toolkit/README.md</code> for package-facing truth.</li>
+            <li>Edit <code>packages/omniweb-toolkit/references/</code> for maintained proof and behavior notes.</li>
+            <li>Edit <code>docs/</code> for repo-wide architecture or research.</li>
+            <li>Edit <code>docs-site/</code> only to refresh the public-facing summary layer.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="panel">
+        <h2>Pages deployment flow</h2>
+        <ol>
+          <li>Update canonical docs in the repo first.</li>
+          <li>Refresh the public summary pages in <code>docs-site/</code> if the outside-facing message changed.</li>
+          <li>Merge to <code>main</code>.</li>
+          <li>GitHub Pages deploys the static artifact from <code>docs-site/</code>.</li>
+        </ol>
+        <div class="callout" style="margin-top: 1rem;">
+          The point is not to mirror every markdown file here. The point is to give outside users a clean front door while keeping the real source docs versioned in one repo.
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid grid-two">
+        <article class="card">
+          <h3>Primary repo links</h3>
+          <ul>
+            <li><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit">Package root</a></li>
+            <li><a href="https://github.com/mj-deving/omniweb-agents/tree/main/docs">Repo docs</a></li>
+            <li><a href="https://github.com/mj-deving/omniweb-agents/tree/main/docs/decisions">Architecture decisions</a></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Why not a wiki-first model?</h3>
+          <p>
+            A wiki is optional later if it adds distribution value, but the versioned repo remains the canonical source so
+            package docs, checks, and public claims change together.
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-grid">
+      <div><strong>Repo</strong><p><a href="https://github.com/mj-deving/omniweb-agents">GitHub source</a></p></div>
+      <div><strong>Package docs</strong><p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit">omniweb-toolkit</a></p></div>
+      <div><strong>Architecture docs</strong><p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/docs/project-structure.md">Project structure</a></p></div>
+    </div>
+  </footer>
+</body>
+</html>
