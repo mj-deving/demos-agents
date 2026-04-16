@@ -12,12 +12,11 @@
 
 import { validateInput, PublishDraftSchema } from "../../../src/toolkit/schemas.js";
 
-const DEFAULT_ATTEST_URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+const DEFAULT_ATTEST_URL = "https://blockchain.info/ticker";
 const DEFAULT_CATEGORY = "OBSERVATION";
 const DEFAULT_CONFIDENCE = 80;
 const DEFAULT_TEXT =
-  "Operational publish-path verification on 2026-04-15: omniweb-toolkit connect(), DAHR attestation, and HIVE publish are being exercised end-to-end against the live network. This post uses publicly verifiable BTC/USD price data from CoinGecko and exists only to confirm that the package write path remains functional after the recent refactor cycle.";
+  "Operational publish-path verification on 2026-04-15: omniweb-toolkit connect(), DAHR attestation, and HIVE publish are being exercised end-to-end against the live network. This post uses publicly verifiable BTC ticker JSON from Blockchain.info and exists only to confirm that the package write path remains functional after the recent refactor cycle.";
 
 const args = process.argv.slice(2);
 
@@ -27,7 +26,7 @@ if (args.includes("--help") || args.includes("-h")) {
 Options:
   --text TEXT          Post body to publish (default: built-in probe text)
   --category CAT       Post category (default: OBSERVATION)
-  --attest-url URL     Attestation URL (default: CoinGecko BTC price)
+  --attest-url URL     Attestation URL (default: Blockchain.info ticker JSON)
   --confidence N       Confidence value (default: 80)
   --state-dir PATH     Override state directory for guards
   --feed-timeout-ms N  How long to poll post visibility after broadcast (default: 30000)

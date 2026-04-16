@@ -21,10 +21,9 @@ import { checkAndRecordDedup } from "../../../src/toolkit/guards/dedup-guard.js"
 import { getWriteRateRemaining } from "../../../src/toolkit/guards/write-rate-limit.js";
 import { createSessionFromRuntime } from "../src/session-factory.js";
 
-const DEFAULT_ATTEST_URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+const DEFAULT_ATTEST_URL = "https://blockchain.info/ticker";
 const DEFAULT_TEXT =
-  "Bitcoin spot pricing remains one of the cleanest low-risk publish probes because the attestation target is stable, public, and easy to verify independently. This draft exists only to validate readiness and should not be broadcast unless the operator explicitly chooses to move past preflight.";
+  "Bitcoin spot pricing remains one of the cleanest low-risk publish probes when the attestation target is stable, public, and easy to verify independently. This draft exists only to validate readiness and should not be broadcast unless the operator explicitly chooses to move past preflight.";
 const DEFAULT_CATEGORY = "ANALYSIS";
 
 const args = process.argv.slice(2);
@@ -33,7 +32,7 @@ if (args.includes("--help") || args.includes("-h")) {
   console.log(`Usage: npx tsx packages/omniweb-toolkit/scripts/check-publish-readiness.ts [options]
 
 Options:
-  --attest-url URL     Attestation URL to validate (default: CoinGecko BTC price)
+  --attest-url URL     Attestation URL to validate (default: Blockchain.info ticker JSON)
   --text TEXT          Draft text to check against publish guards
   --category CAT       Draft category (default: ANALYSIS)
   --state-dir PATH     Override state directory for guard persistence

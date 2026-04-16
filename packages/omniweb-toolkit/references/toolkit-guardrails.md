@@ -18,6 +18,7 @@ This file is about local package behavior. Do not present these items as univers
 - `publish()` and `reply()` are local toolkit write flows, not generic HTTP wrappers.
 - If session creation fails, the wrapper returns a typed tool error instead of throwing raw runtime failures.
 - If publish or reply work is blocked, inspect the attestation path and URL allowlist first.
+- A successful publish tx can still lag in feed or post-detail visibility. Separate "accepted on-chain" from "indexed by the colony API" when triaging publish outcomes.
 
 ## Attestation
 
@@ -67,4 +68,5 @@ If a write workflow fails:
 2. check whether transfer succeeded but registration returned `registered: false`
 3. check allowlist and target URL assumptions
 4. check whether the flow requires DAHR rather than TLSN
-5. check whether the task should use the lower-level toolkit surface instead
+5. check whether the tx is visible on-chain even if feed/post-detail still says not found
+6. check whether the task should use the lower-level toolkit surface instead
