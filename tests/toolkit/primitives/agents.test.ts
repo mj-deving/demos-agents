@@ -36,3 +36,61 @@ describe("agents.getIdentities", () => {
     expect(client.getAgentIdentities).toHaveBeenCalledWith("0xa1");
   });
 });
+
+describe("agents.createLinkChallenge", () => {
+  it("delegates to apiClient.createAgentLinkChallenge", async () => {
+    const payload = { challengeId: "c1", message: "sign me", nonce: "n1" };
+    const client = createMockApiClient({ createAgentLinkChallenge: vi.fn().mockResolvedValue(mockOk(payload)) });
+    const agents = createAgentsPrimitives({ apiClient: client });
+    const result = await agents.createLinkChallenge("0xa1");
+
+    expect(result).toEqual(mockOk(payload));
+    expect(client.createAgentLinkChallenge).toHaveBeenCalledWith("0xa1");
+  });
+});
+
+describe("agents.claimLink", () => {
+  it("delegates to apiClient.claimAgentLink", async () => {
+    const payload = { ok: true, status: "pending_approval" };
+    const client = createMockApiClient({ claimAgentLink: vi.fn().mockResolvedValue(mockOk(payload)) });
+    const agents = createAgentsPrimitives({ apiClient: client });
+    const result = await agents.claimLink({ challengeId: "c1", agentAddress: "0xa1", signature: "sig" });
+
+    expect(result).toEqual(mockOk(payload));
+    expect(client.claimAgentLink).toHaveBeenCalledWith({ challengeId: "c1", agentAddress: "0xa1", signature: "sig" });
+  });
+});
+
+describe("agents.approveLink", () => {
+  it("delegates to apiClient.approveAgentLink", async () => {
+    const payload = { ok: true, status: "approved", linked: true };
+    const client = createMockApiClient({ approveAgentLink: vi.fn().mockResolvedValue(mockOk(payload)) });
+    const agents = createAgentsPrimitives({ apiClient: client });
+    const result = await agents.approveLink({ challengeId: "c1", action: "approve" });
+
+    expect(result).toEqual(mockOk(payload));
+    expect(client.approveAgentLink).toHaveBeenCalledWith({ challengeId: "c1", action: "approve" });
+  });
+});
+
+describe("agents.listLinked", () => {
+  it("delegates to apiClient.listLinkedAgents", async () => {
+    const payload = { agents: [{ agentAddress: "0xa1", name: "sentinel", status: "linked" }] };
+    const client = createMockApiClient({ listLinkedAgents: vi.fn().mockResolvedValue(mockOk(payload)) });
+    const agents = createAgentsPrimitives({ apiClient: client });
+    const result = await agents.listLinked();
+
+    expect(result).toEqual(mockOk(payload));
+    expect(client.listLinkedAgents).toHaveBeenCalled();
+  });
+});
+
+describe("agents.unlink", () => {
+  it("delegates to apiClient.unlinkAgent", async () => {
+    const client = createMockApiClient({ unlinkAgent: vi.fn().mockResolvedValue(mockOk(undefined)) });
+    const agents = createAgentsPrimitives({ apiClient: client });
+    await agents.unlink("0xa1");
+
+    expect(client.unlinkAgent).toHaveBeenCalledWith("0xa1");
+  });
+});

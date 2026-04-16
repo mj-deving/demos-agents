@@ -31,16 +31,21 @@ import type { OmniWeb } from "../../packages/omniweb-toolkit/src/colony.js";
 type ExactKeys<T, U> = [keyof T] extends [U] ? ([U] extends [keyof T] ? true : false) : false;
 
 type HiveAPIKeys =
-  | "attest" | "attestTlsn" | "getAgents" | "getBalance" | "getBinaryPools"
-  | "getCommodityPool" | "getConvergence" | "getEthBinaryPools"
-  | "getEthHigherLowerPool" | "getEthPool" | "getEthWinners" | "getFeed"
-  | "getForecastScore" | "getHigherLowerPool" | "getLeaderboard"
-  | "getMarkets" | "getOracle" | "getPool" | "getPostDetail" | "getPredictionIntelligence"
-  | "getPredictionRecommendations" | "getPredictions" | "getPriceHistory" | "getPrices" | "getReactions" | "getReport"
-  | "registerBet" | "registerEthBinaryBet" | "registerHL"
-  | "getSignals" | "getSportsMarkets" | "getSportsPool" | "getSportsWinners"
-  | "getTipStats" | "getTopPosts" | "linkIdentity" | "placeBet" | "placeHL"
-  | "publish" | "react" | "register" | "reply" | "search" | "tip";
+  | "approveAgentLink" | "attest" | "attestTlsn" | "claimAgentLink"
+  | "createAgentLinkChallenge" | "createWebhook" | "deleteWebhook"
+  | "getAgentBalance" | "getAgentIdentities" | "getAgentProfile" | "getAgentTipStats"
+  | "getAgents" | "getBalance" | "getBinaryPools" | "getCommodityPool"
+  | "getConvergence" | "getEthBinaryPools" | "getEthHigherLowerPool"
+  | "getEthPool" | "getEthWinners" | "getFeed" | "getForecastScore"
+  | "getHigherLowerPool" | "getLeaderboard" | "getLinkedAgents" | "getMarkets"
+  | "getOracle" | "getPool" | "getPostDetail" | "getPredictionIntelligence"
+  | "getPredictionLeaderboard" | "getPredictionRecommendations" | "getPredictionScore"
+  | "getPredictions" | "getPriceHistory" | "getPrices" | "getReactions"
+  | "getReport" | "getRss" | "getSignals" | "getSportsMarkets"
+  | "getSportsPool" | "getSportsWinners" | "getTipStats" | "getTopPosts"
+  | "getWebhooks" | "linkIdentity" | "lookupIdentity" | "placeBet" | "placeHL"
+  | "publish" | "react" | "register" | "registerBet" | "registerEthBinaryBet"
+  | "registerHL" | "reply" | "search" | "tip" | "unlinkAgent";
 
 type IdentityAPIKeys = "createProof" | "getIdentities" | "link" | "lookup";
 type EscrowAPIKeys = "claimEscrow" | "getClaimable" | "getEscrowBalance" | "refundExpired" | "sendToIdentity";
@@ -66,16 +71,19 @@ void _storageExact; void _ipfsExact; void _chainExact;
  */
 const EXPECTED_SURFACE = {
   colony: [
-    "attest", "attestTlsn", "getAgents", "getBalance", "getBinaryPools",
+    "approveAgentLink", "attest", "attestTlsn", "claimAgentLink", "createAgentLinkChallenge",
+    "createWebhook", "deleteWebhook", "getAgentBalance", "getAgentIdentities",
+    "getAgentProfile", "getAgentTipStats", "getAgents", "getBalance", "getBinaryPools",
     "getCommodityPool", "getConvergence", "getEthBinaryPools", "getEthHigherLowerPool",
     "getEthPool", "getEthWinners", "getFeed", "getForecastScore", "getHigherLowerPool",
-    "getLeaderboard", "getMarkets", "getOracle", "getPool", "getPostDetail",
-    "getPredictionIntelligence", "getPredictionRecommendations", "getPredictions",
-    "getPriceHistory", "getPrices", "getReactions", "getReport", "getSignals",
-    "getSportsMarkets", "getSportsPool", "getSportsWinners",
-    "getTipStats", "getTopPosts", "linkIdentity", "placeBet", "placeHL",
+    "getLeaderboard", "getLinkedAgents", "getMarkets", "getOracle", "getPool",
+    "getPostDetail", "getPredictionIntelligence", "getPredictionLeaderboard",
+    "getPredictionRecommendations", "getPredictionScore", "getPredictions",
+    "getPriceHistory", "getPrices", "getReactions", "getReport", "getRss", "getSignals",
+    "getSportsMarkets", "getSportsPool", "getSportsWinners", "getTipStats", "getTopPosts",
+    "getWebhooks", "linkIdentity", "lookupIdentity", "placeBet", "placeHL",
     "publish", "react", "register", "registerBet", "registerEthBinaryBet",
-    "registerHL", "reply", "search", "tip",
+    "registerHL", "reply", "search", "tip", "unlinkAgent",
   ],
   identity: ["createProof", "getIdentities", "link", "lookup"],
   escrow: ["claimEscrow", "getClaimable", "getEscrowBalance", "refundExpired", "sendToIdentity"],
@@ -102,8 +110,8 @@ describe("OmniWeb API Surface Snapshot", () => {
 
   // ── Per-domain surface snapshot assertions ──
 
-  it("HiveAPI (colony) has exactly 44 methods", () => {
-    expect(EXPECTED_SURFACE.colony).toHaveLength(44);
+  it("HiveAPI (colony) has exactly 60 methods", () => {
+    expect(EXPECTED_SURFACE.colony).toHaveLength(60);
     expect(EXPECTED_SURFACE.colony).toEqual([...EXPECTED_SURFACE.colony].sort());
   });
 
@@ -127,12 +135,12 @@ describe("OmniWeb API Surface Snapshot", () => {
     expect(EXPECTED_SURFACE.chain).toHaveLength(6);
   });
 
-  it("total OmniWeb surface is 67 methods across 6 domains", () => {
+  it("total OmniWeb surface is 83 methods across 6 domains", () => {
     const total = Object.values(EXPECTED_SURFACE).reduce(
       (sum, methods) => sum + methods.length,
       0,
     );
-    expect(total).toBe(67);
+    expect(total).toBe(83);
   });
 
   // ── Specific signature checks for money-moving paths ──

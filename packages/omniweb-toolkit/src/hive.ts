@@ -27,6 +27,7 @@ export interface HiveAPI {
   getFeed(opts?: { limit?: number; category?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").FeedResponse>>;
   search(opts: { text?: string; category?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").FeedResponse>>;
   getPostDetail(txHash: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PostDetail>>;
+  getRss(): Promise<ApiResult<string>>;
   /** Tip a post author. Amount is rounded to nearest integer and clamped 1-10 DEM. */
   tip(txHash: string, amount: number): Promise<ApiResult<{ txHash: string; validated: boolean }>>;
   react(txHash: string, type: "agree" | "disagree" | "flag" | null): Promise<ApiResult<void>>;
@@ -34,6 +35,7 @@ export interface HiveAPI {
   getPrices(assets: string[]): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
   getPriceHistory(asset: string, periods: number): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
   getBalance(): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentBalanceResponse>>;
+  getAgentBalance(address: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentBalanceResponse>>;
   getPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").BettingPool>>;
   getHigherLowerPool(opts?: { asset?: string; horizon?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").HigherLowerPool>>;
   getBinaryPools(opts?: { category?: string; limit?: number }): Promise<ApiResult<Record<string, import("../../../src/toolkit/supercolony/types.js").BinaryPool>>>;
@@ -52,7 +54,12 @@ export interface HiveAPI {
   getReport(opts?: { id?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").ReportResponse>>;
   getLeaderboard(opts?: { limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").LeaderboardResult>>;
   getTopPosts(opts?: { category?: string; minScore?: number; limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").TopPostsResult>>;
+  getPredictionLeaderboard(opts?: { limit?: number }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PredictionLeaderboardResult>>;
+  getPredictionScore(address: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PredictionScoreResult>>;
   getAgents(): Promise<ApiResult<{ agents: import("../../../src/toolkit/supercolony/types.js").AgentProfile[] }>>;
+  getAgentProfile(address: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentProfile>>;
+  getAgentIdentities(address: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentIdentities>>;
+  lookupIdentity(opts: { chain?: string; address?: string; platform?: string; username?: string; query?: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").IdentityResult | import("../../../src/toolkit/supercolony/types.js").IdentitySearchResult>>;
   placeBet(
     asset: string,
     price: number,
@@ -75,6 +82,10 @@ export interface HiveAPI {
   ): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").EthBinaryRegistrationResponse>>;
   getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
   getTipStats(txHash: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").TipStats>>;
+  getAgentTipStats(address: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentTipStats>>;
+  getWebhooks(): Promise<ApiResult<{ webhooks: import("../../../src/toolkit/supercolony/types.js").Webhook[] }>>;
+  createWebhook(url: string, events: string[]): Promise<ApiResult<void>>;
+  deleteWebhook(webhookId: string): Promise<ApiResult<void>>;
 
   // ── Write methods ────────────────────────────────
   /** Publish an attested post to SuperColony. DAHR attestation is mandatory. */
@@ -87,6 +98,11 @@ export interface HiveAPI {
   attestTlsn(url: string): Promise<ToolResult<AttestResult>>;
   /** Register agent profile on SuperColony. */
   register(opts: { name: string; description: string; specialties: string[] }): Promise<ApiResult<void>>;
+  createAgentLinkChallenge(agentAddress: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkChallengeResponse>>;
+  claimAgentLink(opts: { challengeId: string; agentAddress: string; signature: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkClaimResponse>>;
+  approveAgentLink(opts: { challengeId: string; action: "approve" | "reject" }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkClaimResponse>>;
+  getLinkedAgents(): Promise<ApiResult<{ agents: import("../../../src/toolkit/supercolony/types.js").LinkedAgent[] }>>;
+  unlinkAgent(agentAddress: string): Promise<ApiResult<void>>;
 
   // ── Discovery methods ────────────────────────────
   /** Query prediction markets (Polymarket odds). */
@@ -165,12 +181,14 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getFeed: (o) => toolkit.feed.getRecent(o),
     search: (o) => toolkit.feed.search(o),
     getPostDetail: (txHash) => toolkit.feed.getPostDetail(txHash),
+    getRss: () => toolkit.feed.getRss(),
     tip: (txHash, amount) => toolkit.actions.tip(txHash, amount),
     react: (txHash, type) => toolkit.actions.react(txHash, type),
     getOracle: (o) => toolkit.oracle.get(o),
     getPrices: (assets) => toolkit.prices.get(assets),
     getPriceHistory: (asset, periods) => toolkit.prices.getHistory(asset, periods),
     getBalance: () => toolkit.balance.get(runtime.address),
+    getAgentBalance: (address) => toolkit.balance.get(address),
     getPool: (o) => toolkit.ballot.getPool(o),
     getHigherLowerPool: (o) => toolkit.ballot.getHigherLowerPool(o),
     getBinaryPools: (o) => toolkit.ballot.getBinaryPools(o),
@@ -189,13 +207,22 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     getReport: (o) => toolkit.intelligence.getReport(o),
     getLeaderboard: (o) => toolkit.scores.getLeaderboard(o),
     getTopPosts: (o) => toolkit.scores.getTopPosts(o),
+    getPredictionLeaderboard: (o) => toolkit.scores.getPredictionLeaderboard(o),
+    getPredictionScore: (address) => toolkit.scores.getPredictionScore(address),
     getAgents: () => toolkit.agents.list(),
+    getAgentProfile: (address) => toolkit.agents.getProfile(address),
+    getAgentIdentities: (address) => toolkit.agents.getIdentities(address),
+    lookupIdentity: (o) => toolkit.identity.lookup(o),
     placeBet: (asset, price, o) => toolkit.actions.placeBet(asset, price, o),
     registerBet: (txHash, asset, predictedPrice, o) => toolkit.actions.registerBet(txHash, asset, predictedPrice, o),
     registerHL: (txHash, asset, direction, o) => toolkit.actions.registerHL(txHash, asset, direction, o),
     registerEthBinaryBet: (txHash) => toolkit.actions.registerEthBinaryBet(txHash),
     getReactions: (txHash) => toolkit.actions.getReactions(txHash),
     getTipStats: (txHash) => toolkit.actions.getTipStats(txHash),
+    getAgentTipStats: (address) => toolkit.actions.getAgentTipStats(address),
+    getWebhooks: () => toolkit.webhooks.list(),
+    createWebhook: (url, events) => toolkit.webhooks.create(url, events),
+    deleteWebhook: (webhookId) => toolkit.webhooks.delete(webhookId),
 
     // ── Write methods (lazy session → internal tools) ──
     // Session/import failures are caught and returned as typed ToolResult errors
@@ -256,6 +283,26 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
       return toolkit.agents.register(registerOpts);
     },
 
+    async createAgentLinkChallenge(agentAddress) {
+      return toolkit.agents.createLinkChallenge(agentAddress);
+    },
+
+    async claimAgentLink(linkOpts) {
+      return toolkit.agents.claimLink(linkOpts);
+    },
+
+    async approveAgentLink(linkOpts) {
+      return toolkit.agents.approveLink(linkOpts);
+    },
+
+    async getLinkedAgents() {
+      return toolkit.agents.listLinked();
+    },
+
+    async unlinkAgent(agentAddress) {
+      return toolkit.agents.unlink(agentAddress);
+    },
+
     // ── Discovery methods (delegate to toolkit primitives) ──
     getMarkets: (o) => toolkit.predictions.markets(o),
     getPredictions: (o) => toolkit.predictions.query(o),
@@ -274,6 +321,22 @@ export function createHiveAPI(runtime: AgentRuntime, opts?: SessionFactoryOption
     // ── Forecast scoring ─────────────────────────────
     async getForecastScore(address) {
       try {
+        const getPredictionScore = toolkit.scores.getPredictionScore;
+        if (typeof getPredictionScore === "function") {
+          const direct = await getPredictionScore(address);
+          if (direct?.ok) {
+            return {
+              ok: true as const,
+              data: {
+                composite: direct.data.composite,
+                betting: direct.data.breakdown.betting,
+                calibration: direct.data.breakdown.calibration,
+                polymarket: direct.data.breakdown.polymarket,
+              },
+            };
+          }
+        }
+
         const predictions = await toolkit.predictions.query({ agent: address });
 
         let bettingScore = 50; // default if no data

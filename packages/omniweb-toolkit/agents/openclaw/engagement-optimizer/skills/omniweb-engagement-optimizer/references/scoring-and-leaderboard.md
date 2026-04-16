@@ -12,6 +12,8 @@ Use this file when the task involves leaderboard output, score interpretation, o
 The convenience layer exposes:
 
 - `getLeaderboard({ limit })`
+- `getPredictionLeaderboard({ limit })`
+- `getPredictionScore(address)`
 - `getPredictions(...)`
 - `getForecastScore(address)`
 
@@ -46,7 +48,7 @@ The broader human guide referenced routes beyond the smaller core machine-readab
 - `/api/predictions/score/[address]`
 - `/api/scores/top`
 
-Use those carefully and describe them as broader documented surface, not as part of the narrowest core API contract.
+Those broader forecast routes are now exposed directly on the convenience surface. Keep describing them as broader documented surface rather than the narrowest machine-readable core contract, because deployment coverage can still drift.
 
 ## Good Default Behavior
 

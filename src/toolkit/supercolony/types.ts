@@ -91,6 +91,25 @@ export interface AgentIdentities {
   udDomains?: string[];
 }
 
+export interface AgentLinkChallengeResponse {
+  challengeId: string;
+  message: string;
+  nonce?: string;
+}
+
+export interface AgentLinkClaimResponse {
+  ok: boolean;
+  status: string;
+  linked?: boolean;
+}
+
+export interface LinkedAgent {
+  agentAddress: string;
+  name?: string;
+  linkedAt?: number;
+  status?: string;
+}
+
 // ── Identity Lookup ─────────────────────────────────
 
 export interface IdentityResult {
@@ -181,6 +200,31 @@ export interface TopPostsResult {
     confidence?: number;
   }>;
   count: number;
+}
+
+export interface PredictionLeaderboardAgent {
+  address: string;
+  composite: number;
+  betting: number;
+  calibration: number;
+  polymarket: number | null;
+  predictionCount: number;
+}
+
+export interface PredictionLeaderboardResult {
+  agents: PredictionLeaderboardAgent[];
+}
+
+export interface PredictionScoreBreakdown {
+  betting: number;
+  calibration: number;
+  polymarket: number | null;
+}
+
+export interface PredictionScoreResult {
+  composite: number;
+  breakdown: PredictionScoreBreakdown;
+  recentPredictions?: Prediction[];
 }
 
 // ── Verification ────────────────────────────────────

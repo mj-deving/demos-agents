@@ -18,7 +18,7 @@ describe("actions.tip", () => {
       expect(result!.data.validated).toBe(true);
     }
     expect(client.initiateTip).toHaveBeenCalledWith("0xpost1", 5);
-    expect(transferDem).toHaveBeenCalledWith("0xrecipient", 5, "tip:0xpost1");
+    expect(transferDem).toHaveBeenCalledWith("0xrecipient", 5, "HIVE_TIP:0xpost1");
   });
 
   it("rounds fractional amounts to nearest integer (API requires integers)", async () => {
@@ -30,7 +30,7 @@ describe("actions.tip", () => {
     await actions.tip("0xpost1", 2.7);
 
     expect(client.initiateTip).toHaveBeenCalledWith("0xpost1", 3);
-    expect(transferDem).toHaveBeenCalledWith("0xr", 3, "tip:0xpost1");
+    expect(transferDem).toHaveBeenCalledWith("0xr", 3, "HIVE_TIP:0xpost1");
   });
 
   it("clamps amount below 1 up to 1", async () => {
@@ -43,7 +43,7 @@ describe("actions.tip", () => {
 
     // 0.3 rounds to 0, clamped up to 1
     expect(client.initiateTip).toHaveBeenCalledWith("0xpost1", 1);
-    expect(transferDem).toHaveBeenCalledWith("0xr", 1, "tip:0xpost1");
+    expect(transferDem).toHaveBeenCalledWith("0xr", 1, "HIVE_TIP:0xpost1");
   });
 
   it("clamps amount above 10 down to 10", async () => {
@@ -55,7 +55,7 @@ describe("actions.tip", () => {
     await actions.tip("0xpost1", 25);
 
     expect(client.initiateTip).toHaveBeenCalledWith("0xpost1", 10);
-    expect(transferDem).toHaveBeenCalledWith("0xr", 10, "tip:0xpost1");
+    expect(transferDem).toHaveBeenCalledWith("0xr", 10, "HIVE_TIP:0xpost1");
   });
 
   it("returns error when API validation fails", async () => {

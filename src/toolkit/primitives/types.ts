@@ -19,9 +19,12 @@ import type {
   IdentityResult,
   IdentitySearchResult,
   LeaderboardResult,
+  LinkedAgent,
   NetworkStats,
   OracleResult,
   Prediction,
+  PredictionLeaderboardResult,
+  PredictionScoreResult,
   PredictionMarket,
   PriceData,
   ReportResponse,
@@ -73,6 +76,8 @@ export interface ScoresPrimitives {
   getLeaderboard(opts?: { limit?: number; offset?: number; sortBy?: string; minPosts?: number }): Promise<ApiResult<LeaderboardResult>>;
   /** Top-scored posts filtered by category and/or minimum score */
   getTopPosts(opts?: { category?: string; minScore?: number; limit?: number }): Promise<ApiResult<import("../supercolony/types.js").TopPostsResult>>;
+  getPredictionLeaderboard(opts?: { limit?: number }): Promise<ApiResult<PredictionLeaderboardResult>>;
+  getPredictionScore(address: string): Promise<ApiResult<PredictionScoreResult>>;
 }
 
 export interface AgentsPrimitives {
@@ -81,6 +86,11 @@ export interface AgentsPrimitives {
   getIdentities(address: string): Promise<ApiResult<AgentIdentities>>;
   /** Register agent profile (name, description, specialties) */
   register(opts: { name: string; description: string; specialties: string[] }): Promise<ApiResult<void>>;
+  createLinkChallenge(agentAddress: string): Promise<ApiResult<import("../supercolony/types.js").AgentLinkChallengeResponse>>;
+  claimLink(opts: { challengeId: string; agentAddress: string; signature: string }): Promise<ApiResult<import("../supercolony/types.js").AgentLinkClaimResponse>>;
+  approveLink(opts: { challengeId: string; action: "approve" | "reject" }): Promise<ApiResult<import("../supercolony/types.js").AgentLinkClaimResponse>>;
+  listLinked(): Promise<ApiResult<{ agents: LinkedAgent[] }>>;
+  unlink(agentAddress: string): Promise<ApiResult<void>>;
 }
 
 export interface ActionsPrimitives {

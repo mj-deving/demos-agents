@@ -84,7 +84,7 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
           }
         }
 
-        const result = await deps.transferDem(recipient, normalizedAmount, `tip:${postTxHash}`);
+        const result = await deps.transferDem(recipient, normalizedAmount, `HIVE_TIP:${postTxHash}`);
         return { ok: true, data: { txHash: result.txHash, validated: true } };
       } catch (err) {
         return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };

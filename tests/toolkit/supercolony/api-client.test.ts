@@ -153,6 +153,32 @@ describe("SuperColonyApiClient", () => {
       expect(body.name).toBe("sentinel");
     });
 
+    it("registerAgent slugifies names to the upstream format", async () => {
+      mockFetchResponse({ success: true });
+      const client = createClient();
+      await client.registerAgent({
+        name: "My Market Agent!!",
+        description: "A test agent",
+        specialties: ["crypto"],
+      });
+
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      const body = JSON.parse(fetchCall[1]?.body as string);
+      expect(body.name).toBe("my-market-agent");
+    });
+
+    it("registerAgent rejects names that collapse below 2 slug characters", async () => {
+      const client = createClient();
+      const result = await client.registerAgent({
+        name: "!",
+        description: "A test agent",
+        specialties: ["crypto"],
+      });
+
+      expect(result?.ok).toBe(false);
+      expect(vi.isMockFunction(globalThis.fetch)).toBe(false);
+    });
+
     it("listAgents returns typed AgentProfile array", async () => {
       const payload = {
         agents: [
@@ -207,6 +233,64 @@ describe("SuperColonyApiClient", () => {
         expect(result.data.web2Identities).toHaveLength(1);
         expect(result.data.xmIdentities).toHaveLength(1);
       }
+    });
+
+    it("createAgentLinkChallenge sends the agent address", async () => {
+      mockFetchResponse({ challengeId: "c1", nonce: "n1", message: "sign me" });
+      const client = createClient();
+      const result = await client.createAgentLinkChallenge("0xagent");
+      expect(result?.ok).toBe(true);
+
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      expect(fetchCall[1]?.method).toBe("POST");
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({ agentAddress: "0xagent" });
+    });
+
+    it("claimAgentLink posts publicly without Authorization", async () => {
+      mockFetchResponse({ ok: true, status: "pending_approval" });
+      const client = createClient("test-token");
+      const result = await client.claimAgentLink({
+        challengeId: "c1",
+        agentAddress: "0xagent",
+        signature: "sig",
+      });
+      expect(result?.ok).toBe(true);
+
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      const headers = fetchCall[1]?.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("approveAgentLink requires auth and posts approval action", async () => {
+      mockFetchResponse({ ok: true, status: "approved", linked: true });
+      const client = createClient();
+      const result = await client.approveAgentLink({ challengeId: "c1", action: "approve" });
+      expect(result?.ok).toBe(true);
+
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      const headers = fetchCall[1]?.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer test-token");
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({ challengeId: "c1", action: "approve" });
+    });
+
+    it("listLinkedAgents returns the linked agent envelope", async () => {
+      mockFetchResponse({ agents: [{ agentAddress: "0xagent", name: "sentinel", status: "linked" }] });
+      const client = createClient();
+      const result = await client.listLinkedAgents();
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.agents[0].agentAddress).toBe("0xagent");
+      }
+    });
+
+    it("unlinkAgent sends DELETE to the address route", async () => {
+      mockFetchResponse({ ok: true });
+      const client = createClient();
+      await client.unlinkAgent("0xagent");
+
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      expect(fetchCall[1]?.method).toBe("DELETE");
+      expect(fetchCall[0]).toBe("https://www.supercolony.ai/api/user/agents/0xagent");
     });
   });
 
@@ -387,6 +471,48 @@ describe("SuperColonyApiClient", () => {
       if (result?.ok) {
         expect(result.data.posts[0].score).toBe(92);
       }
+    });
+
+    it("getPredictionLeaderboard returns forecast leaderboard rows", async () => {
+      const payload = {
+        agents: [{
+          address: "0xabc",
+          composite: 82,
+          betting: 80,
+          calibration: 85,
+          polymarket: 79,
+          predictionCount: 14,
+        }],
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getPredictionLeaderboard({ limit: 20 });
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.agents[0].predictionCount).toBe(14);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toContain("/api/predictions/leaderboard");
+      expect(fetchUrl).toContain("limit=20");
+    });
+
+    it("getPredictionScore returns the official per-agent breakdown", async () => {
+      const payload = {
+        composite: 81,
+        breakdown: { betting: 78, calibration: 84, polymarket: null },
+        recentPredictions: [],
+      };
+      mockFetchResponse(payload);
+      const client = createClient();
+      const result = await client.getPredictionScore("0xabc");
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.breakdown.calibration).toBe(84);
+      }
+
+      const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
+      expect(fetchUrl).toBe("https://www.supercolony.ai/api/predictions/score/0xabc");
     });
   });
 

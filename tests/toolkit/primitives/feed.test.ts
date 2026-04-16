@@ -99,3 +99,16 @@ describe("feed.getThread", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("feed.getRss", () => {
+  it("delegates to apiClient.getRssFeed", async () => {
+    const client = createMockApiClient({
+      getRssFeed: vi.fn().mockResolvedValue(mockOk("<feed />")),
+    });
+    const feed = createFeedPrimitives({ apiClient: client, dataSource: createMockDataSource() });
+    const result = await feed.getRss();
+
+    expect(result).toEqual(mockOk("<feed />"));
+    expect(client.getRssFeed).toHaveBeenCalled();
+  });
+});

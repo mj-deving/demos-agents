@@ -14,5 +14,13 @@ export function createScoresPrimitives(deps: { apiClient: SuperColonyApiClient }
     async getTopPosts(opts) {
       return deps.apiClient.getTopPosts(opts);
     },
+
+    async getPredictionLeaderboard(opts) {
+      return deps.apiClient.getPredictionLeaderboard(opts);
+    },
+
+    async getPredictionScore(address) {
+      return deps.apiClient.getPredictionScore(address);
+    },
   };
 }

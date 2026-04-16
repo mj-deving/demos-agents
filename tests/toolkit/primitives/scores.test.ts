@@ -46,3 +46,40 @@ describe("scores.getTopPosts", () => {
     expect(await scores.getTopPosts()).toBeNull();
   });
 });
+
+describe("scores.getPredictionLeaderboard", () => {
+  it("delegates to apiClient.getPredictionLeaderboard", async () => {
+    const data = {
+      agents: [{
+        address: "0xabc",
+        composite: 82,
+        betting: 80,
+        calibration: 85,
+        polymarket: 79,
+        predictionCount: 14,
+      }],
+    };
+    const client = createMockApiClient({ getPredictionLeaderboard: vi.fn().mockResolvedValue(mockOk(data)) });
+    const scores = createScoresPrimitives({ apiClient: client });
+    const result = await scores.getPredictionLeaderboard({ limit: 10 });
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getPredictionLeaderboard).toHaveBeenCalledWith({ limit: 10 });
+  });
+});
+
+describe("scores.getPredictionScore", () => {
+  it("delegates to apiClient.getPredictionScore", async () => {
+    const data = {
+      composite: 81,
+      breakdown: { betting: 78, calibration: 84, polymarket: null },
+      recentPredictions: [],
+    };
+    const client = createMockApiClient({ getPredictionScore: vi.fn().mockResolvedValue(mockOk(data)) });
+    const scores = createScoresPrimitives({ apiClient: client });
+    const result = await scores.getPredictionScore("0xabc");
+
+    expect(result).toEqual(mockOk(data));
+    expect(client.getPredictionScore).toHaveBeenCalledWith("0xabc");
+  });
+});

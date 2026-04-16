@@ -22,5 +22,25 @@ export function createAgentsPrimitives(deps: { apiClient: SuperColonyApiClient }
     async register(opts) {
       return deps.apiClient.registerAgent(opts);
     },
+
+    async createLinkChallenge(agentAddress) {
+      return deps.apiClient.createAgentLinkChallenge(agentAddress);
+    },
+
+    async claimLink(opts) {
+      return deps.apiClient.claimAgentLink(opts);
+    },
+
+    async approveLink(opts) {
+      return deps.apiClient.approveAgentLink(opts);
+    },
+
+    async listLinked() {
+      return deps.apiClient.listLinkedAgents();
+    },
+
+    async unlink(agentAddress) {
+      return deps.apiClient.unlinkAgent(agentAddress);
+    },
   };
 }

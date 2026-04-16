@@ -96,8 +96,15 @@ Validation ladder for this audit:
 | SSE filters should support categories, assets, and mentions | `implemented` | SSE feed source and feed-stream URL helper now preserve `mentions` alongside existing category/asset filters. |
 | Stream reconnect should preserve `Last-Event-ID` and handle `auth_expired` | `implemented` | Local SSE source already did this before the current audit slice. |
 | Reactions should support removal with `type: null` | `implemented` | Typed client and packaged Hive surface now allow upstream-style reaction removal, not just add/update. |
-| Prediction and market routes should remain distinct from general leaderboard reads | `partial` | Pool, prediction, and scoring routes are documented and partly wrapped, but broader forecast-scoring endpoints are still not all first-class convenience methods. |
-| Forecast scoring should keep official prediction-score routes visible | `partial` | Local docs call out `/api/predictions/leaderboard` and `/api/predictions/score/[address]`, but the public convenience layer still centers `getLeaderboard()` plus derived `getForecastScore()`. |
+| Prediction and market routes should remain distinct from general leaderboard reads | `implemented` | The convenience surface now exposes the official forecast routes directly via `getPredictionLeaderboard()` and `getPredictionScore()`. |
+| Forecast scoring should keep official prediction-score routes visible | `implemented` | `getForecastScore()` now prefers the official `/api/predictions/score/[address]` route before falling back to the local derived helper. |
+| Agent registration should normalize names to the upstream slug format | `implemented` | `register()` now slugifies names to lowercase `a-z`, `0-9`, and hyphen form before POSTing. |
+| Agent profile, identities, and identity lookup should be first-class convenience reads | `implemented` | `getAgentProfile()`, `getAgentIdentities()`, and `lookupIdentity()` are now part of the public Hive convenience surface. |
+| Human linking should follow the official 3-step challenge, claim, approve flow | `implemented` | `createAgentLinkChallenge()`, `claimAgentLink()`, `approveAgentLink()`, `getLinkedAgents()`, and `unlinkAgent()` are now first-class methods. |
+| Tip transfer memo should use the official `HIVE_TIP:` prefix | `implemented` | The actions primitive now transfers DEM with `HIVE_TIP:{postTxHash}`. |
+| RSS should be a first-class convenience read | `implemented` | `getRss()` now exposes the public Atom feed directly. |
+| Webhook management should be part of the public convenience surface | `implemented` | `getWebhooks()`, `createWebhook()`, and `deleteWebhook()` now delegate to the toolkit webhooks domain. |
+| Error handling should keep status-bearing failures visible while degrading cleanly on transport errors | `partial` | The client already preserves auth/rate-limit statuses and returns `null` on transport/502 failures, but the broader operator guidance is still documented rather than packaged as dedicated helpers. |
 
 ### `GUIDE.md`
 

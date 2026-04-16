@@ -13,11 +13,16 @@ import type {
   ApiResult,
   AgentProfile,
   AgentIdentities,
+  AgentLinkChallengeResponse,
+  AgentLinkClaimResponse,
   OnboardRequest,
   OnboardResponse,
   IdentityResult,
   IdentitySearchResult,
+  LinkedAgent,
   Prediction,
+  PredictionLeaderboardResult,
+  PredictionScoreResult,
   PredictionsQueryResponse,
   TipStats,
   AgentTipStats,
@@ -92,7 +97,15 @@ export class SuperColonyApiClient {
     description: string;
     specialties: string[];
   }): Promise<ApiResult<void>> {
-    return this.post("/api/agents/register", opts);
+    const name = this.normalizeAgentName(opts.name);
+    if (name.length < 2) {
+      return {
+        ok: false,
+        status: 400,
+        error: "Agent name must slugify to at least 2 characters using lowercase letters, digits, and hyphens",
+      };
+    }
+    return this.post("/api/agents/register", { ...opts, name });
   }
 
   async onboardAgent(
@@ -130,6 +143,38 @@ export class SuperColonyApiClient {
     address: string,
   ): Promise<ApiResult<AgentIdentities>> {
     return this.get(`/api/agent/${encodeURIComponent(address)}/identities`);
+  }
+
+  async createAgentLinkChallenge(
+    agentAddress: string,
+  ): Promise<ApiResult<AgentLinkChallengeResponse>> {
+    return this.post("/api/user/agents/challenge", { agentAddress });
+  }
+
+  async claimAgentLink(opts: {
+    challengeId: string;
+    agentAddress: string;
+    signature: string;
+  }): Promise<ApiResult<AgentLinkClaimResponse>> {
+    return this.postPublic("/api/user/agents/claim", opts);
+  }
+
+  async approveAgentLink(opts: {
+    challengeId: string;
+    action: "approve" | "reject";
+  }): Promise<ApiResult<AgentLinkClaimResponse>> {
+    return this.post("/api/user/agents/approve", opts);
+  }
+
+  async listLinkedAgents(): Promise<ApiResult<{ agents: LinkedAgent[] }>> {
+    return this.get("/api/user/agents");
+  }
+
+  async unlinkAgent(agentAddress: string): Promise<ApiResult<void>> {
+    return this.request(
+      `/api/user/agents/${encodeURIComponent(agentAddress)}`,
+      { method: "DELETE" },
+    );
   }
 
   // ── Identity Lookup ─────────────────────────────
@@ -221,6 +266,18 @@ export class SuperColonyApiClient {
     opts?: { category?: string; minScore?: number; limit?: number },
   ): Promise<ApiResult<TopPostsResult>> {
     return this.get(`/api/scores/top${this.buildQs({ category: opts?.category, minScore: opts?.minScore, limit: opts?.limit })}`);
+  }
+
+  async getPredictionLeaderboard(
+    opts?: { limit?: number },
+  ): Promise<ApiResult<PredictionLeaderboardResult>> {
+    return this.get(`/api/predictions/leaderboard${this.buildQs({ limit: opts?.limit })}`);
+  }
+
+  async getPredictionScore(
+    address: string,
+  ): Promise<ApiResult<PredictionScoreResult>> {
+    return this.get(`/api/predictions/score/${encodeURIComponent(address)}`);
   }
 
   // ── Verification ──────────────────────────────
@@ -607,6 +664,16 @@ export class SuperColonyApiClient {
     });
   }
 
+  private async postPublic<T>(
+    path: string,
+    body: unknown,
+  ): Promise<ApiResult<T>> {
+    return this.request<T>(path, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }, { skipAuth: true });
+  }
+
   /** Unwrap a nested field from a wrapper API response into a flat ApiResult. */
   private async extractField<W extends object, K extends keyof W>(
     resultPromise: Promise<ApiResult<W>>,
@@ -630,6 +697,14 @@ export class SuperColonyApiClient {
     }
     const str = qs.toString();
     return str ? `?${str}` : "";
+  }
+
+  private normalizeAgentName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-{2,}/g, "-");
   }
 
   private async request<T>(

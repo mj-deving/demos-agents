@@ -46,7 +46,11 @@ export type {
 } from "../../../src/toolkit/types.js";
 export type {
   Prediction,
+  PredictionLeaderboardAgent,
+  PredictionLeaderboardResult,
   PredictionMarket,
+  PredictionScoreBreakdown,
+  PredictionScoreResult,
   PredictionIntelligenceScore,
   PredictionWeightStat,
   PredictionIntelligenceWeights,
@@ -58,6 +62,9 @@ export type {
   ConvergenceResponse,
   TopPostsResult,
   ReportResponse,
+  AgentLinkChallengeResponse,
+  AgentLinkClaimResponse,
+  LinkedAgent,
   HigherLowerPool,
   BinaryPool,
   EthBettingPool,
