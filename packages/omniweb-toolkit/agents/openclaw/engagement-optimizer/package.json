@@ -1,0 +1,19 @@
+{
+  "name": "@omniweb-toolkit/openclaw-engagement-optimizer-bundle",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:playbook": "node --import tsx ./node_modules/omniweb-toolkit/scripts/check-playbook-path.ts --archetype engagement-optimizer",
+    "check:publish": "node --import tsx ./node_modules/omniweb-toolkit/scripts/check-publish-readiness.ts",
+    "check:attestation": "node --import tsx ./node_modules/omniweb-toolkit/scripts/check-attestation-workflow.ts",
+    "score:template": "node --import tsx ./node_modules/omniweb-toolkit/evals/score-playbook-run.ts --template engagement-optimizer",
+    "check:bundle": "node --import tsx ../../../scripts/check-openclaw-export.ts --archetype engagement-optimizer"
+  },
+  "dependencies": {
+    "omniweb-toolkit": "file:../../.."
+  },
+  "peerDependencies": {
+    "@kynesyslabs/demosdk": ">=2.11.0",
+    "better-sqlite3": "*"
+  }
+}

@@ -1,5 +1,5 @@
 ---
-summary: "OpenClaw skill format research — schema, distribution, feasibility assessment for agent templates"
+summary: "OpenClaw skill format research — current workspace/config shape, supporting-file rules, and omniweb-toolkit export fit"
 read_when: ["openclaw", "skill format", "skill packaging", "agent distribution"]
 ---
 
@@ -17,28 +17,22 @@ OpenClaw skills are **directories** containing a `SKILL.md` file. The file uses 
 ---
 name: my-skill
 description: What this skill does
-metadata:
-  openclaw:
-    emoji: "🔍"
-    requires:
-      bins: ["required-binaries"]
-      env: ["REQUIRED_ENV_VARS"]
-    primaryEnv: "MAIN_ENV_VAR"
-    install:
-      - id: brew
-        kind: brew
-        formula: package-name
-os: [darwin, linux, win32]
+metadata: {"openclaw":{"emoji":"🔍","requires":{"bins":["node"]},"primaryEnv":"MAIN_ENV_VAR"}}
 ---
 ```
 
 Key fields:
 
 - **name / description** — Identity and discoverability.
-- **metadata.openclaw.requires** — Declares binary and environment variable dependencies. The runtime checks these before execution.
+- **metadata.openclaw.requires** — Declares binary, env, or config dependencies. The runtime checks these before execution.
 - **metadata.openclaw.primaryEnv** — The main environment variable the skill needs (typically an API key).
 - **metadata.openclaw.install** — Installation steps for dependencies, supporting multiple package managers.
-- **os** — Platform compatibility list.
+- **skillKey / homepage / emoji / os** — Optional runtime metadata surfaced by the loader and UI.
+
+Runtime nuance:
+
+- The embedded OpenClaw skill loader prefers **single-line frontmatter keys**, with `metadata` written as a single-line JSON object.
+- ClawHub publish accepts normal skill folders with **supporting text-based files** alongside `SKILL.md`.
 
 ### Skill body
 
@@ -53,10 +47,16 @@ Five distribution channels exist:
 | **ClawHub** | Official marketplace | 13,729+ community skills |
 | **Community repos** | GitHub repositories (e.g., VoltAgent/awesome-openclaw-skills) | Curated collections |
 | **Direct URLs** | Install from any URL | Ad hoc sharing |
-| **Local directories** | `~/.openclaw/skills`, `.agents/skills`, `workspace/skills` | Development / private use |
+| **Local directories** | `~/.openclaw/skills`, `~/.agents/skills`, `<workspace>/.agents/skills`, `<workspace>/skills` | Development / private use |
 | **Bundled** | Ships with OpenClaw install | Core skills |
 
-ClawHub is the primary discovery mechanism. Skills are searchable and installable via `openclaw install skill-name`.
+ClawHub is the primary discovery mechanism. Skills are searchable and installable via `openclaw skills install <skill-slug>`.
+
+Current precedence is:
+
+`<workspace>/skills` → `<workspace>/.agents/skills` → `~/.agents/skills` → `~/.openclaw/skills` → bundled → `skills.load.extraDirs`
+
+Skill visibility is controlled separately through `agents.defaults.skills` and `agents.list[].skills` in `openclaw.json`.
 
 ## Template Mapping
 
@@ -64,21 +64,22 @@ How our agent template components map to OpenClaw's skill model:
 
 | Our component | OpenClaw equivalent | Fit |
 |---------------|-------------------|-----|
-| Base template (v3-loop orchestration) | Meta-skill that loads strategy YAML and runs the loop | Indirect — requires adapter |
-| Strategy YAML (10 rules, scoring weights, source configs) | **No equivalent** — strategy lives in markdown prose | Paradigm mismatch |
+| Base template (v3-loop orchestration) | Skill plus supporting files inside one folder | Workable |
+| Strategy YAML (10 rules, scoring weights, source configs) | Companion `strategy.yaml` next to `SKILL.md` | Workable |
 | Market Intelligence agent | Skill with market `observe()` instructions in body | Workable with companion files |
 | Security Sentinel agent | Skill with security `observe()` instructions in body | Workable with companion files |
 | Toolkit (createToolkit, 15 domains) | Would need to be a dependency, not part of the skill | External dependency |
 
 ### Proposed packaging (if pursued)
 
-Each agent template would become a skill directory:
+Each agent template can become a skill directory:
 
 ```
 market-intelligence/
 ├── SKILL.md           # Frontmatter + loop orchestration instructions
-├── strategy.yaml      # Companion file — our structured strategy rules
-└── sources.yaml       # Optional — source configuration
+├── strategy.yaml      # Companion file — concrete structured strategy
+├── starter.ts         # Optional code scaffold
+└── RUNBOOK.md         # Optional validation / operational notes
 ```
 
 The SKILL.md body would instruct the agent to:
@@ -94,34 +95,30 @@ The SKILL.md body would instruct the agent to:
 - **Dependency declarations** (`requires.bins`, `requires.env`) can express our Node.js + SDK requirements.
 - **Local directory loading** enables development without publishing to ClawHub.
 
-### What does not work
+### What still does not fit cleanly
 
-- **Strategy-as-data vs strategy-as-prose.** Our core value proposition is structured, tunable strategy YAML — scoring weights, thresholds, rule priorities. OpenClaw's model bakes strategy into unstructured markdown. A skill consumer cannot easily tune `min_confidence: 0.7` when it is buried in prose.
-- **No native companion file support.** OpenClaw skills are SKILL.md-centric. Companion files (strategy.yaml, sources.yaml) would work in local directories but may not survive ClawHub distribution cleanly.
-- **Runtime assumptions.** OpenClaw skills assume a conversational AI context. Our v3-loop is a headless autonomous pipeline (sense → plan → act). The execution model differs.
-- **Toolkit dependency.** Our 15-domain toolkit with 38 API endpoints, chain SDK integration, and colony DB is a substantial runtime dependency that does not fit the "self-contained skill" model.
+- **Toolkit dependency.** `omniweb-toolkit` remains the real runtime. The skill folder teaches the agent how to use it, but the dependency still has to be installed and configured.
+- **Runtime assumptions.** OpenClaw is prompt-driven and interactive; our playbooks are closer to deliberate autonomous loops. The skill can teach that loop, but OpenClaw does not enforce it structurally.
+- **Pre-publish distribution story.** Until `omniweb-toolkit` is published, the cleanest OpenClaw setup is a local workspace bundle pointing at the checked-out package or repo tarball.
 
 ### Verdict
 
-**Possible but requires an adapter pattern.** The paradigm mismatch (strategy-as-data vs strategy-as-prose) means OpenClaw packaging would be a lossy translation of our template model. The structured strategy YAML — our key differentiator — would need to be either:
+**Viable as local workspace bundles today.** Current OpenClaw and ClawHub docs explicitly support skill folders with supporting text files, which means exported archetypes can carry a real `strategy.yaml`, starter asset, and runbook next to `SKILL.md`.
 
-1. Flattened into prose (losing tunability), or
-2. Kept as a companion file with custom loading logic in the SKILL.md body (fragile, non-standard).
-
-Neither option is clean.
+The remaining constraint is operational, not format-level: the bundle still needs a working `omniweb-toolkit` installation and peer dependencies.
 
 ## Recommendation
 
-**Defer OpenClaw packaging until templates are validated in production.**
+**Export local OpenClaw workspace bundles now, keep public registry publish later.**
 
 Rationale:
 
-1. Templates do not yet exist — designing for a distribution format before the thing being distributed is premature.
-2. The adapter cost is non-trivial and adds complexity without immediate user value.
-3. Local directory loading means we can always package later without changing the template format.
-4. Production validation will reveal which parts of templates are stable enough to package.
+1. The current format is already enough for local OpenClaw workspaces.
+2. Supporting files remove the biggest earlier blocker: structured strategy can ship next to the skill.
+3. The unresolved part is package distribution, not skill schema.
+4. A local generated bundle gives a real interoperability test without forcing an early ClawHub publish.
 
-**Revisit after:** Two agent templates (Market Intelligence + one more) are running successfully in production with the v3-loop.
+**Current recommendation:** ship generated local bundles for the maintained archetypes, validate them deterministically, and revisit ClawHub publication after the package's npm distribution path is stable.
 
 ## Sources
 

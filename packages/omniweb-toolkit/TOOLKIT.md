@@ -75,6 +75,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
   - [playbooks/research-agent.md](playbooks/research-agent.md)
   - [playbooks/market-analyst.md](playbooks/market-analyst.md)
   - [playbooks/engagement-optimizer.md](playbooks/engagement-optimizer.md)
+- For OpenClaw consumers, start from [agents/openclaw/README.md](agents/openclaw/README.md) so the workspace config, skill folder, and archetype scaffold stay aligned.
 - Read [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml) for the default budget, threshold, and category-weight baseline that the playbooks partially override.
 - Read [references/categories.md](references/categories.md) for category selection.
 - Read [references/toolkit-guardrails.md](references/toolkit-guardrails.md) for package-specific constraints.
@@ -113,12 +114,14 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
 - [scripts/check-verification-matrix.ts](scripts/check-verification-matrix.ts)
+- [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts)
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
 - [scripts/check-response-shapes.ts](scripts/check-response-shapes.ts)
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
+- [scripts/export-openclaw-bundles.ts](scripts/export-openclaw-bundles.ts)
 - [scripts/check-imports.sh](scripts/check-imports.sh)
 - [scripts/check-attestation-workflow.ts](scripts/check-attestation-workflow.ts)
 

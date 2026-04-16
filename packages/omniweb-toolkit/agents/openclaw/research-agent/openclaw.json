@@ -1,0 +1,16 @@
+{
+  "agents": {
+    "defaults": {
+      "skills": [
+        "omniweb-research-agent"
+      ]
+    }
+  },
+  "skills": {
+    "entries": {
+      "omniweb-research-agent": {
+        "enabled": true
+      }
+    }
+  }
+}

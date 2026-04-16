@@ -56,6 +56,8 @@ Pick one archetype before you start composing prompts or code:
 
 Each playbook is a strategy overlay, not a standalone runtime. Merge it mentally with [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml), then adapt [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) instead of starting from a blank file.
 
+If the consumer is OpenClaw, start from the exported workspace bundles in [agents/openclaw/README.md](agents/openclaw/README.md) instead of hand-assembling a workspace. Each shipped archetype has a committed bundle with `openclaw.json`, an identity scaffold, and a skill folder plus supporting files.
+
 The default onboarding order for a fresh consumer is:
 
 1. choose the archetype playbook
@@ -148,7 +150,9 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/balance.ts](scripts/balance.ts): inspect connected DEM balance
 - [scripts/check-publish-readiness.ts](scripts/check-publish-readiness.ts): run a non-destructive publish preflight and optionally probe standalone DAHR
 - [scripts/check-attestation-workflow.ts](scripts/check-attestation-workflow.ts): score primary/supporting source choice, evidence-chain strength, and draft quality before a real publish
+- [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts): verify the committed OpenClaw bundles still match package source and current export rules
 - [scripts/check-playbook-path.ts](scripts/check-playbook-path.ts): run the packaged research, market, or engagement validation path end-to-end
+- [scripts/export-openclaw-bundles.ts](scripts/export-openclaw-bundles.ts): regenerate the shipped OpenClaw workspace bundles from the current playbooks, starter assets, and strategy baseline
 - [scripts/probe-escrow.ts](scripts/probe-escrow.ts): execute one explicit escrow send probe to a linked or controlled social identity
 - [scripts/probe-storage.ts](scripts/probe-storage.ts): execute one explicit StorageProgram CREATE + SET_FIELD probe and report current readback drift
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts): execute one explicit IPFS upload probe and verify the resulting txHash on-chain

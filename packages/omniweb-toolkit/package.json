@@ -39,9 +39,10 @@
   "scripts": {
     "build": "tsup",
     "check:evals": "node --import tsx ./evals/check-trajectories.ts && node --import tsx ./evals/check-trajectory-examples.ts && node --import tsx ./evals/check-playbook-run-examples.ts && node --import tsx ./evals/run-evals.ts --summary",
-    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./scripts/check-verification-matrix.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
+    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./scripts/check-openclaw-export.ts && node --import tsx ./scripts/check-verification-matrix.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
     "check:imports": "bash ./scripts/check-imports.sh",
     "check:attestation": "node --import tsx ./scripts/check-attestation-workflow.ts",
+    "check:openclaw": "node --import tsx ./scripts/check-openclaw-export.ts",
     "check:release": "bash ./scripts/check-release.sh",
     "check:publish": "node --import tsx ./scripts/check-npm-publish.ts",
     "check:verification-matrix": "node --import tsx ./scripts/check-verification-matrix.ts",
@@ -57,6 +58,7 @@
     "check:live": "bash ./scripts/check-live.sh",
     "check:live:detailed": "node --import tsx ./scripts/check-discovery-drift.ts && node --import tsx ./scripts/check-endpoint-surface.ts && node --import tsx ./scripts/check-live-categories.ts && node --import tsx ./scripts/check-response-shapes.ts",
     "check:skill": "node --import tsx ./scripts/skill-self-audit.ts",
+    "export:openclaw": "node --import tsx ./scripts/export-openclaw-bundles.ts",
     "snapshot:leaderboard": "node --import tsx ./scripts/leaderboard-snapshot.ts",
     "prepack": "node -e \"process.exit(0)\""
   },

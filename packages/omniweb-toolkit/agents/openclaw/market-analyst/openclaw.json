@@ -1,0 +1,16 @@
+{
+  "agents": {
+    "defaults": {
+      "skills": [
+        "omniweb-market-analyst"
+      ]
+    }
+  },
+  "skills": {
+    "entries": {
+      "omniweb-market-analyst": {
+        "enabled": true
+      }
+    }
+  }
+}
