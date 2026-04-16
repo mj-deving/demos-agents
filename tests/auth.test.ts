@@ -39,6 +39,10 @@ function futureExpiry(minutesFromNow: number): string {
   return new Date(Date.now() + minutesFromNow * 60 * 1000).toISOString();
 }
 
+function futureExpiryMs(minutesFromNow: number): number {
+  return Date.now() + minutesFromNow * 60 * 1000;
+}
+
 /** Create a past ISO timestamp. */
 function pastExpiry(): string {
   return new Date(Date.now() - 60 * 1000).toISOString();
@@ -78,7 +82,7 @@ describe("loadAuthCache", () => {
   });
 
   it("returns cached token from namespaced format", () => {
-    const expiry = futureExpiry(30);
+    const expiry = futureExpiry(90);
     const cache = namespacedCache(TEST_ADDRESS, "ns-token", expiry);
 
     vi.mocked(existsSync).mockReturnValue(true);
@@ -100,9 +104,8 @@ describe("loadAuthCache", () => {
     expect(loadAuthCache(TEST_ADDRESS)).toBeNull();
   });
 
-  it("returns null when token expires within 5-minute margin", () => {
-    // 4 minutes from now — within the 5-min margin
-    const cache = namespacedCache(TEST_ADDRESS, "almost-expired", futureExpiry(4));
+  it("returns null when token expires within 1-hour refresh margin", () => {
+    const cache = namespacedCache(TEST_ADDRESS, "almost-expired", futureExpiry(30));
 
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(JSON.stringify(cache));
@@ -110,8 +113,8 @@ describe("loadAuthCache", () => {
     expect(loadAuthCache(TEST_ADDRESS)).toBeNull();
   });
 
-  it("returns token that expires in exactly 6 minutes (outside margin)", () => {
-    const cache = namespacedCache(TEST_ADDRESS, "valid-tok", futureExpiry(6));
+  it("returns token when more than 1 hour remains", () => {
+    const cache = namespacedCache(TEST_ADDRESS, "valid-tok", futureExpiry(90));
 
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(JSON.stringify(cache));
@@ -122,7 +125,7 @@ describe("loadAuthCache", () => {
   });
 
   it("reads legacy flat format when no namespaced entry", () => {
-    const expiry = futureExpiry(30);
+    const expiry = futureExpiry(90);
     const cache = legacyCache(TEST_ADDRESS, "legacy-tok", expiry);
 
     vi.mocked(existsSync).mockReturnValue(true);
@@ -136,7 +139,7 @@ describe("loadAuthCache", () => {
   });
 
   it("returns null for legacy format with wrong address", () => {
-    const cache = legacyCache(OTHER_ADDRESS, "legacy-tok", futureExpiry(30));
+    const cache = legacyCache(OTHER_ADDRESS, "legacy-tok", futureExpiry(90));
 
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(JSON.stringify(cache));
@@ -145,7 +148,7 @@ describe("loadAuthCache", () => {
   });
 
   it("returns legacy token when no address filter provided", () => {
-    const cache = legacyCache(TEST_ADDRESS, "legacy-tok", futureExpiry(30));
+    const cache = legacyCache(TEST_ADDRESS, "legacy-tok", futureExpiry(90));
 
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(JSON.stringify(cache));
@@ -157,7 +160,7 @@ describe("loadAuthCache", () => {
   });
 
   it("prefers namespaced entry over legacy when both exist", () => {
-    const expiry = futureExpiry(30);
+    const expiry = futureExpiry(90);
     const cache = {
       // Legacy flat fields
       token: "legacy-tok",
@@ -189,6 +192,19 @@ describe("loadAuthCache", () => {
     vi.mocked(readFileSync).mockReturnValue(JSON.stringify(cache));
 
     expect(loadAuthCache(TEST_ADDRESS)).toBeNull();
+  });
+
+  it("accepts upstream millisecond expiresAt values and normalizes them", () => {
+    const cache = namespacedCache(TEST_ADDRESS, "ms-token", String(futureExpiryMs(90)));
+
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(cache));
+
+    const result = loadAuthCache(TEST_ADDRESS);
+
+    expect(result).not.toBeNull();
+    expect(result!.token).toBe("ms-token");
+    expect(result!.expiresAt).toContain("T");
   });
 });
 
@@ -223,7 +239,7 @@ describe("ensureAuth", () => {
   }
 
   it("returns cached token when valid", async () => {
-    const expiry = futureExpiry(30);
+    const expiry = futureExpiry(90);
     const cache = namespacedCache(TEST_ADDRESS, "cached-tok", expiry);
 
     vi.mocked(existsSync).mockReturnValue(true);
@@ -374,6 +390,32 @@ describe("ensureAuth", () => {
     expect(result).toBe("no-expiry-token");
     // Should still save to cache with a generated expiry
     expect(writeFileSync).toHaveBeenCalled();
+  });
+
+  it("persists numeric millisecond expiry values from auth verify", async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    const expiry = futureExpiryMs(1440);
+
+    vi.mocked(apiCall)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: { challenge: "c1", message: "Sign" },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: { token: "ms-expiry-token", expiresAt: expiry },
+      });
+
+    const result = await ensureAuth(mockDemos(), TEST_ADDRESS);
+
+    expect(result).toBe("ms-expiry-token");
+    expect(writeFileSync).toHaveBeenCalledWith(
+      AUTH_CACHE_PATH,
+      expect.stringContaining(new Date(expiry).toISOString()),
+      { mode: 0o600 },
+    );
   });
 
   it("sends correct verify payload shape", async () => {

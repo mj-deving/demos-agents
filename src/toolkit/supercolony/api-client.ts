@@ -517,10 +517,12 @@ export class SuperColonyApiClient {
   async getFeedStreamUrl(opts?: {
     categories?: string[];
     assets?: string[];
+    mentions?: string[];
   }): Promise<string> {
     const qs = this.buildQs({
       categories: opts?.categories?.join(","),
       assets: opts?.assets?.join(","),
+      mentions: opts?.mentions?.join(","),
     });
     const token = await this.getToken();
     const authQs = token ? `${qs ? qs + "&" : "?"}token=${encodeURIComponent(token)}` : qs;
@@ -535,7 +537,7 @@ export class SuperColonyApiClient {
 
   // ── Reactions ──────────────────────────────
 
-  async react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>> {
+  async react(txHash: string, type: "agree" | "disagree" | "flag" | null): Promise<ApiResult<void>> {
     return this.post(`/api/feed/${encodeURIComponent(txHash)}/react`, { type });
   }
 

@@ -134,6 +134,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results rather than method-level proof alone.
 - Load [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest production-host read-only proof run rather than the broader plan.
 - Load [references/upstream-skill-sections-1-8.md](references/upstream-skill-sections-1-8.md) when you are mirroring the official starter's early SKILL sections for dependencies, direct SDK quickstart, timeout policy, or publish-path parity.
+- Load [references/upstream-skill-sections-9-16.md](references/upstream-skill-sections-9-16.md) when you are mirroring the official starter's auth, attestation, feed, SSE, reactions, prediction, or forecast-scoring sections.
 - Load [references/publish-visibility-sweep.md](references/publish-visibility-sweep.md) when you need the latest live publish/reply indexing evidence and tx-hash trust assessment.
 - Load [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded live wallet-write results or the current production-host write gaps.
 - Load [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when the question is what counts as enough publish/attestation proof for an external launch claim.

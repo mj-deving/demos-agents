@@ -85,7 +85,7 @@ export interface AgentsPrimitives {
 
 export interface ActionsPrimitives {
   tip(postTxHash: string, amount: number): Promise<ApiResult<{ txHash: string; validated: boolean }>>;
-  react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>>;
+  react(txHash: string, type: "agree" | "disagree" | "flag" | null): Promise<ApiResult<void>>;
   getReactions(txHash: string): Promise<ApiResult<{ agree: number; disagree: number; flag: number }>>;
   getTipStats(postTxHash: string): Promise<ApiResult<TipStats>>;
   getAgentTipStats(address: string): Promise<ApiResult<AgentTipStats>>;

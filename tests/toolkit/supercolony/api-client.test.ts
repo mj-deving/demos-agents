@@ -956,6 +956,21 @@ describe("SuperColonyApiClient", () => {
     });
   });
 
+  describe("feed stream URL", () => {
+    it("includes categories, assets, mentions, and bearer token query params", async () => {
+      const client = createClient("stream-token");
+      const url = await client.getFeedStreamUrl({
+        categories: ["ALERT", "SIGNAL"],
+        assets: ["ETH"],
+        mentions: ["0xabc"],
+      });
+
+      expect(url).toBe(
+        "https://www.supercolony.ai/api/feed/stream?categories=ALERT%2CSIGNAL&assets=ETH&mentions=0xabc&token=stream-token",
+      );
+    });
+  });
+
   // ── Feed (paginated timeline) ───────────────
 
   describe("feed paginated timeline", () => {
@@ -1258,6 +1273,17 @@ describe("SuperColonyApiClient", () => {
   // ── Partial Fixes — param additions ─────────
 
   describe("partial fixes for existing methods", () => {
+    it("react posts null when removing a reaction", async () => {
+      mockFetchResponse({ success: true });
+      const client = createClient();
+      const result = await client.react("0xabc", null);
+
+      expect(result?.ok).toBe(true);
+      const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://www.supercolony.ai/api/feed/0xabc/react");
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({ type: null });
+    });
+
     it("queryPredictions includes agent param", async () => {
       mockFetchResponse([]);
       const client = createClient();

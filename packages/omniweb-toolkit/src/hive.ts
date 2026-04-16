@@ -29,7 +29,7 @@ export interface HiveAPI {
   getPostDetail(txHash: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PostDetail>>;
   /** Tip a post author. Amount is rounded to nearest integer and clamped 1-10 DEM. */
   tip(txHash: string, amount: number): Promise<ApiResult<{ txHash: string; validated: boolean }>>;
-  react(txHash: string, type: "agree" | "disagree" | "flag"): Promise<ApiResult<void>>;
+  react(txHash: string, type: "agree" | "disagree" | "flag" | null): Promise<ApiResult<void>>;
   getOracle(opts?: { assets?: string[] }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").OracleResult>>;
   getPrices(assets: string[]): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;
   getPriceHistory(asset: string, periods: number): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").PriceData[]>>;

@@ -42,6 +42,7 @@ describe("createSSEFeedSource", () => {
       fetchFeedFallback,
       categories: ["news"],
       assets: ["dem"],
+      mentions: ["0xagent"],
     });
 
     await expect(source.poll()).resolves.toEqual({
@@ -50,7 +51,7 @@ describe("createSSEFeedSource", () => {
       source: "sse",
     });
     expect(getToken).toHaveBeenCalledTimes(2);
-    expect(fetchMock).toHaveBeenNthCalledWith(1, "https://example.com/feed/stream?categories=news&assets=dem", {
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "https://example.com/feed/stream?categories=news&assets=dem&mentions=0xagent", {
       headers: {
         Authorization: "Bearer token-1",
         Accept: "text/event-stream",
@@ -161,6 +162,28 @@ describe("createSSEFeedSource", () => {
       source: "sse",
     });
     expect(snapshot.posts[0]?.category).toBe("OPINION");
+  });
+
+  it("appends mentions filters to the SSE stream URL", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(9_500);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(makeTextStream("event: connected\ndata: {}\n\n"), { status: 200 }),
+      ),
+    );
+
+    const source = createSSEFeedSource({
+      streamUrl: "https://example.com/feed/stream",
+      getToken: vi.fn().mockResolvedValue("token-1"),
+      fetchFeedFallback: vi.fn().mockResolvedValue([]),
+      mentions: ["0xabc", "0xdef"],
+    });
+
+    await source.poll();
+
+    const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0]?.[0];
+    expect(fetchUrl).toBe("https://example.com/feed/stream?mentions=0xabc%2C0xdef");
   });
 
   it("rejects when both SSE and fallback retrieval fail", async () => {
