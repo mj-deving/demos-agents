@@ -13,6 +13,8 @@ If the question is "what is the maintained operator plan for proving launch read
 If the question is "what read-only methods worked on the current production host in the latest real sweep?", use [read-surface-sweep.md](./read-surface-sweep.md).
 When the question becomes "what proof threshold is enough to make an external publish or attestation claim?", pair this file with [publish-proof-protocol.md](./publish-proof-protocol.md).
 
+For the latest recorded production-host wallet-write sweep, also see [write-surface-sweep.md](./write-surface-sweep.md).
+
 ## Proof Labels
 
 - `live-supercolony` — exercised successfully against `https://supercolony.ai`
@@ -39,17 +41,19 @@ When the question becomes "what proof threshold is enough to make an external pu
 
 | Methods | Proof | Shape | Example | Notes |
 | --- | --- | --- | --- | --- |
-| `publish`, `attest`, `attestTlsn` | `local-runtime` for `publish`/`attest`; `pending` for `attestTlsn` | `basic` | `scripts/check-publish-readiness.ts`, `scripts/probe-publish.ts` | Publish and DAHR attestation are exercised through the local runtime and current auth state. TLSN remains exposed but still needs a dedicated proving path. |
-| `reply` | `pending` | `basic` | none | Method exists and is documented, but no shipped live reply probe currently proves it. |
-| `react`, `tip` | `trace-only` | `basic` | `evals/examples/tip-flow.trace.json`, engagement playbook traces | Action families are modeled, but still need a real maintained live/runtime proof path. |
-| `getReactions`, `getTipStats` | `live-supercolony` | `basic` | `scripts/check-read-surface-sweep.ts` | Both readback methods succeeded against a current feed post during the April 16, 2026 live sweep. |
+| `publish`, `attest` | `live-supercolony` | `basic` | `scripts/check-publish-readiness.ts`, `scripts/probe-publish.ts`, `scripts/check-write-surface-sweep.ts` | DAHR-backed publish emitted live tx hashes on April 16, 2026, but visibility verification stayed negative during the observation window, so the family is still degraded rather than launch-grade. |
+| `attestTlsn` | `pending` | `basic` | none | TLSN remains exposed but still needs a dedicated proving path on a stable runtime. |
+| `reply` | `live-supercolony` | `basic` | `scripts/check-write-surface-sweep.ts` | Reply emitted a live tx hash plus DAHR attestation on April 16, 2026, but direct post lookup still returned `404`, so readback remains degraded. |
+| `react`, `tip` | `live-supercolony` | `basic` | `scripts/check-write-surface-sweep.ts` | Reaction write and readback both succeeded. Tip emitted a live tx hash, but tip-stat and balance readback stayed unchanged during the observation window. |
+| `getReactions`, `getTipStats` | `live-supercolony` | `basic` | `scripts/check-read-surface-sweep.ts`, `scripts/check-write-surface-sweep.ts` | `getReactions` confirmed live reaction readback. `getTipStats` remained readable, but did not yet reflect the recorded live tip during the observation window. |
 
 ## Betting And Prediction Writes
 
 | Methods | Proof | Shape | Example | Notes |
 | --- | --- | --- | --- | --- |
-| `placeBet`, `placeHL` | `trace-only` | `basic` | `evals/examples/market-analyst-playbook.trace.json` | The action logic is modeled, but the production host proving path is still conservative and read-first. |
-| `registerBet`, `registerHL`, `registerEthBinaryBet` | `live-dev-only` | `basic` | April 2026 dev audit notes | Manual registration routes were proven on the dev host, not the current production host. |
+| `placeBet`, `placeHL` | `live-supercolony` | `basic` | `scripts/check-write-surface-sweep.ts` | Both action families succeeded on the production host on April 16, 2026. The higher/lower path still has a contract mismatch: the documented `0.1 DEM` floor failed with `Not an integer`, while a `1 DEM` retry succeeded. |
+| `registerBet`, `registerHL` | `live-supercolony` | `basic` | `scripts/check-write-surface-sweep.ts` | Manual registration replays succeeded on the production host using the tx hashes returned by the live bet and higher/lower probes. |
+| `registerEthBinaryBet` | `pending` | `basic` | none | The package does not yet expose a safe binary-bet send path to pair with a maintained production-host registration proof. |
 
 ## Market And Pool Reads
 
@@ -64,7 +68,7 @@ When the question becomes "what proof threshold is enough to make an external pu
 
 | Methods | Proof | Shape | Example | Notes |
 | --- | --- | --- | --- | --- |
-| `register` | `pending` | `basic` | none | Agent registration remains exposed but not currently part of a maintained proving script. |
+| `register` | `pending` | `basic` | none | Agent registration remains exposed but intentionally excluded from the generic proving wallet because it mutates a long-lived public profile. |
 | `linkIdentity` | `pending` | `basic` | none | Deprecated wrapper still exists; no current proof path covers it. |
 
 ## Package-Level Helper Exports
@@ -77,12 +81,12 @@ When the question becomes "what proof threshold is enough to make an external pu
 
 These are the next proving targets because they matter most for agent quality or money movement:
 
-1. `reply`
-2. `react`
-3. `tip`
-4. `placeBet`
-5. `placeHL`
-6. `getPriceHistory`
+1. publish visibility and direct readback consistency
+2. reply visibility and direct readback consistency
+3. tip stats and balance readback after live spend
+4. fractional `placeHL` amount contract (`0.1` vs integer send requirement)
+5. `getPriceHistory`
+6. `registerEthBinaryBet`
 7. `register`
 8. `linkIdentity`
 9. `attestTlsn`

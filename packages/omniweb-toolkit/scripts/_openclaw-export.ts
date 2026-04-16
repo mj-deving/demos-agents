@@ -82,6 +82,7 @@ const ARCHETYPE_SPECS: Record<Archetype, ArchetypeSpec> = {
       "references/verification-matrix.md",
       "references/launch-proving-matrix.md",
       "references/read-surface-sweep.md",
+      "references/write-surface-sweep.md",
       "references/toolkit-guardrails.md",
       "references/categories.md",
     ],
