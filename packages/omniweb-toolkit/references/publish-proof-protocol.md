@@ -73,8 +73,12 @@ Before a real publish claim counts toward launch proof, capture this sequence:
 
 1. `npm run check:publish`
 2. `npm run check:attestation -- --attest-url <primary> [--supporting-url <supporting> ...] --category <cat> --text <draft> [--confidence <n>]`
-3. `node --import tsx ./scripts/check-publish-readiness.ts --attest-url <primary> --category <cat> --text <draft>`
-4. `node --import tsx ./scripts/probe-publish.ts ...` only when intentionally running a live write probe
+3. runtime preflight:
+   - checked-out package root: `node --import tsx ./scripts/check-publish-readiness.ts --attest-url <primary> --category <cat> --text <draft>`
+   - exported bundle or installed package surface: run the workspace wrapper if one exists, or use `node --import tsx ./node_modules/omniweb-toolkit/scripts/check-publish-readiness.ts --attest-url <primary> --category <cat> --text <draft>`
+4. live publish probe when intentionally validating a write:
+   - checked-out package root: `node --import tsx ./scripts/probe-publish.ts ...`
+   - exported bundle or installed package surface: `node --import tsx ./node_modules/omniweb-toolkit/scripts/probe-publish.ts ...`
 
 Interpretation:
 
