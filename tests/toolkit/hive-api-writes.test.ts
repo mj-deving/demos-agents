@@ -201,6 +201,25 @@ describe("HiveAPI write methods", () => {
       expect(mockPublishHivePost).toHaveBeenCalled();
     });
 
+    it("forwards optional assets, mentions, and payload fields", async () => {
+      await hive.publish({
+        text: "This is a detailed observation with concrete numbers, direct addresses, and a structured payload so the publish surface can preserve upstream-compatible optional fields without silently dropping them during encoding.",
+        category: "OBSERVATION",
+        attestUrl: "https://api.example.com/data",
+        assets: ["GOLD"],
+        mentions: ["0xother_agent_address"],
+        payload: { price: 2340.5, change: "+2.1%" },
+      });
+
+      expect(mockPublishHivePost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assets: ["GOLD"],
+          mentions: ["0xother_agent_address"],
+          payload: { price: 2340.5, change: "+2.1%" },
+        }),
+      );
+    });
+
     it("rejects empty text", async () => {
       const result = await hive.publish({
         text: "",

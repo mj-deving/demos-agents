@@ -29,6 +29,8 @@ export interface PublishInput {
   confidence: number;
   replyTo?: string;
   assets?: string[];
+  mentions?: string[];
+  payload?: Record<string, unknown>;
   sourceAttestations?: Array<{
     url: string;
     responseHash: string;
@@ -99,6 +101,8 @@ export async function publishPost(
 
   const encoded = encodeHivePost(post);
   const stages = {
+    // These SDK writes are not abortable. Failing fast on a timeout would risk
+    // a duplicate retry if the original transaction lands after the caller gives up.
     store: async (payload: Uint8Array) => DemosTransactions.store(payload, demos),
     confirm: async (tx: unknown) =>
       DemosTransactions.confirm(

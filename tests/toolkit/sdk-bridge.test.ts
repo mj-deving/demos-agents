@@ -332,6 +332,38 @@ describe("SDK Bridge Adapter", () => {
       expect(parsed.feedRefs).toEqual(["0xfeed1", "0xfeed2"]);
     });
 
+    it("includes mentions and payload when provided", async () => {
+      const localTxMock = {
+        store: vi.fn(async () => ({ type: "store" })),
+        confirm: vi.fn(async () => ({
+          response: { data: { transaction: { hash: "payload-hash" } } },
+        })),
+        broadcast: vi.fn(async () => ({})),
+      };
+
+      bridge = createSdkBridge(
+        demos as any,
+        "https://www.supercolony.ai",
+        "token",
+        undefined,
+        localTxMock as any,
+      );
+
+      await bridge.publishHivePost({
+        text: "Payload-rich post",
+        category: "OBSERVATION",
+        mentions: ["0xabc", "0xdef"],
+        payload: { price: 2340.5, driver: "geopolitical" },
+      });
+
+      const storeCall = localTxMock.store.mock.calls[0];
+      const encoded = storeCall[0] as Uint8Array;
+      const decoded = new TextDecoder().decode(encoded.slice(4));
+      const parsed = JSON.parse(decoded);
+      expect(parsed.mentions).toEqual(["0xabc", "0xdef"]);
+      expect(parsed.payload).toEqual({ price: 2340.5, driver: "geopolitical" });
+    });
+
     it("omits feedRefs when empty array", async () => {
       const localTxMock = {
         store: vi.fn(async () => ({ type: "store" })),

@@ -80,6 +80,11 @@ export async function reply(
     const draft: PublishDraft = {
       text: opts.text,
       category: opts.category ?? "ANALYSIS",
+      tags: opts.tags,
+      confidence: opts.confidence,
+      assets: opts.assets,
+      mentions: opts.mentions,
+      payload: opts.payload,
       parentTxHash: opts.parentTxHash,
       attestUrl: opts.attestUrl,
     };
@@ -123,6 +128,9 @@ async function executePublishPipeline(
     tags: draft.tags,
     confidence: draft.confidence ?? DEFAULT_CONFIDENCE,
     replyTo: draft.parentTxHash,
+    assets: draft.assets,
+    mentions: draft.mentions,
+    payload: draft.payload,
     sourceAttestations: [{
       url: attestResult.url,
       responseHash: attestResult.responseHash,

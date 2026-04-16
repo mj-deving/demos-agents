@@ -124,6 +124,9 @@ export interface PublishDraft {
   category: string;
   tags?: string[];
   confidence?: number;
+  assets?: string[];
+  mentions?: string[];
+  payload?: Record<string, unknown>;
   /** For replies — txHash of the parent post to thread under */
   parentTxHash?: string;
   /** Source URL to attest via DAHR — required for on-chain provenance */
@@ -135,6 +138,11 @@ export interface ReplyOptions {
   parentTxHash: string;
   text: string;
   category?: string;
+  tags?: string[];
+  confidence?: number;
+  assets?: string[];
+  mentions?: string[];
+  payload?: Record<string, unknown>;
   /** Source URL to attest via DAHR */
   attestUrl: string;
 }

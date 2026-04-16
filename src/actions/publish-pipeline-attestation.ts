@@ -1,5 +1,6 @@
 import { Demos } from "@kynesyslabs/demosdk/websdk";
 import { info } from "../lib/network/sdk.js";
+import { DEMOS_NETWORK_TIMEOUT_MS, withTimeout } from "../lib/network/timeouts.js";
 import { observe } from "../lib/pipeline/observe.js";
 import { attestTlsnViaPlaywrightBridge } from "../lib/tlsn-playwright-bridge.js";
 import type { AttestResult } from "./publish-pipeline.js";
@@ -32,8 +33,16 @@ export async function attestDahr(
 ): Promise<AttestResult> {
   const attestUrl = url;
   info(`DAHR attesting: ${attestUrl}`);
-  const dahr = await (demos as unknown as DemosWithDahr).web2.createDahr();
-  const proxyResponse = await dahr.startProxy({ url: attestUrl, method });
+  const dahr = await withTimeout(
+    "demos.web2.createDahr()",
+    DEMOS_NETWORK_TIMEOUT_MS.createDahr,
+    (demos as unknown as DemosWithDahr).web2.createDahr(),
+  );
+  const proxyResponse = await withTimeout(
+    "dahr.startProxy()",
+    DEMOS_NETWORK_TIMEOUT_MS.startProxy,
+    dahr.startProxy({ url: attestUrl, method }),
+  );
 
   const httpStatus = proxyResponse.status ?? proxyResponse.statusCode ?? proxyResponse.httpStatus;
   if (typeof httpStatus === "number" && (httpStatus < 200 || httpStatus >= 300)) {

@@ -97,6 +97,9 @@ export const PublishDraftSchema = z.object({
   category: nonEmptyString,
   tags: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(100).optional(),
+  assets: z.array(z.string()).optional(),
+  mentions: z.array(z.string()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   parentTxHash: z.string().optional(),
   attestUrl: nonEmptyString,  // Required — SSRF validated in executePublishPipeline, not here
 });
@@ -105,6 +108,11 @@ export const ReplyOptionsSchema = z.object({
   parentTxHash: txHashString,
   text: textBody,
   category: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  confidence: z.number().min(0).max(100).optional(),
+  assets: z.array(z.string()).optional(),
+  mentions: z.array(z.string()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   attestUrl: nonEmptyString,
 });
 

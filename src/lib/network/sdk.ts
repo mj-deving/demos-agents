@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import { homedir } from "node:os";
 
 import { Demos } from "@kynesyslabs/demosdk/websdk";
+import { DEMOS_NETWORK_TIMEOUT_MS, withTimeout } from "./timeouts.js";
 
 /** Signing algorithm — matches SDK's internal type without deep import */
 export type SigningAlgorithm = "ed25519" | "falcon" | "ml-dsa";
@@ -203,7 +204,11 @@ export async function connectWallet(
   const dualSign = walletOpts?.dualSign ?? resolvedDualSign ?? false;
 
   const demos = new Demos();
-  await demos.connect(getRpcUrl());
+  await withTimeout(
+    "demos.connect()",
+    DEMOS_NETWORK_TIMEOUT_MS.connect,
+    demos.connect(getRpcUrl()),
+  );
 
   const connectOpts: { algorithm?: SigningAlgorithm; dual_sign?: boolean } = {};
   if (algorithm !== "ed25519") {

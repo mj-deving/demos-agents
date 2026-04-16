@@ -19,6 +19,7 @@ import { FileStateStore } from "../state-store.js";
 import { createSdkBridge, AUTH_PENDING_TOKEN } from "../sdk-bridge.js";
 import { validateInput, ConnectOptionsSchema } from "../schemas.js";
 import { validateUrl } from "../url-validator.js";
+import { DEMOS_NETWORK_TIMEOUT_MS, withTimeout } from "../../lib/network/timeouts.js";
 
 const DEFAULT_RPC_URL = "https://demosnode.discus.sh";
 const DEFAULT_ALGORITHM = "falcon";
@@ -214,7 +215,11 @@ async function connectAndAuthenticate(
     const { Demos } = await import("@kynesyslabs/demosdk/websdk");
 
     const demos = new Demos();
-    await demos.connect(rpcUrl);
+    await withTimeout(
+      "demos.connect()",
+      DEMOS_NETWORK_TIMEOUT_MS.connect,
+      demos.connect(rpcUrl),
+    );
 
     // Determine mnemonic source
     let mnemonic: string | undefined = wallet.mnemonic;

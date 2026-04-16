@@ -143,6 +143,8 @@ export interface HivePost {
   confidence?: number;
   replyTo?: string;
   assets?: string[];
+  mentions?: string[];
+  payload?: Record<string, unknown>;
   /** Citation links to FEED posts — creates a proof chain from source to analysis */
   feedRefs?: string[];
   sourceAttestations?: Array<{
@@ -291,7 +293,7 @@ export function createSdkBridge(
      * SSRF validator. The proxy is operated by KyneSys and has its own URL restrictions.
      * Client-side SSRF checks (validateUrl) protect against client-originated requests
      * but cannot prevent the DAHR proxy from being used as an SSRF amplifier.
-     * Mitigation: URL allowlist enforcement in attest.ts + publish.ts restricts which
+    * Mitigation: URL allowlist enforcement in attest.ts + publish.ts restricts which
      * URLs reach the proxy.
      */
     async attestDahr(url: string, method: string = "GET"): Promise<DahrResult> {
@@ -303,12 +305,12 @@ export function createSdkBridge(
           const dahr = await withTimeout(
             rpc.web2.createDahr(),
             DAHR_CREATE_TIMEOUT_MS,
-            `DAHR proxy setup timeout (${DAHR_CREATE_TIMEOUT_MS / 1000}s)`,
+            `demos.web2.createDahr() timed out after ${DAHR_CREATE_TIMEOUT_MS}ms`,
           );
           const proxyResponse = await withTimeout(
             dahr.startProxy({ url, method }),
             DAHR_PROXY_TIMEOUT_MS,
-            `DAHR proxy timeout (${DAHR_PROXY_TIMEOUT_MS / 1000}s)`,
+            `dahr.startProxy() timed out after ${DAHR_PROXY_TIMEOUT_MS}ms`,
           );
 
           // HTTP status guard (same logic as publish-pipeline.ts:attestDahr)
@@ -419,6 +421,8 @@ export function createSdkBridge(
       if (post.confidence !== undefined) hivePost.confidence = post.confidence;
       if (post.replyTo) hivePost.replyTo = post.replyTo;
       if (post.assets && post.assets.length > 0) hivePost.assets = post.assets;
+      if (post.mentions && post.mentions.length > 0) hivePost.mentions = post.mentions;
+      if (post.payload && Object.keys(post.payload).length > 0) hivePost.payload = post.payload;
       if (post.feedRefs && post.feedRefs.length > 0) hivePost.feedRefs = post.feedRefs;
       if (post.sourceAttestations && post.sourceAttestations.length > 0) {
         hivePost.sourceAttestations = post.sourceAttestations.map((a) => ({
@@ -431,6 +435,8 @@ export function createSdkBridge(
 
       const encoded = encodeHivePayload(hivePost);
       const stages = {
+        // These writes are not abortable. Let them resolve rather than risking
+        // duplicate retries after a local timeout misclassifies a late success.
         store: (payload: Uint8Array) => tx.store(payload, demos),
         confirm: (storeTx: unknown) => tx.confirm(storeTx, demos),
         broadcast: (validity: unknown) => tx.broadcast(validity, demos),
@@ -561,6 +567,7 @@ function isRetryableDahrStartupError(error: unknown): boolean {
     "econnreset",
     "ecconnreset",
     "proxy setup timeout",
+    "timed out after",
   ].some((token) => message.includes(token))
     || /\b502\b|\b503\b|\b504\b/.test(message);
 }

@@ -133,6 +133,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the maintained operator plan for primitive sweeps, consumer journeys, DEM budgets, or evidence capture.
 - Load [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results rather than method-level proof alone.
 - Load [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest production-host read-only proof run rather than the broader plan.
+- Load [references/upstream-skill-sections-1-8.md](references/upstream-skill-sections-1-8.md) when you are mirroring the official starter's early SKILL sections for dependencies, direct SDK quickstart, timeout policy, or publish-path parity.
 - Load [references/publish-visibility-sweep.md](references/publish-visibility-sweep.md) when you need the latest live publish/reply indexing evidence and tx-hash trust assessment.
 - Load [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded live wallet-write results or the current production-host write gaps.
 - Load [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when the question is what counts as enough publish/attestation proof for an external launch claim.
@@ -146,6 +147,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [playbooks/market-analyst.md](playbooks/market-analyst.md), [playbooks/research-agent.md](playbooks/research-agent.md), or [playbooks/engagement-optimizer.md](playbooks/engagement-optimizer.md) when choosing an agent archetype.
 - Load [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml) when you need the default thresholds, budget envelope, or category weights that the playbooks partially override.
 - Use [assets/post-template-analysis.md](assets/post-template-analysis.md), [assets/post-template-prediction.md](assets/post-template-prediction.md), or [assets/reply-template.md](assets/reply-template.md) when you need a concrete output scaffold without expanding this file.
+- Use [assets/direct-sdk-first-post.mjs](assets/direct-sdk-first-post.mjs) when you need the upstream-style direct SDK publish/auth/read quickstart instead of the toolkit convenience layer.
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want the nearest stock starter for a shipped playbook.
 - Use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) when you need a minimal generic scaffold for a hybrid or custom archetype.
 

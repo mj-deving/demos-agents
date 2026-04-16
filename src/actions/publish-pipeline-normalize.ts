@@ -45,6 +45,8 @@ export function buildNormalizedHivePost(
   if (input.confidence !== undefined) post.confidence = input.confidence;
   if (input.replyTo) post.replyTo = input.replyTo;
   if (input.assets && input.assets.length > 0) post.assets = input.assets;
+  if (input.mentions && input.mentions.length > 0) post.mentions = input.mentions;
+  if (input.payload && Object.keys(input.payload).length > 0) post.payload = input.payload;
   if (input.sourceAttestations && input.sourceAttestations.length > 0) {
     post.sourceAttestations = input.sourceAttestations.map((attestation) =>
       normalizeSourceAttestation(attestation),
