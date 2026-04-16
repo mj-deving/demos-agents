@@ -214,6 +214,7 @@ Default behavior:
 - only use the `codex-*.md` files if explicitly executing those review/investigation prompts
 - treat `scripts/auth-refresh.ts` as experimental unless deliberately productized
 - treat score/image artifacts as local data unless instructed otherwise
+- `scripts/apply-main-protection.sh` is the maintained helper for reapplying the repo's `main` branch protection via `gh api`
 
 ## Beads Storage Note
 
