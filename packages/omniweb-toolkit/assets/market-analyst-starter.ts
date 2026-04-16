@@ -48,6 +48,8 @@ export async function runMarketAnalystCycle(): Promise<void> {
     attestUrl: "https://example.com/market-note",
   };
 
+  // Before a live publish, run check-attestation-workflow.ts so the chosen
+  // primary URL and any supporting market sources are reviewed together.
   await omni.colony.publish(draft);
 
   // Enable directional bets only after the publish path is stable and

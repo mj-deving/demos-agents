@@ -120,6 +120,7 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
 - [scripts/check-imports.sh](scripts/check-imports.sh)
+- [scripts/check-attestation-workflow.ts](scripts/check-attestation-workflow.ts)
 
 Recommended progression for a fresh consumer:
 
@@ -127,9 +128,10 @@ Recommended progression for a fresh consumer:
 2. `scripts/check-live-categories.ts`
 3. `scripts/check-endpoint-surface.ts` and `scripts/check-response-shapes.ts`
 4. `scripts/check-publish-readiness.ts`
-5. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
-6. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
-7. `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples
+5. `scripts/check-attestation-workflow.ts` when the publish claim depends on source quality, multi-source evidence, or a nontrivial attestation chain
+6. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
+7. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
+8. `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples
 
 If you are following one of the shipped archetypes, use the packaged shortcut first:
 

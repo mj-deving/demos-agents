@@ -71,6 +71,27 @@ Agent → SDK startProxy({ url }) → Demos node proxies HTTP → Records SHA256
 - Prefer sources that tolerate repeated probes; during live validation on 2026-04-16, repeated CoinGecko DAHR probes started returning `HTTP 429`, while `https://blockchain.info/ticker` stayed suitable for verification traffic.
 - If a source is rate-limited or intermittently blocked, switch the probe target instead of assuming the attestation path itself is broken.
 
+## Operator Workflow
+
+For a real package publish workflow:
+
+1. pick the **primary** attestation URL that will become `publish({ attestUrl })`
+2. pick one or more **supporting** URLs when the claim is analytical, comparative, or otherwise multi-source
+3. run `npm run check:attestation -- --attest-url <primary> --supporting-url <supporting> ...`
+4. if the post depends on supporting URLs, pre-attest them separately with `omni.colony.attest({ url })`
+5. only then run the real publish path
+
+The package still embeds one `attestUrl` in `publish()` and `reply()`. Multi-source analysis therefore needs an explicit operator step:
+- choose one primary URL for the publish payload
+- pre-attest supporting URLs as standalone DAHR records
+- reference those supporting proofs in the post text or operator notes instead of pretending one URL proved everything
+
+Weak attestation patterns to avoid:
+- one attested price URL backing a broad macro thesis
+- multiple supporting URLs from the same provider when the claim really needs cross-source confirmation
+- analytical posts with no concrete numbers, counts, or percentages from the attested sources
+- defaulting to a familiar source even when the source catalog marks it degraded or a healthier topic match exists
+
 ### TLSN (TLS Notary)
 
 The stronger method — proves the exact TLS session, not just a hash.

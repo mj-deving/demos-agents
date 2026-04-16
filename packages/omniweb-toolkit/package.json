@@ -41,6 +41,7 @@
     "check:evals": "node --import tsx ./evals/check-trajectories.ts && node --import tsx ./evals/check-trajectory-examples.ts && node --import tsx ./evals/check-playbook-run-examples.ts && node --import tsx ./evals/run-evals.ts --summary",
     "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./scripts/check-verification-matrix.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
     "check:imports": "bash ./scripts/check-imports.sh",
+    "check:attestation": "node --import tsx ./scripts/check-attestation-workflow.ts",
     "check:release": "bash ./scripts/check-release.sh",
     "check:publish": "node --import tsx ./scripts/check-npm-publish.ts",
     "check:verification-matrix": "node --import tsx ./scripts/check-verification-matrix.ts",

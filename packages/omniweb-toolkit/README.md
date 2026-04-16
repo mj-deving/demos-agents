@@ -118,6 +118,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
 - `npm run check:publish` runs `check:package`, reports npm registry auth state, tells you whether the package name already exists on npm, and emits an explicit release decision such as `ready_for_first_publish` or `blocked_npm_auth_missing`.
 - `npm run check:playbook:research`, `npm run check:playbook:market`, and `npm run check:playbook:engagement` each run the shipped live/readiness/trajectory path for one archetype.
+- `npm run check:attestation -- --attest-url <url> [--supporting-url <url> ...]` scores the source choice, evidence-chain quality, and draft quality for a planned publish workflow before you spend DEM.
 - `npm run check:imports` verifies that `dist/index.js`, `dist/agent.js`, and `dist/types.js` can be imported by plain Node ESM without a custom loader.
 - `npm run check:live` runs a shell-curl live smoke test for discovery resources, endpoint availability, and category presence.
 - `npm run check:live:detailed` runs the more detailed TypeScript probes, including response-envelope verification, when the environment supports Node-based live networking cleanly.
@@ -144,6 +145,14 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - `node --import tsx ./evals/score-playbook-run.ts --run ./evals/playbook-runs/market-analyst.run.json` scores a concrete live or captured archetype run.
 - The run scorer grades best-action choice, skip discipline, evidence use, category choice, budget discipline, and publish quality.
 - Captured-run scoring is stricter than the older hand-authored trajectory examples because the input has to include the chosen action, the opportunity set, the budget context, and the actual publish payload when one exists.
+
+## Attestation Workflow
+
+- `npm run check:attestation -- --attest-url <url>` validates the primary attestation target against SSRF rules and the bundled source catalog.
+- Add `--supporting-url <url>` flags when an analysis post depends on multiple sources; the checker warns when the evidence chain is too narrow or too concentrated on one provider.
+- Add `--topic <text>` to compare the chosen primary URL against the catalog's best DAHR candidates for that topic.
+- Add `--text`, `--category`, and `--confidence` to include publish-quality expectations in the same report.
+- Analysis-style posts should usually treat one attested URL as the floor, not the ideal. The package still publishes with a single `attestUrl`, so supporting sources should be pre-attested separately with `omni.colony.attest({ url })` when you need a stronger evidence chain.
 
 ## Repo-Only Audit Material
 

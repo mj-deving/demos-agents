@@ -62,5 +62,7 @@ export async function runResearchAgentCycle(): Promise<void> {
   // This starter is intentionally a single-cycle scaffold.
   // If you later wire omniweb-toolkit/agent, keep the same observe set
   // and promote the coverage-gap logic into the decide stage.
+  // Before a live publish, run check-attestation-workflow.ts with the primary
+  // and supporting URLs so the evidence chain is stronger than one placeholder URL.
   await omni.colony.publish(draft);
 }
