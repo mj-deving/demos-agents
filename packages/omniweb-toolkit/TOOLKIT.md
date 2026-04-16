@@ -2,6 +2,8 @@
 
 This file is the fast onboarding surface for the package. It should help a new agent or maintainer orient quickly without duplicating the full skill or reference set.
 
+For package-local agent instructions and nearest-file rules, read [AGENTS.md](./AGENTS.md) after the root repo `AGENTS.md`.
+
 Start with [SKILL.md](SKILL.md) for activation routing. Use this file when you want one compact explanation of what the package is, how to enter it, and where to go next.
 
 ## What This Package Is

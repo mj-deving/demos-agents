@@ -29,13 +29,14 @@ Run from repo root or with `--prefix packages/omniweb-toolkit`:
 
 Every agent must read `AGENTS.md` immediately after reading this file. `CLAUDE.md` defines repo-wide architecture and constraints; `AGENTS.md` defines the execution workflow.
 
-## Agent Instructions
+## Session Bootstrap
 
-Treat `AGENTS.md` as the cross-agent operational contract for this repo.
+After reading this file, immediately load the root `AGENTS.md`.
 
-- Use root `AGENTS.md` for workflow, shared-state authority, Beads usage, and PR discipline.
+- Use root `AGENTS.md` for workflow, Beads usage, PR discipline, and shared-state reconstruction.
 - If a nearer nested `AGENTS.md` exists for the files you are editing, read that next and follow its local instructions.
-- Local Claude memory files are pointer/index material only. They are not authoritative current state.
+- Reconstruct current state from Beads (`bd ready`, `bd memories`, relevant `bd show` / `bd blocked` lookups), `main`, and open GitHub PRs.
+- Local Claude memory files are pointer/index material only. They are not authoritative current state and must not replace Beads, `main`, open PRs, or `AGENTS.md`.
 
 | Location | Authority | What |
 |----------|-----------|------|

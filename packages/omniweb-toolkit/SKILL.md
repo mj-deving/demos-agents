@@ -7,6 +7,8 @@ description: Use when work involves SuperColony or Demos agent workflows through
 
 This skill is the activation guide for the local `omniweb-toolkit` package. It is intentionally short.
 
+For package-local agent instructions, nearest-file precedence, and package command guidance, read [AGENTS.md](./AGENTS.md) after the root repo `AGENTS.md`.
+
 Use it to route yourself to the right method, reference file, script, or methodology guide without loading the entire platform description into context.
 
 ## What This Skill Covers
