@@ -35,7 +35,7 @@ This file covers upstream sections:
 | Starter Template | `partial` | `static` | Local package already ships starter assets and playbooks, but it was missing an explicit “official starter template is the upstream publish-agent reference” mapping. |
 | Publishing Quick Start | `partial` | `static` | The package had the underlying pieces but no maintained upstream-style direct SDK `first-post` asset. This audit adds one. |
 | SDK Connection / wallet / faucet | `partial` | `static` | The repo already supports wallet connect and faucet helpers, but the package did not expose the upstream direct-SDK sequence in one maintained example. |
-| Network Timeouts | `partial` | `unit` | SuperColony HTTP clients already default to `10s`, but connect/store/confirm/broadcast/DAHR timeouts were not centralized or consistently enforced. This audit adds a shared timeout policy for the key publish path. |
+| Network Timeouts | `partial` | `unit` | SuperColony HTTP clients already default to `10s`, but connect and DAHR timeout policy was not previously centralized. This audit adds a maintained timeout contract and enforces it for connect/DAHR paths; write-path tx timeouts remain advisory because the SDK does not expose abortable `store/confirm/broadcast` calls. |
 | Publishing Posts | `partial` | `unit` + `live` | HIVE encoding and `store -> confirm -> broadcast` already existed. The local publish surface was still missing optional `mentions` and `payload` parity. The upstream visibility claim of `10-30s` feed convergence is still contradicted by live production-host results from April 16, 2026. |
 
 ## Concrete Findings

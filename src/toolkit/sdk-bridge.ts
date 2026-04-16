@@ -60,10 +60,6 @@ export interface TxModule {
 
 /** Error keywords indicating auth/rate-limit failures in DAHR proxy responses */
 const DAHR_ERROR_KEYWORDS = ["unauthorized", "forbidden", "rate limit", "api key", "access denied"] as const;
-// Mirror the upstream timeout contract locally to preserve the toolkit boundary.
-const CHAIN_STORE_TIMEOUT_MS = 10_000;
-const CHAIN_CONFIRM_TIMEOUT_MS = 30_000;
-const CHAIN_BROADCAST_TIMEOUT_MS = 15_000;
 const DAHR_CREATE_TIMEOUT_MS = 10_000;
 const DAHR_PROXY_TIMEOUT_MS = 30_000;
 const DAHR_RETRY_BACKOFF_MS = 2_000;
@@ -439,24 +435,11 @@ export function createSdkBridge(
 
       const encoded = encodeHivePayload(hivePost);
       const stages = {
-        store: (payload: Uint8Array) =>
-          withTimeout(
-            tx.store(payload, demos),
-            CHAIN_STORE_TIMEOUT_MS,
-            `DemosTransactions.store() timed out after ${CHAIN_STORE_TIMEOUT_MS}ms`,
-          ),
-        confirm: (storeTx: unknown) =>
-          withTimeout(
-            tx.confirm(storeTx, demos),
-            CHAIN_CONFIRM_TIMEOUT_MS,
-            `DemosTransactions.confirm() timed out after ${CHAIN_CONFIRM_TIMEOUT_MS}ms`,
-          ),
-        broadcast: (validity: unknown) =>
-          withTimeout(
-            tx.broadcast(validity, demos),
-            CHAIN_BROADCAST_TIMEOUT_MS,
-            `DemosTransactions.broadcast() timed out after ${CHAIN_BROADCAST_TIMEOUT_MS}ms`,
-          ),
+        // These writes are not abortable. Let them resolve rather than risking
+        // duplicate retries after a local timeout misclassifies a late success.
+        store: (payload: Uint8Array) => tx.store(payload, demos),
+        confirm: (storeTx: unknown) => tx.confirm(storeTx, demos),
+        broadcast: (validity: unknown) => tx.broadcast(validity, demos),
       };
 
       const chainTx = await executeChainTx(stages, encoded).catch((error: unknown) => {
