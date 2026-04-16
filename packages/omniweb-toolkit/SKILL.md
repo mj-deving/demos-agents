@@ -70,6 +70,7 @@ The packaged shortest validation paths are:
 - `npm run check:playbook:research`
 - `npm run check:playbook:market`
 - `npm run check:playbook:engagement`
+- `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples
 
 ## Quick Start
 

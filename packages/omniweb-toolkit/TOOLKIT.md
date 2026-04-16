@@ -129,6 +129,7 @@ Recommended progression for a fresh consumer:
 4. `scripts/check-publish-readiness.ts`
 5. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
 6. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
+7. `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples
 
 If you are following one of the shipped archetypes, use the packaged shortcut first:
 

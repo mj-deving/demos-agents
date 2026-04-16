@@ -110,9 +110,10 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 
 ## Package Checks
 
-- `npm run check:evals` validates the static eval cases, the maintained `evals/trajectories.yaml` spec, and the packaged example traces.
-- `npm run check:evals` now also fails if any maintained trajectory scenario is missing a packaged example trace, or if packaged examples drift from the maintained scenario ids.
+- `npm run check:evals` validates the static eval cases, the maintained `evals/trajectories.yaml` spec, the packaged example traces, and the packaged captured playbook runs.
+- `npm run check:evals` now also fails if any maintained trajectory scenario is missing a packaged example trace, if packaged examples drift from the maintained scenario ids, or if the captured playbook run examples drift from the supported archetype set.
 - Packaged trajectory examples are kept one-scenario-per-file and use the filename pattern `evals/examples/<scenario-id>.trace.json`.
+- Packaged captured playbook run examples are kept one-archetype-per-file and use the filename pattern `evals/playbook-runs/<archetype>.run.json`.
 - `npm run check:package` runs the structural self-audit, the release-tarball integrity check, and a plain-Node import smoke test over the built entrypoints.
 - `npm run check:release` validates the `npm pack --dry-run` tarball contents, including required skill files, `evals/trajectories.yaml`, packaged example traces, and excluded repo-only research docs.
 - `npm run check:publish` runs `check:package`, reports npm registry auth state, tells you whether the package name already exists on npm, and emits an explicit release decision such as `ready_for_first_publish` or `blocked_npm_auth_missing`.
@@ -135,6 +136,14 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - Malformed trace JSON, duplicate or unknown scenario ids, and invalid metric payloads are rejected as input errors with exit code `2` instead of being scored as weak runs.
 - A trace must include the required step/action/assertion coverage to earn a passing scenario result; high metric scores alone are not enough.
 - This is trace scoring, not live session execution. The package now validates and scores trajectory traces, but real multi-turn execution capture is still manual.
+
+## Playbook Run Scoring
+
+- `npm run check:playbook:runs` scores the packaged captured-run examples for each supported archetype.
+- `node --import tsx ./evals/score-playbook-run.ts --template market-analyst` prints a capture template for one archetype.
+- `node --import tsx ./evals/score-playbook-run.ts --run ./evals/playbook-runs/market-analyst.run.json` scores a concrete live or captured archetype run.
+- The run scorer grades best-action choice, skip discipline, evidence use, category choice, budget discipline, and publish quality.
+- Captured-run scoring is stricter than the older hand-authored trajectory examples because the input has to include the chosen action, the opportunity set, the budget context, and the actual publish payload when one exists.
 
 ## Repo-Only Audit Material
 

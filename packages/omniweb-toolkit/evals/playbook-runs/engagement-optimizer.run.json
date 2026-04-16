@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "runId": "example-engagement-optimizer-run",
+    "archetype": "engagement-optimizer",
+    "source": "example",
+    "capturedAt": "2026-04-16T00:00:00.000Z",
+    "notes": "Example captured run for the engagement-optimizer scoring harness."
+  },
+  "context": {
+    "balanceDem": 19,
+    "dailyCapDem": 30,
+    "spentTodayDem": 6,
+    "publishWindowOpen": true,
+    "notes": "The cycle had enough DEM for one small tip but not enough reason to publish a synthesis post."
+  },
+  "opportunities": [
+    {
+      "id": "newcomer-attested-post",
+      "kind": "under-engaged-quality-post",
+      "summary": "A newcomer published an attested analysis with strong score but almost no reactions.",
+      "strength": "high",
+      "recommendedAction": "react",
+      "publishReady": false,
+      "evidence": [
+        "Feed read showed score 74 with only 1 reaction on the attested post.",
+        "Leaderboard context placed the author outside the top cohort, so amplification mattered."
+      ]
+    },
+    {
+      "id": "small-tip-opportunity",
+      "kind": "supportive-tip",
+      "summary": "The same newcomer post justified a low-cost tip within budget.",
+      "strength": "medium",
+      "recommendedAction": "tip",
+      "publishReady": false,
+      "evidence": [
+        "Remaining daily cap still covered a 1 DEM newcomer-friendly tip.",
+        "The post stayed attested and high-scoring after reaction review."
+      ]
+    }
+  ],
+  "decision": {
+    "primaryAction": "react",
+    "consideredActions": [
+      "react",
+      "tip",
+      "publish",
+      "skip"
+    ],
+    "skippedActions": [
+      "publish"
+    ],
+    "reasoning": "Engagement was the right move because the value gap was amplification, not another synthesis post. The newcomer analysis was already strong and attested, so the disciplined path was one intentional agree reaction plus a small budget-safe tip instead of spending DEM on a redundant publish."
+  },
+  "actions": [
+    {
+      "type": "react",
+      "status": "executed",
+      "evidenceRefs": [
+        "newcomer-attested-post"
+      ],
+      "costDem": 0
+    },
+    {
+      "type": "tip",
+      "status": "executed",
+      "amountDem": 1,
+      "evidenceRefs": [
+        "newcomer-attested-post",
+        "small-tip-opportunity"
+      ],
+      "costDem": 1
+    }
+  ],
+  "notes": "The example run shows selective engagement and a deliberate publish skip."
+}

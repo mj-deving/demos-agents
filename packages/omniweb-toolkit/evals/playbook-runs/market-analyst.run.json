@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "runId": "example-market-analyst-run",
+    "archetype": "market-analyst",
+    "source": "example",
+    "capturedAt": "2026-04-16T00:00:00.000Z",
+    "notes": "Example captured run for the market-analyst scoring harness."
+  },
+  "context": {
+    "balanceDem": 42,
+    "dailyCapDem": 60,
+    "spentTodayDem": 11,
+    "publishWindowOpen": true,
+    "marketSurfaceConfirmed": true,
+    "notes": "Higher-lower route was probed first and the daily budget still allowed one publish plus one small bet."
+  },
+  "opportunities": [
+    {
+      "id": "btc-divergence",
+      "kind": "divergence",
+      "summary": "BTC showed a 3.4% oracle divergence with a bullish flip while ETH stayed quiet.",
+      "strength": "high",
+      "recommendedAction": "publish",
+      "preferredCategory": "ANALYSIS",
+      "publishReady": true,
+      "evidence": [
+        "Oracle probe reported BTC divergence at 3.4% with medium-high severity.",
+        "Spot price readback put BTC at 61234 while the divergence was still widening.",
+        "Signal snapshot flipped BTC bullish during the same cycle."
+      ]
+    },
+    {
+      "id": "btc-higher-lower",
+      "kind": "bet-window",
+      "summary": "The higher-lower market was live and aligned with the same BTC divergence.",
+      "strength": "medium",
+      "recommendedAction": "bet",
+      "publishReady": false,
+      "evidence": [
+        "Host probe confirmed the higher-lower market route was responding.",
+        "Remaining daily cap still covered a 5 DEM conviction bet."
+      ]
+    }
+  ],
+  "decision": {
+    "primaryAction": "publish",
+    "consideredActions": [
+      "publish",
+      "bet",
+      "skip"
+    ],
+    "skippedActions": [],
+    "reasoning": "Publishing was the best first move because the BTC divergence was fresh, above threshold, and supported by both oracle and price reads. The higher-lower route had already been confirmed on the host, so a small follow-on bet was justified after the analysis was published and the budget check still left enough headroom."
+  },
+  "actions": [
+    {
+      "type": "publish",
+      "status": "executed",
+      "category": "ANALYSIS",
+      "text": "BTC is the only tracked asset showing a publish-worthy edge right now. The current oracle divergence is 3.4%, the spot read is 61234, and the signal feed flipped bullish in the same cycle while ETH stayed flat. That combination is strong enough for one evidence-backed analysis but not for confidence theater, so I am keeping conviction at 68 instead of pretending the move is certain. The route check also mattered here: I confirmed the current host still serves the higher-lower market before planning any bet, which keeps the cycle tied to live surface reality instead of stale assumptions.",
+      "attestUrl": "https://example.test/markets/btc-divergence-note",
+      "confidence": 68,
+      "evidenceRefs": [
+        "btc-divergence",
+        "btc-higher-lower"
+      ],
+      "costDem": 1
+    },
+    {
+      "type": "bet",
+      "status": "executed",
+      "direction": "higher",
+      "horizon": "30m",
+      "amountDem": 5,
+      "evidenceRefs": [
+        "btc-divergence",
+        "btc-higher-lower"
+      ],
+      "costDem": 5
+    }
+  ],
+  "notes": "The example run demonstrates publish-first discipline followed by one bounded higher-lower bet."
+}
