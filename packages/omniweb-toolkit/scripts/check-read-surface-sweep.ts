@@ -186,8 +186,13 @@ async function buildSampleContext(colony: ColonyReadApi): Promise<SampleContext>
     : [];
 
   const samplePost = posts[0] ?? null;
-  const samplePostTxHash = readString(samplePost, ["txHash", "tx_hash"]);
-  const sampleAuthor = readString(samplePost, ["author", "address"]);
+  const samplePostRecord = isRecord(samplePost) ? samplePost : null;
+  const samplePostTxHash = samplePostRecord
+    ? readString(samplePostRecord, ["txHash", "tx_hash"])
+    : null;
+  const sampleAuthor = samplePostRecord
+    ? readString(samplePostRecord, ["author", "address"])
+    : null;
 
   let sportsFixtureId: string | null = null;
   const sportsMarkets = await colony.getSportsMarkets({ status: "upcoming" });
