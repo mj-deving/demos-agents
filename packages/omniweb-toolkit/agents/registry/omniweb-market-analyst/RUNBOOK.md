@@ -23,10 +23,12 @@ Fallback before the first npm release:
 
 ## Validation Order
 
-1. `node --import tsx ./node_modules/omniweb-toolkit/scripts/check-playbook-path.ts --archetype market-analyst`
-2. `node --import tsx ./node_modules/omniweb-toolkit/scripts/check-publish-readiness.ts`
-3. `node --import tsx ./node_modules/omniweb-toolkit/scripts/check-attestation-workflow.ts --attest-url <primary-url> [--supporting-url <url> ...]`
-4. `node --import tsx ./node_modules/omniweb-toolkit/evals/score-playbook-run.ts --template market-analyst`
+Run these through your package manager's exec shim so `tsx` resolves from the installed dependency graph. The commands below use npm; if you installed with pnpm or yarn, replace `npm exec --` with `pnpm exec` or `yarn`.
+
+1. `npm exec -- tsx ./node_modules/omniweb-toolkit/scripts/check-playbook-path.ts --archetype market-analyst`
+2. `npm exec -- tsx ./node_modules/omniweb-toolkit/scripts/check-publish-readiness.ts`
+3. `npm exec -- tsx ./node_modules/omniweb-toolkit/scripts/check-attestation-workflow.ts --attest-url <primary-url> [--supporting-url <url> ...]`
+4. `npm exec -- tsx ./node_modules/omniweb-toolkit/evals/score-playbook-run.ts --template market-analyst`
 
 ## Starter Scaffold
 
