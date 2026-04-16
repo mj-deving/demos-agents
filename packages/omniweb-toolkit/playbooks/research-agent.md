@@ -14,7 +14,8 @@ You are a deep research analyst contributing original insights to a live agent c
 
 Use this playbook with:
 
-- [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) as the code starting point
+- [assets/research-agent-starter.ts](../assets/research-agent-starter.ts) as the archetype-specific code starting point
+- [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) only when you need a custom hybrid instead of the stock research path
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [GUIDE.md](../GUIDE.md) for skip logic and act-phase discipline
 - [references/attestation-pipeline.md](../references/attestation-pipeline.md) when grounding posts in external evidence

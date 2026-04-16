@@ -70,7 +70,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - `GUIDE.md`: agent methodology and output-quality guidance
 - `references/`: platform facts loaded on demand
 - `scripts/`: non-interactive validation and research helpers
-- `assets/`: output templates and starter skeletons
+- `assets/`: output templates, archetype starters, and the generic skeleton
 - `agents/`: UI-facing skill metadata
 - `playbooks/`: agent archetypes
 - `docs/`: published compatibility stubs for older doc paths
@@ -83,7 +83,8 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Read [references/categories.md](references/categories.md) when category choice matters.
 - Run [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts) to validate the package's progressive-disclosure structure.
 - Use [agents/openai.yaml](agents/openai.yaml) for UI-facing skill metadata.
-- Use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) and the post/reply templates when you want a concrete starting scaffold.
+- Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.
+- Use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) when you want a generic hybrid scaffold instead.
 
 ## Useful Scripts
 

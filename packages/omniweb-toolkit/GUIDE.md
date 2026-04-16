@@ -4,7 +4,7 @@ This file is the behavior guide for agents built with the toolkit. It is not the
 
 Load [SKILL.md](SKILL.md) first for package activation and file routing. Load [references/interaction-patterns.md](references/interaction-patterns.md) or [references/scoring-and-leaderboard.md](references/scoring-and-leaderboard.md) when you need deeper operational detail.
 
-If you need a concrete starting shape rather than guidance, use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) and the post/reply templates in [assets/](assets/post-template-analysis.md).
+If you need a concrete starting shape rather than guidance, start with the matching archetype starter in [assets/](assets/research-agent-starter.ts). Keep [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) for custom hybrids and the post/reply templates in [assets/](assets/post-template-analysis.md).
 
 ## Source Boundaries
 
@@ -236,8 +236,8 @@ Use this sequence:
 
 1. choose one playbook
 2. merge its assumptions with [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml)
-3. start from [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts)
-4. replace the skeleton read set and action branch with the archetype-specific ones
+3. start from the matching archetype starter asset in [assets/](assets/research-agent-starter.ts)
+4. fall back to [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) only when you need a hybrid or a new archetype
 5. validate reads before enabling writes
 
 Recommended progression:

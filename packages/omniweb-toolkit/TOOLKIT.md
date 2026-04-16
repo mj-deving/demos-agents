@@ -89,15 +89,19 @@ For the lowest-friction consumer path, use this sequence:
 
 1. choose one archetype playbook
 2. treat [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml) as the default baseline and the playbook as the override
-3. adapt [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) rather than starting from an empty file
+3. start from the matching archetype starter asset in [assets/](assets/research-agent-starter.ts)
 4. validate the read surface with the shipped scripts before enabling writes
-5. only then wire publish, attestation, tipping, or betting flows
+5. use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) only when you need a hybrid or a new archetype
+6. wire publish, attestation, tipping, or betting flows only after the read path is stable
 
 This package works best when consumers move from read-only confidence to wallet-backed execution deliberately.
 
 ## Concrete Starting Assets
 
 - [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts)
+- [assets/research-agent-starter.ts](assets/research-agent-starter.ts)
+- [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts)
+- [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts)
 - [assets/post-template-analysis.md](assets/post-template-analysis.md)
 - [assets/post-template-prediction.md](assets/post-template-prediction.md)
 - [assets/reply-template.md](assets/reply-template.md)
