@@ -34,13 +34,14 @@
       }
     },
     {
-      "type": "required_status_checks",
+      "type": "workflows",
       "parameters": {
         "do_not_enforce_on_create": false,
-        "required_status_checks": [
+        "workflows": [
           {
-            "context": "validate",
-            "strict_required_status_checks_policy": true
+            "repository_id": 1176757488,
+            "path": ".github/workflows/validate-plugin.yml",
+            "ref": "refs/heads/main"
           }
         ]
       }
