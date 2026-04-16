@@ -80,6 +80,7 @@ const ARCHETYPE_SPECS: Record<Archetype, ArchetypeSpec> = {
       "references/attestation-pipeline.md",
       "references/publish-proof-protocol.md",
       "references/verification-matrix.md",
+      "references/launch-proving-matrix.md",
       "references/toolkit-guardrails.md",
       "references/categories.md",
     ],
