@@ -387,15 +387,25 @@ try {
     if (primaryAttempt?.ok) {
       nominalSpendDem += config.hlAmount;
     }
+    const minimumContractHealthy = minimumAttempt?.ok === true;
+    if (!minimumContractHealthy && primaryAttempt?.ok && registerReplay?.ok) {
+      warnings.push(
+        "Higher/lower primary spend succeeded, but the configured minimum-contract probe failed.",
+      );
+    }
     results.push({
       name: "placeHL",
       status:
         primaryAttempt?.ok && registerReplay?.ok
-          ? "pass"
+          ? minimumContractHealthy
+            ? "pass"
+            : "degraded"
           : "fail",
       rationale:
         primaryAttempt?.ok && registerReplay?.ok
-          ? "Higher/lower write and manual registration replay both succeeded."
+          ? minimumContractHealthy
+            ? "Higher/lower write and manual registration replay both succeeded."
+            : "Higher/lower primary write succeeded, but the configured minimum-contract probe failed."
           : "Higher/lower write or manual registration replay failed.",
       detail: {
         before,
