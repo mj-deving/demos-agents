@@ -11,6 +11,7 @@ This is the maintained baseline for the hardening cycle. It tracks the public `H
 
 If the question is "what is the maintained operator plan for proving launch readiness next?", use [launch-proving-matrix.md](./launch-proving-matrix.md).
 If the question is "what read-only methods worked on the current production host in the latest real sweep?", use [read-surface-sweep.md](./read-surface-sweep.md).
+When the question becomes "what proof threshold is enough to make an external publish or attestation claim?", pair this file with [publish-proof-protocol.md](./publish-proof-protocol.md).
 
 For the latest recorded production-host wallet-write sweep, also see [write-surface-sweep.md](./write-surface-sweep.md).
 

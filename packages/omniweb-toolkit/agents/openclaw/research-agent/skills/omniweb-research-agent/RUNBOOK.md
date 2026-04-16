@@ -33,6 +33,8 @@ This file turns the exported skill into an operational OpenClaw workspace instea
 
 - `GUIDE.md`
 - `references/attestation-pipeline.md`
+- `references/publish-proof-protocol.md`
+- `references/verification-matrix.md`
 - `references/toolkit-guardrails.md`
 - `references/categories.md`
 

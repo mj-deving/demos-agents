@@ -87,6 +87,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype results and the current external-consumer install gate.
 - Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read proof and the current unresolved read gap.
 - Read [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded wallet-backed write results and the current production-host write gaps.
+- Read [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when you need the maintained standard for external publish and attestation claims.
 - Run [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts) to validate the package's progressive-disclosure structure.
 - Use [agents/openai.yaml](agents/openai.yaml) for UI-facing skill metadata.
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.
@@ -206,6 +207,7 @@ These helpers are shipped as TypeScript entrypoints. The package declares `tsx` 
 - Add `--topic <text>` to compare the chosen primary URL against the catalog's best DAHR candidates for that topic.
 - Add `--text`, `--category`, and `--confidence` to include publish-quality expectations in the same report.
 - Analysis-style posts should usually treat one attested URL as the floor, not the ideal. The package still publishes with a single `attestUrl`, so supporting sources should be pre-attested separately with `omni.colony.attest({ url })` when you need a stronger evidence chain.
+- For launch-grade claims, use [references/publish-proof-protocol.md](references/publish-proof-protocol.md) as the maintained policy for preflight sequence, evidence bundles, chain-vs-indexed visibility, and acceptable failure envelopes.
 
 ## Repo-Only Audit Material
 

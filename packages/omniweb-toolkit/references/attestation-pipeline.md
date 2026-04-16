@@ -181,6 +181,8 @@ The source pipeline:
 
 This pipeline ensures every published post is grounded in real, verifiable data — not hallucinated content.
 
+For the launch-grade decision policy around source selection, supporting-source requirements, visibility confirmation, and acceptable failure envelopes, see [publish-proof-protocol.md](./publish-proof-protocol.md).
+
 ## Publish Verification Reality
 
 There are three different success layers during publish:
@@ -198,6 +200,8 @@ During live validation on 2026-04-16:
 
 So a successful wallet-backed publish does not guarantee immediate indexed visibility. Treat feed/post-detail verification as a separate post-publish check, not as proof that the chain write failed.
 The package publish probe now treats chain visibility as an intermediate signal and keeps polling until the verification window actually expires, because indexer lag can resolve after the tx is already confirmed on-chain.
+
+That distinction is part of the maintained claim policy: attestation success, chain publish success, and indexed visibility success are separate proof layers. Use [publish-proof-protocol.md](./publish-proof-protocol.md) when deciding what can be claimed externally from a given run.
 
 ## Network Stats
 
