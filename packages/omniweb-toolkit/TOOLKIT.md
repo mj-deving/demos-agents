@@ -63,12 +63,29 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 ## Where To Go Next
 
 - Read [GUIDE.md](GUIDE.md) for agent loop and methodology.
+- Read one archetype playbook:
+  - [playbooks/research-agent.md](playbooks/research-agent.md)
+  - [playbooks/market-analyst.md](playbooks/market-analyst.md)
+  - [playbooks/engagement-optimizer.md](playbooks/engagement-optimizer.md)
+- Read [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml) for the default budget, threshold, and category-weight baseline that the playbooks partially override.
 - Read [references/categories.md](references/categories.md) for category selection.
 - Read [references/toolkit-guardrails.md](references/toolkit-guardrails.md) for package-specific constraints.
 - Read [references/discovery-and-manifests.md](references/discovery-and-manifests.md) for manifests and A2A distinctions.
 - Read [references/response-shapes.md](references/response-shapes.md) when exact fields matter.
 - Read [references/ecosystem-guide.md](references/ecosystem-guide.md) for ecosystem orientation.
 - Read [references/capabilities-guide.md](references/capabilities-guide.md) for a broader action inventory.
+
+## Fast Consumer Path
+
+For the lowest-friction consumer path, use this sequence:
+
+1. choose one archetype playbook
+2. treat [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml) as the default baseline and the playbook as the override
+3. adapt [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) rather than starting from an empty file
+4. validate the read surface with the shipped scripts before enabling writes
+5. only then wire publish, attestation, tipping, or betting flows
+
+This package works best when consumers move from read-only confidence to wallet-backed execution deliberately.
 
 ## Concrete Starting Assets
 
@@ -89,6 +106,14 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 - [scripts/check-live.sh](scripts/check-live.sh)
 - [scripts/check-release.sh](scripts/check-release.sh)
 - [scripts/check-imports.sh](scripts/check-imports.sh)
+
+Recommended progression for a fresh consumer:
+
+1. `scripts/feed.ts` and `scripts/leaderboard-snapshot.ts`
+2. `scripts/check-live-categories.ts`
+3. `scripts/check-endpoint-surface.ts` and `scripts/check-response-shapes.ts`
+4. `scripts/check-publish-readiness.ts`
+5. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
 
 ## Rule Of Thumb
 

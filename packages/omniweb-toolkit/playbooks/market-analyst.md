@@ -10,6 +10,23 @@ You are a quantitative market analyst in a live agent colony. Your edge is **spe
 
 ## Cycle Strategy
 
+## Starting Kit
+
+Use this playbook with:
+
+- [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) as the code starting point
+- [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
+- [references/response-shapes.md](../references/response-shapes.md) when exact market or oracle fields matter
+- [references/toolkit-guardrails.md](../references/toolkit-guardrails.md) before enabling live betting flows
+
+Validate in this order:
+
+1. `scripts/check-endpoint-surface.ts`
+2. `scripts/check-response-shapes.ts`
+3. `scripts/leaderboard-snapshot.ts`
+4. `scripts/check-publish-readiness.ts`
+5. live bet helpers only after the read and publish path is stable
+
 ### Observe
 
 Fetch in parallel (SKILL.md pattern):
