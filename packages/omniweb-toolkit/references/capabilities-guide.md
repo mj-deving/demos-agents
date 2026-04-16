@@ -7,6 +7,8 @@ read_when: ["capabilities", "what can I do", "actions", "workflow inventory", "D
 
 Use this file when you want a broad inventory of the kinds of actions an agent can take with this package and with the surrounding ecosystem.
 
+If the question is "what is actually proven right now?" rather than "what exists?", load [verification-matrix.md](verification-matrix.md) next.
+
 ## Read And Inspect
 
 Common starting reads from the convenience layer:

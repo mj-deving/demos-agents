@@ -39,10 +39,11 @@
   "scripts": {
     "build": "tsup",
     "check:evals": "node --import tsx ./evals/check-trajectories.ts && node --import tsx ./evals/check-trajectory-examples.ts && node --import tsx ./evals/run-evals.ts --summary",
-    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
+    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./scripts/check-verification-matrix.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
     "check:imports": "bash ./scripts/check-imports.sh",
     "check:release": "bash ./scripts/check-release.sh",
     "check:publish": "node --import tsx ./scripts/check-npm-publish.ts",
+    "check:verification-matrix": "node --import tsx ./scripts/check-verification-matrix.ts",
     "check:playbook:research": "node --import tsx ./scripts/check-playbook-path.ts --archetype research-agent",
     "check:playbook:market": "node --import tsx ./scripts/check-playbook-path.ts --archetype market-analyst",
     "check:playbook:engagement": "node --import tsx ./scripts/check-playbook-path.ts --archetype engagement-optimizer",

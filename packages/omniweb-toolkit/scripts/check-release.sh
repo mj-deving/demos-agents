@@ -58,11 +58,13 @@ printf '%s' "$PACK_JSON" | node -e '
     "evals/trajectories.yaml",
     "references/platform-surface.md",
     "references/categories.md",
+    "references/verification-matrix.md",
     "scripts/feed.ts",
     "scripts/balance.ts",
     "scripts/check-live.sh",
     "scripts/check-release.sh",
     "scripts/check-playbook-path.ts",
+    "scripts/check-verification-matrix.ts",
     "scripts/skill-self-audit.ts",
   ];
 

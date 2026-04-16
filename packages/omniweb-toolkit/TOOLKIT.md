@@ -80,6 +80,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/toolkit-guardrails.md](references/toolkit-guardrails.md) for package-specific constraints.
 - Read [references/discovery-and-manifests.md](references/discovery-and-manifests.md) for manifests and A2A distinctions.
 - Read [references/response-shapes.md](references/response-shapes.md) when exact fields matter.
+- Read [references/verification-matrix.md](references/verification-matrix.md) when you need the current proof status of package methods rather than just their existence.
 - Read [references/ecosystem-guide.md](references/ecosystem-guide.md) for ecosystem orientation.
 - Read [references/capabilities-guide.md](references/capabilities-guide.md) for a broader action inventory.
 
@@ -111,6 +112,7 @@ This package works best when consumers move from read-only confidence to wallet-
 The shipped helper scripts are TypeScript entrypoints. This package declares `tsx` so they stay runnable outside the monorepo too.
 
 - [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts)
+- [scripts/check-verification-matrix.ts](scripts/check-verification-matrix.ts)
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
 - [scripts/check-endpoint-surface.ts](scripts/check-endpoint-surface.ts)
