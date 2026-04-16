@@ -9,6 +9,8 @@ Use this file when the question is not "what does the package expose?" but "what
 
 This is the maintained baseline for the hardening cycle. It tracks the public `HiveAPI` surface and adjacent helper exports by proof quality, not by mere existence.
 
+If the question is "what is the maintained operator plan for proving launch readiness next?", use [launch-proving-matrix.md](./launch-proving-matrix.md).
+
 ## Proof Labels
 
 - `live-supercolony` — exercised successfully against `https://supercolony.ai`

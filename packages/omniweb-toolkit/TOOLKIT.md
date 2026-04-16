@@ -82,6 +82,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/discovery-and-manifests.md](references/discovery-and-manifests.md) for manifests and A2A distinctions.
 - Read [references/response-shapes.md](references/response-shapes.md) when exact fields matter.
 - Read [references/verification-matrix.md](references/verification-matrix.md) when you need the current proof status of package methods rather than just their existence.
+- Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged proving plan for primitive sweeps, consumer journeys, budgets, and evidence capture.
 - Read [references/ecosystem-guide.md](references/ecosystem-guide.md) for ecosystem orientation.
 - Read [references/capabilities-guide.md](references/capabilities-guide.md) for a broader action inventory.
 

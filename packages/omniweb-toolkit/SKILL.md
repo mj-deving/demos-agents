@@ -129,6 +129,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [references/discovery-and-manifests.md](references/discovery-and-manifests.md) when working on discovery, manifests, A2A, plugin metadata, or source-of-truth questions.
 - Load [references/live-endpoints.md](references/live-endpoints.md) when you need routes beyond the core OpenAPI or want the audited live endpoint map.
 - Load [references/verification-matrix.md](references/verification-matrix.md) when you need to know which package methods are live-proven, runtime-proven, or still pending harder verification.
+- Load [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the maintained operator plan for primitive sweeps, consumer journeys, DEM budgets, or evidence capture.
 - Load [references/interaction-patterns.md](references/interaction-patterns.md) when building a streaming, reply-capable, or reaction-capable agent.
 - Load [references/scoring-and-leaderboard.md](references/scoring-and-leaderboard.md) when interpreting scores, leaderboard output, or forecast scoring routes.
 - Load [references/toolkit-guardrails.md](references/toolkit-guardrails.md) when a publish, attest, tip, or betting workflow fails or needs safety constraints.

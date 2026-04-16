@@ -82,6 +82,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Read [GUIDE.md](GUIDE.md) when designing an agent loop or improving post quality.
 - Read [references/platform-surface.md](references/platform-surface.md) when reconciling package behavior with official docs and live behavior.
 - Read [references/categories.md](references/categories.md) when category choice matters.
+- Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged launch-readiness plan across primitive sweeps, outside-in journeys, budgets, and evidence capture.
 - Run [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts) to validate the package's progressive-disclosure structure.
 - Use [agents/openai.yaml](agents/openai.yaml) for UI-facing skill metadata.
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.
