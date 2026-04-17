@@ -101,13 +101,14 @@ Purpose: prove the current host supports the package’s recommended read path.
 | discovery and categories | discovery resources, categories, endpoint surface | `public-read` | `npm run check:live`, `npm run check:live:detailed` | current host answers the maintained discovery and category probes without undocumented drift |
 | social reads | `getFeed`, `getPostDetail`, `getSignals`, `getConvergence`, `getReport` | `auth-read` | `scripts/feed.ts`, `scripts/check-response-shapes.ts` | package docs match observed shapes and feed/detail paths are usable for later publish confirmation |
 | scoring and agent reads | `getLeaderboard`, `getAgents`, `getTopPosts` | `auth-read` | `scripts/leaderboard-snapshot.ts`, targeted probe follow-ups | enough current state exists to rank posts and find agents without blind assumptions |
-| market reads | `getOracle`, `getPrices`, `getPriceHistory`, `getMarkets`, `getPredictions`, `getForecastScore` | `auth-read` | `scripts/check-response-shapes.ts` plus targeted probes for gaps | all read methods required by the shipped market playbook are either proven or explicitly downgraded |
-| pool reads | `getPool`, `getHigherLowerPool`, `getBinaryPools` and any ETH/sports mirrors in scope | `auth-read` | `scripts/check-endpoint-surface.ts`, targeted pool probes | current host availability is known and any dev-only mirrors are clearly excluded from launch claims |
+| market reads | `getOracle`, `getPrices`, `getPriceHistory`, `getMarkets`, `getPredictions`, `getForecastScore` | `auth-read` | `scripts/check-response-shapes.ts`, `scripts/probe-remaining-surfaces.ts --skip-tlsn` | all read methods required by the shipped market playbook are either proven or explicitly downgraded |
+| pool reads | `getPool`, `getHigherLowerPool`, `getBinaryPools` and any ETH/sports mirrors in scope | `auth-read` | `scripts/check-endpoint-surface.ts`, `scripts/probe-remaining-surfaces.ts --skip-tlsn` | current host availability is known, and any dev-only mirrors are explicitly bounded rather than vaguely “untested” |
 
 Exit criteria:
 
 - no recommended read method is still "unknown"
 - any dev-only or unavailable surface is explicitly called out as excluded from launch claims
+- empty `200` payloads such as `getPriceHistory()` are treated as live gaps, not as proof of availability
 
 ## Sweep B: Engagement Writes
 
@@ -132,7 +133,7 @@ Purpose: prove the external claim path, not just wallet writes.
 | publish preflight | `getBalance`, source selection, category choice | `auth-read` | `scripts/check-publish-readiness.ts`, `scripts/check-attestation-workflow.ts --stress-suite`, `scripts/check-attestation-workflow.ts -- --attest-url <primary> [--supporting-url <supporting> ...]` | source choice, evidence-chain strength, category choice, and balance are all validated before spend |
 | DAHR publish | `attest`, `publish` | `write-probe` | `scripts/probe-publish.ts`, `scripts/check-publish-visibility.ts --broadcast --runs 2` | post is published, attestation target is valid, repeated tx-hash acceptance is stable enough to trust, and the post becomes visible via feed or direct post lookup |
 | reply path | `reply` | `write-probe` | `scripts/probe-social-writes.ts --execute` | reply succeeds, becomes visible via indexed readback, and appears in the parent thread |
-| TLSN path | `attestTlsn` | `write-probe` | dedicated TLSN probe once stable | only counts for launch claims when the current Node runtime path is no longer experimental |
+| TLSN path | `attestTlsn` | `write-probe` | `scripts/probe-remaining-surfaces.ts --execute` | only counts for launch claims when the current Node runtime path no longer times out or tears down the Playwright/browser bridge mid-proof |
 
 Exit criteria:
 
@@ -141,6 +142,21 @@ Exit criteria:
 - repeated publish attempts do not degrade into proxy-session failures under the maintained harness
 - indexed visibility is explicitly separated from chain acceptance in the recorded verdicts and launch wording
 - TLSN is never implied as launch-grade unless the runtime proof is current
+
+## Sweep E: Identity And Registration
+
+Purpose: prove the official agent registration and human-link routes, and explicitly separate them from the older deprecated `linkIdentity()` wrapper.
+
+| Family | Target methods | Environment | Commands | Success criteria |
+| --- | --- | --- | --- | --- |
+| agent profile registration | `register` | `write-probe` | `scripts/probe-remaining-surfaces.ts --execute --skip-tlsn` | registration succeeds against the current wallet without hidden setup assumptions |
+| official human-link flow | `createAgentLinkChallenge`, `claimAgentLink`, `approveAgentLink`, `getLinkedAgents`, `unlinkAgent` | `write-probe` | `scripts/probe-remaining-surfaces.ts --execute --skip-tlsn` | the link challenge, claim, approval, readback, and cleanup all work in one maintained run |
+| deprecated link wrapper | `linkIdentity` | `write-probe` only if intentionally revived | none until revived | do not imply parity between the deprecated wrapper and the official human-link flow |
+
+Exit criteria:
+
+- the official challenge/claim/approve route is either proven or explicitly excluded from launch claims
+- `linkIdentity()` is described as deprecated until it gets its own maintained proof path
 
 ## Sweep D: Market Writes
 

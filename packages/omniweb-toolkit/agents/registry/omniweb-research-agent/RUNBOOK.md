@@ -46,6 +46,7 @@ Run these through your package manager's exec shim so `tsx` resolves from the in
 - `references/verification-matrix.md`
 - `references/launch-proving-matrix.md`
 - `references/market-write-sweep-2026-04-17.md`
+- `references/remaining-surface-sweep-2026-04-17.md`
 - `references/read-surface-sweep.md`
 - `references/social-write-sweep-2026-04-17.md`
 - `references/write-surface-sweep.md`

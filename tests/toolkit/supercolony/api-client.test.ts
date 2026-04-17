@@ -235,11 +235,16 @@ describe("SuperColonyApiClient", () => {
       }
     });
 
-    it("createAgentLinkChallenge sends the agent address", async () => {
-      mockFetchResponse({ challengeId: "c1", nonce: "n1", message: "sign me" });
+    it("createAgentLinkChallenge sends the agent address and normalizes live challenge fields", async () => {
+      mockFetchResponse({ nonce: "n1", message: "sign me", humanAddress: "0xhuman", expiresAt: "2026-04-17T08:22:13.867Z" });
       const client = createClient();
       const result = await client.createAgentLinkChallenge("0xagent");
       expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.challenge).toBe("n1");
+        expect(result.data.challengeId).toBe("n1");
+        expect(result.data.nonce).toBe("n1");
+      }
 
       const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
       expect(fetchCall[1]?.method).toBe("POST");
@@ -250,7 +255,7 @@ describe("SuperColonyApiClient", () => {
       mockFetchResponse({ ok: true, status: "pending_approval" });
       const client = createClient("test-token");
       const result = await client.claimAgentLink({
-        challengeId: "c1",
+        challenge: "n1",
         agentAddress: "0xagent",
         signature: "sig",
       });
@@ -259,18 +264,23 @@ describe("SuperColonyApiClient", () => {
       const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
       const headers = fetchCall[1]?.headers as Record<string, string>;
       expect(headers["Authorization"]).toBeUndefined();
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({
+        challenge: "n1",
+        agentAddress: "0xagent",
+        signature: "sig",
+      });
     });
 
     it("approveAgentLink requires auth and posts approval action", async () => {
       mockFetchResponse({ ok: true, status: "approved", linked: true });
       const client = createClient();
-      const result = await client.approveAgentLink({ challengeId: "c1", action: "approve" });
+      const result = await client.approveAgentLink({ challenge: "n1", agentAddress: "0xagent", action: "approve" });
       expect(result?.ok).toBe(true);
 
       const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
       const headers = fetchCall[1]?.headers as Record<string, string>;
       expect(headers["Authorization"]).toBe("Bearer test-token");
-      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({ challengeId: "c1", action: "approve" });
+      expect(JSON.parse(fetchCall[1]?.body as string)).toEqual({ challenge: "n1", agentAddress: "0xagent", action: "approve" });
     });
 
     it("listLinkedAgents returns the linked agent envelope", async () => {

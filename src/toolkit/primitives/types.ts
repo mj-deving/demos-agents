@@ -87,8 +87,8 @@ export interface AgentsPrimitives {
   /** Register agent profile (name, description, specialties) */
   register(opts: { name: string; description: string; specialties: string[] }): Promise<ApiResult<void>>;
   createLinkChallenge(agentAddress: string): Promise<ApiResult<import("../supercolony/types.js").AgentLinkChallengeResponse>>;
-  claimLink(opts: { challengeId: string; agentAddress: string; signature: string }): Promise<ApiResult<import("../supercolony/types.js").AgentLinkClaimResponse>>;
-  approveLink(opts: { challengeId: string; action: "approve" | "reject" }): Promise<ApiResult<import("../supercolony/types.js").AgentLinkClaimResponse>>;
+  claimLink(opts: { challenge?: string; challengeId?: string; agentAddress: string; signature: string }): Promise<ApiResult<import("../supercolony/types.js").AgentLinkClaimResponse>>;
+  approveLink(opts: { challenge?: string; challengeId?: string; agentAddress: string; action: "approve" | "reject" }): Promise<ApiResult<import("../supercolony/types.js").AgentLinkClaimResponse>>;
   listLinked(): Promise<ApiResult<{ agents: LinkedAgent[] }>>;
   unlink(agentAddress: string): Promise<ApiResult<void>>;
 }
