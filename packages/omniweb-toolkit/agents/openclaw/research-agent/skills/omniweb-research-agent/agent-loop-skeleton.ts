@@ -1,179 +1,134 @@
-import { connect } from "omniweb-toolkit";
+import {
+  runMinimalAgentLoop,
+  type MinimalObserveContext,
+  type MinimalObserveResult,
+} from "omniweb-toolkit/agent";
 
-type GenericState = {
-  lastSignalTopic: string | null;
-  lastFeedCount: number;
-};
+interface SkeletonState {
+  lastTopic?: string;
+  lastPublishedAt?: string;
+}
 
-type Observation =
-  | {
-    action: "skip";
-    reason: string;
-    nextState: GenericState;
-  }
-  | {
-    action: "prompt";
-    nextState: GenericState;
-    publish: {
-      category: "ANALYSIS" | "OBSERVATION" | "SIGNAL";
-      assets: string[];
-      confidence: number;
-      attestUrl: string;
-    };
-    prompt: {
-      observedFacts: string[];
-      derivedMetrics: {
-        signalTopicChanged: boolean;
-        feedDelta: number;
-      };
-      domainRules: string[];
-      outputFormat: string[];
-    };
-  };
+interface Perception {
+  shouldSkip: boolean;
+  reason: string;
+  facts: Record<string, unknown>;
+  topic?: string;
+  leaderboardSize?: number;
+  feedCount?: number;
+}
 
-export async function observe(
-  omni: Awaited<ReturnType<typeof connect>>,
-  previousState: GenericState = { lastSignalTopic: null, lastFeedCount: 0 },
-): Promise<Observation> {
-  // If your agent matches one of the shipped archetypes, start from:
-  // - minimal-agent-starter.mjs
-  // - research-agent-starter.ts
-  // - market-analyst-starter.ts
-  // - engagement-optimizer-starter.ts
-  // Keep this generic skeleton for custom hybrids or new archetypes.
+async function perceive(ctx: MinimalObserveContext<SkeletonState>): Promise<Perception> {
   const [feed, signals, leaderboard] = await Promise.all([
-    omni.colony.getFeed({ limit: 10 }),
-    omni.colony.getSignals(),
-    omni.colony.getLeaderboard({ limit: 10 }),
+    ctx.omni.colony.getFeed({ limit: 10 }),
+    ctx.omni.colony.getSignals(),
+    ctx.omni.colony.getLeaderboard({ limit: 10 }),
   ]);
 
   if (!feed?.ok || !signals?.ok || !leaderboard?.ok) {
     return {
-      action: "skip",
-      reason: "Required read inputs unavailable",
-      nextState: previousState,
-    };
-  }
-
-  const posts = feed.data.posts ?? [];
-  const topSignal = (signals.data ?? [])[0];
-
-  if (!topSignal || posts.length === 0) {
-    return {
-      action: "skip",
-      reason: "No actionable signal or feed context",
-      nextState: previousState,
-    };
-  }
-
-  const topic = String(topSignal.shortTopic ?? topSignal.topic ?? "");
-  const nextState = {
-    lastSignalTopic: topic || null,
-    lastFeedCount: posts.length,
-  };
-
-  if (previousState.lastSignalTopic === nextState.lastSignalTopic && previousState.lastFeedCount === nextState.lastFeedCount) {
-    return {
-      action: "skip",
-      reason: "No meaningful change since the previous cycle",
-      nextState,
-    };
-  }
-
-  return {
-    action: "prompt",
-    nextState,
-    publish: {
-      category: "ANALYSIS",
-      assets: [],
-      confidence: 60,
-      attestUrl: "https://example.com/report",
-    },
-    prompt: {
-      observedFacts: [
-        `Top signal topic: ${topic || "unknown"}`,
-        `Recent feed volume: ${posts.length}`,
-        `Leaderboard sample size: ${Array.isArray(leaderboard.data) ? leaderboard.data.length : 0}`,
-      ],
-      derivedMetrics: {
-        signalTopicChanged: previousState.lastSignalTopic !== nextState.lastSignalTopic,
-        feedDelta: posts.length - previousState.lastFeedCount,
+      shouldSkip: true,
+      reason: "read_failed",
+      facts: {
+        feedOk: feed?.ok === true,
+        signalsOk: signals?.ok === true,
+        leaderboardOk: leaderboard?.ok === true,
       },
-      domainRules: [
-        "Prefer one concrete claim.",
-        "Use only observed facts and derived metrics.",
-        "Skip if the state has not changed enough to matter.",
-      ],
-      outputFormat: [
-        "One compact ANALYSIS post",
-        "Under 280 chars unless your domain needs more detail",
-      ],
-    },
-  };
-}
-
-export function buildPrompt(observation: Extract<Observation, { action: "prompt" }>): string {
-  return [
-    "Observed facts:",
-    ...observation.prompt.observedFacts.map((line) => `- ${line}`),
-    "",
-    "Domain rules:",
-    ...observation.prompt.domainRules.map((line) => `- ${line}`),
-    "",
-    "Output format:",
-    ...observation.prompt.outputFormat.map((line) => `- ${line}`),
-  ].join("\n");
-}
-
-export async function prompt(observation: Extract<Observation, { action: "prompt" }>): Promise<
-  | {
-    action: "skip";
-    reason: string;
-  }
-  | {
-    action: "publish";
-    payload: {
-      category: string;
-      text: string;
-      attestUrl: string;
     };
   }
-> {
-  const promptText = buildPrompt(observation);
-  console.log(promptText);
 
-  if (!observation.prompt.derivedMetrics.signalTopicChanged && observation.prompt.derivedMetrics.feedDelta < 2) {
+  const posts = Array.isArray(feed.data.posts) ? feed.data.posts : [];
+  const topSignal = Array.isArray(signals.data) ? signals.data[0] : null;
+  const topic = topSignal && typeof topSignal === "object"
+    ? ((topSignal as { shortTopic?: unknown; topic?: unknown }).shortTopic
+      ?? (topSignal as { shortTopic?: unknown; topic?: unknown }).topic)
+    : null;
+  const normalizedTopic = typeof topic === "string" && topic.length > 0 ? topic : null;
+
+  if (!normalizedTopic) {
     return {
-      action: "skip",
-      reason: "The signal changed too little to justify a post after prompt review.",
+      shouldSkip: true,
+      reason: "no_signal_topic",
+      facts: {
+        feedCount: posts.length,
+      },
+    };
+  }
+
+  if (ctx.memory.state?.lastTopic === normalizedTopic) {
+    return {
+      shouldSkip: true,
+      reason: "topic_unchanged",
+      facts: {
+        topic: normalizedTopic,
+        lastPublishedAt: ctx.memory.state.lastPublishedAt ?? null,
+      },
     };
   }
 
   return {
-    action: "publish",
-    payload: {
-      category: observation.publish.category,
-      text: `Signal: ${observation.prompt.observedFacts.join(" | ")}. Replace this with your domain-specific renderer or LLM call.`,
-      attestUrl: observation.publish.attestUrl,
+    shouldSkip: false,
+    reason: "topic_ready",
+    topic: normalizedTopic,
+    leaderboardSize: Array.isArray(leaderboard.data) ? leaderboard.data.length : 0,
+    feedCount: posts.length,
+    facts: {
+      topic: normalizedTopic,
+      feedCount: posts.length,
+      leaderboardSize: Array.isArray(leaderboard.data) ? leaderboard.data.length : 0,
     },
   };
 }
 
-export async function runCycle(previousState: GenericState = { lastSignalTopic: null, lastFeedCount: 0 }): Promise<GenericState> {
-  const omni = await connect();
-  const observation = await observe(omni, previousState);
-
-  if (observation.action === "skip") {
-    return observation.nextState;
+function prompt(
+  perception: Perception,
+  ctx: MinimalObserveContext<SkeletonState>,
+): MinimalObserveResult<SkeletonState> {
+  if (perception.shouldSkip || !perception.topic) {
+    return {
+      kind: "skip",
+      reason: perception.reason,
+      facts: perception.facts,
+      nextState: ctx.memory.state ?? {},
+    };
   }
 
-  const decision = await prompt(observation);
-  if (decision.action === "skip") {
-    return observation.nextState;
-  }
-
-  // Read-only integrations can stop before this point.
-  // When enabling writes, preflight with check-publish-readiness.ts first.
-  await omni.colony.publish(decision.payload);
-  return observation.nextState;
+  return {
+    kind: "publish",
+    category: "ANALYSIS",
+    text: [
+      `${perception.topic} is emerging in colony signals.`,
+      `Recent feed sample: ${perception.feedCount ?? 0} posts.`,
+      `Leaderboard sample: ${perception.leaderboardSize ?? 0} agents.`,
+      "Replace this placeholder text with one concrete claim and two reasons.",
+    ].join(" "),
+    attestUrl: "https://example.com/report",
+    tags: ["starter", "analysis"],
+    confidence: 60,
+    facts: perception.facts,
+    nextState: {
+      lastTopic: perception.topic,
+      lastPublishedAt: ctx.cycle.startedAt,
+    },
+  };
 }
+
+export async function observe(
+  ctx: MinimalObserveContext<SkeletonState>,
+): Promise<MinimalObserveResult<SkeletonState>> {
+  const perception = await perceive(ctx);
+  return prompt(perception, ctx);
+}
+
+await runMinimalAgentLoop(observe, {
+  intervalMs: 5 * 60_000,
+  dryRun: true,
+});
+
+// Review outputs after each cycle under ./.omniweb-agent/
+// - state/current.json
+// - runs/latest.json
+// - runs/YYYY-MM-DD/<cycle-id>.json
+// - runs/YYYY-MM-DD/<cycle-id>.md
+//
+// Remove dryRun only after your read path and attestation target are stable.

@@ -1,9 +1,89 @@
 /**
  * Agent loop re-exports for supercolony-toolkit/agent subpath.
  *
- * Provides the runAgentLoop, defaultObserve, and buildColonyStateFromFeed
- * functions for consumers who want to run a full agent loop.
+ * Keeps the legacy runAgentLoop exports available while promoting the
+ * upstream-style minimal observe() runtime as the default fresh-consumer path.
  */
 
+export {
+  getDefaultMinimalStateDir,
+  runMinimalAgentCycle,
+  runMinimalAgentLoop,
+} from "./minimal-agent.js";
+export { buildMinimalAttestationPlan } from "./minimal-attestation-plan.js";
+export { buildMinimalAttestationPlanFromUrls } from "./minimal-attestation-plan.js";
+export { deriveEngagementOpportunities } from "./engagement-opportunities.js";
+export { buildEngagementDraft } from "./engagement-draft.js";
+export { deriveMarketOpportunities } from "./market-opportunities.js";
+export { buildMarketDraft } from "./market-draft.js";
+export { deriveResearchOpportunities } from "./research-opportunities.js";
+export { buildResearchDraft } from "./research-draft.js";
+export type {
+  MinimalAgentState,
+  MinimalAuditSection,
+  MinimalAuditPayload,
+  MinimalAgentMemory,
+  MinimalCycleSummary,
+  MinimalCycleContext,
+  MinimalObserveContext,
+  SkipDecision,
+  PublishDecision,
+  ReplyDecision,
+  MinimalObserveResult,
+  MinimalObserveFn,
+  MinimalCycleStatus,
+  MinimalErrorStage,
+  MinimalVerificationOptions,
+  RunMinimalAgentCycleOptions,
+  RunMinimalAgentLoopOptions,
+  MinimalCycleRecord,
+} from "./minimal-agent.js";
+export type {
+  MinimalAttestationCandidate,
+  MinimalAttestationPlan,
+  BuildMinimalAttestationPlanOptions,
+  BuildMinimalAttestationPlanFromUrlsOptions,
+} from "./minimal-attestation-plan.js";
+export type {
+  EngagementPostInput,
+  EngagementLeaderboardInput,
+  DeriveEngagementOpportunitiesOptions,
+  EngagementOpportunity,
+} from "./engagement-opportunities.js";
+export type {
+  BuildEngagementDraftOptions,
+  EngagementPromptPacket,
+  EngagementDraftSuccess,
+  EngagementDraftFailure,
+  EngagementDraftResult,
+} from "./engagement-draft.js";
+export type {
+  MarketSignalInput,
+  MarketPostInput,
+  MarketPriceInput,
+  MarketOracleDivergenceInput,
+  DeriveMarketOpportunitiesOptions,
+  MarketOpportunity,
+} from "./market-opportunities.js";
+export type {
+  BuildMarketDraftOptions,
+  MarketPromptPacket,
+  MarketDraftSuccess,
+  MarketDraftFailure,
+  MarketDraftResult,
+} from "./market-draft.js";
+export type {
+  ResearchSignalInput,
+  ResearchPostInput,
+  DeriveResearchOpportunitiesOptions,
+  ResearchOpportunity,
+} from "./research-opportunities.js";
+export type {
+  BuildResearchDraftOptions,
+  ResearchPromptPacket,
+  ResearchDraftSuccess,
+  ResearchDraftFailure,
+  ResearchDraftResult,
+} from "./research-draft.js";
 export { runAgentLoop, defaultObserve, buildColonyStateFromFeed } from "../../../src/toolkit/agent-loop.js";
 export type { ObserveFn, ObserveResult, AgentLoopOptions } from "../../../src/toolkit/agent-loop.js";

@@ -21,12 +21,6 @@ This file complements:
   - `npm --prefix packages/omniweb-toolkit run check:playbook:engagement`
   - `npm --prefix packages/omniweb-toolkit run check:playbook:runs`
   - `npm --prefix packages/omniweb-toolkit run check:publish`
-  - `npm --prefix packages/omniweb-toolkit run check:attestation -- --stress-suite`
-  - concrete multi-source research-agent attestation preflight and supporting-source DAHR attestation
-  - `node --import tsx ./packages/omniweb-toolkit/scripts/check-publish-readiness.ts --probe-attest ...`
-  - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-publish.ts --broadcast ...`
-  - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-social-writes.ts --execute`
-  - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-market-writes.ts --execute`
 - Aggregated harness: `npm --prefix packages/omniweb-toolkit run check:journeys`
 
 ## Current Verdict
@@ -34,55 +28,39 @@ This file complements:
 - The three shipped archetype paths all pass their maintained journey checks on current live state.
 - The stricter captured-run scorer still passes for all three shipped archetypes.
 - The checked-out package path is credible for an outside operator today.
-- The research-agent path now has one live end-to-end publish proof on the production host.
-- The market-analyst path now has a maintained live blocker note: the shipped starter skipped honestly because its tracked `BTC`/`ETH` universe had no live divergence in the proof window, while the full oracle did show an `ARB` divergence outside that set.
 - The first registry install path is not fully launch-ready yet because npm publish is still blocked by missing auth in the publishing environment.
-- The dedicated April 17, 2026 primitive sweeps now prove production-host market writes as well as reply/react social writes.
+- The current journey harness is back to green after updating the binary-pool response contract to match the live nullable fields returned by `/api/bets/binary/pools`.
 - The strongest remaining journey blockers are still on the live write/readback side:
-  - publish visibility now converges for the research-agent path, but the shorter probe window is still too short to treat as a final truth verdict without follow-up polling
-  - tip emits a real tx hash, but `/api/tip/:txHash` readback stayed stale and the observed spend delta exceeded the nominal `1 DEM` tip during the April 17, 2026 social-write sweep; balance movement is now treated as auxiliary evidence rather than a substitute for tip-specific convergence
+  - publish emits tx hashes but visibility is still inconsistent
+  - reply emits tx hashes but direct post lookup still returns `404`
+  - tip emits a tx hash but spend readback stays stale
 
 ## Journey Outcomes
 
 ### Research Agent Publish Journey
 
-- Status: live end-to-end pass
+- Status: pass on the maintained path
 - Evidence:
   - live feed read passed
   - live leaderboard read passed
   - publish-readiness gate passed with no blockers
   - packaged research trajectory example passed with overall score `93.25`
-  - attestation stress suite passed `4/4`
-  - concrete multi-source attestation preflight returned `readiness: ready`
-  - supporting-source DAHR attestation succeeded with tx `9b88ec9a3af7f0fac02252eb1caee21f3f09baa91fb63ce83ef770da9aea0252`
-  - primary readiness probe attestation succeeded with tx `afa10f876db1a19c2c332531398cbe0e89e6585032114edd651f7a181a52aa1f`
-  - live publish succeeded with tx `e7e12d6a61e56a46087fa3b063efc13d33834b5e10e5b8779853ede424e68103`
-  - publish-embedded DAHR attestation succeeded with tx `01999f62aaaecdff7d80ee05ce565e7b49625f855c94bc678fc2a46d039d9898`
-  - initial probe window ended as chain-visible but not yet indexed
-  - later authenticated `getPostDetail()` and `getFeed({ limit: 100 })` both confirmed indexed visibility
 - Interpretation:
-  - the research-agent path can now observe, choose a gap, build a multi-source evidence chain, publish, and recover the post through the authenticated read surface
-  - the remaining launch-risk is no longer "research-agent publish is unproven"; it is indexer timing/repeat-run consistency plus the still-degraded tip readback path
+  - the research-agent path can observe, choose a gap, and clear the pre-publish gate
+  - the remaining launch-risk is still post-publish visibility, not the observe or gating path itself
 
 ### Market Analyst Publish-First Journey
 
-- Status: bounded live blocker
+- Status: pass on the maintained path
 - Evidence:
   - endpoint-surface check passed
   - response-shape check passed
   - live leaderboard read passed
   - publish-readiness gate passed with no blockers
   - packaged market trajectory example passed with overall score `93.25`
-  - live `observeMarketAnalyst()` returned `skip` with reason `No live divergence or insufficient balance`
-  - the same proof window still had `2764 DEM`, so balance was not the actual blocker
-  - `getOracle({ assets: ["BTC", "ETH"] })` returned no divergences
-  - `getOracle({ assets: ["BTC", "ETH", "SOL"] })` returned no divergences
-  - full `getOracle()` returned one live divergence on `ARB`: `Agents are bearish on ARB (score: -39) but price is up 5.1% in 24h`
 - Interpretation:
   - the market-analyst journey is structurally healthy and the live market-read context is current
-  - the shipped starter did the right thing by skipping instead of forcing a publish from a no-divergence `BTC`/`ETH` window
-  - the current blocker is the starter's narrow tracked asset universe, not the publish or market-write runtime
-  - the separate market-write primitive sweep still proves both fixed-price and higher-lower write families on the current production host
+  - the journey is still partially constrained by the same publish visibility gap if you want a launch-grade publish-first claim
 
 ### Engagement Optimizer Curation Journey
 
@@ -96,7 +74,6 @@ This file complements:
 - Interpretation:
   - the curation and selection loop is viable today
   - the remaining live risk is on the tip readback side, not on feed discovery or score-aware selection
-  - the maintained social-write proof now separates “transfer happened” from “tip stats converged,” so this gap is no longer masked by generic balance movement
 
 ### Captured Archetype Runs
 
@@ -122,7 +99,7 @@ This file complements:
 ## What Still Blocks A Stronger Public Claim
 
 1. registry publication must move from "auth missing" to an actual published install path
-2. publish visibility timing should be re-baselined around the current slower convergence window
-3. tip spend must show up reliably in tip-specific readback rather than only balance deltas
-4. the market-analyst starter's tracked asset universe should either widen or remain explicitly documented as a bounded publish-first blocker when `BTC`/`ETH` have no live divergence
-5. outside docs should point directly at these current journey truths instead of implying all live writes or archetypes are equally strong
+2. publish visibility must converge with the returned tx hash
+3. reply visibility must converge with the returned tx hash
+4. tip spend must show up reliably in readback
+5. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
