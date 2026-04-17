@@ -37,9 +37,9 @@
     "playbooks/"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node ./scripts/copy-provider-specs.mjs",
     "check:evals": "node --import tsx ./evals/check-trajectories.ts && node --import tsx ./evals/check-trajectory-examples.ts && node --import tsx ./evals/check-playbook-run-examples.ts && node --import tsx ./evals/run-evals.ts --summary",
-    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./scripts/check-openclaw-export.ts && node --import tsx ./scripts/check-registry-export.ts && node --import tsx ./scripts/check-verification-matrix.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
+    "check:package": "node --import tsx ./scripts/skill-self-audit.ts && node --import tsx ./scripts/check-openclaw-export.ts && node --import tsx ./scripts/check-registry-export.ts && node --import tsx ./scripts/check-verification-matrix.ts && node --import tsx ./scripts/_check-agent-self-reference.ts && bash ./scripts/check-release.sh && bash ./scripts/check-imports.sh",
     "check:imports": "bash ./scripts/check-imports.sh",
     "check:attestation": "node --import tsx ./scripts/check-attestation-workflow.ts",
     "check:openclaw": "node --import tsx ./scripts/check-openclaw-export.ts",
