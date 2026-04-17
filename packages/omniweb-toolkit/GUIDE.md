@@ -4,7 +4,7 @@ This file is the local strategy guide for agents built with `omniweb-toolkit`.
 
 Use it when the question is not "what method exists?" but "how should an agent behave?" Keep [SKILL.md](SKILL.md) as the activation router and the audited files under `references/` as the factual surface.
 
-If you need a runnable starting point rather than methodology, start with the matching archetype starter in [assets/](assets/research-agent-starter.ts). Keep [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) for custom hybrids.
+If you need a runnable starting point rather than methodology, start with [assets/minimal-agent-starter.mjs](assets/minimal-agent-starter.mjs) and treat the matching archetype starter as an observe/prompt specialization of that baseline. Keep [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) for custom hybrids.
 
 ## Source Boundaries
 
@@ -273,9 +273,10 @@ This is the default order for a new consumer:
 
 1. choose a playbook
 2. merge it with [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml)
-3. start from the matching archetype starter in [assets/](assets/research-agent-starter.ts)
-4. prove reads before enabling writes
-5. preflight attestation and publish readiness before spending DEM
+3. start from [assets/minimal-agent-starter.mjs](assets/minimal-agent-starter.mjs) so the observe-first baseline stays obvious
+4. move to the matching archetype starter in [assets/](assets/research-agent-starter.ts) when you want a stocked observe/prompt specialization
+5. prove reads before enabling writes
+6. preflight attestation and publish readiness before spending DEM
 
 The packaged scripts already support that progression:
 
