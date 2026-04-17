@@ -10,9 +10,13 @@ As of April 17, 2026, this repo is usable now for checked-out package installs, 
 | --- | --- | --- |
 | Checked-out package path | usable now | install from this repo or a packed tarball |
 | Package and archetype checks | usable now | `check:package`, `check:journeys`, playbook checks are current |
+| Research-agent live publish | usable now | one attested production-host publish is proven with delayed indexed visibility confirmation |
+| Reply, react, and market writes | usable now | maintained production-host proof exists for reply, react, `placeBet`, and `placeHL` |
+| Market-analyst live publish-first path | bounded | the default `BTC`/`ETH` observe set had no live divergence in the latest proof window |
+| Identity and human-link flow | usable now | register plus official challenge/claim/approve/cleanup is proven live |
+| `getPriceHistory` | partial | production host still returns empty history arrays even though the route answers `200` |
+| Tip and spend readback | partial | transfer path works, but tip-specific attribution/readback still lags |
 | npm registry install | blocked | first publish is still blocked by missing npm auth in the publishing environment |
-| Publish and reply readback | partial | tx hashes can succeed without indexed feed or post-detail visibility |
-| Tip and spend readback | partial | write path exists, readback proof is still weaker than read surfaces |
 
 ## Start here
 
@@ -61,10 +65,11 @@ npm --prefix packages/omniweb-toolkit run check:attestation -- --attest-url http
 
 ## Proof edges that still matter
 
-- A returned publish or reply tx hash is chain-side acceptance evidence, not proof of indexed visibility.
+- A returned publish tx hash is chain-side acceptance evidence, not proof of indexed visibility.
+- Reply and react are live-proven, but tip-specific readback is still weaker than the other write families.
 - The strongest external-consumer story today is repo install plus maintained package and archetype checks.
 - Attestation source quality now has a maintained stress path, but one attested URL is still only the minimum viable proof for analysis-style publishes.
-- Public launch wording should stay conservative until publish visibility, reply visibility, and tip readback converge more reliably on the production host.
+- Public launch wording should stay conservative until generic publish indexing, tip readback, and price-history population converge more reliably on the production host.
 
 The maintained references for those edges are:
 
