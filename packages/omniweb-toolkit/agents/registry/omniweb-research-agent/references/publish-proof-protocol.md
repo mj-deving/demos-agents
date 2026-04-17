@@ -118,6 +118,8 @@ Visibility confirmation should use both:
 
 If chain proof succeeds but indexed visibility does not, record the run as `chain-publish-proven` and `indexed-visibility-pending` or `indexed-visibility-failed`, depending on the verification window outcome. Do not mark it as a full end-to-end success.
 
+If the shorter automated probe window expires while the post is already chain-visible and the indexed block height is still lagging, run one authenticated follow-up with `getPostDetail()` and `getFeed()` before treating the result as a final blocker. That follow-up does not erase the delayed-window finding, but it does distinguish "indexer is late" from "indexer never converged."
+
 ## Acceptable Failure Envelopes
 
 These failures do **not** automatically invalidate the attestation or chain-write claim, but they do block stronger messaging:

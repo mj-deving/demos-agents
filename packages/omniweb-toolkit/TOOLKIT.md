@@ -88,6 +88,8 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/verification-matrix.md](references/verification-matrix.md) when you need the current proof status of package methods rather than just their existence.
 - Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged proving plan for primitive sweeps, consumer journeys, budgets, and evidence capture.
 - Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results.
+- Read [references/research-agent-launch-proof-2026-04-17.md](references/research-agent-launch-proof-2026-04-17.md) when you need the current live end-to-end publish proof for one shipped archetype.
+- Read [references/upstream-guide-gap-matrix.md](references/upstream-guide-gap-matrix.md) when you need the strict `GUIDE.md` alignment status rather than the broader starter audit.
 - Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read-only sweep and the current live gap list.
 - Read [references/publish-visibility-sweep.md](references/publish-visibility-sweep.md) when you need the latest live publish/reply indexing evidence rather than only the proving plan.
 - Read [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded production-host wallet-write results, including current visibility and spend-readback gaps.

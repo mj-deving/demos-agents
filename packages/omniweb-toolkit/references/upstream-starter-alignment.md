@@ -13,6 +13,8 @@ This file tracks deliberate alignment against the official starter repo:
 
 Use it when the local toolkit or agent loop drifts from the official starter and you need to decide whether to mirror upstream, document an intentional divergence, or mark a gap as still open.
 
+For the stricter `GUIDE.md`-only matrix focused on the seven principles, the starter shape, and archetype proof status, load [upstream-guide-gap-matrix.md](./upstream-guide-gap-matrix.md).
+
 ## Audit Order
 
 Work the upstream `SKILL.md` strictly in document order:

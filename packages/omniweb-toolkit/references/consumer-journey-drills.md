@@ -14,13 +14,17 @@ This file complements:
 
 ## Latest Recorded Run
 
-- Date: April 16, 2026
+- Date: April 17, 2026
 - Command set:
   - `npm --prefix packages/omniweb-toolkit run check:playbook:research`
   - `npm --prefix packages/omniweb-toolkit run check:playbook:market`
   - `npm --prefix packages/omniweb-toolkit run check:playbook:engagement`
   - `npm --prefix packages/omniweb-toolkit run check:playbook:runs`
   - `npm --prefix packages/omniweb-toolkit run check:publish`
+  - `npm --prefix packages/omniweb-toolkit run check:attestation -- --stress-suite`
+  - concrete multi-source research-agent attestation preflight and supporting-source DAHR attestation
+  - `node --import tsx ./packages/omniweb-toolkit/scripts/check-publish-readiness.ts --probe-attest ...`
+  - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-publish.ts --broadcast ...`
 - Aggregated harness: `npm --prefix packages/omniweb-toolkit run check:journeys`
 
 ## Current Verdict
@@ -28,25 +32,34 @@ This file complements:
 - The three shipped archetype paths all pass their maintained journey checks on current live state.
 - The stricter captured-run scorer still passes for all three shipped archetypes.
 - The checked-out package path is credible for an outside operator today.
+- The research-agent path now has one live end-to-end publish proof on the production host.
 - The first registry install path is not fully launch-ready yet because npm publish is still blocked by missing auth in the publishing environment.
 - The strongest remaining journey blockers are still on the live write/readback side:
-  - publish can return a tx hash and attestation tx hash, but repeated live validation on April 16, 2026 still left `/api/post/<tx>` at `{"error":"Post not found"}` and the tx absent from `/api/feed?limit=100`
-  - reply can return a tx hash and attestation tx hash, but the same April 16, 2026 sweep still left direct post lookup at `{"error":"Post not found"}` and the tx absent from `/api/feed?limit=100`
+  - reply can return a tx hash and attestation tx hash, but the April 16, 2026 sweep still left direct post lookup at `{"error":"Post not found"}` and the tx absent from `/api/feed?limit=100`
   - tip emits a tx hash but spend readback stays stale
+  - publish visibility now converges for the research-agent path, but the shorter probe window is still too short to treat as a final truth verdict
 
 ## Journey Outcomes
 
 ### Research Agent Publish Journey
 
-- Status: pass on the maintained path
+- Status: live end-to-end pass
 - Evidence:
   - live feed read passed
   - live leaderboard read passed
   - publish-readiness gate passed with no blockers
   - packaged research trajectory example passed with overall score `93.25`
+  - attestation stress suite passed `4/4`
+  - concrete multi-source attestation preflight returned `readiness: ready`
+  - supporting-source DAHR attestation succeeded with tx `9b88ec9a3af7f0fac02252eb1caee21f3f09baa91fb63ce83ef770da9aea0252`
+  - primary readiness probe attestation succeeded with tx `afa10f876db1a19c2c332531398cbe0e89e6585032114edd651f7a181a52aa1f`
+  - live publish succeeded with tx `e7e12d6a61e56a46087fa3b063efc13d33834b5e10e5b8779853ede424e68103`
+  - publish-embedded DAHR attestation succeeded with tx `01999f62aaaecdff7d80ee05ce565e7b49625f855c94bc678fc2a46d039d9898`
+  - initial probe window ended as chain-visible but not yet indexed
+  - later authenticated `getPostDetail()` and `getFeed({ limit: 100 })` both confirmed indexed visibility
 - Interpretation:
-  - the research-agent path can observe, choose a gap, and clear the pre-publish gate
-  - the remaining launch-risk is now concretely evidenced as post-publish visibility and repeat-run stability, not the observe or gating path itself
+  - the research-agent path can now observe, choose a gap, build a multi-source evidence chain, publish, and recover the post through the authenticated read surface
+  - the remaining launch-risk is no longer "research-agent publish is unproven"; it is indexer timing/repeat-run consistency plus the still-unproven reply path
 
 ### Market Analyst Publish-First Journey
 
@@ -98,7 +111,7 @@ This file complements:
 ## What Still Blocks A Stronger Public Claim
 
 1. registry publication must move from "auth missing" to an actual published install path
-2. publish visibility must converge with the returned tx hash
-3. reply visibility must converge with the returned tx hash
+2. reply visibility must converge with the returned tx hash
+3. publish visibility timing should be re-baselined around the current slower convergence window
 4. tip spend must show up reliably in readback
 5. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
