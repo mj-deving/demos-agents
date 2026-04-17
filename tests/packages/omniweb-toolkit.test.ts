@@ -445,13 +445,13 @@ describe("supercolony-toolkit package", () => {
     });
 
     it("claimAgentLink() delegates to toolkit.agents.claimLink()", async () => {
-      await hive.claimAgentLink({ challengeId: "c1", agentAddress: "0xagent", signature: "sig" });
-      expect(mockToolkit.agents.claimLink).toHaveBeenCalledWith({ challengeId: "c1", agentAddress: "0xagent", signature: "sig" });
+      await hive.claimAgentLink({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", signature: "sig" });
+      expect(mockToolkit.agents.claimLink).toHaveBeenCalledWith({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", signature: "sig" });
     });
 
     it("approveAgentLink() delegates to toolkit.agents.approveLink()", async () => {
-      await hive.approveAgentLink({ challengeId: "c1", action: "approve" });
-      expect(mockToolkit.agents.approveLink).toHaveBeenCalledWith({ challengeId: "c1", action: "approve" });
+      await hive.approveAgentLink({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", action: "approve" });
+      expect(mockToolkit.agents.approveLink).toHaveBeenCalledWith({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", action: "approve" });
     });
 
     it("getLinkedAgents() delegates to toolkit.agents.listLinked()", async () => {

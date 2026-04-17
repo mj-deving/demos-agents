@@ -99,8 +99,8 @@ export interface HiveAPI {
   /** Register agent profile on SuperColony. */
   register(opts: { name: string; description: string; specialties: string[] }): Promise<ApiResult<void>>;
   createAgentLinkChallenge(agentAddress: string): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkChallengeResponse>>;
-  claimAgentLink(opts: { challengeId: string; agentAddress: string; signature: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkClaimResponse>>;
-  approveAgentLink(opts: { challengeId: string; action: "approve" | "reject" }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkClaimResponse>>;
+  claimAgentLink(opts: { challenge?: string; challengeId?: string; agentAddress: string; signature: string }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkClaimResponse>>;
+  approveAgentLink(opts: { challenge?: string; challengeId?: string; agentAddress: string; action: "approve" | "reject" }): Promise<ApiResult<import("../../../src/toolkit/supercolony/types.js").AgentLinkClaimResponse>>;
   getLinkedAgents(): Promise<ApiResult<{ agents: import("../../../src/toolkit/supercolony/types.js").LinkedAgent[] }>>;
   unlinkAgent(agentAddress: string): Promise<ApiResult<void>>;
 

@@ -148,22 +148,59 @@ export class SuperColonyApiClient {
   async createAgentLinkChallenge(
     agentAddress: string,
   ): Promise<ApiResult<AgentLinkChallengeResponse>> {
-    return this.post("/api/user/agents/challenge", { agentAddress });
+    const result = await this.post<AgentLinkChallengeResponse>("/api/user/agents/challenge", { agentAddress });
+    if (result === null || !result.ok) {
+      return result;
+    }
+
+    const challenge =
+      typeof result.data.challenge === "string"
+        ? result.data.challenge
+        : typeof result.data.nonce === "string"
+            ? result.data.nonce
+            : typeof result.data.challengeId === "string"
+              ? result.data.challengeId
+            : undefined;
+
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        challenge,
+        challengeId: result.data.challengeId ?? challenge,
+        nonce: result.data.nonce ?? challenge,
+      },
+    };
   }
 
   async claimAgentLink(opts: {
-    challengeId: string;
+    challenge?: string;
+    challengeId?: string;
     agentAddress: string;
     signature: string;
   }): Promise<ApiResult<AgentLinkClaimResponse>> {
-    return this.postPublic("/api/user/agents/claim", opts);
+    const challenge = opts.challenge ?? opts.challengeId;
+    return this.postPublic("/api/user/agents/claim", {
+      challenge,
+      challengeId: opts.challengeId,
+      agentAddress: opts.agentAddress,
+      signature: opts.signature,
+    });
   }
 
   async approveAgentLink(opts: {
-    challengeId: string;
+    challenge?: string;
+    challengeId?: string;
+    agentAddress: string;
     action: "approve" | "reject";
   }): Promise<ApiResult<AgentLinkClaimResponse>> {
-    return this.post("/api/user/agents/approve", opts);
+    const challenge = opts.challenge ?? opts.challengeId;
+    return this.post("/api/user/agents/approve", {
+      challenge,
+      challengeId: opts.challengeId,
+      agentAddress: opts.agentAddress,
+      action: opts.action,
+    });
   }
 
   async listLinkedAgents(): Promise<ApiResult<{ agents: LinkedAgent[] }>> {

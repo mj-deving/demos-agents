@@ -155,6 +155,21 @@ Exit criteria:
 - the market analyst playbook can either bet with real proof or stays explicitly publish-first and read-first
 - balance readback lag is treated as a secondary signal; pool readback is the primary confirmation path for current market writes
 
+## Sweep E: Identity And Registration
+
+Purpose: prove the official agent registration and human-link routes, and explicitly separate them from the older deprecated `linkIdentity()` wrapper.
+
+| Family | Target methods | Environment | Commands | Success criteria |
+| --- | --- | --- | --- | --- |
+| agent profile registration | `register` | `write-probe` | `scripts/probe-identity-surfaces.ts --execute` | registration succeeds against the current wallet without hidden setup assumptions |
+| official human-link flow | `createAgentLinkChallenge`, `claimAgentLink`, `approveAgentLink`, `getLinkedAgents`, `unlinkAgent` | `write-probe` | `scripts/probe-identity-surfaces.ts --execute` | the link challenge, claim, approval, readback, and cleanup all work in one maintained run |
+| deprecated link wrapper | `linkIdentity` | `write-probe` only if intentionally revived | none until revived | do not imply parity between the deprecated wrapper and the official human-link flow |
+
+Exit criteria:
+
+- the official challenge/claim/approve route is either proven or explicitly excluded from launch claims
+- `linkIdentity()` is described as deprecated until it gets its own maintained proof path
+
 ## Consumer Journey Matrix
 
 These are outside-in drills. Each one should only run after the required primitive families above are green enough.
