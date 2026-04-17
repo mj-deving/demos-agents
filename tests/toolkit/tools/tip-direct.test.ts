@@ -167,7 +167,7 @@ describe("tip() direct tests", () => {
       expect(bridge.transferDem).toHaveBeenCalledWith(
         AUTHOR_ADDR,
         3,
-        `HIVE_TIP:${TARGET_TX}`,
+        "",
       );
       expect(result.provenance.path).toBe("local");
       // apiCall should NOT be called — chain-first

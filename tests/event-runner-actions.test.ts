@@ -145,11 +145,8 @@ describe("Tip action", () => {
 
     const tipAmount = Number(params.amount || 1);
     const tipAddress = String(params.address || "");
-    const memo = `HIVE_TIP:${params.txHash || "event"}`;
-
     expect(tipAmount).toBe(3);
     expect(tipAddress).toBe("0xRecipient123");
-    expect(memo).toBe("HIVE_TIP:tx-tipped-post");
   });
 
   it("defaults tip amount to 1 when missing", () => {
@@ -157,9 +154,9 @@ describe("Tip action", () => {
     expect(tipAmount).toBe(1);
   });
 
-  it("uses 'event' memo when txHash is missing", () => {
-    const memo = `HIVE_TIP:${undefined || "event"}`;
-    expect(memo).toBe("HIVE_TIP:event");
+  it("does not require a memo for the current tip path", () => {
+    const memo = "";
+    expect(memo).toBe("");
   });
 });
 

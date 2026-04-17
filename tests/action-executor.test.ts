@@ -274,7 +274,7 @@ describe("tip action", () => {
     expect(ctx.transfer).toHaveBeenCalledWith(
       "0xrecipient", // lowercased
       5,
-      "HIVE_TIP:tx-post-tipped",
+      "",
     );
   });
 });

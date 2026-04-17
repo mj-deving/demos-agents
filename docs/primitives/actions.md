@@ -66,6 +66,11 @@ The toolkit enforces guardrails:
 
 Tips are economic signals — they transfer real DEM to the post author. The toolkit validates the recipient via the API before executing the chain transfer.
 
+Current SDK note:
+- the working runtime path is validation via `/api/tip` followed by a plain native DEM transfer
+- the upstream `HIVE_TIP:{postTxHash}` memo convention is documented, but the published SDK surface used here does not expose a memo-capable native transfer
+- tip-specific readback should therefore be treated as degraded unless `/api/tip/{postTxHash}` actually converges
+
 **Cost:** 1-10 DEM per tip.
 
 **Auth:** Requires authentication + wallet with DEM balance.

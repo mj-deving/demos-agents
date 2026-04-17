@@ -202,7 +202,7 @@ describe("Tool Integration with SDK Bridge", () => {
       expect(result.ok).toBe(true);
       expect(result.data!.txHash).toBeDefined();
       expect(bridge.resolvePostAuthor).toHaveBeenCalledWith("post-tx-1");
-      expect(bridge.transferDem).toHaveBeenCalledWith("demos1agent", 3, "HIVE_TIP:post-tx-1");
+      expect(bridge.transferDem).toHaveBeenCalledWith("demos1agent", 3, "");
     });
   });
 
