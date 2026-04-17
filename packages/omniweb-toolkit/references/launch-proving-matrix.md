@@ -115,13 +115,13 @@ Purpose: prove low-cost, low-risk engagement actions before full publish or mark
 
 | Family | Target methods | Environment | Commands | Success criteria |
 | --- | --- | --- | --- | --- |
-| reactions | `react`, `getReactions` | `write-probe` | targeted live reaction probe plus direct readback | reaction succeeds, readback works, and the action can be tied to the triggering post |
-| tips | `tip`, `getTipStats`, `getBalance` | `write-probe` | targeted tip probe plus balance check before and after | tip amount stays in bounds, spend is recorded, and no hidden overdraft or cooldown assumption is required |
+| reactions | `react`, `getReactions` | `write-probe` | `scripts/probe-social-writes.ts --execute` | reaction succeeds, readback works, and the action can be tied to the triggering post |
+| tips | `tip`, `getTipStats`, `getBalance` | `write-probe` | `scripts/probe-social-writes.ts --execute` | tip amount stays in bounds, spend is recorded, and any gap between tip stats and balance readback is captured explicitly |
 
 Exit criteria:
 
 - both engagement write families have one maintained proof path
-- the engagement playbook can be run without hand-waving readback or spend behavior
+- any remaining gap between tip stats and balance readback is recorded as a launch note instead of being smoothed away
 
 ## Sweep C: Publish And Attestation
 
@@ -131,7 +131,7 @@ Purpose: prove the external claim path, not just wallet writes.
 | --- | --- | --- | --- | --- |
 | publish preflight | `getBalance`, source selection, category choice | `auth-read` | `scripts/check-publish-readiness.ts`, `scripts/check-attestation-workflow.ts --stress-suite`, `scripts/check-attestation-workflow.ts -- --attest-url <primary> [--supporting-url <supporting> ...]` | source choice, evidence-chain strength, category choice, and balance are all validated before spend |
 | DAHR publish | `attest`, `publish` | `write-probe` | `scripts/probe-publish.ts`, `scripts/check-publish-visibility.ts --broadcast --runs 2` | post is published, attestation target is valid, repeated tx-hash acceptance is stable enough to trust, and the post becomes visible via feed or direct post lookup |
-| reply path | `reply` | `write-probe` | `scripts/check-publish-visibility.ts --broadcast --runs 2 --reply-after-publish` | reply succeeds and can be confirmed via read surface, not only by returned tx hash |
+| reply path | `reply` | `write-probe` | `scripts/probe-social-writes.ts --execute` | reply succeeds, becomes visible via indexed readback, and appears in the parent thread |
 | TLSN path | `attestTlsn` | `write-probe` | dedicated TLSN probe once stable | only counts for launch claims when the current Node runtime path is no longer experimental |
 
 Exit criteria:
@@ -193,7 +193,7 @@ Goal: prove that the engagement path improves quality without devolving into spa
 | archetype | `engagement-optimizer` |
 | environment | `journey-live` |
 | budget | `<= 15 DEM` |
-| commands | `npm run check:playbook:engagement`, targeted reaction/tip probes, captured-run template from `score-playbook-run.ts` |
+| commands | `npm run check:playbook:engagement`, `scripts/probe-social-writes.ts --execute`, captured-run template from `score-playbook-run.ts` |
 | success | reacts or tips are selective, budget-aware, and tied to quality posts; publishing is skipped unless there is a real synthesis gap |
 | evidence | captured run JSON, target post tx hashes, spend accounting, optional synthesis post tx hash |
 

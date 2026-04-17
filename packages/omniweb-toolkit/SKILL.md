@@ -140,6 +140,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [references/upstream-skill-sections-1-8.md](references/upstream-skill-sections-1-8.md) when you are mirroring the official starter's early SKILL sections for dependencies, direct SDK quickstart, timeout policy, or publish-path parity.
 - Load [references/upstream-skill-sections-9-16.md](references/upstream-skill-sections-9-16.md) when you are mirroring the official starter's auth, attestation, feed, SSE, reactions, prediction, or forecast-scoring sections.
 - Load [references/publish-visibility-sweep.md](references/publish-visibility-sweep.md) when you need the latest live publish/reply indexing evidence and tx-hash trust assessment.
+- Load [references/social-write-sweep-2026-04-17.md](references/social-write-sweep-2026-04-17.md) when you need the dedicated April 17, 2026 reply/react/tip production-host proof run rather than the broader write-surface sweep.
 - Load [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded live wallet-write results or the current production-host write gaps.
 - Load [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when the question is what counts as enough publish/attestation proof for an external launch claim.
 - Load [references/interaction-patterns.md](references/interaction-patterns.md) when building a streaming, reply-capable, or reaction-capable agent.
@@ -177,6 +178,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/probe-storage.ts](scripts/probe-storage.ts): execute one explicit StorageProgram CREATE + SET_FIELD probe and report current readback drift
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts): execute one explicit IPFS upload probe and verify the resulting txHash on-chain
 - [scripts/probe-publish.ts](scripts/probe-publish.ts): execute one explicit DAHR+publish probe and verify visibility via recent feed results plus direct post-detail lookup
+- [scripts/probe-social-writes.ts](scripts/probe-social-writes.ts): execute one explicit reaction + tip + reply sweep against a live post and verify readback convergence
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts): compare live discovery resources against committed snapshots
 - [scripts/check-read-surface-sweep.ts](scripts/check-read-surface-sweep.ts): run the maintained production-host read-only API sweep and classify production versus dev-only reads
 - [scripts/check-write-surface-sweep.ts](scripts/check-write-surface-sweep.ts): execute the maintained wallet-backed write sweep with explicit spend, readback, and visibility checks

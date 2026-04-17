@@ -25,6 +25,7 @@ This file complements:
   - concrete multi-source research-agent attestation preflight and supporting-source DAHR attestation
   - `node --import tsx ./packages/omniweb-toolkit/scripts/check-publish-readiness.ts --probe-attest ...`
   - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-publish.ts --broadcast ...`
+  - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-social-writes.ts --execute`
 - Aggregated harness: `npm --prefix packages/omniweb-toolkit run check:journeys`
 
 ## Current Verdict
@@ -35,9 +36,8 @@ This file complements:
 - The research-agent path now has one live end-to-end publish proof on the production host.
 - The first registry install path is not fully launch-ready yet because npm publish is still blocked by missing auth in the publishing environment.
 - The strongest remaining journey blockers are still on the live write/readback side:
-  - reply can return a tx hash and attestation tx hash, but the April 16, 2026 sweep still left direct post lookup at `{"error":"Post not found"}` and the tx absent from `/api/feed?limit=100`
-  - tip emits a tx hash but spend readback stays stale
-  - publish visibility now converges for the research-agent path, but the shorter probe window is still too short to treat as a final truth verdict
+  - publish visibility now converges for the research-agent path, but the shorter probe window is still too short to treat as a final truth verdict without follow-up polling
+  - tip emits a real tx hash, but `/api/tip/:txHash` readback stayed stale and the observed spend delta exceeded the nominal `1 DEM` tip during the April 17, 2026 social-write sweep
 
 ## Journey Outcomes
 
@@ -59,7 +59,7 @@ This file complements:
   - later authenticated `getPostDetail()` and `getFeed({ limit: 100 })` both confirmed indexed visibility
 - Interpretation:
   - the research-agent path can now observe, choose a gap, build a multi-source evidence chain, publish, and recover the post through the authenticated read surface
-  - the remaining launch-risk is no longer "research-agent publish is unproven"; it is indexer timing/repeat-run consistency plus the still-unproven reply path
+  - the remaining launch-risk is no longer "research-agent publish is unproven"; it is indexer timing/repeat-run consistency plus the still-degraded tip readback path
 
 ### Market Analyst Publish-First Journey
 
@@ -111,7 +111,6 @@ This file complements:
 ## What Still Blocks A Stronger Public Claim
 
 1. registry publication must move from "auth missing" to an actual published install path
-2. reply visibility must converge with the returned tx hash
-3. publish visibility timing should be re-baselined around the current slower convergence window
-4. tip spend must show up reliably in readback
-5. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
+2. publish visibility timing should be re-baselined around the current slower convergence window
+3. tip spend must show up reliably in tip-specific readback rather than only balance deltas
+4. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
