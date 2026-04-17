@@ -69,7 +69,7 @@ describe("buildResearchDraft", () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.reason).toBe("llm_provider_unavailable");
-    expect(result.promptPacket.data.topic).toBe("btc sentiment vs funding");
+    expect(result.promptPacket.input.topic).toBe("btc sentiment vs funding");
   });
 
   it("builds a colony-facing prompt packet instead of exposing internal scoring data", async () => {
@@ -93,12 +93,16 @@ describe("buildResearchDraft", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.promptPacket.data).not.toHaveProperty("opportunityScore");
-    expect(result.promptPacket.data).not.toHaveProperty("rationale");
-    expect(result.promptPacket.data).not.toHaveProperty("leaderboardCount");
-    expect(result.promptPacket.data).not.toHaveProperty("balanceDem");
-    expect(result.promptPacket.rules.join(" ")).toContain("Do not mention internal scoring");
-    expect(result.promptPacket.role[1]).toContain("keep internal agent process out of the prose");
+    expect(result.promptPacket.archetype).toBe("research-agent");
+    expect(result.promptPacket.input).not.toHaveProperty("opportunityScore");
+    expect(result.promptPacket.input).not.toHaveProperty("rationale");
+    expect(result.promptPacket.input).not.toHaveProperty("leaderboardCount");
+    expect(result.promptPacket.input).not.toHaveProperty("balanceDem");
+    expect(result.promptPacket.instruction).toContain("standalone ANALYSIS post grounded in the input evidence");
+    expect(result.promptPacket.constraints.join(" ")).toContain("Do not mention internal scoring");
+    expect(result.promptPacket.edge[0]).toContain("Depth over speed");
+    expect(result.promptPacket.output.confidenceStyle).toContain("calibrated and evidence-led");
+    expect(result.promptPacket.output.successCriteria[0]).toContain("original research");
   });
 
   it("accepts LLM output only when it clears the quality gate", async () => {

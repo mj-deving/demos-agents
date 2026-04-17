@@ -1,5 +1,6 @@
 import type { QualityGateResult } from "../../../src/toolkit/publish/quality-gate.js";
 import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.js";
+import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prompt.js";
 import type { EngagementOpportunity } from "./engagement-opportunities.js";
 
 interface PromptCapableProvider {
@@ -21,42 +22,34 @@ export interface BuildEngagementDraftOptions {
   minTextLength?: number;
 }
 
-export interface EngagementPromptPacket {
-  role: string[];
-  data: {
-    opportunityKind: EngagementOpportunity["kind"];
-    opportunityScore: number;
-    rationale: string;
-    post: {
-      txHash: string;
-      category: string | null;
-      score: number;
-      reputationTier: string | null;
-      replyCount: number;
-      textSnippet: string;
-    };
-    reactions: {
-      agree: number;
-      disagree: number;
-      flag: number;
-      total: number;
-    };
-    leaderboard: {
-      count: number;
-      authorRanked: boolean;
-      bayesianScore: number | null;
-      avgScore: number | null;
-    };
-    feedCount: number;
-    balanceDem: number;
-    attestation: {
-      primarySource: string | null;
-      supportingSources: string[];
-    };
+export interface EngagementPromptInput {
+  opportunityKind: EngagementOpportunity["kind"];
+  post: {
+    txHash: string;
+    category: string | null;
+    score: number;
+    reputationTier: string | null;
+    replyCount: number;
+    textSnippet: string;
   };
-  rules: string[];
-  outputFormat: string[];
+  reactions: {
+    agree: number;
+    disagree: number;
+    flag: number;
+    total: number;
+  };
+  communityContext: {
+    authorRanked: boolean;
+    bayesianScore: number | null;
+    avgScore: number | null;
+  };
+  evidence: {
+    primarySourceName: string | null;
+    supportingSourceNames: string[];
+  };
 }
+
+export type EngagementPromptPacket = ColonyPromptPacket<EngagementPromptInput>;
 
 export interface EngagementDraftSuccess {
   ok: true;
@@ -132,14 +125,18 @@ function buildEngagementPromptPacket(opts: BuildEngagementDraftOptions): Engagem
   const reactionTotal = post.reactions.agree + post.reactions.disagree + post.reactions.flag;
 
   return {
+    archetype: "engagement-optimizer",
     role: [
-      "You are a community curator highlighting why a specific attested colony post deserves more attention.",
-      "Your role is to surface signal, not to flatter. Explain why the post matters and why it is under-amplified.",
+      "You are a community curator surfacing under-amplified signal in the colony feed.",
+      "Your job is to explain why a specific post matters without sounding promotional, internal, or hype-driven.",
     ],
-    data: {
+    edge: [
+      "Selective curation over volume: surface signal the colony is overlooking.",
+      "Translate engagement asymmetry into a readable reason to pay attention now.",
+      "Validate quality without cheerleading or leaking internal curation logic.",
+    ],
+    input: {
       opportunityKind: opportunity.kind,
-      opportunityScore: opportunity.score,
-      rationale: opportunity.rationale,
       post: {
         txHash: post.txHash,
         category: post.category,
@@ -154,31 +151,40 @@ function buildEngagementPromptPacket(opts: BuildEngagementDraftOptions): Engagem
         flag: post.reactions.flag,
         total: reactionTotal,
       },
-      leaderboard: {
-        count: opts.leaderboardCount,
+      communityContext: {
         authorRanked: opportunity.leaderboardAgent != null,
         bayesianScore: opportunity.leaderboardAgent?.bayesianScore ?? null,
         avgScore: opportunity.leaderboardAgent?.avgScore ?? null,
       },
-      feedCount: opts.feedCount,
-      balanceDem: opts.availableBalance,
-      attestation: {
-        primarySource,
-        supportingSources,
+      evidence: {
+        primarySourceName: primarySource,
+        supportingSourceNames: supportingSources,
       },
     },
-    rules: [
+    instruction: "Write one standalone OBSERVATION post grounded in this packet. Explain why the selected post deserves attention now, using the observed engagement and author context rather than internal curation logic.",
+    constraints: [
       "Use only the packet data; do not invent post quality, reactions, or leaderboard standing.",
       "Explain why the post is under-engaged or why the newcomer context matters now.",
+      "Do not mention opportunity scores, rationale strings, feed counts, or internal curation logic.",
       "Keep the tone selective and evidence-bound rather than cheerleading.",
-      "Mention the attested source context in the final sentence.",
+      "Mention the source context only as evidence for why the post matters, not as pipeline narration.",
+      "Make the post read like a curator's signal note, not a social recommendation engine.",
       "Output one compact OBSERVATION post in plain prose, not headings or bullets.",
     ],
-    outputFormat: [
-      "Sentence 1: why this post matters right now.",
-      "Sentence 2: the quality/engagement gap using the packet numbers.",
-      "Sentence 3: attestation context and why the colony should pay attention.",
-    ],
+    output: {
+      category: "OBSERVATION",
+      confidenceStyle: "steady and socially calibrated; the tone should fit curation, not hard prediction",
+      shape: [
+        "Sentence 1: why this post matters right now.",
+        "Sentence 2: the engagement or quality gap using the packet numbers.",
+        "Sentence 3: why the colony should pay attention next.",
+      ],
+      successCriteria: [
+        "Reads like selective curation, not praise or promotion.",
+        "Uses the engagement/context numbers to justify attention.",
+        "Leaves a clear reason the colony should revisit or amplify the post.",
+      ],
+    },
   };
 }
 
@@ -188,24 +194,10 @@ async function generateViaProvider(
 ): Promise<string | null> {
   if (!provider) return null;
 
-  const prompt = [
-    "Role:",
-    ...packet.role,
-    "",
-    "Data:",
-    JSON.stringify(packet.data, null, 2),
-    "",
-    "Rules:",
-    ...packet.rules.map((rule) => `- ${rule}`),
-    "",
-    "Output format:",
-    ...packet.outputFormat.map((line) => `- ${line}`),
-    "",
-    "Return only the final post text.",
-  ].join("\n");
+  const prompt = renderColonyPromptPacket(packet);
 
   const completion = await provider.complete(prompt, {
-    system: "You write concise, selective curation notes. Never use markdown, headings, or hype.",
+    system: "You write concise, selective curation notes for a live colony feed. Highlight why a post matters, stay evidence-bound, avoid hype, and never use markdown, headings, or internal curation language.",
     maxTokens: 220,
     modelTier: "standard",
   });

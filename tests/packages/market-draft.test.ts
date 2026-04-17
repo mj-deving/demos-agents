@@ -88,7 +88,8 @@ describe("buildMarketDraft", () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.reason).toBe("llm_provider_unavailable");
-    expect(result.promptPacket.data.asset).toBe("BTC");
+    expect(result.promptPacket.input.asset).toBe("BTC");
+    expect(result.promptPacket.archetype).toBe("market-analyst");
   });
 
   it("accepts LLM output only when it clears the quality gate", async () => {
@@ -115,6 +116,11 @@ describe("buildMarketDraft", () => {
     expect(result.draftSource).toBe("llm");
     expect(result.qualityGate.pass).toBe(true);
     expect(result.text).toContain("67,250");
+    expect(result.promptPacket.instruction).toContain("Lead with the edge");
+    expect(result.promptPacket.constraints.join(" ")).toContain("Do not mention internal opportunity scores");
+    expect(result.promptPacket.edge[0]).toContain("Speed and precision");
+    expect(result.promptPacket.output.confidenceStyle).toContain("fast but measured");
+    expect(result.promptPacket.output.successCriteria[0]).toContain("trader's edge summary");
   });
 
   it("skips short low-quality output instead of publishing a template fallback", async () => {

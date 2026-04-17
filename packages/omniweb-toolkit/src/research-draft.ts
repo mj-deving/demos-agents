@@ -1,5 +1,6 @@
 import type { QualityGateResult } from "../../../src/toolkit/publish/quality-gate.js";
 import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.js";
+import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prompt.js";
 import type { ResearchOpportunity } from "./research-opportunities.js";
 
 interface PromptCapableProvider {
@@ -21,26 +22,23 @@ export interface BuildResearchDraftOptions {
   minTextLength?: number;
 }
 
-export interface ResearchPromptPacket {
-  role: string[];
-  data: {
-    topic: string;
-    signal: {
-      direction: string | null;
-    };
-    colonyContext: {
-      situation: "fresh-topic" | "conflicting-takes" | "stale-coverage";
-      contradictionSignals: string[];
-      lastCoveredAt: string | null;
-    };
-    evidence: {
-      primarySourceName: string | null;
-      supportingSourceNames: string[];
-    };
+export interface ResearchPromptInput {
+  topic: string;
+  signal: {
+    direction: string | null;
   };
-  rules: string[];
-  outputFormat: string[];
+  colonyContext: {
+    situation: "fresh-topic" | "conflicting-takes" | "stale-coverage";
+    contradictionSignals: string[];
+    lastCoveredAt: string | null;
+  };
+  evidence: {
+    primarySourceName: string | null;
+    supportingSourceNames: string[];
+  };
 }
+
+export type ResearchPromptPacket = ColonyPromptPacket<ResearchPromptInput>;
 
 export interface ResearchDraftSuccess {
   ok: true;
@@ -136,11 +134,17 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
   const supportingSources = opts.opportunity.attestationPlan.supporting.map((candidate) => candidate.name);
 
   return {
+    archetype: "research-agent",
     role: [
       "You are a deep research analyst writing a colony-facing ANALYSIS post for human readers.",
-      "Your job is to state the thesis clearly, support it with the evidence packet, and keep internal agent process out of the prose.",
+      "Your job is to turn evidence into a thesis another agent could cite without needing the internal workflow behind it.",
     ],
-    data: {
+    edge: [
+      "Depth over speed: synthesize the strongest signal into one sharp take instead of spraying commentary.",
+      "Interpret what the evidence means and why it matters now, not why the agent decided to post.",
+      "Surface the tension, contradiction, or stale assumption that makes this analysis worth reading.",
+    ],
+    input: {
       topic: opts.opportunity.topic,
       signal: {
         direction: opts.opportunity.matchedSignal.direction,
@@ -157,19 +161,31 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
         supportingSourceNames: supportingSources,
       },
     },
-    rules: [
-      "Write a standalone ANALYSIS post that makes sense to a human reader who never saw the agent's internal decision process.",
+    instruction: "Write one standalone ANALYSIS post grounded in the input evidence and colony context. Lead with the thesis, then explain the mechanism, then say what would confirm or invalidate the view.",
+    constraints: [
+      "Make the post fully legible to a human reader who never saw the agent's internal reasoning or the prompt packet.",
       "Do not mention internal scoring, confidence numbers, coverage gaps, feed sampling, matching-post counts, or why the agent decided to post.",
-      "Do not narrate the attestation pipeline, source ranking, or supporting-source bookkeeping.",
+      "Do not narrate the attestation pipeline, source ranking, supporting-source bookkeeping, or any source-selection process.",
+      "Treat source names as evidence anchors, not as the subject of the prose.",
       "State one clear thesis, ground it in the topic and source context, and end with the concrete condition that would confirm or invalidate the take.",
       "If the packet contains contradiction signals, frame the post as a synthesis of conflicting takes rather than a debug explanation.",
+      "Avoid generic metric parroting: connect the evidence to a readable interpretation.",
       "Output plain prose only, with no headings, bullets, labels, or markdown.",
     ],
-    outputFormat: [
-      "Sentence 1: the core thesis in plain language.",
-      "Sentence 2: the mechanism, evidence, or market structure behind the thesis.",
-      "Sentence 3: what to watch next that would confirm or invalidate the view.",
-    ],
+    output: {
+      category: "ANALYSIS",
+      confidenceStyle: "calibrated and evidence-led; strong enough to be useful, never absolute",
+      shape: [
+        "Sentence 1: the core thesis in plain language.",
+        "Sentence 2: the mechanism, contradiction, or evidence pattern behind the thesis.",
+        "Sentence 3: what to watch next that would confirm or invalidate the view.",
+      ],
+      successCriteria: [
+        "Reads like original research, not a process memo.",
+        "Contains one interpretable thesis another colony reader could reuse.",
+        "Leaves the reader with a concrete watcher or invalidation condition.",
+      ],
+    },
   };
 }
 
@@ -179,24 +195,10 @@ async function generateViaProvider(
 ): Promise<string | null> {
   if (!provider) return null;
 
-  const prompt = [
-    "Role:",
-    ...packet.role,
-    "",
-    "Data:",
-    JSON.stringify(packet.data, null, 2),
-    "",
-    "Rules:",
-    ...packet.rules.map((rule) => `- ${rule}`),
-    "",
-    "Output format:",
-    ...packet.outputFormat.map((line) => `- ${line}`),
-    "",
-    "Return only the final post text.",
-  ].join("\n");
+  const prompt = renderColonyPromptPacket(packet);
 
   const completion = await provider.complete(prompt, {
-    system: "You write concise, evidence-bound colony posts for human readers. Never mention internal agent scoring, feed coverage, or attestation workflow details.",
+    system: "You write concise, evidence-bound colony research posts for human readers. Synthesize the evidence into one strong thesis, mention only what matters externally, and never leak internal scoring, feed coverage, or attestation workflow details.",
     maxTokens: 220,
     modelTier: "standard",
   });

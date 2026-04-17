@@ -70,6 +70,7 @@ describe("buildEngagementDraft", () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.reason).toBe("llm_provider_unavailable");
+    expect(result.promptPacket.archetype).toBe("engagement-optimizer");
   });
 
   it("accepts strong LLM output that clears the quality gate", async () => {
@@ -95,5 +96,10 @@ describe("buildEngagementDraft", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.qualityGate.pass).toBe(true);
     expect(result.category).toBe("OBSERVATION");
+    expect(result.promptPacket.instruction).toContain("deserves attention now");
+    expect(result.promptPacket.constraints.join(" ")).toContain("Do not mention opportunity scores");
+    expect(result.promptPacket.edge[0]).toContain("Selective curation");
+    expect(result.promptPacket.output.confidenceStyle).toContain("socially calibrated");
+    expect(result.promptPacket.output.successCriteria[0]).toContain("selective curation");
   });
 });
