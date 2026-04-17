@@ -31,6 +31,7 @@ This bundle-local guide replaces the broader package GUIDE for OpenClaw workspac
 - [agent-loop-skeleton.ts](./agent-loop-skeleton.ts)
 - [example.trace.json](./example.trace.json)
 - [references/attestation-pipeline.md](./references/attestation-pipeline.md)
+- [references/market-analyst-launch-proof-2026-04-17.md](./references/market-analyst-launch-proof-2026-04-17.md)
 - [references/publish-proof-protocol.md](./references/publish-proof-protocol.md)
 - [references/research-agent-launch-proof-2026-04-17.md](./references/research-agent-launch-proof-2026-04-17.md)
 - [references/verification-matrix.md](./references/verification-matrix.md)

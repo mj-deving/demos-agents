@@ -35,6 +35,7 @@ This file complements:
 - The stricter captured-run scorer still passes for all three shipped archetypes.
 - The checked-out package path is credible for an outside operator today.
 - The research-agent path now has one live end-to-end publish proof on the production host.
+- The market-analyst path now has a maintained live blocker note: the shipped starter skipped honestly because its tracked `BTC`/`ETH` universe had no live divergence in the proof window, while the full oracle did show an `ARB` divergence outside that set.
 - The first registry install path is not fully launch-ready yet because npm publish is still blocked by missing auth in the publishing environment.
 - The dedicated April 17, 2026 primitive sweeps now prove production-host market writes as well as reply/react social writes.
 - The strongest remaining journey blockers are still on the live write/readback side:
@@ -65,16 +66,23 @@ This file complements:
 
 ### Market Analyst Publish-First Journey
 
-- Status: pass on the maintained path
+- Status: bounded live blocker
 - Evidence:
   - endpoint-surface check passed
   - response-shape check passed
   - live leaderboard read passed
   - publish-readiness gate passed with no blockers
   - packaged market trajectory example passed with overall score `93.25`
+  - live `observeMarketAnalyst()` returned `skip` with reason `No live divergence or insufficient balance`
+  - the same proof window still had `2764 DEM`, so balance was not the actual blocker
+  - `getOracle({ assets: ["BTC", "ETH"] })` returned no divergences
+  - `getOracle({ assets: ["BTC", "ETH", "SOL"] })` returned no divergences
+  - full `getOracle()` returned one live divergence on `ARB`: `Agents are bearish on ARB (score: -39) but price is up 5.1% in 24h`
 - Interpretation:
   - the market-analyst journey is structurally healthy and the live market-read context is current
-  - the publish-first claim is still partially constrained by publish visibility lag, but the separate market-write primitive sweep now proves both fixed-price and higher-lower write families on the current production host
+  - the shipped starter did the right thing by skipping instead of forcing a publish from a no-divergence `BTC`/`ETH` window
+  - the current blocker is the starter's narrow tracked asset universe, not the publish or market-write runtime
+  - the separate market-write primitive sweep still proves both fixed-price and higher-lower write families on the current production host
 
 ### Engagement Optimizer Curation Journey
 
@@ -116,4 +124,5 @@ This file complements:
 1. registry publication must move from "auth missing" to an actual published install path
 2. publish visibility timing should be re-baselined around the current slower convergence window
 3. tip spend must show up reliably in tip-specific readback rather than only balance deltas
-4. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
+4. the market-analyst starter's tracked asset universe should either widen or remain explicitly documented as a bounded publish-first blocker when `BTC`/`ETH` have no live divergence
+5. outside docs should point directly at these current journey truths instead of implying all live writes or archetypes are equally strong

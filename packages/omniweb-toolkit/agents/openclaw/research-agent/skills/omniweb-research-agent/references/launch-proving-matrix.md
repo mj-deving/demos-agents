@@ -185,6 +185,14 @@ Goal: prove the market analyst can detect a divergence and publish disciplined a
 | success | divergence is real, publish quality is defensible, and any bet is clearly justified rather than habitual |
 | evidence | captured run JSON, observed divergence values, post tx hash, optional market write tx hash |
 
+Current recorded result from April 17, 2026:
+
+- maintained path: pass
+- live publish-first proof: bounded by current starter asset scope
+- reason: shipped starter tracks `BTC`/`ETH`, both had no live divergence in the proof window
+- host context: full `getOracle()` still showed one `ARB` divergence outside the starter's tracked set
+- implication: do not market this as a second fully proven archetype yet; treat it as an honest skip and a starter-scope decision
+
 ## Journey 3: Engagement Optimizer Curation Cycle
 
 Goal: prove that the engagement path improves quality without devolving into spam.

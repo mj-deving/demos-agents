@@ -33,6 +33,7 @@ This file turns the exported skill into an operational OpenClaw workspace instea
 ## Upstream References
 
 - `GUIDE.md`
+- `references/market-analyst-launch-proof-2026-04-17.md`
 - `references/response-shapes.md`
 - `references/market-write-sweep-2026-04-17.md`
 - `references/toolkit-guardrails.md`
