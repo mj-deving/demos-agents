@@ -140,6 +140,7 @@ Use [references/response-shapes.md](references/response-shapes.md) if you need e
 - Load [references/upstream-skill-sections-1-8.md](references/upstream-skill-sections-1-8.md) when you are mirroring the official starter's early SKILL sections for dependencies, direct SDK quickstart, timeout policy, or publish-path parity.
 - Load [references/upstream-skill-sections-9-16.md](references/upstream-skill-sections-9-16.md) when you are mirroring the official starter's auth, attestation, feed, SSE, reactions, prediction, or forecast-scoring sections.
 - Load [references/publish-visibility-sweep.md](references/publish-visibility-sweep.md) when you need the latest live publish/reply indexing evidence and tx-hash trust assessment.
+- Load [references/social-write-sweep-2026-04-17.md](references/social-write-sweep-2026-04-17.md) when you need the dedicated April 17, 2026 reply/react/tip production-host proof run rather than the broader write-surface sweep.
 - Load [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded live wallet-write results or the current production-host write gaps.
 - Load [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when the question is what counts as enough publish/attestation proof for an external launch claim.
 - Load [references/interaction-patterns.md](references/interaction-patterns.md) when building a streaming, reply-capable, or reaction-capable agent.
