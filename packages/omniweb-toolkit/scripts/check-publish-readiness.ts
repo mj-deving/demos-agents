@@ -15,50 +15,11 @@
  * 1 on runtime error, 2 on invalid args.
  */
 
-import { loadConnect, loadPackageExport } from "./_shared.ts";
-
-type PublishDraft = {
-  text: string;
-  category: string;
-  attestUrl: string;
-};
-
-type ValidationError = {
-  code: string;
-  message: string;
-  retryable?: boolean;
-};
-
-type UrlValidationResult =
-  | { valid: true; reason?: undefined }
-  | { valid: false; reason?: string };
-
-type SessionStateStore = unknown;
-
-type SessionFactoryResult = {
-  stateStore: SessionStateStore;
-  walletAddress: string;
-};
-
-type PublishReadinessSupport = {
-  validateInput: (schema: unknown, input: PublishDraft) => ValidationError | null;
-  PublishDraftSchema: unknown;
-  validateUrl: (url: string, options: { allowInsecure: boolean }) => Promise<UrlValidationResult>;
-  checkAndRecordDedup: (
-    stateStore: SessionStateStore,
-    walletAddress: string,
-    text: string,
-    recordHit: boolean,
-  ) => Promise<ValidationError | null>;
-  getWriteRateRemaining: (
-    stateStore: SessionStateStore,
-    walletAddress: string,
-  ) => Promise<{ hourlyRemaining: number; dailyRemaining: number }>;
-  createSessionFromRuntime: (
-    runtime: any,
-    options: { stateDir?: string; allowInsecureUrls?: boolean },
-  ) => Promise<SessionFactoryResult>;
-};
+import { validateInput, PublishDraftSchema } from "../../../src/toolkit/schemas.js";
+import { validateUrl } from "../../../src/toolkit/url-validator.js";
+import { checkAndRecordDedup } from "../../../src/toolkit/guards/dedup-guard.js";
+import { getWriteRateRemaining } from "../../../src/toolkit/guards/write-rate-limit.js";
+import { createSessionFromRuntime } from "../src/session-factory.js";
 
 const DEFAULT_ATTEST_URL = "https://blockchain.info/ticker";
 const DEFAULT_TEXT =
@@ -109,20 +70,14 @@ const stateDir = stateDirArg || undefined;
 
 try {
   const connect = await loadConnect();
-  const {
-    validateInput,
-    PublishDraftSchema,
-    validateUrl,
-    checkAndRecordDedup,
-    getWriteRateRemaining,
-    createSessionFromRuntime,
-  } = await loadPublishReadinessSupport();
   const omni = await connect({ stateDir, allowInsecureUrls });
   const session = await createSessionFromRuntime(omni.runtime, { stateDir, allowInsecureUrls });
   const authToken = await omni.runtime.getToken();
 
   const balanceResult = await omni.colony.getBalance();
   const feedResult = await omni.colony.getFeed({ limit: 3 });
+  const balanceOk = balanceResult?.ok === true;
+  const feedOk = feedResult?.ok === true;
   const schemaError = validateInput(PublishDraftSchema, {
     text,
     category,
@@ -165,16 +120,16 @@ try {
         };
   }
 
-  const balanceData = balanceResult.ok
+  const balanceData = balanceOk
     ? balanceResult.data as { balance?: number; available?: number }
     : null;
   const balance = Number(balanceData?.balance ?? balanceData?.available ?? 0);
 
   const blockers: string[] = [];
   if (!authToken) blockers.push("token_unavailable");
-  if (!balanceResult.ok) blockers.push("balance_unavailable");
-  if (balanceResult.ok && balance <= 0) blockers.push("insufficient_dem");
-  if (!feedResult.ok) blockers.push("feed_unavailable");
+  if (!balanceOk) blockers.push("balance_unavailable");
+  if (balanceOk && balance <= 0) blockers.push("insufficient_dem");
+  if (!feedOk) blockers.push("feed_unavailable");
   if (schemaError) blockers.push("draft_invalid");
   if (!urlCheck.valid) blockers.push("attest_url_blocked");
   if (writeRate.hourlyRemaining <= 0) blockers.push("hourly_limit_reached");
@@ -201,18 +156,18 @@ try {
           connect: true,
           tokenAvailable: !!authToken,
           balance: {
-            ok: balanceResult.ok,
+            ok: balanceOk,
             dem: balance,
-            error: balanceResult.ok ? undefined : balanceResult.error,
+            error: balanceOk ? undefined : balanceResult?.error ?? { code: "UNAVAILABLE", message: "Balance result unavailable" },
           },
           feedRead: {
-            ok: feedResult.ok,
-            count: feedResult.ok
+            ok: feedOk,
+            count: feedOk
               ? Array.isArray((feedResult.data as { posts?: unknown[] })?.posts)
                 ? (feedResult.data as { posts: unknown[] }).posts.length
                 : 0
               : 0,
-            error: feedResult.ok ? undefined : feedResult.error,
+            error: feedOk ? undefined : feedResult?.error ?? { code: "UNAVAILABLE", message: "Feed result unavailable" },
           },
           draftSchema: schemaError
             ? { ok: false, code: schemaError.code, message: schemaError.message }
@@ -237,43 +192,22 @@ try {
   process.exit(1);
 }
 
-async function loadPublishReadinessSupport(): Promise<PublishReadinessSupport> {
-  const validateInput = await loadPackageExport<PublishReadinessSupport["validateInput"]>(
-    "../dist/publish-readiness-support.js",
-    "../src/publish-readiness-support.ts",
-    "validateInput",
-  );
-  const PublishDraftSchema = await loadPackageExport<PublishReadinessSupport["PublishDraftSchema"]>(
-    "../dist/publish-readiness-support.js",
-    "../src/publish-readiness-support.ts",
-    "PublishDraftSchema",
-  );
-  const validateUrl = await loadPackageExport<PublishReadinessSupport["validateUrl"]>(
-    "../dist/publish-readiness-support.js",
-    "../src/publish-readiness-support.ts",
-    "validateUrl",
-  );
-  const checkAndRecordDedup = await loadPackageExport<PublishReadinessSupport["checkAndRecordDedup"]>(
-    "../dist/publish-readiness-support.js",
-    "../src/publish-readiness-support.ts",
-    "checkAndRecordDedup",
-  );
-  const getWriteRateRemaining = await loadPackageExport<PublishReadinessSupport["getWriteRateRemaining"]>(
-    "../dist/publish-readiness-support.js",
-    "../src/publish-readiness-support.ts",
-    "getWriteRateRemaining",
-  );
-  const createSessionFromRuntime = await loadPackageExport<PublishReadinessSupport["createSessionFromRuntime"]>(
-    "../dist/publish-readiness-support.js",
-    "../src/publish-readiness-support.ts",
-    "createSessionFromRuntime",
-  );
-  return {
-    validateInput,
-    PublishDraftSchema,
-    validateUrl,
-    checkAndRecordDedup,
-    getWriteRateRemaining,
-    createSessionFromRuntime,
-  };
+async function loadConnect(): Promise<(opts?: {
+  stateDir?: string;
+  allowInsecureUrls?: boolean;
+}) => Promise<any>> {
+  try {
+    const mod = await import("../dist/index.js");
+    if (typeof mod.connect === "function") {
+      return mod.connect;
+    }
+  } catch {
+    // Fall back to source during local development before build output exists.
+  }
+
+  const mod = await import("../src/index.ts");
+  if (typeof mod.connect !== "function") {
+    throw new Error("connect() export not found in dist/index.js or src/index.ts");
+  }
+  return mod.connect;
 }

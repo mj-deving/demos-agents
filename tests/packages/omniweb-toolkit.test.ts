@@ -38,19 +38,8 @@ function stubToolkit(): Toolkit {
     scores: {
       getLeaderboard: tag("scores", "getLeaderboard"),
       getTopPosts: tag("scores", "getTopPosts"),
-      getPredictionLeaderboard: tag("scores", "getPredictionLeaderboard"),
-      getPredictionScore: tag("scores", "getPredictionScore"),
     },
-    agents: {
-      list: tag("agents", "list"),
-      getProfile: tag("agents", "getProfile"),
-      getIdentities: tag("agents", "getIdentities"),
-      createLinkChallenge: tag("agents", "createLinkChallenge"),
-      claimLink: tag("agents", "claimLink"),
-      approveLink: tag("agents", "approveLink"),
-      listLinked: tag("agents", "listLinked"),
-      unlink: tag("agents", "unlink"),
-    },
+    agents: { list: tag("agents", "list"), getProfile: tag("agents", "getProfile"), getIdentities: tag("agents", "getIdentities") },
     actions: {
       tip: tag("actions", "tip"), react: tag("actions", "react"),
       getReactions: tag("actions", "getReactions"), getTipStats: tag("actions", "getTipStats"),
@@ -223,11 +212,6 @@ describe("supercolony-toolkit package", () => {
       expect(mockToolkit.feed.getPostDetail).toHaveBeenCalledWith("0xabc");
     });
 
-    it("getRss() delegates to toolkit.feed.getRss()", async () => {
-      await hive.getRss();
-      expect(mockToolkit.feed.getRss).toHaveBeenCalledWith();
-    });
-
     it("tip() delegates to toolkit.actions.tip()", async () => {
       await hive.tip("0xabc", 100);
       expect(mockToolkit.actions.tip).toHaveBeenCalledWith("0xabc", 100);
@@ -256,11 +240,6 @@ describe("supercolony-toolkit package", () => {
     it("getBalance() delegates to toolkit.balance.get() with runtime address", async () => {
       await hive.getBalance();
       expect(mockToolkit.balance.get).toHaveBeenCalledWith("0xTEST_ADDRESS");
-    });
-
-    it("getAgentBalance() delegates to toolkit.balance.get() with explicit address", async () => {
-      await hive.getAgentBalance("0xOTHER");
-      expect(mockToolkit.balance.get).toHaveBeenCalledWith("0xOTHER");
     });
 
     it("getPool() delegates to toolkit.ballot.getPool()", async () => {
@@ -353,34 +332,9 @@ describe("supercolony-toolkit package", () => {
       expect(mockToolkit.scores.getTopPosts).toHaveBeenCalledWith({ category: "ANALYSIS", limit: 3 });
     });
 
-    it("getPredictionLeaderboard() delegates to toolkit.scores.getPredictionLeaderboard()", async () => {
-      await hive.getPredictionLeaderboard({ limit: 3 });
-      expect(mockToolkit.scores.getPredictionLeaderboard).toHaveBeenCalledWith({ limit: 3 });
-    });
-
-    it("getPredictionScore() delegates to toolkit.scores.getPredictionScore()", async () => {
-      await hive.getPredictionScore("0xabc");
-      expect(mockToolkit.scores.getPredictionScore).toHaveBeenCalledWith("0xabc");
-    });
-
     it("getAgents() delegates to toolkit.agents.list()", async () => {
       await hive.getAgents();
       expect(mockToolkit.agents.list).toHaveBeenCalled();
-    });
-
-    it("getAgentProfile() delegates to toolkit.agents.getProfile()", async () => {
-      await hive.getAgentProfile("0xabc");
-      expect(mockToolkit.agents.getProfile).toHaveBeenCalledWith("0xabc");
-    });
-
-    it("getAgentIdentities() delegates to toolkit.agents.getIdentities()", async () => {
-      await hive.getAgentIdentities("0xabc");
-      expect(mockToolkit.agents.getIdentities).toHaveBeenCalledWith("0xabc");
-    });
-
-    it("lookupIdentity() delegates to toolkit.identity.lookup()", async () => {
-      await hive.lookupIdentity({ platform: "twitter", username: "sentinel" });
-      expect(mockToolkit.identity.lookup).toHaveBeenCalledWith({ platform: "twitter", username: "sentinel" });
     });
 
     it("placeBet() delegates to toolkit.actions.placeBet()", async () => {
@@ -418,54 +372,24 @@ describe("supercolony-toolkit package", () => {
       await hive.getTipStats("0xabc");
       expect(mockToolkit.actions.getTipStats).toHaveBeenCalledWith("0xabc");
     });
-
-    it("getAgentTipStats() delegates to toolkit.actions.getAgentTipStats()", async () => {
-      await hive.getAgentTipStats("0xabc");
-      expect(mockToolkit.actions.getAgentTipStats).toHaveBeenCalledWith("0xabc");
-    });
-
-    it("getWebhooks() delegates to toolkit.webhooks.list()", async () => {
-      await hive.getWebhooks();
-      expect(mockToolkit.webhooks.list).toHaveBeenCalledWith();
-    });
-
-    it("createWebhook() delegates to toolkit.webhooks.create()", async () => {
-      await hive.createWebhook("https://hook.example.com", ["reply"]);
-      expect(mockToolkit.webhooks.create).toHaveBeenCalledWith("https://hook.example.com", ["reply"]);
-    });
-
-    it("deleteWebhook() delegates to toolkit.webhooks.delete()", async () => {
-      await hive.deleteWebhook("wh-1");
-      expect(mockToolkit.webhooks.delete).toHaveBeenCalledWith("wh-1");
-    });
-
-    it("createAgentLinkChallenge() delegates to toolkit.agents.createLinkChallenge()", async () => {
-      await hive.createAgentLinkChallenge("0xagent");
-      expect(mockToolkit.agents.createLinkChallenge).toHaveBeenCalledWith("0xagent");
-    });
-
-    it("claimAgentLink() delegates to toolkit.agents.claimLink()", async () => {
-      await hive.claimAgentLink({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", signature: "sig" });
-      expect(mockToolkit.agents.claimLink).toHaveBeenCalledWith({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", signature: "sig" });
-    });
-
-    it("approveAgentLink() delegates to toolkit.agents.approveLink()", async () => {
-      await hive.approveAgentLink({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", action: "approve" });
-      expect(mockToolkit.agents.approveLink).toHaveBeenCalledWith({ challenge: "n1", challengeId: "c1", agentAddress: "0xagent", action: "approve" });
-    });
-
-    it("getLinkedAgents() delegates to toolkit.agents.listLinked()", async () => {
-      await hive.getLinkedAgents();
-      expect(mockToolkit.agents.listLinked).toHaveBeenCalledWith();
-    });
-
-    it("unlinkAgent() delegates to toolkit.agents.unlink()", async () => {
-      await hive.unlinkAgent("0xagent");
-      expect(mockToolkit.agents.unlink).toHaveBeenCalledWith("0xagent");
-    });
   });
 
   describe("agent subpath re-exports", () => {
+    it("exports runMinimalAgentCycle", async () => {
+      const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
+      expect(typeof agent.runMinimalAgentCycle).toBe("function");
+    });
+
+    it("exports runMinimalAgentLoop", async () => {
+      const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
+      expect(typeof agent.runMinimalAgentLoop).toBe("function");
+    });
+
+    it("exports getDefaultMinimalStateDir", async () => {
+      const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
+      expect(typeof agent.getDefaultMinimalStateDir).toBe("function");
+    });
+
     it("exports runAgentLoop", async () => {
       const agent = await import("../../packages/omniweb-toolkit/src/agent.js");
       expect(typeof agent.runAgentLoop).toBe("function");

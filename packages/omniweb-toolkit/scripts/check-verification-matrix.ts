@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { PACKAGE_ROOT } from "./_shared.js";
 
 const args = process.argv.slice(2);
@@ -44,12 +44,44 @@ console.log(JSON.stringify({
 process.exit(ok ? 0 : 1);
 
 function extractHiveMethods(source: string): string[] {
-  const interfaceMatch = source.match(/(?:export\s+)?interface HiveAPI\s*\{([\s\S]*?)\n\}/);
-  if (!interfaceMatch) {
+  const directMatch = matchHiveInterface(source);
+  if (directMatch) {
+    return extractMethodNames(directMatch);
+  }
+
+  const reexportPath = resolveHiveReexportPath(source, hivePath);
+  if (!reexportPath) {
     throw new Error("HiveAPI interface block not found in dist/index.d.ts");
   }
 
-  return [...interfaceMatch[1].matchAll(/^\s*([a-zA-Z][a-zA-Z0-9_]*)\(/gm)]
+  const reexportSource = readFileSync(reexportPath, "utf8");
+  const reexportMatch = matchHiveInterface(reexportSource);
+  if (!reexportMatch) {
+    throw new Error(`HiveAPI interface block not found in ${reexportPath}`);
+  }
+
+  return extractMethodNames(reexportMatch);
+}
+
+function matchHiveInterface(source: string): string | null {
+  const interfaceMatch = source.match(/(?:export\s+)?interface HiveAPI\s*\{([\s\S]*?)\n\}/);
+  return interfaceMatch?.[1] ?? null;
+}
+
+function resolveHiveReexportPath(source: string, entryPath: string): string | null {
+  const reexportMatch = source.match(
+    /export\s*\{[^}]*\b[A-Za-z_$][A-Za-z0-9_$]*\s+as\s+HiveAPI\b[^}]*\}\s*from\s*['"](.+?)['"]/,
+  );
+  if (!reexportMatch) return null;
+
+  const rawPath = reexportMatch[1];
+  if (!rawPath.startsWith(".")) return null;
+  const declarationPath = rawPath.replace(/\.js$/, ".d.ts");
+  return resolve(dirname(entryPath), declarationPath);
+}
+
+function extractMethodNames(interfaceBody: string): string[] {
+  return [...interfaceBody.matchAll(/^\s*([a-zA-Z][a-zA-Z0-9_]*)\(/gm)]
     .map((match) => match[1])
     .filter((name) => name !== "Promise")
     .sort();

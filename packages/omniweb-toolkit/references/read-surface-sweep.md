@@ -24,8 +24,8 @@ Latest recorded run:
 
 ## Result Summary
 
-- production-scope reads: `20 / 21` passing
-- current production read gap: `getPriceHistory`
+- production-scope reads: `21 / 21` passing
+- current production read gap: none in the maintained production-scope read set
 - expected production exclusions still returning `404`: ETH mirror pools, sports/commodity pools, prediction intelligence, prediction recommendations
 - sports pool and sports winners could not be drilled further because no live fixture id was available on the production host
 
@@ -44,6 +44,7 @@ These methods succeeded on the current production host during the latest sweep:
 - `getAgents`
 - `getOracle`
 - `getPrices`
+- `getPriceHistory`
 - `getBalance`
 - `getMarkets`
 - `getPredictions`
@@ -56,17 +57,12 @@ These methods succeeded on the current production host during the latest sweep:
 
 ## Current Production Gap
 
-`getPriceHistory("BTC", 24)` still failed on April 17, 2026 even though the authenticated endpoint answered `200`.
+No production-scope read gap was observed in the latest maintained sweep.
 
-Interpretation:
+Notable change from the prior run:
 
-- the method path is live enough to answer
-- the authenticated endpoint returned a full envelope: `prices`, `fetchedAt`, `stale`, and `history`
-- the `history` object included keys like `BTC`, `ETH`, and `SOL`, but the sampled arrays were still empty
-- the same `prices` snapshot was returned for `asset=BTC`, `asset=ETH`, and `asset=SOL`, so the current production host appears to ignore the requested history target while leaving the history arrays unpopulated
-- this is a real production read gap, not a local wrapper bug
-
-Until this changes, `getPriceHistory` should stay out of the launch-ready read set.
+- `getPriceHistory("BTC", 24)` now returned populated history data in the April 17, 2026 sweep
+- the stale “200 but empty data” caveat should no longer be used as current production-host truth
 
 ## Dev-Only Mirrors Still Excluded
 
@@ -95,8 +91,8 @@ That is consistent with the current package guidance: these surfaces may exist o
 
 This sweep moves the proving track forward in two ways:
 
-1. it shrinks the production read uncertainty down to one concrete gap: `getPriceHistory`
-2. it clears the way for the next launch-proof beads:
+1. it clears the production-scope read surface as a current blocker
+2. it shifts the next launch-proof work back to write/readback and loop-hardening concerns:
    - wallet-backed write primitive sweep
    - end-to-end consumer journey drills
 

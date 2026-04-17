@@ -32,7 +32,14 @@ const checks = [
   {
     id: "agent",
     path: new URL(`file://${packageRoot}/dist/agent.js`).href,
-    expect: ["runAgentLoop", "defaultObserve", "buildColonyStateFromFeed"],
+    expect: [
+      "getDefaultMinimalStateDir",
+      "runMinimalAgentCycle",
+      "runMinimalAgentLoop",
+      "runAgentLoop",
+      "defaultObserve",
+      "buildColonyStateFromFeed",
+    ],
   },
   {
     id: "types",

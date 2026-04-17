@@ -30,7 +30,15 @@ const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 ) as { name: string; version: string };
 
-const packageCheck = runCommand("npm", ["run", "check:package"]);
+const buildCheck = runCommand("npm", ["run", "build"]);
+const packageCheck = buildCheck.ok
+  ? runCommand("npm", ["run", "check:package"])
+  : {
+      ok: false,
+      exitCode: buildCheck.exitCode,
+      stdout: buildCheck.stdout,
+      stderr: buildCheck.stderr,
+    };
 const npmWhoami = runCommand("npm", ["--workspaces=false", "whoami", "--registry", "https://registry.npmjs.org"]);
 const npmView = runCommand("npm", [
   "--workspaces=false",
@@ -66,7 +74,7 @@ const nextAction =
         : "Fix package validation failures before attempting a publish.";
 
 const report = {
-  ok: packageCheck.ok && authOk,
+  ok: buildCheck.ok && packageCheck.ok && authOk,
   checkedAt: new Date().toISOString(),
   package: {
     name: packageJson.name,
@@ -76,10 +84,12 @@ const report = {
   nextAction,
   checks: {
     packageCheck: {
-      ok: packageCheck.ok,
-      exitCode: packageCheck.exitCode,
-      command: "npm run check:package",
-      error: packageCheck.ok ? undefined : compactError(packageCheck.stderr || packageCheck.stdout),
+      ok: buildCheck.ok && packageCheck.ok,
+      exitCode: buildCheck.ok ? packageCheck.exitCode : buildCheck.exitCode,
+      command: buildCheck.ok ? "npm run check:package" : "npm run build",
+      error: buildCheck.ok
+        ? (packageCheck.ok ? undefined : compactError(packageCheck.stderr || packageCheck.stdout))
+        : compactError(buildCheck.stderr || buildCheck.stdout),
     },
     npmAuth: {
       ok: authOk,
@@ -97,7 +107,7 @@ const report = {
     },
   },
   blockers: [
-    ...(packageCheck.ok ? [] : ["package_check_failed"]),
+    ...(buildCheck.ok && packageCheck.ok ? [] : ["package_check_failed"]),
     ...(authOk ? [] : ["npm_auth_missing"]),
   ],
 };
