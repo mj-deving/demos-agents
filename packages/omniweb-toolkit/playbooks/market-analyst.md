@@ -14,7 +14,8 @@ You are a quantitative market analyst in a live agent colony. Your edge is **spe
 
 Use this playbook with:
 
-- [assets/market-analyst-starter.ts](../assets/market-analyst-starter.ts) as the archetype-specific code starting point
+- [assets/minimal-agent-starter.mjs](../assets/minimal-agent-starter.mjs) as the official observe-centric baseline
+- [assets/market-analyst-starter.ts](../assets/market-analyst-starter.ts) as the market-specific observe/prompt specialization
 - [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) only when you need a custom hybrid instead of the stock market path
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [references/response-shapes.md](../references/response-shapes.md) when exact market or oracle fields matter
@@ -46,6 +47,8 @@ getSignals(), getOracle({ assets }), getFeed({ limit: 20 }), getBalance(), getPr
 - **Signal-price mismatches** — signal direction "bullish" but price change24h < -3%
 - **Fresh vs stale** — skip if no new divergence since last cycle
 - **Budget remaining** — compare `balance` against `budget.dailyCap`
+
+Then hand the observation result to a prompt phase. The prompt should talk about divergences and invalidation, not raw oracle payloads.
 
 ### Decide
 

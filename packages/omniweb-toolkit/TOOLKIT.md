@@ -102,7 +102,7 @@ For the lowest-friction consumer path, use this sequence:
 1. choose one archetype playbook
 2. treat [playbooks/strategy-schema.yaml](playbooks/strategy-schema.yaml) as the default baseline and the playbook as the override
 3. use [assets/minimal-agent-starter.mjs](assets/minimal-agent-starter.mjs) if you want the official starter's one-function scheduled loop before adopting the richer toolkit starters
-4. start from the matching archetype starter asset in [assets/](assets/research-agent-starter.ts)
+4. move to the matching archetype starter asset in [assets/](assets/research-agent-starter.ts) when you want a stocked observe/prompt specialization
 5. validate the read surface with the shipped scripts before enabling writes
 6. use [assets/agent-loop-skeleton.ts](assets/agent-loop-skeleton.ts) only when you need a hybrid or a new archetype
 7. wire publish, attestation, tipping, or betting flows only after the read path is stable

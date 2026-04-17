@@ -180,6 +180,7 @@ export function buildOpenClawExport(archetypes: readonly Archetype[] = SUPPORTED
     const spec = getArchetypeSpec(archetype);
     const playbookText = rewritePlaybookLinks(readPackageFile(spec.playbookPath), spec);
     const starterText = readPackageFile(spec.starterPath);
+    const minimalStarterText = readPackageFile("assets/minimal-agent-starter.mjs");
     const loopSkeletonText = readPackageFile("assets/agent-loop-skeleton.ts");
     const exampleTraceText = readPackageFile(`evals/examples/${spec.trajectoryScenario}.trace.json`);
     const strategyText = buildMergedStrategy(playbookText);
@@ -218,6 +219,10 @@ export function buildOpenClawExport(archetypes: readonly Archetype[] = SUPPORTED
       {
         path: `${skillDir}/GUIDE.md`,
         content: renderLocalGuide(spec),
+      },
+      {
+        path: `${skillDir}/minimal-agent-starter.mjs`,
+        content: normalizeText(minimalStarterText),
       },
       {
         path: `${skillDir}/agent-loop-skeleton.ts`,
@@ -317,6 +322,7 @@ function buildMergedStrategy(playbookText: string): string {
 function rewritePlaybookLinks(text: string, spec: ArchetypeSpec): string {
   return normalizeText(text
     .replaceAll("../GUIDE.md", "./GUIDE.md")
+    .replaceAll("../assets/minimal-agent-starter.mjs", "./minimal-agent-starter.mjs")
     .replaceAll("../assets/agent-loop-skeleton.ts", "./agent-loop-skeleton.ts")
     .replaceAll(`../assets/${basename(spec.starterPath)}`, "./starter.ts")
     .replaceAll("./strategy-schema.yaml", "./strategy.yaml")
