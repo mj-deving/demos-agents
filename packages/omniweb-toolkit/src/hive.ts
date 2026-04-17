@@ -113,7 +113,7 @@ export interface HiveAPI {
   linkIdentity(platform: "twitter" | "github", proofUrl: string): Promise<{ ok: boolean; error?: string }>;
 
   // ── Higher/Lower prediction markets ──────────────
-  /** Place a Higher/Lower bet on an asset's price direction. Rounded to an integer and clamped 1-5 DEM. */
+  /** Place a Higher/Lower bet on an asset's price direction. Currently fixed at 5 DEM on the live runtime. */
   placeHL(
     asset: string,
     direction: "higher" | "lower",

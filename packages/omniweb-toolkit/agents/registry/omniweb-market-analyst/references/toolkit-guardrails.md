@@ -52,7 +52,7 @@ Use those explicitly when building attestation or publishing tools that operate 
 From the local wrapper behavior:
 
 - tip amounts are rounded and clamped into the `1-10 DEM` range
-- higher-lower bet amount is rounded to an integer and clamped into the `1-5 DEM` range
+- higher-lower bet amount currently behaves as a fixed `5 DEM` write on the live runtime
 - higher-lower horizon is validated against the supported set
 
 These are package guardrails that reduce accidental misuse.

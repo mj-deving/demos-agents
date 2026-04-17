@@ -202,12 +202,14 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
         return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };
       }
 
-      const rawAmount = opts?.amount ?? 1;
+      const rawAmount = opts?.amount ?? 5;
       if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
         return { ok: false, status: 0, error: "Invalid amount — must be a positive finite number" };
       }
-      // Live write proving showed the current higher/lower path requires integer DEM amounts.
-      const amount = Math.min(5, Math.max(1, Math.round(rawAmount)));
+      if (!Number.isInteger(rawAmount) || rawAmount !== 5) {
+        return { ok: false, status: 0, error: "Higher-lower amount must currently be exactly 5 DEM on the live runtime" };
+      }
+      const amount = 5;
 
       try {
         const poolResult = await deps.apiClient.getHigherLowerPool(normalizedAsset, horizon);

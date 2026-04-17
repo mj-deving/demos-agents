@@ -309,7 +309,7 @@ describe("actions.placeHL", () => {
     });
     const transferDem = vi.fn().mockResolvedValue({ txHash: "0xhl1" });
     const actions = createActionsPrimitives({ apiClient: client, transferDem });
-    const result = await actions.placeHL("BTC", "higher", { amount: 2, horizon: "30m" });
+    const result = await actions.placeHL("BTC", "higher", { amount: 5, horizon: "30m" });
 
     expect(result).not.toBeNull();
     expect(result!.ok).toBe(true);
@@ -318,52 +318,22 @@ describe("actions.placeHL", () => {
       expect(result.data.memo).toBe("HIVE_HL:BTC:HIGHER:30m");
       expect(result.data.registered).toBe(true);
     }
-    expect(transferDem).toHaveBeenCalledWith("0xpool", 2, "HIVE_HL:BTC:HIGHER:30m");
+    expect(transferDem).toHaveBeenCalledWith("0xpool", 5, "HIVE_HL:BTC:HIGHER:30m");
     expect(client.registerHigherLowerBet).toHaveBeenCalledWith("0xhl1", "BTC", "HIGHER", { horizon: "30m" });
   });
 
-  it("rounds fractional amounts to integers and clamps the minimum to 1 DEM", async () => {
-    const pool = { asset: "BTC", horizon: "30m", totalHigher: 1, totalLower: 1, totalDem: 10, higherCount: 1, lowerCount: 1, roundEnd: 0, referencePrice: null, poolAddress: "0xpool", currentPrice: 70000 };
-    const client = createMockApiClient({
-      getHigherLowerPool: vi.fn().mockResolvedValue(mockOk(pool)),
-      registerHigherLowerBet: vi.fn().mockResolvedValue(mockOk({
-        ok: true,
-        txHash: "0xhl2",
-        asset: "BTC",
-        direction: "HIGHER",
-        horizon: "30m",
-        amount: 1,
-        message: "Prediction placed: BTC HIGHER",
-      })),
-    });
-    const transferDem = vi.fn().mockResolvedValue({ txHash: "0xhl2" });
+  it("rejects non-5 higher-lower amounts before transfer", async () => {
+    const client = createMockApiClient();
+    const transferDem = vi.fn();
     const actions = createActionsPrimitives({ apiClient: client, transferDem });
+    const result = await actions.placeHL("BTC", "lower", { amount: 1, horizon: "24h" });
 
-    await actions.placeHL("BTC", "higher", { amount: 0.3, horizon: "30m" });
-
-    expect(transferDem).toHaveBeenCalledWith("0xpool", 1, "HIVE_HL:BTC:HIGHER:30m");
-  });
-
-  it("clamps higher-lower amounts above the ceiling down to 5 DEM", async () => {
-    const pool = { asset: "BTC", horizon: "30m", totalHigher: 1, totalLower: 1, totalDem: 10, higherCount: 1, lowerCount: 1, roundEnd: 0, referencePrice: null, poolAddress: "0xpool", currentPrice: 70000 };
-    const client = createMockApiClient({
-      getHigherLowerPool: vi.fn().mockResolvedValue(mockOk(pool)),
-      registerHigherLowerBet: vi.fn().mockResolvedValue(mockOk({
-        ok: true,
-        txHash: "0xhl3",
-        asset: "BTC",
-        direction: "HIGHER",
-        horizon: "30m",
-        amount: 5,
-        message: "Prediction placed: BTC HIGHER",
-      })),
-    });
-    const transferDem = vi.fn().mockResolvedValue({ txHash: "0xhl3" });
-    const actions = createActionsPrimitives({ apiClient: client, transferDem });
-
-    await actions.placeHL("BTC", "higher", { amount: 9.9, horizon: "30m" });
-
-    expect(transferDem).toHaveBeenCalledWith("0xpool", 5, "HIVE_HL:BTC:HIGHER:30m");
+    expect(result).not.toBeNull();
+    expect(result!.ok).toBe(false);
+    if (!result!.ok) {
+      expect(result.error).toContain("exactly 5 DEM");
+    }
+    expect(transferDem).not.toHaveBeenCalled();
   });
 });
 

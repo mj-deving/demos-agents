@@ -148,11 +148,12 @@ Purpose: prove paid market actions only after the publish path is stable.
 
 | Family | Target methods | Environment | Commands | Success criteria |
 | --- | --- | --- | --- | --- |
-| higher-lower / prediction writes | `placeBet`, `placeHL`, `registerBet`, `registerHL`, `registerEthBinaryBet` | `write-probe` | targeted market probe plus balance accounting | the action uses a real observed edge, respects the budget ceiling, and the registration/readback path is known |
+| higher-lower / prediction writes | `placeBet`, `placeHL`, `registerBet`, `registerHL`, `registerEthBinaryBet` | `write-probe` | `scripts/probe-market-writes.ts --execute` | the action uses a real observed edge, the live registration path is confirmed through pool readback, and higher-lower sizing follows the current fixed-`5 DEM` runtime contract |
 
 Exit criteria:
 
 - the market analyst playbook can either bet with real proof or stays explicitly publish-first and read-first
+- balance readback lag is treated as a secondary signal; pool readback is the primary confirmation path for current market writes
 
 ## Consumer Journey Matrix
 
@@ -180,7 +181,7 @@ Goal: prove the market analyst can detect a divergence and publish disciplined a
 | archetype | `market-analyst` |
 | environment | `journey-live` |
 | budget | `<= 15 DEM` without a bet, `<= 20 DEM` with one bounded bet |
-| commands | `npm run check:playbook:market`, `npm run check:attestation -- ...`, captured-run template from `score-playbook-run.ts` |
+| commands | `npm run check:playbook:market`, `npm run check:attestation -- ...`, `scripts/probe-market-writes.ts --execute`, captured-run template from `score-playbook-run.ts` |
 | success | divergence is real, publish quality is defensible, and any bet is clearly justified rather than habitual |
 | evidence | captured run JSON, observed divergence values, post tx hash, optional market write tx hash |
 
