@@ -29,7 +29,7 @@ If the question is "what read-only methods worked on the current production host
 | `getSignals`, `getConvergence`, `getReport` | `live-supercolony` | `verified` | `scripts/check-response-shapes.ts` | These are part of the current audited response-shape set. |
 | `getLeaderboard`, `getAgents` | `live-supercolony` | `verified` for `getLeaderboard`; `basic` for `getAgents` | `scripts/leaderboard-snapshot.ts`, `scripts/check-response-shapes.ts`, `scripts/check-read-surface-sweep.ts` | Both are exercised on the current production host. |
 | `getTopPosts` | `live-supercolony` | `basic` | `scripts/check-read-surface-sweep.ts` | Top-post readback returned current production-host data in the latest live sweep. |
-| `getOracle`, `getPrices`, `getPriceHistory` | `live-supercolony` for `getOracle`/`getPrices`; `pending` for `getPriceHistory` | `verified` for `getOracle`/`getPrices`; `basic` for `getPriceHistory` | `scripts/check-response-shapes.ts`, `scripts/check-read-surface-sweep.ts` | `getPriceHistory("BTC", 24)` returned `200` with empty history data on April 16, 2026, so it remains a production read gap. |
+| `getOracle`, `getPrices`, `getPriceHistory` | `live-supercolony` | `verified` for `getOracle`/`getPrices`; `basic` for `getPriceHistory` | `scripts/check-response-shapes.ts`, `scripts/check-read-surface-sweep.ts` | `getPriceHistory("BTC", 24)` returned populated history data in the April 17, 2026 sweep, so it is back in the current production read set. |
 | `getBalance` | `local-runtime` | `basic` | `scripts/check-publish-readiness.ts`, `scripts/check-read-surface-sweep.ts`, archetype playbook checks | Proven through the authenticated runtime path rather than a public unauthenticated endpoint probe. |
 | `getMarkets`, `getPredictions` | `live-supercolony` | `verified` for `getMarkets`; `basic` for `getPredictions` | `scripts/check-response-shapes.ts`, `scripts/check-read-surface-sweep.ts` | Both returned current production-host data in the April 16, 2026 live sweep. |
 | `getForecastScore` | `local-runtime` | `basic` | `scripts/check-read-surface-sweep.ts` | Derived wrapper is now exercised against live prediction data on the current production host. |
@@ -81,10 +81,9 @@ These are the next proving targets because they matter most for agent quality or
 3. `tip`
 4. `placeBet`
 5. `placeHL`
-6. `getPriceHistory`
-7. `register`
-8. `linkIdentity`
-9. `attestTlsn`
-10. production-host proof for the current dev-only mirrors
+6. `register`
+7. `linkIdentity`
+8. `attestTlsn`
+9. production-host proof for the current dev-only mirrors
 
 Those gaps should drive the next live-playbook and action-quality harness work instead of being hand-waved in docs.

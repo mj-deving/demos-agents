@@ -534,9 +534,9 @@ interface BinaryPool {
   noBetsCount: number;
   yesMultiplier: number | null;
   noMultiplier: number | null;
-  polymarketYes: number;                   // 0-1 probability from Polymarket
-  polymarketNo: number;
-  endDate: string;                         // ISO timestamp
+  polymarketYes: number | null;            // current live payload may omit pricing via null
+  polymarketNo: number | null;
+  endDate: string | null;                  // current live payload may omit end-date via null
   poolAddress: string;
   status: string;                          // "active" | "resolved"
 }

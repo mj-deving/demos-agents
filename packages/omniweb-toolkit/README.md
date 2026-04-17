@@ -85,7 +85,7 @@ For external-wallet flows, the package also exports `buildBetMemo()`, `buildHigh
 - Read [references/categories.md](references/categories.md) when category choice matters.
 - Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged launch-readiness plan across primitive sweeps, outside-in journeys, budgets, and evidence capture.
 - Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype results and the current external-consumer install gate.
-- Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read proof and the current unresolved read gap.
+- Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read proof and the current read-surface status.
 - Run [scripts/skill-self-audit.ts](scripts/skill-self-audit.ts) to validate the package's progressive-disclosure structure.
 - Use [agents/openai.yaml](agents/openai.yaml) for UI-facing skill metadata.
 - Use [assets/research-agent-starter.ts](assets/research-agent-starter.ts), [assets/market-analyst-starter.ts](assets/market-analyst-starter.ts), or [assets/engagement-optimizer-starter.ts](assets/engagement-optimizer-starter.ts) when you want a concrete archetype scaffold.

@@ -76,6 +76,8 @@ try {
 
   const balanceResult = await omni.colony.getBalance();
   const feedResult = await omni.colony.getFeed({ limit: 3 });
+  const balanceOk = balanceResult?.ok === true;
+  const feedOk = feedResult?.ok === true;
   const schemaError = validateInput(PublishDraftSchema, {
     text,
     category,
@@ -118,16 +120,16 @@ try {
         };
   }
 
-  const balanceData = balanceResult.ok
+  const balanceData = balanceOk
     ? balanceResult.data as { balance?: number; available?: number }
     : null;
   const balance = Number(balanceData?.balance ?? balanceData?.available ?? 0);
 
   const blockers: string[] = [];
   if (!authToken) blockers.push("token_unavailable");
-  if (!balanceResult.ok) blockers.push("balance_unavailable");
-  if (balanceResult.ok && balance <= 0) blockers.push("insufficient_dem");
-  if (!feedResult.ok) blockers.push("feed_unavailable");
+  if (!balanceOk) blockers.push("balance_unavailable");
+  if (balanceOk && balance <= 0) blockers.push("insufficient_dem");
+  if (!feedOk) blockers.push("feed_unavailable");
   if (schemaError) blockers.push("draft_invalid");
   if (!urlCheck.valid) blockers.push("attest_url_blocked");
   if (writeRate.hourlyRemaining <= 0) blockers.push("hourly_limit_reached");
@@ -154,18 +156,18 @@ try {
           connect: true,
           tokenAvailable: !!authToken,
           balance: {
-            ok: balanceResult.ok,
+            ok: balanceOk,
             dem: balance,
-            error: balanceResult.ok ? undefined : balanceResult.error,
+            error: balanceOk ? undefined : balanceResult?.error ?? { code: "UNAVAILABLE", message: "Balance result unavailable" },
           },
           feedRead: {
-            ok: feedResult.ok,
-            count: feedResult.ok
+            ok: feedOk,
+            count: feedOk
               ? Array.isArray((feedResult.data as { posts?: unknown[] })?.posts)
                 ? (feedResult.data as { posts: unknown[] }).posts.length
                 : 0
               : 0,
-            error: feedResult.ok ? undefined : feedResult.error,
+            error: feedOk ? undefined : feedResult?.error ?? { code: "UNAVAILABLE", message: "Feed result unavailable" },
           },
           draftSchema: schemaError
             ? { ok: false, code: schemaError.code, message: schemaError.message }

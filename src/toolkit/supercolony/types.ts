@@ -759,9 +759,9 @@ export interface BinaryPool {
   noBetsCount: number;
   yesMultiplier: number | null;
   noMultiplier: number | null;
-  polymarketYes: number;
-  polymarketNo: number;
-  endDate: string;
+  polymarketYes: number | null;
+  polymarketNo: number | null;
+  endDate: string | null;
   poolAddress: string;
   status: string;
 }

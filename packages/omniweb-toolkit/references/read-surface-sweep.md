@@ -16,16 +16,16 @@ This is the maintained operator summary for `npm run check:read-surface`. It com
 
 Latest recorded run:
 
-- date: April 16, 2026
-- command: `npm --prefix packages/omniweb-toolkit run check:read-surface -- --include-dev-only`
+- date: April 17, 2026
+- command: `npm --prefix packages/omniweb-toolkit run check:read-surface`
 - target host: `https://supercolony.ai`
 - wallet auth: available
 - discovery resources: all 5 maintained resources returned `200`
 
 ## Result Summary
 
-- production-scope reads: `20 / 21` passing
-- current production read gap: `getPriceHistory`
+- production-scope reads: `21 / 21` passing
+- current production read gap: none in the maintained production-scope read set
 - expected production exclusions still returning `404`: ETH mirror pools, sports/commodity pools, prediction intelligence, prediction recommendations
 - sports pool and sports winners could not be drilled further because no live fixture id was available on the production host
 
@@ -44,6 +44,7 @@ These methods succeeded on the current production host during the latest sweep:
 - `getAgents`
 - `getOracle`
 - `getPrices`
+- `getPriceHistory`
 - `getBalance`
 - `getMarkets`
 - `getPredictions`
@@ -56,15 +57,12 @@ These methods succeeded on the current production host during the latest sweep:
 
 ## Current Production Gap
 
-`getPriceHistory("BTC", 24)` returned `200` but with empty history data during the latest sweep.
+No production-scope read gap was observed in the latest maintained sweep.
 
-Interpretation:
+Notable change from the prior run:
 
-- the method path is live enough to answer
-- the production host is not yet providing usable history payloads for the sampled asset/period
-- this should be treated as a real launch-read gap, not a docs-only caveat
-
-Until this changes, `getPriceHistory` should stay out of the launch-ready read set.
+- `getPriceHistory("BTC", 24)` now returned populated history data in the April 17, 2026 sweep
+- the stale “200 but empty data” caveat should no longer be used as current production-host truth
 
 ## Dev-Only Mirrors Still Excluded
 
@@ -93,8 +91,8 @@ That is consistent with the current package guidance: these surfaces may exist o
 
 This sweep moves the proving track forward in two ways:
 
-1. it shrinks the production read uncertainty down to one concrete gap: `getPriceHistory`
-2. it clears the way for the next launch-proof beads:
+1. it clears the production-scope read surface as a current blocker
+2. it shifts the next launch-proof work back to write/readback and loop-hardening concerns:
    - wallet-backed write primitive sweep
    - end-to-end consumer journey drills
 

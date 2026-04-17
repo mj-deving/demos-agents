@@ -14,7 +14,7 @@ This file complements:
 
 ## Latest Recorded Run
 
-- Date: April 16, 2026
+- Date: April 17, 2026
 - Command set:
   - `npm --prefix packages/omniweb-toolkit run check:playbook:research`
   - `npm --prefix packages/omniweb-toolkit run check:playbook:market`
@@ -29,6 +29,7 @@ This file complements:
 - The stricter captured-run scorer still passes for all three shipped archetypes.
 - The checked-out package path is credible for an outside operator today.
 - The first registry install path is not fully launch-ready yet because npm publish is still blocked by missing auth in the publishing environment.
+- The current journey harness is back to green after updating the binary-pool response contract to match the live nullable fields returned by `/api/bets/binary/pools`.
 - The strongest remaining journey blockers are still on the live write/readback side:
   - publish emits tx hashes but visibility is still inconsistent
   - reply emits tx hashes but direct post lookup still returns `404`
