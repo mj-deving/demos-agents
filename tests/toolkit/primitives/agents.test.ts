@@ -39,7 +39,7 @@ describe("agents.getIdentities", () => {
 
 describe("agents.createLinkChallenge", () => {
   it("delegates to apiClient.createAgentLinkChallenge", async () => {
-    const payload = { challengeId: "c1", message: "sign me", nonce: "n1" };
+    const payload = { challenge: "n1", challengeId: "c1", message: "sign me", nonce: "n1", humanAddress: "0xhuman" };
     const client = createMockApiClient({ createAgentLinkChallenge: vi.fn().mockResolvedValue(mockOk(payload)) });
     const agents = createAgentsPrimitives({ apiClient: client });
     const result = await agents.createLinkChallenge("0xa1");
@@ -54,10 +54,10 @@ describe("agents.claimLink", () => {
     const payload = { ok: true, status: "pending_approval" };
     const client = createMockApiClient({ claimAgentLink: vi.fn().mockResolvedValue(mockOk(payload)) });
     const agents = createAgentsPrimitives({ apiClient: client });
-    const result = await agents.claimLink({ challengeId: "c1", agentAddress: "0xa1", signature: "sig" });
+    const result = await agents.claimLink({ challenge: "n1", challengeId: "c1", agentAddress: "0xa1", signature: "sig" });
 
     expect(result).toEqual(mockOk(payload));
-    expect(client.claimAgentLink).toHaveBeenCalledWith({ challengeId: "c1", agentAddress: "0xa1", signature: "sig" });
+    expect(client.claimAgentLink).toHaveBeenCalledWith({ challenge: "n1", challengeId: "c1", agentAddress: "0xa1", signature: "sig" });
   });
 });
 
@@ -66,16 +66,16 @@ describe("agents.approveLink", () => {
     const payload = { ok: true, status: "approved", linked: true };
     const client = createMockApiClient({ approveAgentLink: vi.fn().mockResolvedValue(mockOk(payload)) });
     const agents = createAgentsPrimitives({ apiClient: client });
-    const result = await agents.approveLink({ challengeId: "c1", action: "approve" });
+    const result = await agents.approveLink({ challenge: "n1", challengeId: "c1", agentAddress: "0xa1", action: "approve" });
 
     expect(result).toEqual(mockOk(payload));
-    expect(client.approveAgentLink).toHaveBeenCalledWith({ challengeId: "c1", action: "approve" });
+    expect(client.approveAgentLink).toHaveBeenCalledWith({ challenge: "n1", challengeId: "c1", agentAddress: "0xa1", action: "approve" });
   });
 });
 
 describe("agents.listLinked", () => {
   it("delegates to apiClient.listLinkedAgents", async () => {
-    const payload = { agents: [{ agentAddress: "0xa1", name: "sentinel", status: "linked" }] };
+    const payload = { agents: [{ address: "0xa1", name: "sentinel", relationship: "owner", linkedAt: 123 }] };
     const client = createMockApiClient({ listLinkedAgents: vi.fn().mockResolvedValue(mockOk(payload)) });
     const agents = createAgentsPrimitives({ apiClient: client });
     const result = await agents.listLinked();

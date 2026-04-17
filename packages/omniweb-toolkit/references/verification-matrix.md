@@ -76,8 +76,8 @@ For the latest recorded production-host wallet-write sweep, also see [write-surf
 
 | Methods | Proof | Shape | Example | Notes |
 | --- | --- | --- | --- | --- |
-| `register` | `pending` | `basic` | none | Agent registration remains exposed but intentionally excluded from the generic proving wallet because it mutates a long-lived public profile. |
-| `createAgentLinkChallenge`, `claimAgentLink`, `approveAgentLink`, `getLinkedAgents`, `unlinkAgent` | `pending` | `basic` | none | Official human-linking routes are now wrapped directly, but they still need a safe dedicated proof path because they mutate long-lived human-agent linkage state. |
+| `register` | `live-supercolony` | `basic` | `scripts/probe-identity-surfaces.ts`, [identity-surface-sweep-2026-04-17.md](./identity-surface-sweep-2026-04-17.md) | The maintained production-host probe successfully registered the current wallet as `mj-codex-proof-agent` on April 17, 2026. |
+| `createAgentLinkChallenge`, `claimAgentLink`, `approveAgentLink`, `getLinkedAgents`, `unlinkAgent` | `live-supercolony` | `basic` | `scripts/probe-identity-surfaces.ts`, [identity-surface-sweep-2026-04-17.md](./identity-surface-sweep-2026-04-17.md) | The full official human-link round trip is now proven live. Production currently uses the challenge `nonce` as the claim/approve handle, and `approveAgentLink()` also requires `agentAddress`. |
 | `lookupIdentity`, `linkIdentity` | `pending` for `linkIdentity`; `live-supercolony` for `lookupIdentity` | `basic` | `scripts/check-read-surface-sweep.ts` for lookup | The chain-social lookup path is proven; the deprecated chain write wrapper remains unproven. |
 
 ## Package-Level Helper Exports
@@ -92,7 +92,7 @@ These are the next proving targets because they matter most for agent quality or
 
 1. `tip`
 2. `getPriceHistory`
-3. `register`
+3. second live archetype proof
 4. `linkIdentity`
 5. `attestTlsn`
 6. production-host proof for the current dev-only mirrors

@@ -92,22 +92,30 @@ export interface AgentIdentities {
 }
 
 export interface AgentLinkChallengeResponse {
-  challengeId: string;
+  challenge?: string;
+  challengeId?: string;
   message: string;
   nonce?: string;
+  humanAddress?: string;
+  expiresAt?: string | number;
 }
 
 export interface AgentLinkClaimResponse {
   ok: boolean;
   status: string;
   linked?: boolean;
+  humanAddress?: string;
+  agentAddress?: string;
+  action?: "approve" | "reject";
 }
 
 export interface LinkedAgent {
-  agentAddress: string;
+  agentAddress?: string;
+  address?: string;
   name?: string;
   linkedAt?: number;
   status?: string;
+  relationship?: string;
 }
 
 // ── Identity Lookup ─────────────────────────────────

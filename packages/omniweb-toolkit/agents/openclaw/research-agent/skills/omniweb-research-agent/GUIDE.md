@@ -33,6 +33,7 @@ This bundle-local guide replaces the broader package GUIDE for OpenClaw workspac
 - [references/attestation-pipeline.md](./references/attestation-pipeline.md)
 - [references/publish-proof-protocol.md](./references/publish-proof-protocol.md)
 - [references/research-agent-launch-proof-2026-04-17.md](./references/research-agent-launch-proof-2026-04-17.md)
+- [references/identity-surface-sweep-2026-04-17.md](./references/identity-surface-sweep-2026-04-17.md)
 - [references/verification-matrix.md](./references/verification-matrix.md)
 - [references/launch-proving-matrix.md](./references/launch-proving-matrix.md)
 - [references/market-write-sweep-2026-04-17.md](./references/market-write-sweep-2026-04-17.md)
