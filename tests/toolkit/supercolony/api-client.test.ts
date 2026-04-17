@@ -241,7 +241,7 @@ describe("SuperColonyApiClient", () => {
       const result = await client.createAgentLinkChallenge("0xagent");
       expect(result?.ok).toBe(true);
       if (result?.ok) {
-        expect(result.data.challenge).toBe("c1");
+        expect(result.data.challenge).toBe("n1");
         expect(result.data.challengeId).toBe("c1");
         expect(result.data.nonce).toBe("n1");
         expect(result.data.humanAddress).toBe("0xhuman");

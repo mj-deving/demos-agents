@@ -156,10 +156,10 @@ export class SuperColonyApiClient {
     const challenge =
       typeof result.data.challenge === "string"
         ? result.data.challenge
-        : typeof result.data.challengeId === "string"
-          ? result.data.challengeId
-          : typeof result.data.nonce === "string"
+        : typeof result.data.nonce === "string"
             ? result.data.nonce
+            : typeof result.data.challengeId === "string"
+              ? result.data.challengeId
             : undefined;
 
     return {
