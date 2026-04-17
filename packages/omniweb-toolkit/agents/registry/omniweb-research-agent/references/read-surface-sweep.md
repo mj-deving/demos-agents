@@ -16,8 +16,8 @@ This is the maintained operator summary for `npm run check:read-surface`. It com
 
 Latest recorded run:
 
-- date: April 16, 2026
-- command: `npm --prefix packages/omniweb-toolkit run check:read-surface -- --include-dev-only`
+- date: April 17, 2026
+- command: `npm --prefix packages/omniweb-toolkit run check:read-surface`
 - target host: `https://supercolony.ai`
 - wallet auth: available
 - discovery resources: all 5 maintained resources returned `200`
@@ -56,13 +56,15 @@ These methods succeeded on the current production host during the latest sweep:
 
 ## Current Production Gap
 
-`getPriceHistory("BTC", 24)` returned `200` but with empty history data during the latest sweep.
+`getPriceHistory("BTC", 24)` still failed on April 17, 2026 even though the authenticated endpoint answered `200`.
 
 Interpretation:
 
 - the method path is live enough to answer
-- the production host is not yet providing usable history payloads for the sampled asset/period
-- this should be treated as a real launch-read gap, not a docs-only caveat
+- the authenticated endpoint returned a full envelope: `prices`, `fetchedAt`, `stale`, and `history`
+- the `history` object included keys like `BTC`, `ETH`, and `SOL`, but the sampled arrays were still empty
+- the same `prices` snapshot was returned for `asset=BTC`, `asset=ETH`, and `asset=SOL`, so the current production host appears to ignore the requested history target while leaving the history arrays unpopulated
+- this is a real production read gap, not a local wrapper bug
 
 Until this changes, `getPriceHistory` should stay out of the launch-ready read set.
 

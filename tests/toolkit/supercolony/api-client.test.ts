@@ -979,22 +979,51 @@ describe("SuperColonyApiClient", () => {
     });
 
     it("getPriceHistory builds asset and history params", async () => {
-      const payload = [
-        { price: 99000, timestamp: Date.now() - 3600000 },
-        { price: 100000, timestamp: Date.now() },
-      ];
+      const payload = {
+        prices: [{ ticker: "BTC", priceUsd: 100000, fetchedAt: Date.now(), source: "coingecko" }],
+        fetchedAt: Date.now(),
+        stale: false,
+        history: {
+          BTC: [
+            { ticker: "BTC", priceUsd: 99000, fetchedAt: Date.now() - 3600000, source: "coingecko" },
+            { ticker: "BTC", priceUsd: 100000, fetchedAt: Date.now(), source: "coingecko" },
+          ],
+        },
+      };
       mockFetchResponse(payload);
       const client = createClient();
       const result = await client.getPriceHistory("BTC", 60);
       expect(result?.ok).toBe(true);
       if (result?.ok) {
-        expect(result.data).toHaveLength(2);
-        expect(result.data[0].price).toBe(99000);
+        expect(result.data.history.BTC).toHaveLength(2);
+        expect(result.data.history.BTC[0]?.priceUsd).toBe(99000);
+        expect(result.data.prices).toHaveLength(1);
       }
 
       const fetchUrl = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
       expect(fetchUrl).toContain("asset=BTC");
       expect(fetchUrl).toContain("history=60");
+    });
+
+    it("getPriceHistory preserves history envelopes even when the requested asset is empty", async () => {
+      mockFetchResponse({
+        prices: [{ ticker: "BTC", priceUsd: 100000, fetchedAt: Date.now(), source: "coingecko" }],
+        fetchedAt: Date.now(),
+        stale: true,
+        history: {
+          BTC: [],
+          ETH: [],
+        },
+      });
+      const client = createClient();
+      const result = await client.getPriceHistory("BTC", 24);
+
+      expect(result?.ok).toBe(true);
+      if (result?.ok) {
+        expect(result.data.stale).toBe(true);
+        expect(result.data.history.BTC).toEqual([]);
+        expect(Object.keys(result.data.history)).toEqual(["BTC", "ETH"]);
+      }
     });
   });
 
