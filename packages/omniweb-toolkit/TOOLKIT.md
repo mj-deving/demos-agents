@@ -144,7 +144,7 @@ Recommended progression for a fresh consumer:
 4. `scripts/check-endpoint-surface.ts` and `scripts/check-response-shapes.ts`
 5. `scripts/check-publish-readiness.ts`
 6. `scripts/check-attestation-workflow.ts` when the publish claim depends on source quality, multi-source evidence, or a nontrivial attestation chain
-7. `scripts/probe-publish.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
+7. `scripts/probe-publish.ts`, `scripts/probe-social-writes.ts`, `scripts/probe-escrow.ts`, `scripts/probe-storage.ts`, or `scripts/probe-ipfs.ts` only when intentionally validating live writes
 8. `npm run check:journeys` when you want the maintained outside-in archetype bundle plus the external-consumer release gate in one report
 9. `npm run run:trajectories -- --trace ./evals/examples/<playbook>.trace.json --scenario <playbook>` when you want to score a playbook-shaped loop against the maintained trajectory spec
 10. `npm run check:playbook:runs` when you want the stricter captured-run scorer over the packaged archetype examples

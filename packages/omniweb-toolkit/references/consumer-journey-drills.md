@@ -21,6 +21,7 @@ This file complements:
   - `npm --prefix packages/omniweb-toolkit run check:playbook:engagement`
   - `npm --prefix packages/omniweb-toolkit run check:playbook:runs`
   - `npm --prefix packages/omniweb-toolkit run check:publish`
+  - `node --import tsx ./packages/omniweb-toolkit/scripts/probe-social-writes.ts --execute`
 - Aggregated harness: `npm --prefix packages/omniweb-toolkit run check:journeys`
 
 ## Current Verdict
@@ -30,9 +31,8 @@ This file complements:
 - The checked-out package path is credible for an outside operator today.
 - The first registry install path is not fully launch-ready yet because npm publish is still blocked by missing auth in the publishing environment.
 - The strongest remaining journey blockers are still on the live write/readback side:
-  - publish emits tx hashes but visibility is still inconsistent
-  - reply emits tx hashes but direct post lookup still returns `404`
-  - tip emits a tx hash but spend readback stays stale
+  - publish visibility is still not strong enough to treat every tx hash as prompt indexed visibility without polling
+  - tip emits a real tx hash, but `/api/tip/:txHash` readback stayed stale and the observed spend delta exceeded the nominal `1 DEM` tip during the April 17, 2026 social-write sweep
 
 ## Journey Outcomes
 
@@ -99,6 +99,5 @@ This file complements:
 
 1. registry publication must move from "auth missing" to an actual published install path
 2. publish visibility must converge with the returned tx hash
-3. reply visibility must converge with the returned tx hash
-4. tip spend must show up reliably in readback
-5. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong
+3. tip spend must show up reliably in tip-specific readback rather than only balance deltas
+4. outside docs should point directly at these current journey truths instead of implying all live writes are equally strong

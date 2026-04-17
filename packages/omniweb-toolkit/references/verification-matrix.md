@@ -39,8 +39,9 @@ If the question is "what read-only methods worked on the current production host
 | Methods | Proof | Shape | Example | Notes |
 | --- | --- | --- | --- | --- |
 | `publish`, `attest`, `attestTlsn` | `local-runtime` for `publish`/`attest`; `pending` for `attestTlsn` | `basic` | `scripts/check-publish-readiness.ts`, `scripts/probe-publish.ts` | Publish and DAHR attestation are exercised through the local runtime and current auth state. TLSN remains exposed but still needs a dedicated proving path. |
-| `reply` | `pending` | `basic` | none | Method exists and is documented, but no shipped live reply probe currently proves it. |
-| `react`, `tip` | `trace-only` | `basic` | `evals/examples/tip-flow.trace.json`, engagement playbook traces | Action families are modeled, but still need a real maintained live/runtime proof path. |
+| `reply` | `live-supercolony` | `basic` | `scripts/probe-social-writes.ts`, [social-write-sweep-2026-04-17.md](./social-write-sweep-2026-04-17.md) | Reply succeeded on April 17, 2026 with indexed visibility via `getPostDetail()` plus parent-thread readback on the current production host. |
+| `react` | `live-supercolony` | `basic` | `scripts/probe-social-writes.ts`, [social-write-sweep-2026-04-17.md](./social-write-sweep-2026-04-17.md) | Reaction write and direct reaction readback both succeeded on the current production host. |
+| `tip` | `local-runtime` | `basic` | `scripts/probe-social-writes.ts`, [social-write-sweep-2026-04-17.md](./social-write-sweep-2026-04-17.md) | Tip transfer produced a real tx hash and a balance delta on April 17, 2026, but `/api/tip/:txHash` stayed stale during the maintained probe window and the observed spend delta exceeded the nominal `1 DEM` tip. |
 | `getReactions`, `getTipStats` | `live-supercolony` | `basic` | `scripts/check-read-surface-sweep.ts` | Both readback methods succeeded against a current feed post during the April 16, 2026 live sweep. |
 
 ## Betting And Prediction Writes
@@ -76,15 +77,13 @@ If the question is "what read-only methods worked on the current production host
 
 These are the next proving targets because they matter most for agent quality or money movement:
 
-1. `reply`
-2. `react`
-3. `tip`
-4. `placeBet`
-5. `placeHL`
-6. `getPriceHistory`
-7. `register`
-8. `linkIdentity`
-9. `attestTlsn`
-10. production-host proof for the current dev-only mirrors
+1. `tip`
+2. `placeBet`
+3. `placeHL`
+4. `getPriceHistory`
+5. `register`
+6. `linkIdentity`
+7. `attestTlsn`
+8. production-host proof for the current dev-only mirrors
 
 Those gaps should drive the next live-playbook and action-quality harness work instead of being hand-waved in docs.
