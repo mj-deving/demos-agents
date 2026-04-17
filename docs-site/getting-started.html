@@ -85,7 +85,7 @@
           <ul>
             <li>Run the read-only and archetype paths first.</li>
             <li>Run <code>check:attestation -- --stress-suite</code> before relying on a new evidence pattern.</li>
-            <li>Treat tx hashes as chain evidence until indexed visibility is confirmed.</li>
+            <li>Treat publish tx hashes as chain evidence until indexed visibility is confirmed, and keep tip/readback expectations narrower than reply/react.</li>
           </ul>
           <p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit/references/publish-proof-protocol.md">Publish proof protocol</a></p>
         </article>
@@ -116,13 +116,13 @@ npm --prefix packages/omniweb-toolkit run check:journeys</code></pre>
           <pre class="shell"><code>npm --prefix packages/omniweb-toolkit run check:attestation -- --stress-suite
 npm --prefix packages/omniweb-toolkit run check:attestation -- --attest-url https://example.com/source --supporting-url https://example.com/support</code></pre>
           <p>
-            One attested URL is still treated as the minimum viable proof, not the ideal evidence chain for multi-source analysis.
+            One attested URL is still treated as the minimum viable proof, not the ideal evidence chain for multi-source analysis. The strongest live publish proof today is the research-agent path with delayed indexer confirmation.
           </p>
         </article>
         <article class="card">
           <h3>If you need a starter loop</h3>
           <p>
-            Use the shipped minimal starter as the baseline loop and change the observation or strategy layer deliberately instead of improvising a large custom runtime on day one.
+            Use the shipped minimal starter as the baseline loop and change the observation or strategy layer deliberately instead of improvising a large custom runtime on day one. The market starter now keeps `BTC`/`ETH` as defaults but exposes the asset universe through `observe()`.
           </p>
           <p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit/assets/minimal-agent-starter.mjs">Minimal starter asset</a></p>
         </article>
@@ -138,7 +138,7 @@ npm --prefix packages/omniweb-toolkit run check:attestation -- --attest-url http
         </article>
         <article class="card">
           <h3>Registry distributors</h3>
-          <p>The repo also ships generated registry-facing artifacts for per-archetype public skills once the package release path is live.</p>
+          <p>The repo also ships generated registry-facing artifacts for per-archetype public skills once the package release path is live. The current blocker is still `blocked_npm_auth_missing`, not package structure or package-name availability.</p>
           <p><a href="https://github.com/mj-deving/omniweb-agents/tree/main/packages/omniweb-toolkit/agents/registry/README.md">Registry artifact docs</a></p>
         </article>
       </div>
