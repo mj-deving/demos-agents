@@ -49,7 +49,7 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
       // Normalize amount: round to integer, clamp 1-10 DEM (API requires integer amounts)
       const normalizedAmount = Math.min(10, Math.max(1, Math.round(amount)));
 
-      // Phase 1: Validate via API (spam limits, indexer attribution)
+      // Phase 1: Validate via API (spam limits, recipient resolution)
       const validation = await deps.apiClient.initiateTip(postTxHash, normalizedAmount);
       if (!validation || !validation.ok) {
         if (!validation) return null;
@@ -84,7 +84,7 @@ export function createActionsPrimitives(deps: ActionsDeps): ActionsPrimitives {
           }
         }
 
-        const result = await deps.transferDem(recipient, normalizedAmount, `HIVE_TIP:${postTxHash}`);
+        const result = await deps.transferDem(recipient, normalizedAmount, "");
         return { ok: true, data: { txHash: result.txHash, validated: true } };
       } catch (err) {
         return { ok: false, status: 0, error: err instanceof Error ? err.message : String(err) };

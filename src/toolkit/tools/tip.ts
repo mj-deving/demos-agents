@@ -37,7 +37,6 @@ export async function tip(
     }
 
     const bridge = session.getBridge();
-    const memo = `HIVE_TIP:${opts.txHash}`;
 
     // Chain-first: resolve post author address from on-chain transaction
     const recipientAddress = await bridge.resolvePostAuthor(opts.txHash);
@@ -77,7 +76,7 @@ export async function tip(
       console.warn(`[tip] Simulation warning: ${sim.warning}`);
     }
 
-    const result = await bridge.transferDem(recipientAddress, opts.amount, memo);
+    const result = await bridge.transferDem(recipientAddress, opts.amount, "");
 
     await checkAndRecordTip(
       session.stateStore,

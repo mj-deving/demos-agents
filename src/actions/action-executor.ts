@@ -288,7 +288,7 @@ export function createActionExecutor(
           const transferResult = await ctx.transfer(
             recipient,
             tipAmount,
-            `HIVE_TIP:${postTxHash}`,
+            "",
           );
           ctx.observe("insight", `Tipped ${tipAmount} DEM to ${recipient}`, {
             phase: "event-loop",

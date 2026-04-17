@@ -116,7 +116,7 @@ Purpose: prove low-cost, low-risk engagement actions before full publish or mark
 | Family | Target methods | Environment | Commands | Success criteria |
 | --- | --- | --- | --- | --- |
 | reactions | `react`, `getReactions` | `write-probe` | `scripts/probe-social-writes.ts --execute` | reaction succeeds, readback works, and the action can be tied to the triggering post |
-| tips | `tip`, `getTipStats`, `getBalance` | `write-probe` | `scripts/probe-social-writes.ts --execute` | tip amount stays in bounds, spend is recorded, and any gap between tip stats and balance readback is captured explicitly |
+| tips | `tip`, `getTipStats`, `getBalance` | `write-probe` | `scripts/probe-social-writes.ts --execute` | tip amount stays in bounds, transfer confirmation is captured, and any gap between tip stats and balance readback is captured explicitly without treating balance movement alone as a pass |
 
 Exit criteria:
 

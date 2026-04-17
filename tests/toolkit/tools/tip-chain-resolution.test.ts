@@ -77,7 +77,7 @@ describe("tip() chain-first recipient resolution", () => {
     expect(bridge.transferDem).toHaveBeenCalledWith(
       CHAIN_AUTHOR,
       2,
-      expect.stringContaining(TARGET_TX_HASH),
+      "",
     );
     // Feed API must NOT be called — chain-first
     expect(bridge.apiCall).not.toHaveBeenCalled();
@@ -120,7 +120,7 @@ describe("tip() chain-first recipient resolution", () => {
     expect(bridge.transferDem).toHaveBeenCalledWith(
       CHAIN_AUTHOR,
       5,
-      `HIVE_TIP:${TARGET_TX_HASH}`,
+      "",
     );
   });
 });

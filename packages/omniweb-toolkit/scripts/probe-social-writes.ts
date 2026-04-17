@@ -26,6 +26,7 @@ import {
   reactionReadbackSatisfied,
   selectSocialWriteCandidate,
   tipReadbackSatisfied,
+  tipSpendObserved,
   verifyPublishVisibility,
 } from "./_write-proof-shared.js";
 
@@ -160,10 +161,18 @@ try {
   const balanceBeforeTip = beforeBalance;
   const tipResult = await omni.colony.tip(candidate.txHash, tipAmount);
   const tipVerification = tipResult.ok
-    ? await verifyTipReadback(omni, candidate.txHash, beforeTipStats, balanceBeforeTip, tipAmount, {
-        timeoutMs: tipTimeoutMs,
-        pollMs,
-      })
+    ? await verifyTipReadback(
+        omni,
+        candidate.txHash,
+        tipResult.data?.txHash,
+        beforeTipStats,
+        balanceBeforeTip,
+        tipAmount,
+        {
+          timeoutMs: tipTimeoutMs,
+          pollMs,
+        },
+      )
     : { attempted: false };
 
   const replyText = buildReplyText(candidate.txHash);
@@ -282,7 +291,8 @@ async function chooseCandidatePost(
 
 async function verifyTipReadback(
   omni: OmniInstance,
-  txHash: string,
+  postTxHash: string,
+  tipTxHash: string | undefined,
   before: ReturnType<typeof normalizeTipReadback>,
   beforeBalance: number | null,
   tipAmountValue: number,
@@ -295,28 +305,67 @@ async function verifyTipReadback(
   after: ReturnType<typeof normalizeTipReadback>;
   beforeBalance: number | null;
   afterBalance: number | null;
+  spendObserved: boolean;
+  txConfirmed: boolean;
+  txBlockNumber?: number;
+  tipStatsConverged: boolean;
 }> {
   const deadline = Date.now() + opts.timeoutMs;
   let polls = 0;
   let after = before;
   let afterBalance = beforeBalance;
+  let txConfirmed = false;
+  let txBlockNumber: number | undefined;
 
   while (Date.now() <= deadline) {
     polls += 1;
-    const tipStats = await omni.colony.getTipStats(txHash);
+    const tipStats = await omni.colony.getTipStats(postTxHash);
     after = normalizeTipReadback(tipStats?.ok ? tipStats.data : null);
     const balanceResult = await omni.colony.getBalance();
     afterBalance = normalizeBalance(balanceResult?.ok ? balanceResult.data?.balance : null);
+    const txVerification = await verifyTipTransfer(omni, tipTxHash);
+    txConfirmed = txConfirmed || txVerification.confirmed;
+    txBlockNumber = txVerification.blockNumber ?? txBlockNumber;
 
-    if (tipReadbackSatisfied(before, after, beforeBalance, afterBalance, tipAmountValue)) {
-      return { attempted: true, ok: true, polls, before, after, beforeBalance, afterBalance };
+    const tipStatsConverged = tipReadbackSatisfied(before, after, tipAmountValue);
+    const spendObserved = txConfirmed || tipSpendObserved(beforeBalance, afterBalance, tipAmountValue);
+
+    if (tipStatsConverged && spendObserved) {
+      return {
+        attempted: true,
+        ok: true,
+        polls,
+        before,
+        after,
+        beforeBalance,
+        afterBalance,
+        spendObserved,
+        txConfirmed,
+        txBlockNumber,
+        tipStatsConverged,
+      };
     }
 
     if (Date.now() + opts.pollMs > deadline) break;
     await sleep(opts.pollMs);
   }
 
-  return { attempted: true, ok: false, polls, before, after, beforeBalance, afterBalance };
+  const tipStatsConverged = tipReadbackSatisfied(before, after, tipAmountValue);
+  const spendObserved = txConfirmed || tipSpendObserved(beforeBalance, afterBalance, tipAmountValue);
+
+  return {
+    attempted: true,
+    ok: false,
+    polls,
+    before,
+    after,
+    beforeBalance,
+    afterBalance,
+    spendObserved,
+    txConfirmed,
+    txBlockNumber,
+    tipStatsConverged,
+  };
 }
 
 async function verifyReplyReadback(
@@ -422,6 +471,28 @@ async function loadConnect(): Promise<(opts?: {
     throw new Error("connect() export not found in dist/index.js or src/index.ts");
   }
   return mod.connect;
+}
+
+async function verifyTipTransfer(
+  omni: OmniInstance,
+  txHash: string | undefined,
+): Promise<{ confirmed: boolean; blockNumber?: number }> {
+  if (!txHash) return { confirmed: false };
+  const bridge = omni?.runtime?.sdkBridge;
+  if (!bridge || typeof bridge.verifyTransaction !== "function") {
+    return { confirmed: false };
+  }
+
+  try {
+    const verification = await bridge.verifyTransaction(txHash);
+    if (!verification?.confirmed) return { confirmed: false };
+    return {
+      confirmed: true,
+      blockNumber: typeof verification.blockNumber === "number" ? verification.blockNumber : undefined,
+    };
+  } catch {
+    return { confirmed: false };
+  }
 }
 
 async function sleep(ms: number): Promise<void> {

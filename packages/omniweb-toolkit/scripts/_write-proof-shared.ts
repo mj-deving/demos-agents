@@ -254,8 +254,6 @@ export function normalizeBalance(value: unknown): number | null {
 export function tipReadbackSatisfied(
   before: TipReadback | null,
   after: TipReadback | null,
-  beforeBalance: number | null,
-  afterBalance: number | null,
   minimumSpend: number,
 ): boolean {
   const beforeMyTip = readNumber(before?.myTip);
@@ -274,11 +272,16 @@ export function tipReadbackSatisfied(
   if ((after?.totalTips ?? 0) > (before?.totalTips ?? 0)) return true;
   if ((after?.totalDem ?? 0) >= (before?.totalDem ?? 0) + minimumSpend) return true;
 
-  if (beforeBalance != null && afterBalance != null) {
-    return beforeBalance - afterBalance >= minimumSpend;
-  }
-
   return false;
+}
+
+export function tipSpendObserved(
+  beforeBalance: number | null,
+  afterBalance: number | null,
+  minimumSpend: number,
+): boolean {
+  if (beforeBalance == null || afterBalance == null) return false;
+  return beforeBalance - afterBalance >= minimumSpend;
 }
 
 export function hasRecordedTip(value: unknown): boolean {

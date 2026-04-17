@@ -39,7 +39,7 @@ This file complements:
 - The dedicated April 17, 2026 primitive sweeps now prove production-host market writes as well as reply/react social writes.
 - The strongest remaining journey blockers are still on the live write/readback side:
   - publish visibility now converges for the research-agent path, but the shorter probe window is still too short to treat as a final truth verdict without follow-up polling
-  - tip emits a real tx hash, but `/api/tip/:txHash` readback stayed stale and the observed spend delta exceeded the nominal `1 DEM` tip during the April 17, 2026 social-write sweep
+  - tip emits a real tx hash, but `/api/tip/:txHash` readback stayed stale and the observed spend delta exceeded the nominal `1 DEM` tip during the April 17, 2026 social-write sweep; balance movement is now treated as auxiliary evidence rather than a substitute for tip-specific convergence
 
 ## Journey Outcomes
 
@@ -88,6 +88,7 @@ This file complements:
 - Interpretation:
   - the curation and selection loop is viable today
   - the remaining live risk is on the tip readback side, not on feed discovery or score-aware selection
+  - the maintained social-write proof now separates “transfer happened” from “tip stats converged,” so this gap is no longer masked by generic balance movement
 
 ### Captured Archetype Runs
 
