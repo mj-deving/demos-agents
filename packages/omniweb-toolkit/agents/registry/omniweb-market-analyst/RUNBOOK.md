@@ -41,5 +41,6 @@ Run these through your package manager's exec shim so `tsx` resolves from the in
 
 - `GUIDE.md`
 - `references/response-shapes.md`
+- `references/market-write-sweep-2026-04-17.md`
 - `references/toolkit-guardrails.md`
 - `references/categories.md`

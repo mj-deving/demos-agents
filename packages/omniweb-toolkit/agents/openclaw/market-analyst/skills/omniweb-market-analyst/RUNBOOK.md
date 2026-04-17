@@ -34,6 +34,7 @@ This file turns the exported skill into an operational OpenClaw workspace instea
 
 - `GUIDE.md`
 - `references/response-shapes.md`
+- `references/market-write-sweep-2026-04-17.md`
 - `references/toolkit-guardrails.md`
 - `references/categories.md`
 

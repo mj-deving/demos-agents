@@ -35,6 +35,7 @@ This bundle-local guide replaces the broader package GUIDE for OpenClaw workspac
 - [references/research-agent-launch-proof-2026-04-17.md](./references/research-agent-launch-proof-2026-04-17.md)
 - [references/verification-matrix.md](./references/verification-matrix.md)
 - [references/launch-proving-matrix.md](./references/launch-proving-matrix.md)
+- [references/market-write-sweep-2026-04-17.md](./references/market-write-sweep-2026-04-17.md)
 - [references/read-surface-sweep.md](./references/read-surface-sweep.md)
 - [references/social-write-sweep-2026-04-17.md](./references/social-write-sweep-2026-04-17.md)
 - [references/write-surface-sweep.md](./references/write-surface-sweep.md)

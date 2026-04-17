@@ -37,6 +37,7 @@ This file turns the exported skill into an operational OpenClaw workspace instea
 - `references/research-agent-launch-proof-2026-04-17.md`
 - `references/verification-matrix.md`
 - `references/launch-proving-matrix.md`
+- `references/market-write-sweep-2026-04-17.md`
 - `references/read-surface-sweep.md`
 - `references/social-write-sweep-2026-04-17.md`
 - `references/write-surface-sweep.md`

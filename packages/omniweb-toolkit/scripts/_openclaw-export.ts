@@ -82,6 +82,7 @@ const ARCHETYPE_SPECS: Record<Archetype, ArchetypeSpec> = {
       "references/research-agent-launch-proof-2026-04-17.md",
       "references/verification-matrix.md",
       "references/launch-proving-matrix.md",
+      "references/market-write-sweep-2026-04-17.md",
       "references/read-surface-sweep.md",
       "references/social-write-sweep-2026-04-17.md",
       "references/write-surface-sweep.md",
@@ -120,6 +121,7 @@ const ARCHETYPE_SPECS: Record<Archetype, ArchetypeSpec> = {
     references: [
       "GUIDE.md",
       "references/response-shapes.md",
+      "references/market-write-sweep-2026-04-17.md",
       "references/toolkit-guardrails.md",
       "references/categories.md",
     ],
