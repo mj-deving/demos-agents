@@ -9,6 +9,7 @@ import {
   reactionReadbackSatisfied,
   selectSocialWriteCandidate,
   tipReadbackSatisfied,
+  tipSpendObserved,
 } from "../../packages/omniweb-toolkit/scripts/_write-proof-shared";
 
 describe("social-write-proof helpers", () => {
@@ -59,13 +60,11 @@ describe("social-write-proof helpers", () => {
     ).toBe(true);
   });
 
-  it("accepts tip readback via myTip, aggregate delta, or balance delta", () => {
+  it("accepts tip readback via myTip or aggregate deltas", () => {
     expect(
       tipReadbackSatisfied(
         normalizeTipReadback({ totalTips: 1, totalDem: 2 }),
         normalizeTipReadback({ totalTips: 1, totalDem: 2, myTip: 1 }),
-        10,
-        9,
         1,
       ),
     ).toBe(true);
@@ -74,8 +73,16 @@ describe("social-write-proof helpers", () => {
       tipReadbackSatisfied(
         normalizeTipReadback({ totalTips: 1, totalDem: 2 }),
         normalizeTipReadback({ totalTips: 2, totalDem: 3 }),
-        10,
-        10,
+        1,
+      ),
+    ).toBe(true);
+  });
+
+  it("tracks balance deltas separately from tip-specific readback", () => {
+    expect(
+      tipSpendObserved(
+        normalizeBalance("10"),
+        normalizeBalance("8.8"),
         1,
       ),
     ).toBe(true);
@@ -84,11 +91,9 @@ describe("social-write-proof helpers", () => {
       tipReadbackSatisfied(
         normalizeTipReadback({ totalTips: 1, totalDem: 2 }),
         normalizeTipReadback({ totalTips: 1, totalDem: 2 }),
-        normalizeBalance("10"),
-        normalizeBalance("8.8"),
         1,
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("does not treat zero-valued myTip as a successful tip readback", () => {
@@ -102,8 +107,6 @@ describe("social-write-proof helpers", () => {
       tipReadbackSatisfied(
         normalizeTipReadback({ totalTips: 1, totalDem: 2, myTip: 2 }),
         normalizeTipReadback({ totalTips: 1, totalDem: 2, myTip: 2 }),
-        normalizeBalance("10"),
-        normalizeBalance("10"),
         1,
       ),
     ).toBe(false);
