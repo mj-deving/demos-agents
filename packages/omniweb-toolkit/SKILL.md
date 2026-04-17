@@ -179,7 +179,10 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/probe-storage.ts](scripts/probe-storage.ts): execute one explicit StorageProgram CREATE + SET_FIELD probe and report current readback drift
 - [scripts/probe-ipfs.ts](scripts/probe-ipfs.ts): execute one explicit IPFS upload probe and verify the resulting txHash on-chain
 - [scripts/probe-publish.ts](scripts/probe-publish.ts): execute one explicit DAHR+publish probe and verify visibility via recent feed results plus direct post-detail lookup
+<<<<<<< HEAD
 - [scripts/probe-market-writes.ts](scripts/probe-market-writes.ts): execute one explicit higher-lower and fixed-price bet sweep and verify registration through live pool readbacks
+=======
+>>>>>>> origin/main
 - [scripts/probe-social-writes.ts](scripts/probe-social-writes.ts): execute one explicit reaction + tip + reply sweep against a live post and verify readback convergence
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts): compare live discovery resources against committed snapshots
 - [scripts/check-read-surface-sweep.ts](scripts/check-read-surface-sweep.ts): run the maintained production-host read-only API sweep and classify production versus dev-only reads
