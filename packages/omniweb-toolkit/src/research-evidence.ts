@@ -1,4 +1,6 @@
 import { fetchWithTimeout } from "../../../src/toolkit/network/fetch-with-timeout.js";
+import { fetchSource } from "../../../src/toolkit/sources/fetch.js";
+import type { FetchedResponse } from "../../../src/toolkit/providers/types.js";
 import { inferAssetAlias } from "../../../src/toolkit/chain/asset-helpers.js";
 import type { MinimalAttestationCandidate } from "./minimal-attestation-plan.js";
 
@@ -16,6 +18,7 @@ export interface ResearchEvidenceSummary {
 export interface FetchResearchEvidenceSummarySuccess {
   ok: true;
   summary: ResearchEvidenceSummary;
+  prefetchedResponse?: FetchedResponse;
 }
 
 export interface FetchResearchEvidenceSummaryFailure {
@@ -40,27 +43,13 @@ export async function fetchResearchEvidenceSummary(
   opts: FetchResearchEvidenceSummaryOptions,
 ): Promise<FetchResearchEvidenceSummaryResult> {
   try {
-    const response = await fetchWithTimeout(
-      opts.source.url,
-      opts.timeoutMs ?? DEFAULT_RESEARCH_EVIDENCE_TIMEOUT_MS,
-      {
-        headers: {
-          accept: "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        reason: "unexpected_status",
-        status: response.status,
-        note: `Source fetch returned HTTP ${response.status} for ${opts.source.name}.`,
-      };
+    const prefetched = await fetchResearchEvidence(opts);
+    if (!prefetched.ok) {
+      return prefetched;
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const rawText = await response.text();
+    const contentType = prefetched.response.headers["content-type"] ?? "";
+    const rawText = prefetched.response.bodyText;
     const payload = parseResearchEvidencePayload(opts.source.url, contentType, rawText);
     const values = extractResearchEvidenceValues(
       opts.source.url,
@@ -79,6 +68,7 @@ export async function fetchResearchEvidenceSummary(
 
     return {
       ok: true,
+      prefetchedResponse: prefetched.response,
       summary: {
         source: opts.source.name,
         url: opts.source.url,
@@ -97,6 +87,80 @@ export async function fetchResearchEvidenceSummary(
       note,
     };
   }
+}
+
+async function fetchResearchEvidence(
+  opts: FetchResearchEvidenceSummaryOptions,
+): Promise<
+  | { ok: true; response: FetchedResponse }
+  | FetchResearchEvidenceSummaryFailure
+> {
+  if (opts.source.sourceRecord) {
+    const fetched = await fetchSource(
+      opts.source.url,
+      opts.source.sourceRecord,
+      {
+        timeoutMs: opts.timeoutMs ?? DEFAULT_RESEARCH_EVIDENCE_TIMEOUT_MS,
+      },
+    );
+
+    if (!fetched.ok || !fetched.response) {
+      return {
+        ok: false,
+        reason: "fetch_failed",
+        note: `Source fetch failed for ${opts.source.name}: ${fetched.error ?? "unknown fetch error"}`,
+      };
+    }
+
+    if (fetched.response.status < 200 || fetched.response.status >= 400) {
+      return {
+        ok: false,
+        reason: "unexpected_status",
+        status: fetched.response.status,
+        note: `Source fetch returned HTTP ${fetched.response.status} for ${opts.source.name}.`,
+      };
+    }
+
+    return {
+      ok: true,
+      response: fetched.response,
+    };
+  }
+
+  const response = await fetchWithTimeout(
+    opts.source.url,
+    opts.timeoutMs ?? DEFAULT_RESEARCH_EVIDENCE_TIMEOUT_MS,
+    {
+      headers: {
+        accept: "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      reason: "unexpected_status",
+      status: response.status,
+      note: `Source fetch returned HTTP ${response.status} for ${opts.source.name}.`,
+    };
+  }
+
+  const bodyText = await response.text();
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key.toLowerCase()] = value;
+  });
+
+  return {
+    ok: true,
+    response: {
+      url: opts.source.url,
+      status: response.status,
+      headers,
+      bodyText,
+    },
+  };
 }
 
 function extractResearchEvidenceValues(

@@ -15,6 +15,7 @@ import {
 
 export interface MinimalAttestationCandidate {
   sourceId: string;
+  sourceRecord?: SourceRecordV2 | null;
   name: string;
   provider: string;
   status: SourceRecordV2["status"];
@@ -284,6 +285,7 @@ function resolveCatalogPath(explicitPath?: string): string | null {
 function mapCandidate(candidate: SourceSelectionResult): MinimalAttestationCandidate {
   return {
     sourceId: candidate.source.id,
+    sourceRecord: candidate.source,
     name: candidate.source.name,
     provider: candidate.source.provider,
     status: candidate.source.status,
@@ -307,6 +309,7 @@ function mapUrlCandidate(url: string, index: number): MinimalAttestationCandidat
 
   return {
     sourceId: `${hostname}-${index + 1}`,
+    sourceRecord: null,
     name: hostname,
     provider: hostname,
     status: "active",
@@ -318,4 +321,22 @@ function mapUrlCandidate(url: string, index: number): MinimalAttestationCandidat
     url,
     score: Math.max(1, 10 - index),
   };
+}
+
+export function toPreflightCandidates(plan: MinimalAttestationPlan) {
+  return [
+    plan.primary,
+    ...plan.supporting,
+    ...plan.fallbacks,
+  ]
+    .filter((candidate): candidate is MinimalAttestationCandidate => candidate != null)
+    .filter((candidate) => candidate.sourceRecord != null)
+    .map((candidate) => ({
+      sourceId: candidate.sourceId,
+      source: candidate.sourceRecord!,
+      method: "DAHR" as const,
+      url: candidate.url,
+      score: candidate.score,
+      adapterCandidates: undefined,
+    }));
 }

@@ -3,6 +3,7 @@ import {
   buildResearchDraft,
   fetchResearchEvidenceSummary,
   deriveResearchOpportunities,
+  matchResearchDraftToPlan,
   runMinimalAgentLoop,
   type MinimalObserveContext,
   type MinimalObserveResult,
@@ -333,6 +334,8 @@ export async function observe(
   ]);
   const primaryEvidenceRead = evidenceReads[0];
   const supportingEvidenceReads = evidenceReads.slice(1);
+  const prefetchedReadResults = evidenceReads.flatMap((entry) =>
+    entry.status === "fulfilled" ? [entry.value] : []);
   const evidenceSummaryResult = primaryEvidenceRead?.status === "fulfilled"
     ? primaryEvidenceRead.value
     : {
@@ -506,6 +509,56 @@ export async function observe(
         },
         promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
         notes: [
+          ...draft.notes,
+          ...supportingEvidenceNotes,
+          ...attestationPlan.warnings,
+        ],
+      },
+      nextState: ctx.memory.state ?? {},
+    };
+  }
+
+  const sourceMatch = await matchResearchDraftToPlan({
+    topic,
+    text: draft.text,
+    tags: draft.tags,
+    attestationPlan,
+    evidenceReads: prefetchedReadResults,
+  });
+
+  if (!sourceMatch.pass) {
+    return {
+      kind: "skip",
+      reason: "draft_source_match_failed",
+      facts: {
+        topic,
+        researchFamily: sourceProfile.family,
+        signalCount: signalList.length,
+        feedCount: posts.length,
+        availableBalance,
+        opportunityKind: chosenOpportunity.kind,
+        opportunityScore: chosenOpportunity.score,
+        ...derivedMetrics,
+        ...readStatus,
+      },
+      attestationPlan,
+      audit: {
+        inputs: {
+          feedSample,
+          signalSample,
+          leaderboardSample: leaderboardAgents.slice(0, 5),
+        },
+        selectedEvidence: {
+          matchedSignal,
+          feedMentions: matchingFeedPosts,
+          sourceProfile,
+          evidenceSummary: evidenceSummaryResult.summary,
+          supportingEvidenceSummaries,
+          evidenceDelta,
+        },
+        promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
+        notes: [
+          `shared_source_match_failed: ${sourceMatch.reason}`,
           ...draft.notes,
           ...supportingEvidenceNotes,
           ...attestationPlan.warnings,
