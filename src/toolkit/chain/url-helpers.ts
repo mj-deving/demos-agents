@@ -1,3 +1,5 @@
+import { inferAssetAlias, inferMacroEntity } from "./asset-helpers.js";
+
 /**
  * Pure URL template helpers for source URL resolution.
  *
@@ -21,11 +23,14 @@ export function extractTopicVars(topic: string): Record<string, string> {
   const t = topic.toLowerCase();
   const firstWord = (t.match(/[a-z0-9-]+/)?.[0] || "topic").replace(/[^a-z0-9-]/g, "");
   const today = new Date().toISOString().slice(0, 10);
+  const assetAlias = inferAssetAlias(topic);
+  const macroEntity = inferMacroEntity(topic);
+
   return {
-    asset: firstWord,
-    symbol: "",
+    asset: assetAlias?.asset ?? macroEntity?.asset ?? firstWord,
+    symbol: assetAlias?.symbol ?? "",
     query: topic,
-    protocol: firstWord,
+    protocol: macroEntity?.asset ?? firstWord,
     package: firstWord,
     title: firstWord,
     name: firstWord,

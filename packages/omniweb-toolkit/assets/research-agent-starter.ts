@@ -648,8 +648,17 @@ function extractAvailableBalance(balance: unknown): number {
   if (!balance || typeof balance !== "object") return 0;
   const direct = (balance as { balance?: unknown }).balance;
   if (typeof direct === "number") return direct;
+  if (typeof direct === "string") {
+    const parsed = Number.parseFloat(direct.replace(/,/g, ""));
+    if (Number.isFinite(parsed)) return parsed;
+  }
   const nested = (balance as { data?: { balance?: unknown } }).data?.balance;
-  return typeof nested === "number" ? nested : 0;
+  if (typeof nested === "number") return nested;
+  if (typeof nested === "string") {
+    const parsed = Number.parseFloat(nested.replace(/,/g, ""));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }
 
 function errorMessage(error: unknown): string {

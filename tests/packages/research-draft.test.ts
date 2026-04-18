@@ -127,11 +127,13 @@ describe("buildResearchDraft", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.promptPacket.archetype).toBe("research-agent");
+    expect(result.promptPacket.input.analysisAngle).toContain("bearish read in colony signals");
     expect(result.promptPacket.input).not.toHaveProperty("opportunityScore");
     expect(result.promptPacket.input).not.toHaveProperty("rationale");
     expect(result.promptPacket.input).not.toHaveProperty("leaderboardCount");
     expect(result.promptPacket.input).not.toHaveProperty("balanceDem");
     expect(result.promptPacket.instruction).toContain("standalone ANALYSIS post grounded in the input evidence");
+    expect(result.promptPacket.constraints.join(" ")).toContain("analysis angle");
     expect(result.promptPacket.constraints.join(" ")).toContain("Do not mention internal scoring");
     expect(result.promptPacket.edge[0]).toContain("Depth over speed");
     expect(result.promptPacket.output.confidenceStyle).toContain("calibrated and evidence-led");
@@ -166,6 +168,8 @@ describe("buildResearchDraft", () => {
     expect(result.qualityGate.pass).toBe(true);
     expect(result.text).not.toContain("opportunity score");
     expect(result.text).not.toContain("coverage gap");
+    expect(result.qualityGate.checks.find((check) => check.name === "research-angle-grounding")?.pass).toBe(true);
+    expect(result.qualityGate.checks.find((check) => check.name === "research-style")?.pass).toBe(true);
     expect(provider.complete).toHaveBeenCalledTimes(1);
   });
 
@@ -219,6 +223,84 @@ describe("buildResearchDraft", () => {
     if (result.ok) throw new Error("expected failure");
     expect(result.reason).toBe("draft_quality_gate_failed");
     expect(result.qualityGate.checks.find((check) => check.name === "evidence-value-overlap")?.pass).toBe(false);
+  });
+
+  it("rejects generic market commentary that ignores the divergence angle", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Bitcoin has gained 5.8 percent this week and is now trading near 67,250 dollars inside a broad range with heavy volume. " +
+        "The market still looks indecisive because price keeps oscillating between support and resistance without a clean breakout. " +
+        "A move above the recent high would be constructive, while a move back toward the lower end of the range would turn the setup weaker."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 300,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "research-angle-grounding")?.pass).toBe(false);
+  });
+
+  it("rejects awkward colony-sentiment phrasing even when the numbers overlap", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Bitcoin's 5.8% weekly move is quietly refuting the bearish half of colony sentiment because spot is still trading near 67,250 dollars rather than breaking lower. " +
+        "The range structure still matters, but the phrase above captures the idea that the market is not yet validating the signal. " +
+        "A reversal through the lower end of the range would restore the bear case."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 300,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "research-style")?.pass).toBe(false);
+  });
+
+  it("rejects mirrored rhetorical closes even when the analysis angle is present", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "The bearish read in colony signals is being contradicted by the tape because Bitcoin is up 5.8% this week at 67,250 dollars and still holding near the top of its range. " +
+        "That mismatch matters because price and volume are leaning constructive instead of validating the breakdown thesis. " +
+        "Until support breaks, the divergence is one of narrative lagging structure rather than structure lagging narrative."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 300,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "research-style")?.pass).toBe(false);
   });
 
   it("skips short low-quality LLM output instead of publishing a template fallback", async () => {

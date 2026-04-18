@@ -26,6 +26,7 @@ export interface BuildResearchDraftOptions {
 
 export interface ResearchPromptInput {
   topic: string;
+  analysisAngle: string;
   signal: {
     direction: string | null;
   };
@@ -91,13 +92,48 @@ const RESEARCH_META_PATTERNS: Array<{ name: string; pattern: RegExp; detail: str
   },
 ];
 
+const DIVERGENCE_CONTEXT_PATTERNS = [
+  /\bdivergence\b/i,
+  /\bmismatch\b/i,
+  /\bdisconnect\b/i,
+  /\bdespite\b/i,
+  /\beven as\b/i,
+  /\bwhile\b/i,
+];
+
+const SENTIMENT_CONTEXT_PATTERNS = [
+  /\bsentiment\b/i,
+  /\bbearish\b/i,
+  /\bbullish\b/i,
+  /\bpositioning\b/i,
+  /\bconviction\b/i,
+];
+
+const RESEARCH_STYLE_PATTERNS: Array<{ name: string; pattern: RegExp; detail: string }> = [
+  {
+    name: "awkward-sentiment-fraction",
+    pattern: /\bhalf of (?:colony )?sentiment\b/i,
+    detail: "uses awkward sentiment phrasing instead of naming the actual bearish or bullish read",
+  },
+  {
+    name: "modelish-narrative-lag",
+    pattern: /\bnarrative lagging (?:price|structure)\b|\bstructure lagging narrative\b/i,
+    detail: "ends on model-y commentary instead of a concrete market interpretation",
+  },
+  {
+    name: "mirrored-rhetorical-close",
+    pattern: /\b[A-Za-z-]+\s+lagging\s+[A-Za-z-]+\s+rather than\s+[A-Za-z-]+\s+lagging\s+[A-Za-z-]+\b/i,
+    detail: "uses mirrored rhetorical phrasing instead of a plain market conclusion",
+  },
+];
+
 export async function buildResearchDraft(
   opts: BuildResearchDraftOptions,
 ): Promise<ResearchDraftResult> {
   const promptPacket = buildResearchPromptPacket(opts);
   const minTextLength = opts.minTextLength ?? DEFAULT_MIN_TEXT_LENGTH;
   const llmText = await generateViaProvider(opts.llmProvider, promptPacket);
-  const emptyQualityGate = checkResearchDraftQuality("", minTextLength, opts.evidenceSummary);
+  const emptyQualityGate = checkResearchDraftQuality("", minTextLength, opts.opportunity, opts.evidenceSummary);
 
   if (!llmText) {
     return {
@@ -109,7 +145,7 @@ export async function buildResearchDraft(
     };
   }
 
-  const preferredGate = checkResearchDraftQuality(llmText, minTextLength, opts.evidenceSummary);
+  const preferredGate = checkResearchDraftQuality(llmText, minTextLength, opts.opportunity, opts.evidenceSummary);
   if (preferredGate.pass) {
     return {
       ok: true,
@@ -138,6 +174,7 @@ export async function buildResearchDraft(
 function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPromptPacket {
   const primarySource = opts.opportunity.attestationPlan.primary?.name ?? null;
   const supportingSources = opts.opportunity.attestationPlan.supporting.map((candidate) => candidate.name);
+  const analysisAngle = buildResearchAnalysisAngle(opts.opportunity);
 
   return {
     archetype: "research-agent",
@@ -152,6 +189,7 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
     ],
     input: {
       topic: opts.opportunity.topic,
+      analysisAngle,
       signal: {
         direction: opts.opportunity.matchedSignal.direction,
       },
@@ -171,12 +209,15 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
         supportingSourceNames: supportingSources,
       },
     },
-    instruction: "Write one standalone ANALYSIS post grounded in the input evidence and colony context. Lead with the thesis, then explain the mechanism, then say what would confirm or invalidate the view.",
+    instruction: "Write one standalone ANALYSIS post grounded in the input evidence and colony context. Lead with the thesis, then explain the mechanism, then say what would confirm or invalidate the view. Center the post on the stated analysis angle instead of generic market color.",
     constraints: [
       "Make the post fully legible to a human reader who never saw the agent's internal reasoning or the prompt packet.",
       "Do not mention internal scoring, confidence numbers, coverage gaps, feed sampling, matching-post counts, or why the agent decided to post.",
       "Do not narrate the attestation pipeline, source ranking, supporting-source bookkeeping, or any source-selection process.",
       "Use the concrete evidence values and derived metrics in the packet; do not write a research post that never cites the fetched data.",
+      "Use the analysis angle explicitly. If the topic is about divergence or sentiment mismatch, say what is diverging from what instead of defaulting to generic trend commentary.",
+      "When describing colony sentiment, use natural phrases like 'the bearish read in colony signals', 'the bullish read', or 'mixed positioning' rather than clunky constructions.",
+      "End in plain language. Do not use mirrored rhetorical constructions or clever symmetry in the closing sentence.",
       "Treat source names as evidence anchors, not as the subject of the prose.",
       "State one clear thesis, ground it in the topic and source context, and end with the concrete condition that would confirm or invalidate the take.",
       "If the packet contains contradiction signals, frame the post as a synthesis of conflicting takes rather than a debug explanation.",
@@ -209,7 +250,7 @@ async function generateViaProvider(
   const prompt = renderColonyPromptPacket(packet);
 
   const completion = await provider.complete(prompt, {
-    system: "You write concise, evidence-bound colony research posts for human readers. Synthesize the evidence into one strong thesis, mention only what matters externally, and never leak internal scoring, feed coverage, or attestation workflow details.",
+    system: "You write concise, evidence-bound colony research posts for human readers. Synthesize the evidence into one strong thesis, mention only what matters externally, and never leak internal scoring, feed coverage, or attestation workflow details. When the topic implies divergence, mismatch, or sentiment dislocation, name that mismatch directly rather than drifting into generic price commentary.",
     maxTokens: 220,
     modelTier: "standard",
   });
@@ -246,6 +287,7 @@ function normalizeDraftText(text: string): string {
 function checkResearchDraftQuality(
   text: string,
   minTextLength: number,
+  opportunity: ResearchOpportunity,
   evidenceSummary: ResearchEvidenceSummary,
 ): QualityGateResult {
   const base = checkPublishQuality(
@@ -254,6 +296,8 @@ function checkResearchDraftQuality(
   );
   const leak = findResearchMetaLeak(text);
   const evidenceAlignment = checkEvidenceValueOverlap(text, evidenceSummary);
+  const contextualGrounding = checkContextualGrounding(text, opportunity);
+  const styleLeak = findResearchStyleProblem(text);
   const checks = [
     ...base.checks,
     {
@@ -265,6 +309,16 @@ function checkResearchDraftQuality(
       name: "evidence-value-overlap",
       pass: evidenceAlignment.pass,
       detail: evidenceAlignment.detail,
+    },
+    {
+      name: "research-angle-grounding",
+      pass: contextualGrounding.pass,
+      detail: contextualGrounding.detail,
+    },
+    {
+      name: "research-style",
+      pass: styleLeak == null,
+      detail: styleLeak == null ? "wording reads like colony-facing analysis" : `${styleLeak.name}: ${styleLeak.detail}`,
     },
   ];
 
@@ -292,10 +346,49 @@ function checkResearchDraftQuality(
     };
   }
 
+  if (!contextualGrounding.pass) {
+    return {
+      pass: false,
+      reason: `failed: research-angle-grounding — ${contextualGrounding.detail}`,
+      checks,
+    };
+  }
+
+  if (styleLeak) {
+    return {
+      pass: false,
+      reason: `failed: research-style — ${styleLeak.detail}`,
+      checks,
+    };
+  }
+
   return {
     pass: true,
     checks,
   };
+}
+
+function buildResearchAnalysisAngle(opportunity: ResearchOpportunity): string {
+  const topic = opportunity.topic.toLowerCase();
+  const sentimentRead = describeSignalRead(opportunity);
+
+  if (topic.includes("divergence") || topic.includes("sentiment")) {
+    return `Explain whether ${sentimentRead} is being confirmed or contradicted by the observed price, range, and volume evidence. Name the mismatch directly.`;
+  }
+
+  if (topic.includes("funding") || topic.includes("premium") || topic.includes("basis")) {
+    return "Explain what the relationship between funding, premium, and price says about positioning, and what would invalidate that read.";
+  }
+
+  if (topic.includes("etf") || topic.includes("flow")) {
+    return "Explain what the latest ETF flow and holdings data implies about institutional demand, and what would mark that demand as weakening.";
+  }
+
+  if (opportunity.kind === "contradiction") {
+    return "Synthesize the conflicting takes into one clear thesis and state which evidence would settle the disagreement.";
+  }
+
+  return "Turn the evidence into one clear thesis, explain the mechanism, and state the concrete invalidation condition.";
 }
 
 function findResearchMetaLeak(text: string): { name: string; detail: string } | null {
@@ -308,6 +401,53 @@ function findResearchMetaLeak(text: string): { name: string; detail: string } | 
     }
   }
   return null;
+}
+
+function findResearchStyleProblem(text: string): { name: string; detail: string } | null {
+  for (const entry of RESEARCH_STYLE_PATTERNS) {
+    if (entry.pattern.test(text)) {
+      return {
+        name: entry.name,
+        detail: entry.detail,
+      };
+    }
+  }
+  return null;
+}
+
+function checkContextualGrounding(
+  text: string,
+  opportunity: ResearchOpportunity,
+): { pass: boolean; detail: string } {
+  const topic = opportunity.topic.toLowerCase();
+
+  if (topic.includes("divergence") || topic.includes("sentiment")) {
+    const hasDivergenceCue = DIVERGENCE_CONTEXT_PATTERNS.some((pattern) => pattern.test(text));
+    const hasSentimentCue = SENTIMENT_CONTEXT_PATTERNS.some((pattern) => pattern.test(text));
+    if (!hasDivergenceCue || !hasSentimentCue) {
+      return {
+        pass: false,
+        detail: "draft does not clearly name the signal-vs-market mismatch implied by the topic",
+      };
+    }
+  }
+
+  return {
+    pass: true,
+    detail: "draft reflects the research angle implied by the topic",
+  };
+}
+
+function describeSignalRead(opportunity: ResearchOpportunity): string {
+  const topic = opportunity.topic.toLowerCase();
+  const direction = opportunity.matchedSignal.direction?.toLowerCase() ?? "mixed";
+
+  if (topic.includes("bear")) return "the bearish read in colony signals";
+  if (topic.includes("bull")) return "the bullish read in colony signals";
+  if (direction === "bearish") return "the bearish read in colony signals";
+  if (direction === "bullish") return "the bullish read in colony signals";
+  if (direction === "mixed") return "mixed positioning in colony signals";
+  return "the current read in colony signals";
 }
 
 function checkEvidenceValueOverlap(

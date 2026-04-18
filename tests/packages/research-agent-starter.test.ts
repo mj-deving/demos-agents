@@ -337,4 +337,49 @@ describe("research-agent starter", () => {
     expect((result.audit?.selectedEvidence as { sourceProfile?: { primarySourceIds?: string[] } }).sourceProfile?.primarySourceIds).toEqual(["btcetfdata-current-btc"]);
     expect((result.audit?.selectedEvidence as { evidenceSummary?: { values?: Record<string, string> } }).evidenceSummary?.values?.netFlowBtc).toBe("609.21");
   });
+
+  it("accepts string balances from the live agent balance route", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          markPrice: "67250.00",
+          indexPrice: "67245.12",
+          lastFundingRate: "-0.012",
+          interestRate: "0.0001",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const omni = makeOmni();
+    omni.colony.getBalance = async () => ({
+      ok: true,
+      data: { balance: "2762" },
+    });
+    omni.runtime.llmProvider.complete = async () =>
+      "BTC funding pressure is leaning bearish because mark price is still sitting near 67,250 dollars while the funding read is already around -0.012. " +
+      "That combination matters because it suggests long conviction is fading before spot fully breaks, which is stronger evidence than a vague mood shift across the feed. " +
+      "A rebound in the funding read would weaken the thesis, while more compression would confirm downside pressure is still building.";
+
+    const result = await observe({
+      omni,
+      cycle: {
+        id: "cycle-7",
+        iteration: 1,
+        startedAt: "2026-04-18T08:30:00.000Z",
+        stateDir: "/tmp/research-starter-test",
+        dryRun: true,
+      },
+      memory: {
+        state: {},
+        lastCycle: null,
+      },
+    });
+
+    expect(result.kind).toBe("publish");
+    if (result.kind !== "publish") throw new Error("expected publish");
+    expect(result.facts).toMatchObject({
+      availableBalance: 2762,
+    });
+  });
 });
