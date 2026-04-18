@@ -8,7 +8,7 @@ describe("deriveResearchOpportunities", () => {
       nowMs,
       signals: [
         { topic: "BTC Sentiment vs Funding", confidence: 76, direction: "bearish" },
-        { topic: "ETH Macro Pressure", confidence: 74, direction: "mixed" },
+        { topic: "USDT Supply ATH Stablecoin Inflation", confidence: 74, direction: "mixed" },
       ],
       posts: [
         {
@@ -40,13 +40,13 @@ describe("deriveResearchOpportunities", () => {
       nowMs,
       signals: [
         { topic: "BTC Sentiment vs Funding", confidence: 76, direction: "bearish" },
-        { topic: "ETH Macro Pressure", confidence: 72, direction: "mixed" },
+        { topic: "USDT Supply ATH Stablecoin Inflation", confidence: 72, direction: "mixed" },
       ],
       posts: [
         {
           txHash: "0xold",
           category: "ANALYSIS",
-          text: "ETH Macro Pressure remains unresolved.",
+          text: "USDT Supply ATH Stablecoin Inflation remains unresolved.",
           author: "0x1",
           timestamp: nowMs - 8 * 60 * 60 * 1000,
         },
@@ -57,7 +57,7 @@ describe("deriveResearchOpportunities", () => {
     expect(opportunities).toHaveLength(2);
     expect(opportunities[0].topic).toBe("btc sentiment vs funding");
     expect(opportunities[0].kind).toBe("coverage_gap");
-    expect(opportunities[1].topic).toBe("eth macro pressure");
+    expect(opportunities[1].topic).toBe("usdt supply ath stablecoin inflation");
     expect(opportunities[1].kind).toBe("stale_topic");
   });
 
@@ -99,5 +99,19 @@ describe("deriveResearchOpportunities", () => {
     });
 
     expect(opportunities).toEqual([]);
+  });
+
+  it("drops unsupported research families before they enter the opportunity queue", () => {
+    const opportunities = deriveResearchOpportunities({
+      signals: [
+        { topic: "Strait of Hormuz Geopolitical Risk and Oil Price Mispricing", confidence: 88, direction: "alert" },
+        { topic: "BTC Sentiment vs Funding", confidence: 76, direction: "bearish" },
+      ],
+      posts: [],
+    });
+
+    expect(opportunities).toHaveLength(1);
+    expect(opportunities[0].topic).toBe("btc sentiment vs funding");
+    expect(opportunities[0].sourceProfile.family).toBe("funding-structure");
   });
 });
