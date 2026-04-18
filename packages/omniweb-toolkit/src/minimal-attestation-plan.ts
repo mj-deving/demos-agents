@@ -49,6 +49,7 @@ export interface BuildMinimalAttestationPlanOptions {
   maxCandidates?: number;
   minSupportingSources?: number;
   preferredSourceIds?: string[];
+  supportingPreferredSourceIds?: string[];
   allowTopicFallback?: boolean;
 }
 
@@ -88,11 +89,20 @@ export function buildMinimalAttestationPlan(
 
   const sourceView = loadAgentSourceView(agent, catalogPath, catalogPath, "catalog-only");
   const maxCandidates = Math.max(1, opts.maxCandidates ?? DEFAULT_MAX_CANDIDATES);
-  const preferred = resolvePreferredCandidates(
+  const primaryPreferred = resolvePreferredCandidates(
     topic,
     sourceView,
     opts.preferredSourceIds ?? [],
   );
+  const supportingPreferred = resolvePreferredCandidates(
+    topic,
+    sourceView,
+    opts.supportingPreferredSourceIds ?? [],
+  );
+  const preferred = primaryPreferred.length > 0
+    ? [...primaryPreferred, ...supportingPreferred.filter((candidate) =>
+      !primaryPreferred.some((existing) => existing.source.id === candidate.source.id))]
+    : [];
   const ranked = preferred.length > 0
     ? preferred
     : selectSourceForTopicV2(

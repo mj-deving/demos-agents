@@ -44,6 +44,21 @@ describe("buildMinimalAttestationPlan", () => {
     expect(plan.supporting[0]?.sourceId).toBe("binance-24hr-btc");
   });
 
+  it("supports separated primary and supporting preferred source lists", () => {
+    const plan = buildMinimalAttestationPlan({
+      topic: "btc funding rate contrarian",
+      preferredSourceIds: ["binance-futures-btc"],
+      supportingPreferredSourceIds: ["binance-futures-oi-btc", "coingecko-42ff8c85", "coingecko-2a7ea372"],
+      allowTopicFallback: false,
+      minSupportingSources: 1,
+    });
+
+    expect(plan.ready).toBe(true);
+    expect(plan.primary?.sourceId).toBe("binance-futures-btc");
+    expect(plan.supporting.length).toBeGreaterThanOrEqual(1);
+    expect(plan.supporting.map((candidate) => candidate.sourceId)).toContain("binance-futures-oi-btc");
+  });
+
   it("can build a ready plan from attested feed URLs without catalog lookups", () => {
     const plan = buildMinimalAttestationPlanFromUrls({
       topic: "engagement spotlight 0xpost",
