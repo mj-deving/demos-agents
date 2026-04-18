@@ -2,6 +2,7 @@ import type { ResearchEvidenceSummary } from "./research-evidence.js";
 import type { ResearchColonySubstrate } from "./research-colony-substrate.js";
 import type { ResearchOpportunity } from "./research-opportunities.js";
 import type { ResearchTopicFamily } from "./research-source-profile.js";
+import type { ResearchSelfHistorySummary } from "./research-self-history.js";
 
 export interface ResearchFamilyDossier {
   family: ResearchTopicFamily;
@@ -24,9 +25,11 @@ export interface ResearchBrief {
     reason: string;
   }>;
   domainContext: string[];
+  substrateSummary: string | null;
+  previousCoverageDelta: string | null;
 }
 
-type CoreResearchBrief = Omit<ResearchBrief, "linkedThemes" | "domainContext">;
+type CoreResearchBrief = Omit<ResearchBrief, "linkedThemes" | "domainContext" | "substrateSummary" | "previousCoverageDelta">;
 
 const GENERIC_DOSSIER: ResearchFamilyDossier = {
   family: "unsupported",
@@ -141,6 +144,7 @@ export function buildResearchBrief(
   colonySubstrate: ResearchColonySubstrate | undefined,
   evidenceSummary: ResearchEvidenceSummary,
   supportingEvidenceSummaries: ResearchEvidenceSummary[] = [],
+  selfHistory?: ResearchSelfHistorySummary | null,
 ): ResearchBrief {
   const dossier = dossierForFamily(opportunity.sourceProfile.family);
   const linkedContext = buildLinkedResearchContext(
@@ -149,7 +153,7 @@ export function buildResearchBrief(
     evidenceSummary,
     supportingEvidenceSummaries,
   );
-  let baseBrief: Omit<ResearchBrief, "linkedThemes" | "domainContext">;
+  let baseBrief: CoreResearchBrief;
 
   if (opportunity.sourceProfile.family === "stablecoin-supply") {
     baseBrief = buildStablecoinSupplyBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
@@ -177,7 +181,63 @@ export function buildResearchBrief(
     ...baseBrief,
     linkedThemes: linkedContext.linkedThemes,
     domainContext: linkedContext.domainContext,
+    substrateSummary: summarizeColonySubstrate(colonySubstrate),
+    previousCoverageDelta: summarizePreviousCoverageDelta(selfHistory ?? null),
   };
+}
+
+function summarizeColonySubstrate(
+  colonySubstrate: ResearchColonySubstrate | undefined,
+): string | null {
+  if (!colonySubstrate) return null;
+
+  const parts = [
+    colonySubstrate.signalSummary.agentCount != null
+      ? `${colonySubstrate.signalSummary.agentCount} agent take(s) in the live signal`
+      : null,
+    colonySubstrate.supportingTakes.length > 0
+      ? `${colonySubstrate.supportingTakes.length} supporting take(s)`
+      : null,
+    colonySubstrate.dissentingTake ? "clear dissent is present" : "no explicit dissent is surfaced",
+    colonySubstrate.crossReferences.length > 0
+      ? `${colonySubstrate.crossReferences.length} cross-link(s) to adjacent themes`
+      : null,
+    colonySubstrate.recentRelatedPosts.length > 0
+      ? `${colonySubstrate.recentRelatedPosts.length} recent related colony post(s)`
+      : null,
+  ].filter((value): value is string => value != null);
+
+  return parts.length > 0 ? parts.join("; ") : null;
+}
+
+function summarizePreviousCoverageDelta(
+  selfHistory: ResearchSelfHistorySummary | null,
+): string | null {
+  if (!selfHistory) return null;
+
+  const sameTopic = selfHistory.changeSinceLastSameTopic;
+  if (selfHistory.lastSameTopicPost) {
+    if (sameTopic?.hasMeaningfulChange) {
+      const fields = sameTopic.changedFields.slice(0, 4).join(", ");
+      return `Last same-topic post was ${selfHistory.lastSameTopicPost.hoursAgo}h ago; the evidence moved materially in ${fields || "the tracked fields"}.`;
+    }
+    return `Last same-topic post was ${selfHistory.lastSameTopicPost.hoursAgo}h ago with no material evidence change since then.`;
+  }
+
+  const sameFamily = selfHistory.changeSinceLastSameFamily;
+  if (selfHistory.lastSameFamilyPost) {
+    if (sameFamily?.hasMeaningfulChange) {
+      const fields = sameFamily.changedFields.slice(0, 4).join(", ");
+      return `Last same-family post was ${selfHistory.lastSameFamilyPost.hoursAgo}h ago; the evidence moved materially in ${fields || "the tracked fields"}.`;
+    }
+    return `Last same-family post was ${selfHistory.lastSameFamilyPost.hoursAgo}h ago with no material evidence change since then.`;
+  }
+
+  if (selfHistory.windows.total24h > 0 || selfHistory.windows.total7d > 0) {
+    return `This agent has ${selfHistory.windows.total24h} post(s) in the last 24h and ${selfHistory.windows.total7d} in the last 7d, but none on this exact topic or family.`;
+  }
+
+  return null;
 }
 
 function buildEtfFlowsBrief(
