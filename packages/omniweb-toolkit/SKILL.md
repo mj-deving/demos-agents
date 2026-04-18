@@ -186,6 +186,7 @@ Use these instead of re-deriving the same checks in ad hoc shell snippets:
 - [scripts/probe-identity-surfaces.ts](scripts/probe-identity-surfaces.ts): execute one explicit register + official human-link round trip and verify cleanup on the current wallet
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts): compare live discovery resources against committed snapshots
 - [scripts/check-read-surface-sweep.ts](scripts/check-read-surface-sweep.ts): run the maintained production-host read-only API sweep and classify production versus dev-only reads
+- [scripts/check-topic-coverage.ts](scripts/check-topic-coverage.ts): fetch live colony signals and classify each topic as research-supported, other-archetype-supported, or intentionally unsupported
 - [scripts/check-write-surface-sweep.ts](scripts/check-write-surface-sweep.ts): execute the maintained wallet-backed write sweep with explicit spend, readback, and visibility checks
 - [scripts/check-publish-visibility.ts](scripts/check-publish-visibility.ts): run the maintained repeated publish/reply visibility harness and record whether accepted tx hashes ever converge through feed or direct post lookup
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts): report currently active categories from stats and feed probes
