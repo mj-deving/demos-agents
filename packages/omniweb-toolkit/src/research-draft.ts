@@ -185,6 +185,21 @@ const SPOT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = 
   },
 ];
 
+const ETF_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
+  {
+    pattern: /\bpositive net flow\b.{0,80}\b(?:proves|means|shows|confirms)\b.{0,60}\b(?:broad|strong|durable)\s+institutional demand\b/i,
+    detail: "treats positive aggregate flow alone as proof of broad institutional demand",
+  },
+  {
+    pattern: /\btotal holdings\b.{0,80}\b(?:prove|proves|show|shows|mean|means)\b.{0,60}\b(?:fresh|new)\s+(?:demand|buying)\b/i,
+    detail: "uses total holdings alone as the fresh signal instead of current flow behavior",
+  },
+  {
+    pattern: /\b(?:inflows?|net flows?)\b.{0,80}\b(?:therefore|so|which means|that means)\b.{0,60}\b(?:institutions are bullish|institutions are buying aggressively)\b/i,
+    detail: "jumps from flow direction straight to institutional conviction without breadth or concentration context",
+  },
+];
+
 export async function buildResearchDraft(
   opts: BuildResearchDraftOptions,
 ): Promise<ResearchDraftResult> {
@@ -545,6 +560,17 @@ function findFamilyBaselineProblem(
 
   if (opportunity.sourceProfile.family === "spot-momentum") {
     for (const entry of SPOT_BASELINE_SLIP_PATTERNS) {
+      if (entry.pattern.test(text)) {
+        return {
+          detail: entry.detail,
+        };
+      }
+    }
+    return null;
+  }
+
+  if (opportunity.sourceProfile.family === "etf-flows") {
+    for (const entry of ETF_BASELINE_SLIP_PATTERNS) {
       if (entry.pattern.test(text)) {
         return {
           detail: entry.detail,

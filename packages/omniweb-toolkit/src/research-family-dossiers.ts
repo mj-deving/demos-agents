@@ -89,6 +89,25 @@ const SPOT_MOMENTUM_DOSSIER: ResearchFamilyDossier = {
   ],
 };
 
+const ETF_FLOWS_DOSSIER: ResearchFamilyDossier = {
+  family: "etf-flows",
+  baseline: [
+    "One positive or negative ETF flow print is context, not a complete institutional-demand thesis by itself.",
+    "Aggregate net flow matters, but issuer breadth and concentration determine how broad that demand really is.",
+    "Total holdings are structural context; fresh thesis should come from current flow mix and leadership, not holdings alone.",
+  ],
+  focus: [
+    "Focus on whether the flow picture is broadening, narrowing, or concentrating in one issuer.",
+    "Explain whether the latest ETF tape signals durable institutional demand, weak participation, or one-name concentration.",
+    "Use aggregate net flow, positive-vs-negative issuer mix, and the leading inflow or outflow name together.",
+  ],
+  falseInferenceGuards: [
+    "Do not claim that positive net flow alone proves broad institutional demand.",
+    "Do not treat total holdings by themselves as a fresh bullish signal.",
+    "Do not ignore issuer concentration when one fund is carrying the tape.",
+  ],
+};
+
 export function buildResearchBrief(
   opportunity: ResearchOpportunity,
   evidenceSummary: ResearchEvidenceSummary,
@@ -108,6 +127,10 @@ export function buildResearchBrief(
     return buildSpotMomentumBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   }
 
+  if (opportunity.sourceProfile.family === "etf-flows") {
+    return buildEtfFlowsBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
+  }
+
   return {
     family: opportunity.sourceProfile.family,
     baselineContext: dossier.baseline,
@@ -116,6 +139,43 @@ export function buildResearchBrief(
     anomalySummary: "Focus on the strongest non-trivial change or mismatch in the fetched evidence.",
     allowedThesisSpace: "Use the evidence to form one concrete, externally legible thesis.",
     invalidationFocus: "State the next observable condition that would weaken the thesis.",
+  };
+}
+
+function buildEtfFlowsBrief(
+  dossier: ResearchFamilyDossier,
+  evidenceSummary: ResearchEvidenceSummary,
+  supportingEvidenceSummaries: ResearchEvidenceSummary[],
+): ResearchBrief {
+  const netFlowBtc = findMetric("netFlowBtc", evidenceSummary, supportingEvidenceSummaries);
+  const totalHoldingsBtc = findMetric("totalHoldingsBtc", evidenceSummary, supportingEvidenceSummaries);
+  const positiveIssuerCount = findMetric("positiveIssuerCount", evidenceSummary, supportingEvidenceSummaries);
+  const negativeIssuerCount = findMetric("negativeIssuerCount", evidenceSummary, supportingEvidenceSummaries);
+  const largestInflowBtc = findMetric("largestInflowBtc", evidenceSummary, supportingEvidenceSummaries);
+  const largestOutflowBtc = findMetric("largestOutflowBtc", evidenceSummary, supportingEvidenceSummaries);
+  const largestInflowTicker = findMetric("largestInflowTicker", evidenceSummary, supportingEvidenceSummaries);
+  const largestOutflowTicker = findMetric("largestOutflowTicker", evidenceSummary, supportingEvidenceSummaries);
+  const netFlowDirection = findMetric("netFlowDirection", evidenceSummary, supportingEvidenceSummaries);
+
+  const breadthSummary = [
+    positiveIssuerCount ? `${positiveIssuerCount} positive issuer(s)` : null,
+    negativeIssuerCount ? `${negativeIssuerCount} negative issuer(s)` : null,
+  ].filter((value): value is string => value != null).join(" vs ");
+
+  const concentrationSummary = largestInflowTicker && largestInflowBtc
+    ? `${largestInflowTicker} leads the tape at ${largestInflowBtc} BTC`
+    : largestOutflowTicker && largestOutflowBtc
+      ? `${largestOutflowTicker} is the largest drag at ${largestOutflowBtc} BTC`
+      : "issuer leadership is unclear";
+
+  return {
+    family: "etf-flows",
+    baselineContext: dossier.baseline,
+    focusNow: dossier.focus,
+    falseInferenceGuards: dossier.falseInferenceGuards,
+    anomalySummary: `ETF holdings sit around ${totalHoldingsBtc ?? "an unresolved total"} BTC, aggregate flow is ${netFlowDirection ?? "unclear"}${netFlowBtc ? ` at ${netFlowBtc} BTC` : ""}, issuer breadth reads ${breadthSummary || "unclear"}, and ${concentrationSummary}.`,
+    allowedThesisSpace: "Write about broad institutional demand only if the aggregate flow, issuer breadth, and leadership all point in the same direction. Otherwise, frame the tape as concentrated, mixed, or weakening demand.",
+    invalidationFocus: "Invalidate with a flip in net flow, a collapse in breadth, or a reversal in the issuer that is currently leading the tape.",
   };
 }
 
@@ -215,6 +275,10 @@ function buildStablecoinSupplyBrief(
 }
 
 function dossierForFamily(family: ResearchTopicFamily): ResearchFamilyDossier {
+  if (family === "etf-flows") {
+    return ETF_FLOWS_DOSSIER;
+  }
+
   if (family === "spot-momentum") {
     return SPOT_MOMENTUM_DOSSIER;
   }

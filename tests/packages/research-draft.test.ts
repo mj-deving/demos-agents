@@ -196,6 +196,70 @@ function makeSpotOpportunity(): ResearchOpportunity {
   };
 }
 
+function makeEtfOpportunity(): ResearchOpportunity {
+  const sourceProfile: ResearchSourceProfile = {
+    family: "etf-flows",
+    topic: "btc etf flows",
+    asset: { asset: "bitcoin", symbol: "BTC" },
+    supported: true,
+    reason: null,
+    primarySourceIds: ["btcetfdata-current-btc"],
+    supportingSourceIds: ["binance-24hr-btc"],
+    expectedMetrics: ["totalHoldingsBtc", "netFlowBtc", "positiveIssuerCount", "negativeIssuerCount", "largestInflowBtc", "largestOutflowBtc"],
+  };
+  return {
+    kind: "coverage_gap",
+    topic: "btc etf flows",
+    score: 89,
+    rationale: "High-confidence ETF flow topic is not covered in the recent feed.",
+    sourceProfile,
+    matchedSignal: {
+      topic: "btc etf flows",
+      confidence: 82,
+      direction: "bullish",
+    },
+    matchingFeedPosts: [],
+    lastSeenAt: null,
+    attestationPlan: {
+      topic: "btc etf flows",
+      agent: "sentinel",
+      catalogPath: "/tmp/catalog.json",
+      ready: true,
+      reason: "ready",
+      primary: {
+        sourceId: "btcetfdata-current-btc",
+        name: "btcetfdata-current-btc",
+        provider: "btcetfdata",
+        status: "active",
+        trustTier: "established",
+        responseFormat: "json",
+        ratingOverall: 80,
+        dahrSafe: true,
+        tlsnSafe: false,
+        url: "https://www.btcetfdata.com/v1/current.json",
+        score: 19,
+      },
+      supporting: [
+        {
+          sourceId: "binance-24hr-btc",
+          name: "Binance 24hr BTC",
+          provider: "binance",
+          status: "active",
+          trustTier: "official",
+          responseFormat: "json",
+          ratingOverall: 84,
+          dahrSafe: true,
+          tlsnSafe: false,
+          url: "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT",
+          score: 12,
+        },
+      ],
+      fallbacks: [],
+      warnings: [],
+    },
+  };
+}
+
 function makeEvidenceSummary(): ResearchEvidenceSummary {
   return {
     source: "Binance Futures Premium Index",
@@ -292,6 +356,28 @@ function makeSpotEvidenceSummary(): ResearchEvidenceSummary {
     derivedMetrics: {
       priceChangePercent7d: "5.8",
       tradingRangeWidthUsd: "7278.56",
+    },
+  };
+}
+
+function makeEtfEvidenceSummary(): ResearchEvidenceSummary {
+  return {
+    source: "btcetfdata-current-btc",
+    url: "https://www.btcetfdata.com/v1/current.json",
+    fetchedAt: "2026-04-18T09:50:00.000Z",
+    values: {
+      totalHoldingsBtc: "984687.45",
+      netFlowBtc: "609.21",
+      issuerCount: "2",
+      positiveIssuerCount: "1",
+      negativeIssuerCount: "1",
+      largestInflowBtc: "1088.13",
+      largestOutflowBtc: "-478.92",
+    },
+    derivedMetrics: {
+      largestInflowTicker: "IBIT",
+      largestOutflowTicker: "FBTC",
+      netFlowDirection: "positive",
     },
   };
 }
@@ -434,6 +520,33 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.family).toBe("spot-momentum");
     expect(result.promptPacket.input.brief.baselineContext[0]).toContain("Absolute price direction");
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("price being up by itself");
+  });
+
+  it("adds a family dossier brief for ETF flow topics", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "BTC ETF demand is still constructive, but the important detail is that the tape is concentrated rather than broad: aggregate net flow is positive at 609.21 BTC while holdings sit near 984,687 BTC and only one issuer is on the positive side. " +
+        "IBIT is doing the real lifting with a 1,088.13 BTC inflow while FBTC is still leaking 478.92 BTC, so the flow picture is supportive but narrow rather than a uniform institutional bid across the complex. " +
+        "That view weakens if the net flow flips negative or if the current leader stops carrying the tape."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeEtfOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEtfEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.promptPacket.input.brief.family).toBe("etf-flows");
+    expect(result.promptPacket.input.brief.baselineContext[0]).toContain("positive or negative ETF flow print");
+    expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("positive net flow alone");
   });
 
   it("accepts LLM output only when it clears the quality gate", async () => {
@@ -616,6 +729,32 @@ describe("buildResearchDraft", () => {
       leaderboardCount: 10,
       availableBalance: 25,
       evidenceSummary: makeSpotEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(false);
+  });
+
+  it("rejects ETF drafts that treat positive net flow alone as proof of broad demand", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Positive net flow of 609.21 BTC proves broad institutional demand is strong again, so the whole ETF complex is clearly back in accumulation mode. " +
+        "The holdings base near 984,687 BTC just reinforces that conclusion and means institutions are buying aggressively across the board. " +
+        "Only a turn to outright net outflows would challenge that bullish call."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeEtfOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEtfEvidenceSummary(),
       llmProvider: provider,
       minTextLength: 260,
     });
