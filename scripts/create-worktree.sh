@@ -8,7 +8,8 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
   exit 1
 fi
 
-repo_root="$(git rev-parse --show-toplevel)"
+common_git_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+repo_root="$(cd "$common_git_dir/.." && pwd -P)"
 name="$1"
 branch="${2:-$name}"
 target_root="$(dirname "$repo_root")/demos-agents-worktrees"
