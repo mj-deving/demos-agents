@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import {
   buildResearchColonySubstrate,
   buildResearchDraft,
+  buildResearchSelfHistory,
   fetchResearchEvidenceSummary,
   deriveResearchOpportunities,
   matchResearchDraftToPlan,
@@ -9,6 +10,7 @@ import {
   type MinimalObserveContext,
   type MinimalObserveResult,
   type ResearchPostInput,
+  type ResearchPublishHistoryEntry,
   type ResearchSignalInput,
   type ResearchSignalCrossReference,
   type ResearchSignalDivergence,
@@ -36,6 +38,7 @@ interface ResearchState {
     publishedAt: string;
     opportunityKind: string;
   }>;
+  publishHistory?: ResearchPublishHistoryEntry[];
 }
 
 type FeedSample = ResearchPostInput;
@@ -523,6 +526,15 @@ export async function observe(
     evidenceSummaryResult.summary.values,
   );
   const deltaSummary = summarizeEvidenceDelta(evidenceDelta);
+  const selfHistory = buildResearchSelfHistory({
+    history: ctx.memory.state?.publishHistory ?? [],
+    topic,
+    family: sourceProfile.family,
+    now: ctx.cycle.startedAt,
+    currentEvidenceValues: evidenceSummaryResult.summary.values,
+    minMeaningfulPercentDelta: MIN_MEANINGFUL_PERCENT_DELTA,
+    minMeaningfulAbsoluteDelta: MIN_MEANINGFUL_ABSOLUTE_DELTA,
+  });
 
   if (previousSnapshot?.topic === topic && !deltaSummary.hasMeaningfulChange) {
     return {
@@ -553,6 +565,7 @@ export async function observe(
           evidenceSummary: evidenceSummaryResult.summary,
           supportingEvidenceSummaries,
           evidenceDelta,
+          selfHistory,
         },
         promptPacket: {
           objective: "Skip when the same research topic has not moved meaningfully since the last cycle.",
@@ -562,6 +575,62 @@ export async function observe(
           derivedMetrics,
           readStatus,
           deltaSummary,
+          selfHistory,
+          result: "skip",
+        },
+      },
+      nextState: {
+        ...(ctx.memory.state ?? {}),
+        lastResearchSnapshot: {
+          topic,
+          observedAt: ctx.cycle.startedAt,
+          evidenceValues: evidenceSummaryResult.summary.values,
+          derivedMetrics,
+        },
+      },
+    };
+  }
+
+  if (selfHistory.skipSuggested) {
+    return {
+      kind: "skip",
+      reason: "recent_self_coverage_without_new_delta",
+      facts: {
+        topic,
+        researchFamily: sourceProfile.family,
+        signalCount: signalList.length,
+        feedCount: posts.length,
+        availableBalance,
+        opportunityKind: chosenOpportunity.kind,
+        ...derivedMetrics,
+        ...readStatus,
+      },
+      attestationPlan,
+      audit: {
+        inputs: {
+          feedSample,
+          signalSample,
+          leaderboardSample: leaderboardAgents.slice(0, 5),
+        },
+        selectedEvidence: {
+          matchedSignal,
+          feedMentions: matchingFeedPosts,
+          sourceProfile,
+          colonySubstrate,
+          evidenceSummary: evidenceSummaryResult.summary,
+          supportingEvidenceSummaries,
+          evidenceDelta,
+          selfHistory,
+        },
+        promptPacket: {
+          objective: "Skip when the same family or topic was just covered and the evidence packet has not moved enough to justify repeating the thesis.",
+          topic,
+          opportunityKind: chosenOpportunity.kind,
+          researchFamily: sourceProfile.family,
+          derivedMetrics,
+          readStatus,
+          deltaSummary,
+          selfHistory,
           result: "skip",
         },
       },
@@ -585,6 +654,7 @@ export async function observe(
     colonySubstrate,
     evidenceSummary: evidenceSummaryResult.summary,
     supportingEvidenceSummaries,
+    selfHistory,
     llmProvider: ctx.omni.runtime.llmProvider,
     minTextLength: 300,
   });
@@ -619,6 +689,7 @@ export async function observe(
           evidenceSummary: evidenceSummaryResult.summary,
           supportingEvidenceSummaries,
           evidenceDelta,
+          selfHistory,
         },
         promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
         notes: [
@@ -669,6 +740,7 @@ export async function observe(
           evidenceSummary: evidenceSummaryResult.summary,
           supportingEvidenceSummaries,
           evidenceDelta,
+          selfHistory,
         },
         promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
         notes: [
@@ -716,6 +788,7 @@ export async function observe(
         evidenceSummary: evidenceSummaryResult.summary,
         supportingEvidenceSummaries,
         evidenceDelta,
+        selfHistory,
       },
       promptPacket: {
         ...draft.promptPacket,
@@ -739,6 +812,14 @@ export async function observe(
         publishedAt: ctx.cycle.startedAt,
         opportunityKind: chosenOpportunity.kind,
       }),
+      publishHistory: buildNextPublishHistory(ctx.memory.state?.publishHistory ?? [], {
+        topic,
+        family: sourceProfile.family,
+        publishedAt: ctx.cycle.startedAt,
+        opportunityKind: chosenOpportunity.kind,
+        textSnippet: snippetText(draft.text),
+        evidenceValues: evidenceSummaryResult.summary.values,
+      }),
       lastResearchSnapshot: {
         topic,
         observedAt: ctx.cycle.startedAt,
@@ -755,6 +836,13 @@ function buildNextTopicHistory(
 ): Array<{ topic: string; publishedAt: string; opportunityKind: string }> {
   const deduped = previous.filter((entry) => entry.topic !== nextEntry.topic);
   return [nextEntry, ...deduped].slice(0, MAX_TOPIC_HISTORY);
+}
+
+function buildNextPublishHistory(
+  previous: ResearchPublishHistoryEntry[],
+  nextEntry: ResearchPublishHistoryEntry,
+): ResearchPublishHistoryEntry[] {
+  return [nextEntry, ...previous].slice(0, 20);
 }
 
 function unwrapReadResult<T extends { ok?: boolean }>(
@@ -827,6 +915,12 @@ function extractAvailableBalance(balance: unknown): number {
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   return String(error);
+}
+
+function snippetText(text: string, maxLength: number = 220): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 function buildEvidenceDelta(

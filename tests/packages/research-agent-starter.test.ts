@@ -193,6 +193,10 @@ describe("research-agent starter", () => {
       .toContain("Funding is rolling over while open interest stays elevated");
     expect((result.audit?.selectedEvidence as { colonySubstrate?: { dissentingTake?: { textSnippet: string } | null } }).colonySubstrate?.dissentingTake?.textSnippet)
       .toContain("Price still looks resilient enough");
+    expect(result.nextState).toHaveProperty("publishHistory");
+    expect((result.nextState as { publishHistory?: Array<{ family: string | null; textSnippet: string | null }> }).publishHistory?.[0]).toMatchObject({
+      family: "funding-structure",
+    });
   });
 
   it("keeps working when the optional leaderboard read fails", async () => {
@@ -337,6 +341,64 @@ describe("research-agent starter", () => {
       sourceProfileReason: "no_family_sources_for_asset",
     });
     expect(provider).not.toHaveBeenCalled();
+  });
+
+  it("skips when the same family was just covered without a material evidence delta", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          markPrice: "67250.00",
+          indexPrice: "67245.12",
+          lastFundingRate: "-0.012",
+          interestRate: "0.0001",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const omni = makeOmni();
+    const provider = vi.fn().mockResolvedValue("This should never be called because recent same-family coverage should skip first.");
+    omni.runtime.llmProvider.complete = provider;
+
+    const result = await observe({
+      omni,
+      cycle: {
+        id: "cycle-5b",
+        iteration: 2,
+        startedAt: "2026-04-18T12:00:00.000Z",
+        stateDir: "/tmp/research-starter-test",
+        dryRun: true,
+      },
+      memory: {
+        state: {
+          publishHistory: [
+            {
+              topic: "btc funding previous take",
+              family: "funding-structure",
+              publishedAt: "2026-04-18T10:30:00.000Z",
+              opportunityKind: "coverage_gap",
+              textSnippet: "Earlier funding take.",
+              evidenceValues: {
+                markPrice: "67250.00",
+                indexPrice: "67245.12",
+                lastFundingRate: "-0.012",
+                interestRate: "0.0001",
+              },
+            },
+          ],
+        },
+        lastCycle: null,
+      },
+    });
+
+    expect(result.kind).toBe("skip");
+    if (result.kind !== "skip") throw new Error("expected skip");
+    expect(result.reason).toBe("recent_self_coverage_without_new_delta");
+    expect(provider).not.toHaveBeenCalled();
+    expect((result.audit?.selectedEvidence as { selfHistory?: { skipSuggested?: boolean; repetitionReason?: string | null } }).selfHistory).toMatchObject({
+      skipSuggested: true,
+      repetitionReason: "same_family_no_material_change_within_24h",
+    });
   });
 
   it("publishes BTC ETF flow topics through the dedicated ETF evidence family", async () => {

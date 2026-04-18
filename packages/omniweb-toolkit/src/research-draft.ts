@@ -5,6 +5,7 @@ import { buildResearchColonySubstrate, type ResearchColonySubstrate } from "./re
 import type { ResearchEvidenceSummary } from "./research-evidence.js";
 import { buildResearchBrief, type ResearchBrief } from "./research-family-dossiers.js";
 import type { ResearchOpportunity } from "./research-opportunities.js";
+import type { ResearchSelfHistorySummary } from "./research-self-history.js";
 
 interface PromptCapableProvider {
   complete(prompt: string, options?: {
@@ -24,6 +25,7 @@ export interface BuildResearchDraftOptions {
   colonySubstrate?: ResearchColonySubstrate;
   evidenceSummary: ResearchEvidenceSummary;
   supportingEvidenceSummaries?: ResearchEvidenceSummary[];
+  selfHistory?: ResearchSelfHistorySummary;
   llmProvider?: PromptCapableProvider | null;
   minTextLength?: number;
 }
@@ -45,6 +47,7 @@ export interface ResearchPromptInput {
     recentRelatedPosts: ResearchColonySubstrate["recentRelatedPosts"];
     crossReferences: ResearchColonySubstrate["crossReferences"];
     reactionSummary: ResearchColonySubstrate["reactionSummary"];
+    selfHistory: ResearchSelfHistorySummary | null;
   };
   evidence: {
     primarySourceName: string | null;
@@ -324,6 +327,7 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
         recentRelatedPosts: colonySubstrate.recentRelatedPosts,
         crossReferences: colonySubstrate.crossReferences,
         reactionSummary: colonySubstrate.reactionSummary,
+        selfHistory: opts.selfHistory ?? null,
       },
       evidence: {
         primarySourceName: primarySource,
@@ -356,6 +360,7 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
       "Use the concrete evidence values and derived metrics in the packet; do not write a research post that never cites the fetched data.",
       "Use the colony substrate compactly: synthesize the signal summary, supporting takes, dissenting take, and recent related context into a readable thesis rather than quoting them mechanically.",
       "If recent related context or dissent is present, use it to say what the colony has already noticed and what still remains unresolved.",
+      "If self-history is present, make the delta from the last same-topic or same-family post explicit instead of repeating the old thesis.",
       "Use the analysis angle explicitly. If the topic is about divergence or sentiment mismatch, say what is diverging from what instead of defaulting to generic trend commentary.",
       "Use the research brief as doctrine. Treat baseline context as background, anomaly summary as the reason this cycle matters, and false-inference guards as hard constraints.",
       "When describing colony sentiment, use natural phrases like 'the bearish read in colony signals', 'the bullish read', or 'mixed positioning' rather than clunky constructions.",

@@ -522,6 +522,40 @@ describe("buildResearchDraft", () => {
       leaderboardCount: 10,
       availableBalance: 25,
       evidenceSummary: makeEvidenceSummary(),
+      selfHistory: {
+        lastPost: {
+          topic: "btc funding previous take",
+          family: "funding-structure",
+          publishedAt: "2026-04-18T07:00:00.000Z",
+          hoursAgo: 4,
+          textSnippet: "Earlier funding take.",
+        },
+        lastSameTopicPost: null,
+        lastSameFamilyPost: {
+          topic: "btc funding previous take",
+          family: "funding-structure",
+          publishedAt: "2026-04-18T07:00:00.000Z",
+          hoursAgo: 4,
+          textSnippet: "Earlier funding take.",
+        },
+        windows: {
+          total24h: 1,
+          total7d: 1,
+          sameTopic24h: 0,
+          sameTopic7d: 0,
+          sameFamily24h: 1,
+          sameFamily7d: 1,
+        },
+        changeSinceLastSameTopic: null,
+        changeSinceLastSameFamily: {
+          comparedToPublishedAt: "2026-04-18T07:00:00.000Z",
+          changedFields: ["markPrice"],
+          hasMeaningfulChange: true,
+        },
+        repeatRisk: "medium",
+        skipSuggested: false,
+        repetitionReason: "recent_same_family_coverage",
+      },
       llmProvider: provider,
       minTextLength: 300,
     });
@@ -543,6 +577,8 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.evidence.values.markPrice).toBe("67250.00");
     expect(result.promptPacket.input.evidence.derivedMetrics.fundingRateBps).toBe("-120");
     expect(result.promptPacket.input.evidence.supportingSources[0]?.source).toBe("Blockchain.com Ticker");
+    expect(result.promptPacket.input.colonyContext.selfHistory?.repeatRisk).toBe("medium");
+    expect(result.promptPacket.constraints.join(" ")).toContain("delta from the last same-topic or same-family post");
   });
 
   it("adds a family dossier brief for funding-structure topics", async () => {
