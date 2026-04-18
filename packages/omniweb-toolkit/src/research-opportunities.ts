@@ -115,13 +115,15 @@ export function deriveResearchOpportunities(
     const confidence = signal.confidence ?? 0;
     if (confidence < minConfidence) continue;
 
+    const sourceProfile = deriveResearchSourceProfile(topic);
+    if (!sourceProfile.supported) continue;
+
     const matchingFeedPosts = opts.posts.filter((post) => includesNormalized(post.text, topic));
     const lastSeenAt = matchingFeedPosts.reduce<number | null>((latest, post) => {
       if (typeof post.timestamp !== "number") return latest;
       return latest == null || post.timestamp > latest ? post.timestamp : latest;
     }, null);
 
-    const sourceProfile = deriveResearchSourceProfile(topic);
     const attestationPlan = buildMinimalAttestationPlan({
       topic,
       agent: "sentinel",

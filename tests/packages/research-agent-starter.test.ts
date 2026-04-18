@@ -335,11 +335,12 @@ describe("research-agent starter", () => {
 
     expect(result.kind).toBe("skip");
     if (result.kind !== "skip") throw new Error("expected skip");
-    expect(result.reason).toBe("research_family_not_ready");
+    expect(result.reason).toBe("no_publishable_research_opportunity");
     expect(result.facts).toMatchObject({
-      researchFamily: "unsupported",
-      sourceProfileReason: "no_family_sources_for_asset",
+      signalCount: 1,
+      highConfidenceSignalCount: 1,
     });
+    expect((result.facts as Record<string, unknown>)?.researchFamily).toBeUndefined();
     expect(provider).not.toHaveBeenCalled();
   });
 
