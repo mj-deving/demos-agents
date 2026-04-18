@@ -21,6 +21,7 @@ export { deriveResearchSourceProfile } from "./research-source-profile.js";
 export { buildResearchColonySubstrate } from "./research-colony-substrate.js";
 export { fetchResearchEvidenceSummary } from "./research-evidence.js";
 export { buildResearchSelfHistory } from "./research-self-history.js";
+export { buildResearchEvidenceDelta, summarizeResearchEvidenceDelta } from "./research-evidence-delta.js";
 export { buildResearchDraft } from "./research-draft.js";
 export { toPreflightCandidates } from "./minimal-attestation-plan.js";
 export { matchResearchDraftToPlan } from "./research-source-match.js";
@@ -90,6 +91,10 @@ export type {
   ResearchSelfHistorySummary,
   BuildResearchSelfHistoryOptions,
 } from "./research-self-history.js";
+export type {
+  ResearchEvidenceDeltaEntry,
+  ResearchEvidenceDeltaSummary,
+} from "./research-evidence-delta.js";
 export type {
   MatchResearchDraftToPlanOptions,
   MatchResearchDraftToPlanResult,

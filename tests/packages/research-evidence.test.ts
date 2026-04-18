@@ -62,6 +62,37 @@ describe("fetchResearchEvidenceSummary", () => {
     });
   });
 
+  it("preserves small numeric precision when extracting research evidence", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          markPrice: "67250.00",
+          indexPrice: "67249.99",
+          lastFundingRate: "0.00001",
+          interestRate: "0.000001",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const result = await fetchResearchEvidenceSummary({
+      source: makeSource("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT"),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.summary.values).toEqual({
+      markPrice: "67250.00",
+      indexPrice: "67249.99",
+      lastFundingRate: "0.00001",
+      interestRate: "0.000001",
+    });
+    expect(result.summary.derivedMetrics).toEqual({
+      fundingRateBps: "0.1",
+      markIndexSpreadUsd: "0.01",
+    });
+  });
+
   it("prefers source identity over URL shape for premium-index extraction", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(

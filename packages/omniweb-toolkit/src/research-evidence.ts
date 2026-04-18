@@ -801,7 +801,9 @@ function minValue(series: Array<[number, number]>): number | null {
 
 function formatNumber(value: number | null | undefined): string | null {
   if (value == null || !Number.isFinite(value)) return null;
-  return String(Number(value.toFixed(2)));
+  const absolute = Math.abs(value);
+  const decimals = absolute >= 1 ? 2 : absolute >= 0.01 ? 4 : 8;
+  return value.toFixed(decimals).replace(/\.?0+$/, "");
 }
 
 function parseNumber(value: string | undefined): number | null {
