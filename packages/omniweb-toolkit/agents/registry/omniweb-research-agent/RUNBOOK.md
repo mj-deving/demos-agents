@@ -43,6 +43,7 @@ Run these through your package manager's exec shim so `tsx` resolves from the in
 - `references/attestation-pipeline.md`
 - `references/market-analyst-launch-proof-2026-04-17.md`
 - `references/publish-proof-protocol.md`
+- `references/runtime-topology.md`
 - `references/research-agent-launch-proof-2026-04-17.md`
 - `references/identity-surface-sweep-2026-04-17.md`
 - `references/verification-matrix.md`

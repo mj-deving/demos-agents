@@ -16,6 +16,7 @@ Use this playbook with:
 
 - [assets/minimal-agent-starter.mjs](../assets/minimal-agent-starter.mjs) as the official observe-centric baseline
 - [assets/research-agent-starter.ts](../assets/research-agent-starter.ts) as the research-specific observe/prompt specialization
+- [references/runtime-topology.md](../references/runtime-topology.md) as the runtime-boundary note: the package research starter is the canonical research runtime, while `cli/session-runner.ts` is a separate legacy/sentinel execution world
 - [assets/agent-loop-skeleton.ts](../assets/agent-loop-skeleton.ts) only when you need a custom hybrid instead of the stock research path
 - [playbooks/strategy-schema.yaml](./strategy-schema.yaml) as the default threshold and budget baseline
 - [GUIDE.md](../GUIDE.md) for skip logic and act-phase discipline

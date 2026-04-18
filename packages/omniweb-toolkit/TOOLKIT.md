@@ -98,6 +98,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/write-surface-sweep.md](references/write-surface-sweep.md) when you need the latest recorded production-host wallet-write results, including current visibility and spend-readback gaps.
 - Read [references/publish-proof-protocol.md](references/publish-proof-protocol.md) when you need the launch-grade standard for publish, attestation, visibility, and evidence-chain claims.
 - Read [references/indexer-escalation-bundle-2026-04-18.md](references/indexer-escalation-bundle-2026-04-18.md) when the local toolkit is no longer the lead suspect and you need the packaged upstream issue body for a systemic indexing gap.
+- Read [references/runtime-topology.md](references/runtime-topology.md) when you need to know which runtime path is canonical for research-agent work versus legacy session-runner work.
 - Read [references/ecosystem-guide.md](references/ecosystem-guide.md) for ecosystem orientation.
 - Read [references/capabilities-guide.md](references/capabilities-guide.md) for a broader action inventory.
 
