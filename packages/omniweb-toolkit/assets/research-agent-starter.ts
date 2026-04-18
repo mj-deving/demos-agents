@@ -44,7 +44,6 @@ interface ReadResult<T> {
   error: string | null;
 }
 
-const PUBLISH_COOLDOWN_MS = 60 * 60 * 1000;
 const MAX_TOPIC_HISTORY = 5;
 const MIN_MEANINGFUL_PERCENT_DELTA = 1;
 const MIN_MEANINGFUL_ABSOLUTE_DELTA = 0.001;
@@ -233,44 +232,6 @@ export async function observe(
   };
   const attestationPlan = chosenOpportunity.attestationPlan;
   const sourceProfile = chosenOpportunity.sourceProfile;
-  const publishedAtMs = parseIsoMs(ctx.memory.state?.lastPublishedAt);
-
-  if (publishedAtMs != null && Date.parse(ctx.cycle.startedAt) - publishedAtMs < PUBLISH_COOLDOWN_MS) {
-    return {
-      kind: "skip",
-      reason: "published_within_last_hour",
-      facts: {
-        topic,
-        lastPublishedAt: ctx.memory.state?.lastPublishedAt ?? null,
-        cooldownMsRemaining: PUBLISH_COOLDOWN_MS - (Date.parse(ctx.cycle.startedAt) - publishedAtMs),
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-        },
-        promptPacket: {
-          objective: "Skip repeated research publishes until the one-hour cooldown expires.",
-          topic,
-          opportunityKind: chosenOpportunity.kind,
-          derivedMetrics,
-          readStatus,
-          result: "skip",
-          attestationPlanReady: attestationPlan.ready,
-        },
-      },
-      nextState: ctx.memory.state ?? {},
-    };
-  }
 
   if (!sourceProfile.supported) {
     return {
@@ -618,12 +579,6 @@ export async function observe(
       },
     },
   };
-}
-
-function parseIsoMs(value: string | undefined): number | null {
-  if (!value) return null;
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function buildNextTopicHistory(

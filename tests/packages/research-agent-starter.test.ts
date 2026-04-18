@@ -26,7 +26,7 @@ function makeOmni(): any {
         ok: true,
         data: [
           {
-            shortTopic: "BTC Sentiment vs Funding",
+            shortTopic: "BTC Funding Rate Contrarian",
             confidence: 76,
             direction: "bearish",
           },
@@ -59,9 +59,27 @@ describe("research-agent starter", () => {
     vi.restoreAllMocks();
   });
 
-  it("skips when the one-hour publish cooldown is still active", async () => {
+  it("does not skip just because the last publish was recent", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          markPrice: "67250.00",
+          indexPrice: "67245.12",
+          lastFundingRate: "-0.012",
+          interestRate: "0.0001",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const omni = makeOmni();
+    omni.runtime.llmProvider.complete = async () =>
+      "BTC funding positioning still deserves a fresh publish because mark price is holding near 67,250 dollars while the funding read is already around -0.012, so the bearish read in signals is being tested by the derivatives tape instead of simply repeated. " +
+      "That mismatch is the actual observation, and it is grounded in the fetched market chart rather than in internal scoring or feed-gap logic. " +
+      "The bearish view only strengthens if price loses the current level on rising turnover instead of stabilizing.";
+
     const result = await observe({
-      omni: makeOmni(),
+      omni,
       cycle: {
         id: "cycle-1",
         iteration: 2,
@@ -78,9 +96,9 @@ describe("research-agent starter", () => {
       },
     });
 
-    expect(result.kind).toBe("skip");
-    if (result.kind !== "skip") throw new Error("expected skip");
-    expect(result.reason).toBe("published_within_last_hour");
+    expect(result.kind).toBe("publish");
+    if (result.kind !== "publish") throw new Error("expected publish");
+    expect(result.text).toContain("67,250");
     expect(result.audit?.promptPacket).toBeDefined();
   });
 
@@ -201,7 +219,7 @@ describe("research-agent starter", () => {
       memory: {
         state: {
           lastResearchSnapshot: {
-            topic: "btc sentiment vs funding",
+            topic: "btc funding rate contrarian",
             observedAt: "2026-04-18T08:00:00.000Z",
             evidenceValues: {
               markPrice: "67250.00",
