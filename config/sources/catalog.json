@@ -2481,10 +2481,10 @@
     },
     {
       "id": "cboe-vix-daily",
-      "name": "cboe-vix-history",
+      "name": "cboe-vix-quote",
       "provider": "cboe",
-      "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
-      "urlPattern": "cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
+      "url": "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json",
+      "urlPattern": "cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json",
       "topics": [
         "markets",
         "volatility",
@@ -2493,14 +2493,14 @@
       "tlsn_safe": true,
       "dahr_safe": true,
       "max_response_kb": 512,
-      "note": "Public CBOE VIX daily history CSV. No auth required.",
+      "note": "Public CBOE delayed VIX quote JSON. No auth required.",
       "topicAliases": [],
       "domainTags": [
         "markets",
         "sentiment",
         "risk"
       ],
-      "responseFormat": "csv",
+      "responseFormat": "json",
       "scope": {
         "visibility": "scoped",
         "agents": [
@@ -2542,7 +2542,7 @@
         "discoveredBy": "manual"
       },
       "adapter": {
-        "operation": "vix-csv"
+        "operation": "vix-quote"
       }
     },
     {

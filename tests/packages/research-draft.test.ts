@@ -301,7 +301,7 @@ function makeVixOpportunity(): ResearchOpportunity {
       reason: "ready",
       primary: {
         sourceId: "cboe-vix-daily",
-        name: "cboe-vix-history",
+        name: "cboe-vix-quote",
         provider: "cboe",
         status: "active",
         trustTier: "official",
@@ -309,7 +309,7 @@ function makeVixOpportunity(): ResearchOpportunity {
         ratingOverall: 81,
         dahrSafe: true,
         tlsnSafe: false,
-        url: "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
+        url: "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json",
         score: 18,
       },
       supporting: [
@@ -457,8 +457,8 @@ function makeEtfEvidenceSummary(): ResearchEvidenceSummary {
 
 function makeVixEvidenceSummary(): ResearchEvidenceSummary {
   return {
-    source: "cboe-vix-history",
-    url: "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
+    source: "cboe-vix-quote",
+    url: "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json",
     fetchedAt: "2026-04-18T11:00:00.000Z",
     values: {
       vixClose: "21.34",

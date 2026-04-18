@@ -219,7 +219,7 @@ function extractResearchEvidenceValues(
   }
 
   if (isCboeVixUrl(url)) {
-    const vixValues = extractVixCsvValues(payload);
+    const vixValues = extractVixValues(payload);
     if (Object.keys(vixValues).length > 0) {
       return vixValues;
     }
@@ -307,7 +307,11 @@ function isTreasuryRatesUrl(url: string): boolean {
 function isCboeVixUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.hostname === "cdn.cboe.com" && parsed.pathname.endsWith("/VIX_History.csv");
+    return parsed.hostname === "cdn.cboe.com"
+      && (
+        parsed.pathname.endsWith("/VIX_History.csv")
+        || parsed.pathname.endsWith("/delayed_quotes/quotes/_VIX.json")
+      );
   } catch {
     return false;
   }
@@ -481,7 +485,21 @@ function extractTreasuryInterestRateValues(payload: unknown): Record<string, str
   });
 }
 
-function extractVixCsvValues(payload: unknown): Record<string, string> {
+function extractVixValues(payload: unknown): Record<string, string> {
+  if (isRecord(payload) && isRecord(payload.data)) {
+    return compactMetrics({
+      vixTimestamp: typeof payload.timestamp === "string" ? payload.timestamp : null,
+      vixClose: normalizeScalarValue(payload.data.close),
+      vixOpen: normalizeScalarValue(payload.data.open),
+      vixHigh: normalizeScalarValue(payload.data.high),
+      vixLow: normalizeScalarValue(payload.data.low),
+      vixPreviousClose: normalizeScalarValue(payload.data.prev_day_close),
+      vixCurrentPrice: normalizeScalarValue(payload.data.current_price),
+      vixPriceChange: normalizeScalarValue(payload.data.price_change),
+      vixPriceChangePercent: normalizeScalarValue(payload.data.price_change_percent),
+    });
+  }
+
   if (!Array.isArray(payload) || payload.length === 0) {
     return {};
   }
@@ -631,7 +649,7 @@ function deriveVixMetrics(values: Record<string, string>): Record<string, string
 }
 
 function parseResearchEvidencePayload(url: string, contentType: string, body: string): unknown {
-  if (isCboeVixUrl(url) || contentType.includes("text/csv")) {
+  if (contentType.includes("text/csv") || url.toLowerCase().endsWith(".csv")) {
     return parseCsv(body);
   }
 

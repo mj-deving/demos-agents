@@ -262,6 +262,56 @@ describe("fetchResearchEvidenceSummary", () => {
     });
   });
 
+  it("extracts VIX quote values from the CBOE delayed quote JSON endpoint", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          timestamp: "2026-04-18 13:29:25",
+          data: {
+            symbol: "^VIX",
+            current_price: 17.48,
+            price_change: -0.46,
+            price_change_percent: -2.6316,
+            open: 18.18,
+            high: 18.24,
+            low: 16.87,
+            close: 17.48,
+            prev_day_close: 17.95,
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const result = await fetchResearchEvidenceSummary({
+      source: {
+        ...makeSource("https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json"),
+        sourceId: "cboe-vix-daily",
+        name: "cboe-vix-quote",
+        provider: "cboe",
+      },
+      topic: "VIX Credit Stress Signal",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.summary.values).toEqual({
+      vixTimestamp: "2026-04-18 13:29:25",
+      vixClose: "17.48",
+      vixOpen: "18.18",
+      vixHigh: "18.24",
+      vixLow: "16.87",
+      vixPreviousClose: "17.95",
+      vixCurrentPrice: "17.48",
+      vixPriceChange: "-0.46",
+      vixPriceChangePercent: "-2.6316",
+    });
+    expect(result.summary.derivedMetrics).toEqual({
+      vixSessionChangePct: "-2.62",
+      vixIntradayRange: "1.37",
+    });
+  });
+
   it("fails when no usable numeric values are present", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(
