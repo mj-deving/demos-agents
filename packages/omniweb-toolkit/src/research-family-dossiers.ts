@@ -70,6 +70,25 @@ const FUNDING_STRUCTURE_DOSSIER: ResearchFamilyDossier = {
   ],
 };
 
+const SPOT_MOMENTUM_DOSSIER: ResearchFamilyDossier = {
+  family: "spot-momentum",
+  baseline: [
+    "Absolute price direction over a week is context, not the thesis by itself.",
+    "Spot momentum needs range location and volume context to mean anything.",
+    "A move toward the top or bottom of the range matters more than a generic up-or-down recap.",
+  ],
+  focus: [
+    "Focus on whether the tape is resolving toward expansion, rejection, or absorption inside the observed range.",
+    "Explain whether price behavior is confirming or refuting the colony signal rather than defaulting to generic trend commentary.",
+    "Use the current price, range width, and volume evidence to say what kind of move the market is actually making.",
+  ],
+  falseInferenceGuards: [
+    "Do not claim that price being up by itself proves a bullish thesis.",
+    "Do not claim that price being down by itself proves a bearish thesis.",
+    "Do not describe the range without saying where price currently sits inside it or why that location matters.",
+  ],
+};
+
 export function buildResearchBrief(
   opportunity: ResearchOpportunity,
   evidenceSummary: ResearchEvidenceSummary,
@@ -85,6 +104,10 @@ export function buildResearchBrief(
     return buildFundingStructureBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   }
 
+  if (opportunity.sourceProfile.family === "spot-momentum") {
+    return buildSpotMomentumBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
+  }
+
   return {
     family: opportunity.sourceProfile.family,
     baselineContext: dossier.baseline,
@@ -93,6 +116,31 @@ export function buildResearchBrief(
     anomalySummary: "Focus on the strongest non-trivial change or mismatch in the fetched evidence.",
     allowedThesisSpace: "Use the evidence to form one concrete, externally legible thesis.",
     invalidationFocus: "State the next observable condition that would weaken the thesis.",
+  };
+}
+
+function buildSpotMomentumBrief(
+  dossier: ResearchFamilyDossier,
+  evidenceSummary: ResearchEvidenceSummary,
+  supportingEvidenceSummaries: ResearchEvidenceSummary[],
+): ResearchBrief {
+  const currentPrice = findMetric("currentPriceUsd", evidenceSummary, supportingEvidenceSummaries);
+  const startPrice = findMetric("startingPriceUsd", evidenceSummary, supportingEvidenceSummaries);
+  const high7d = findMetric("high7d", evidenceSummary, supportingEvidenceSummaries);
+  const low7d = findMetric("low7d", evidenceSummary, supportingEvidenceSummaries);
+  const volume = findMetric("latestVolumeUsd", evidenceSummary, supportingEvidenceSummaries);
+  const change7d = findMetric("priceChangePercent7d", evidenceSummary, supportingEvidenceSummaries);
+  const rangeWidth = findMetric("tradingRangeWidthUsd", evidenceSummary, supportingEvidenceSummaries);
+  const rangeLocation = describeRangeLocation(currentPrice, low7d, high7d);
+
+  return {
+    family: "spot-momentum",
+    baselineContext: dossier.baseline,
+    focusNow: dossier.focus,
+    falseInferenceGuards: dossier.falseInferenceGuards,
+    anomalySummary: `Spot is ${change7d ? `${change7d}% from the 7d starting level` : "moving without a clear 7d delta"}, with current price${currentPrice ? ` at ${currentPrice}` : ""}${rangeLocation ? ` sitting in the ${rangeLocation} of the 7d range` : ""}${rangeWidth ? ` across a ${rangeWidth} USD band` : ""}${volume ? ` on ${volume} of latest volume` : ""}.`,
+    allowedThesisSpace: `Write about whether the tape is confirming, rejecting, or absorbing the colony signal by relating the current price${startPrice ? ` to the ${startPrice} starting level` : ""}, the range${high7d && low7d ? ` from ${low7d} to ${high7d}` : ""}, and the latest volume context.`,
+    invalidationFocus: "Invalidate with a clear move that breaks the current range interpretation, such as losing reclaimed support or cleanly expanding through resistance.",
   };
 }
 
@@ -167,6 +215,10 @@ function buildStablecoinSupplyBrief(
 }
 
 function dossierForFamily(family: ResearchTopicFamily): ResearchFamilyDossier {
+  if (family === "spot-momentum") {
+    return SPOT_MOMENTUM_DOSSIER;
+  }
+
   if (family === "stablecoin-supply") {
     return STABLECOIN_SUPPLY_DOSSIER;
   }
@@ -223,4 +275,22 @@ function describeSpreadDirection(value: number | null): string {
   if (value < 0) return "discounted";
   if (value > 0) return "trading above index";
   return "flat to index";
+}
+
+function describeRangeLocation(
+  currentPrice: string | null,
+  low7d: string | null,
+  high7d: string | null,
+): string | null {
+  const current = parseMetric(currentPrice);
+  const low = parseMetric(low7d);
+  const high = parseMetric(high7d);
+  if (current == null || low == null || high == null || high <= low) {
+    return null;
+  }
+
+  const normalized = (current - low) / (high - low);
+  if (normalized >= 0.67) return "upper third";
+  if (normalized <= 0.33) return "lower third";
+  return "middle third";
 }

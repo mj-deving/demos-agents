@@ -170,6 +170,21 @@ const FUNDING_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }>
   },
 ];
 
+const SPOT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
+  {
+    pattern: /\b(?:price|bitcoin|btc)\b.{0,50}\b(?:up|gained|rallied|climbed)\b.{0,60}\b(?:therefore|so|which means|that means)\b.{0,40}\b(?:bullish|constructive|uptrend)\b/i,
+    detail: "treats a raw upward move as the thesis without explaining the range or signal context",
+  },
+  {
+    pattern: /\b(?:price|bitcoin|btc)\b.{0,50}\b(?:down|fell|dropped|sold off)\b.{0,60}\b(?:therefore|so|which means|that means)\b.{0,40}\b(?:bearish|breakdown|downtrend)\b/i,
+    detail: "treats a raw downward move as the thesis without explaining the range or signal context",
+  },
+  {
+    pattern: /\brange[- ]bound indecision\b|\bprice keeps oscillating between support and resistance\b/i,
+    detail: "falls back to generic range commentary instead of stating where price sits in the range and why that matters",
+  },
+];
+
 export async function buildResearchDraft(
   opts: BuildResearchDraftOptions,
 ): Promise<ResearchDraftResult> {
@@ -517,16 +532,29 @@ function findFamilyBaselineProblem(
   text: string,
   opportunity: ResearchOpportunity,
 ): { detail: string } | null {
-  if (opportunity.sourceProfile.family !== "stablecoin-supply") {
-    if (opportunity.sourceProfile.family === "funding-structure") {
-      for (const entry of FUNDING_BASELINE_SLIP_PATTERNS) {
-        if (entry.pattern.test(text)) {
-          return {
-            detail: entry.detail,
-          };
-        }
+  if (opportunity.sourceProfile.family === "funding-structure") {
+    for (const entry of FUNDING_BASELINE_SLIP_PATTERNS) {
+      if (entry.pattern.test(text)) {
+        return {
+          detail: entry.detail,
+        };
       }
     }
+    return null;
+  }
+
+  if (opportunity.sourceProfile.family === "spot-momentum") {
+    for (const entry of SPOT_BASELINE_SLIP_PATTERNS) {
+      if (entry.pattern.test(text)) {
+        return {
+          detail: entry.detail,
+        };
+      }
+    }
+    return null;
+  }
+
+  if (opportunity.sourceProfile.family !== "stablecoin-supply") {
     return null;
   }
 

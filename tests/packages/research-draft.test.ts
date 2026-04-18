@@ -132,6 +132,70 @@ function makeStablecoinOpportunity(): ResearchOpportunity {
   };
 }
 
+function makeSpotOpportunity(): ResearchOpportunity {
+  const sourceProfile: ResearchSourceProfile = {
+    family: "spot-momentum",
+    topic: "btc sentiment divergence bear",
+    asset: { asset: "bitcoin", symbol: "BTC" },
+    supported: true,
+    reason: null,
+    primarySourceIds: ["coingecko-42ff8c85"],
+    supportingSourceIds: ["binance-24hr-btc", "coingecko-2a7ea372"],
+    expectedMetrics: ["currentPriceUsd", "priceChangePercent7d", "high7d", "low7d", "latestVolumeUsd"],
+  };
+  return {
+    kind: "coverage_gap",
+    topic: "btc sentiment divergence bear",
+    score: 91,
+    rationale: "High-confidence divergence signal is not covered in the recent feed.",
+    sourceProfile,
+    matchedSignal: {
+      topic: "btc sentiment divergence bear",
+      confidence: 73,
+      direction: "bearish",
+    },
+    matchingFeedPosts: [],
+    lastSeenAt: null,
+    attestationPlan: {
+      topic: "btc sentiment divergence bear",
+      agent: "sentinel",
+      catalogPath: "/tmp/catalog.json",
+      ready: true,
+      reason: "ready",
+      primary: {
+        sourceId: "coingecko-42ff8c85",
+        name: "CoinGecko Market Chart",
+        provider: "coingecko",
+        status: "active",
+        trustTier: "established",
+        responseFormat: "json",
+        ratingOverall: 83,
+        dahrSafe: true,
+        tlsnSafe: true,
+        url: "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7",
+        score: 18,
+      },
+      supporting: [
+        {
+          sourceId: "binance-24hr-btc",
+          name: "Binance 24hr BTC",
+          provider: "binance",
+          status: "active",
+          trustTier: "official",
+          responseFormat: "json",
+          ratingOverall: 84,
+          dahrSafe: true,
+          tlsnSafe: false,
+          url: "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT",
+          score: 12,
+        },
+      ],
+      fallbacks: [],
+      warnings: [],
+    },
+  };
+}
+
 function makeEvidenceSummary(): ResearchEvidenceSummary {
   return {
     source: "Binance Futures Premium Index",
@@ -209,6 +273,25 @@ function makeStablecoinSupportingEvidenceSummary(): ResearchEvidenceSummary {
     },
     derivedMetrics: {
       pegDeviationPct: "0",
+    },
+  };
+}
+
+function makeSpotEvidenceSummary(): ResearchEvidenceSummary {
+  return {
+    source: "CoinGecko Market Chart",
+    url: "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7",
+    fetchedAt: "2026-04-18T08:55:00.000Z",
+    values: {
+      currentPriceUsd: "76990.95",
+      startingPriceUsd: "72772.65",
+      high7d: "77956.91",
+      low7d: "70678.35",
+      latestVolumeUsd: "73774927039.04",
+    },
+    derivedMetrics: {
+      priceChangePercent7d: "5.8",
+      tradingRangeWidthUsd: "7278.56",
     },
   };
 }
@@ -324,6 +407,33 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.family).toBe("stablecoin-supply");
     expect(result.promptPacket.input.brief.baselineContext[0]).toContain("near 1.00 USD is baseline");
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("normal peg");
+  });
+
+  it("adds a family dossier brief for spot-momentum topics", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "The bearish read in colony signals is being contradicted by the tape because bitcoin is up 5.8% over the week at 76,991 dollars and the mismatch is that price is still trading in the upper third of a 7,279-dollar range rather than breaking down. " +
+        "That matters because price has rebuilt toward the weekly high on heavy volume instead of validating the bearish signal, which makes the live question one of resistance absorption rather than momentum failure. " +
+        "The thesis weakens if bitcoin loses the weekly starting level and slips back into the lower half of the range on rising volume."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeSpotOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeSpotEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.promptPacket.input.brief.family).toBe("spot-momentum");
+    expect(result.promptPacket.input.brief.baselineContext[0]).toContain("Absolute price direction");
+    expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("price being up by itself");
   });
 
   it("accepts LLM output only when it clears the quality gate", async () => {
@@ -480,6 +590,32 @@ describe("buildResearchDraft", () => {
       availableBalance: 25,
       evidenceSummary: makeStablecoinEvidenceSummary(),
       supportingEvidenceSummaries: [makeStablecoinSupportingEvidenceSummary()],
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(false);
+  });
+
+  it("rejects spot-momentum drafts that turn raw price direction into the thesis", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Bitcoin is up 5.8 percent this week, so the market is clearly bullish again and the bearish signal no longer matters. " +
+        "Price has rallied hard enough that the only real conclusion is that momentum has already resolved higher, which means the bearish take is simply wrong because the weekly move is positive. " +
+        "Only a sudden crash would challenge that bullish conclusion."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeSpotOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeSpotEvidenceSummary(),
       llmProvider: provider,
       minTextLength: 260,
     });
