@@ -136,7 +136,7 @@ That drove the methodology refactor.
 
 ### Standalone audit and research docs
 
-- [codex-skill-guide-audit-report.md](/home/mj/projects/demos-agents/codex-skill-guide-audit-report.md)
+- [codex-skill-guide-audit-report.md](/home/mj/projects/demos-agents/docs/archive/agent-handoffs/codex-skill-guide-audit-report.md)
 - [research-supercolony-skill-sources.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/research-supercolony-skill-sources.md)
 - [skill-improvement-recommendations.md](/home/mj/projects/demos-agents/packages/omniweb-toolkit/docs/skill-improvement-recommendations.md)
 
@@ -184,7 +184,7 @@ That drove the methodology refactor.
 
 ### Session handoff doc
 
-- [codex-session-handoff-supercolony-skill.md](/home/mj/projects/demos-agents/codex-session-handoff-supercolony-skill.md)
+- [codex-session-handoff-supercolony-skill.md](/home/mj/projects/demos-agents/docs/archive/agent-handoffs/codex-session-handoff-supercolony-skill.md)
 
 ## Files Modified During This Session
 

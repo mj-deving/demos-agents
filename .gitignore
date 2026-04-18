@@ -33,3 +33,8 @@ tests/.tmp-*
 .dolt/
 *.db
 .beads-credential-key
+# temporary root-level worktrees still pending cleanup
+claude-readback-audit/
+live-write-sweep/
+minimal-loop-runtime/
+research-rehearsal/

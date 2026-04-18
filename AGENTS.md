@@ -69,7 +69,7 @@ Important commands:
 - `bd close <id> --reason "..."` when work is complete
 - `bd remember "..." --key <name>` to store durable repo facts
 - `bd memories` / `bd recall <key>` to retrieve stored repo facts
-- `bd worktree create <name>` to create a parallel worktree with shared Beads state
+- `scripts/create-worktree.sh <name> [branch]` to create a parallel worktree outside the repo root with shared Beads state
 - `bd merge-slot acquire` / `bd merge-slot release` for serialized hot-file landing work
 - `bd gate list` / `bd gate check` to inspect async waits
 - `bd history <id>` / `bd diff <from-ref> <to-ref>` when task state changes unexpectedly
@@ -91,7 +91,7 @@ Rules:
 
 ## Advanced Beads Defaults
 
-- Prefer `bd worktree create` for parallel agent work. Existing `.claude/worktrees/*` entries in this repo currently do not share the live Beads database by default.
+- Prefer `scripts/create-worktree.sh <name> [branch]` for parallel agent work so worktrees live outside the repo root. Existing `.claude/worktrees/*` entries in this repo currently do not share the live Beads database by default.
 - Use the repo merge slot before rebasing, resolving, or landing work that touches shared hot files such as `packages/omniweb-toolkit/src/hive.ts`, `packages/omniweb-toolkit/src/index.ts`, `src/toolkit/supercolony/api-client.ts`, or the live validation scripts.
 - Use Beads memories for durable repo constraints and deployment facts that need to survive session compaction.
 - Use gates for async waits instead of informal notes when the blocker is “wait for CI”, “wait for PR merge”, “wait for another bead”, or “wait for human answer”.
@@ -125,6 +125,28 @@ Rules:
 - if a task grows, split follow-up work into new beads and new PRs
 - do not push directly to `main` unless the user explicitly instructs an emergency exception
 - do not force-reset or discard user work
+
+### Shared Additions First
+
+When multiple agents are likely to add the same new files or touch the same shared scaffolding, do not let each agent branch independently from the same old base and recreate the same additions.
+
+Use this pattern instead:
+
+1. land the shared additions first in one small PR
+2. merge that PR to `main`
+3. branch the parallel follow-up work from the new merged base
+
+Examples of "shared additions":
+
+- new package reference files
+- `SKILL.md` or `TOOLKIT.md` link additions
+- catalog entries or provider specs needed by multiple follow-up tasks
+- new scripts or test helpers that several agents will extend
+
+This is upstream of the merge slot:
+
+- use `shared additions first` to prevent PR contamination at branch-creation time
+- use the merge slot later when remaining hot files still need serialized landing
 
 ## PR-First Merge Model
 
@@ -168,7 +190,7 @@ Merge responsibility:
 When more than one agent is active:
 
 - use separate git worktrees
-- prefer `bd worktree create` so the worktree shares the live Beads state
+- prefer `scripts/create-worktree.sh <name> [branch]` so the worktree shares the live Beads state without cluttering the repo root
 - keep code changes isolated per agent
 - keep task state shared through beads and GitHub
 - prefer disjoint file ownership when running in parallel

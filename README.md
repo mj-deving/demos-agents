@@ -1,20 +1,20 @@
 # omniweb-agents
 
-![TypeScript](https://img.shields.io/badge/TypeScript-67K_LOC-blue.svg)
-![Tests](https://img.shields.io/badge/tests-3%2C249_passing-brightgreen.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-monorepo-blue.svg)
+![Tests](https://img.shields.io/badge/tests-Vitest-brightgreen.svg)
 ![ADRs](https://img.shields.io/badge/ADRs-19-purple.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-**67,000 lines of TypeScript. 3,249 tests across 263 suites. 19 architectural decision records.** An autonomous agent framework with a custom SENSE/ACT/CONFIRM loop, evidence-driven strategy engine, and cryptographic attestation — deployed on the [Demos Network](https://demos.sh) where it publishes attested analysis, earns real tokens, and competes on a live leaderboard.
+**A TypeScript agent framework for live, attested, wallet-backed agents on the [Demos Network](https://demos.sh).** It combines a custom SENSE/ACT/CONFIRM loop, evidence-driven strategy, financial guardrails, and cryptographic attestation so agents can publish analysis, spend real tokens, and prove what they consulted.
 
 ## Why This Is Different
 
 Most agent frameworks stop at "call an LLM, use some tools." This one has:
 
-- **A strategy engine** that scores evidence, detects contradictions, and decides what to publish — before any LLM call (1,491 LOC across 9 modules)
+- **A strategy engine** that scores evidence, detects contradictions, and decides what to publish — before any LLM call
 - **Cryptographic attestation** (DAHR hash-based in <2s, TLSN zero-knowledge in 50-180s) that proves the agent actually consulted the sources it claims
 - **Financial guardrails** — spend caps, dedup guards, backoff policies, write-rate limiters — because the agent spends real tokens on a real blockchain
-- **An agent compiler** that composes persona + strategy + sources from YAML templates into runnable agents (1,012 LOC)
+- **An agent compiler** that composes persona + strategy + sources from YAML templates into runnable agents
 - **A signal detection pipeline** that scans sources, extracts signals, filters noise, and routes observations — all before the agent loop starts
 
 The result: an agent that doesn't just generate text — it builds evidence, verifies claims, manages money, and proves its work cryptographically.
@@ -24,7 +24,7 @@ The result: an agent that doesn't just generate text — it builds evidence, ver
 ```mermaid
 flowchart TB
     subgraph SENSE["SENSE — Observe & Analyze"]
-        Sources["Source Scanner<br/>11 modules"]
+        Sources["Source Scanner<br/>Multi-stage source pipeline"]
         Signals["Signal Detection<br/>& Filtering"]
         Observe["Observation Router<br/>Learn-first pipeline"]
         Sources --> Signals --> Observe
@@ -50,7 +50,7 @@ flowchart TB
     subgraph INFRA["Infrastructure"]
         Auth["Wallet Auth<br/>+ Token Cache"]
         Chain["Chain Interface<br/>API-first, chain-fallback"]
-        CLI["42 CLI Tools"]
+        CLI["Operator CLI"]
     end
 
     classDef sense fill:#1a1a2e,stroke:#0f3460,color:#fff
@@ -69,7 +69,7 @@ flowchart TB
 ```
 src/
 ├── toolkit/                    # Mechanism layer (ADR-0002)
-│   ├── primitives/             15 domain modules, 47 typed API methods
+│   ├── primitives/             Typed API/domain primitives
 │   ├── strategy/               Evidence engine, scoring, contradiction detection
 │   ├── observe/                Learn-first observation pipeline
 │   ├── publish/                Attestation + dedup + publish
@@ -82,12 +82,12 @@ src/
 │   ├── attestation/            DAHR + TLSN cryptographic proofs
 │   ├── auth/                   Wallet authentication + token cache
 │   ├── llm/                    Provider-agnostic LLM (Claude, OpenAI, local)
-│   ├── pipeline/               Source scanning + signal detection (11 modules)
+│   ├── pipeline/               Source scanning + signal detection
 │   ├── scoring/                Bayesian scoring implementation
 │   └── sources/                Source registry + discovery
 ├── adapters/                   Eliza, Skill Dojo integrations
 ├── plugins/                    Reputation system
-cli/                            42 operator tools
+cli/                            Operator tools
 agents/                         Agent definitions (YAML + Markdown personas)
 docs/decisions/                 19 ADRs
 packages/omniweb-toolkit/       Consumer package (6 domains, 47 methods)
@@ -108,15 +108,22 @@ packages/omniweb-toolkit/       Consumer package (6 domains, 47 methods)
 
 ## Production Evidence
 
-This isn't a demo — it runs on a live network with real tokens:
+This isn't a demo repo. It is built against a live network with real tokens and live publish/readback proof work.
+
+Representative live proof points, current as of **2026-04-18**:
 
 | Metric | Value |
 |---|---|
-| **Live agent** | `stresstestagent` — rank #16, Bayesian score 82.2 |
-| **Published posts** | 145+ attested analyses on SuperColony |
-| **Network size** | 265K+ posts, 221 agents, 24 consensus signals |
-| **Attestation** | DAHR (<2s) and TLSN (50-180s) cryptographic proofs |
-| **Real tokens** | DEM on Demos mainnet — spend caps enforced by code |
+| **Live agent** | `stresstestagent` — live-ranked on SuperColony |
+| **Published posts** | live attested analyses published on SuperColony |
+| **Attestation** | DAHR and TLSN paths implemented, with live DAHR publish proof captured in repo references |
+| **Real tokens** | DEM on Demos mainnet — spend caps and write guards enforced in code |
+
+For dated proof artifacts rather than front-page summaries, see:
+
+- [`packages/omniweb-toolkit/references/research-agent-launch-proof-2026-04-17.md`](packages/omniweb-toolkit/references/research-agent-launch-proof-2026-04-17.md)
+- [`packages/omniweb-toolkit/references/publish-proof-protocol.md`](packages/omniweb-toolkit/references/publish-proof-protocol.md)
+- [`packages/omniweb-toolkit/references/write-surface-sweep.md`](packages/omniweb-toolkit/references/write-surface-sweep.md)
 
 The [Demos Network](https://demos.sh) is a blockchain-based social intelligence platform where AI agents publish attested analysis, earn DEM tokens, and compete on a Bayesian-scored leaderboard. This framework provides the full agent lifecycle for that platform.
 
@@ -215,7 +222,7 @@ const id = await omni.identity.lookup("twitter", "agentname");
 const balance = await omni.chain.getBalance(omni.address);
 ```
 
-All methods return `ApiResult<T>` — typed success/failure with graceful degradation. 15 domain modules, 47 methods, verified against the live API via `scripts/api-depth-audit.ts`.
+All methods return `ApiResult<T>` — typed success/failure with graceful degradation, validated against the live API via `scripts/api-depth-audit.ts`.
 
 Full API reference: [`packages/omniweb-toolkit/`](packages/omniweb-toolkit/)
 
@@ -226,21 +233,18 @@ Full API reference: [`packages/omniweb-toolkit/`](packages/omniweb-toolkit/)
 - **Testing:** Vitest — 3,249 tests, 263 suites
 - **Database:** node:sqlite (built-in, no native deps)
 - **LLM:** Provider-agnostic (Claude, OpenAI, local models via env vars)
-- **Blockchain:** Demos Network via `@kynesyslabs/demosdk` v2.11.0
+- **Blockchain:** Demos Network via `@kynesyslabs/demosdk` `^2.11.5`
 - **Schemas:** Zod validation on all API responses
 
 ## Project Stats
 
 | Metric | Value |
 |---|---|
-| Lines of code (source) | 67,567 |
-| Lines of code (tests) | 119,799 |
-| Commits | 1,001 |
-| Test suites | 263 |
-| Tests passing | 3,249 |
 | ADRs | 19 |
 | CLI tools | 42 |
 | API methods | 47 across 15 domains |
+| Test runner | Vitest |
+| Type checking | `npx tsc --noEmit` |
 
 ## License
 
