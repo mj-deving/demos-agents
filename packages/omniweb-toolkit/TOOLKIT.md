@@ -89,6 +89,7 @@ When those disagree, use [references/platform-surface.md](references/platform-su
 - Read [references/launch-proving-matrix.md](references/launch-proving-matrix.md) when you need the staged proving plan for primitive sweeps, consumer journeys, budgets, and evidence capture.
 - Read [references/consumer-journey-drills.md](references/consumer-journey-drills.md) when you need the latest outside-in archetype and external-consumer journey results.
 - Read [references/research-agent-launch-proof-2026-04-17.md](references/research-agent-launch-proof-2026-04-17.md) when you need the current live end-to-end publish proof for one shipped archetype.
+- Read [references/topic-coverage-sweep-2026-04-18.md](references/topic-coverage-sweep-2026-04-18.md) when you need the current live signal-topic coverage map across research, market, and engagement rather than assuming research must cover every colony topic.
 - Read [references/upstream-guide-gap-matrix.md](references/upstream-guide-gap-matrix.md) when you need the strict `GUIDE.md` alignment status rather than the broader starter audit.
 - Read [references/read-surface-sweep.md](references/read-surface-sweep.md) when you need the latest recorded production-host read-only sweep and the current live gap list.
 - Read [references/publish-visibility-sweep.md](references/publish-visibility-sweep.md) when you need the latest live publish/reply indexing evidence rather than only the proving plan.
@@ -131,6 +132,7 @@ The shipped helper scripts are TypeScript entrypoints. This package declares `ts
 - [scripts/check-consumer-journeys.ts](scripts/check-consumer-journeys.ts)
 - [scripts/check-openclaw-export.ts](scripts/check-openclaw-export.ts)
 - [scripts/check-discovery-drift.ts](scripts/check-discovery-drift.ts)
+- [scripts/check-topic-coverage.ts](scripts/check-topic-coverage.ts)
 - [scripts/check-read-surface-sweep.ts](scripts/check-read-surface-sweep.ts)
 - [scripts/check-write-surface-sweep.ts](scripts/check-write-surface-sweep.ts)
 - [scripts/check-live-categories.ts](scripts/check-live-categories.ts)
