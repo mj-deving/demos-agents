@@ -3,10 +3,12 @@ import {
   buildResearchColonySubstrate,
   buildResearchDraft,
   buildResearchSelfHistory,
+  buildResearchEvidenceDelta,
   fetchResearchEvidenceSummary,
   deriveResearchOpportunities,
   matchResearchDraftToPlan,
   runMinimalAgentLoop,
+  summarizeResearchEvidenceDelta,
   type MinimalObserveContext,
   type MinimalObserveResult,
   type ResearchPostInput,
@@ -50,8 +52,6 @@ interface ReadResult<T> {
 }
 
 const MAX_TOPIC_HISTORY = 5;
-const MIN_MEANINGFUL_PERCENT_DELTA = 1;
-const MIN_MEANINGFUL_ABSOLUTE_DELTA = 0.001;
 
 function signalTopic(signal: unknown): string | null {
   if (!signal || typeof signal !== "object") return null;
@@ -521,20 +521,18 @@ export async function observe(
   }
 
   const previousSnapshot = ctx.memory.state?.lastResearchSnapshot;
-  const evidenceDelta = buildEvidenceDelta(
+  const evidenceDelta = buildResearchEvidenceDelta(
     previousSnapshot?.topic === topic ? previousSnapshot.evidenceValues : null,
     evidenceSummaryResult.summary.values,
   );
-  const deltaSummary = summarizeEvidenceDelta(evidenceDelta);
   const selfHistory = buildResearchSelfHistory({
     history: ctx.memory.state?.publishHistory ?? [],
     topic,
     family: sourceProfile.family,
     now: ctx.cycle.startedAt,
     currentEvidenceValues: evidenceSummaryResult.summary.values,
-    minMeaningfulPercentDelta: MIN_MEANINGFUL_PERCENT_DELTA,
-    minMeaningfulAbsoluteDelta: MIN_MEANINGFUL_ABSOLUTE_DELTA,
   });
+  const deltaSummary = summarizeResearchEvidenceDelta(evidenceDelta);
 
   if (previousSnapshot?.topic === topic && !deltaSummary.hasMeaningfulChange) {
     return {
@@ -922,78 +920,6 @@ function snippetText(text: string, maxLength: number = 220): string {
   if (normalized.length <= maxLength) return normalized;
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
-
-function buildEvidenceDelta(
-  previous: Record<string, string> | null | undefined,
-  current: Record<string, string>,
-): Record<string, {
-  current: string;
-  previous: string | null;
-  absoluteChange: number | null;
-  percentChange: number | null;
-}> {
-  const delta: Record<string, {
-    current: string;
-    previous: string | null;
-    absoluteChange: number | null;
-    percentChange: number | null;
-  }> = {};
-
-  for (const [key, currentValue] of Object.entries(current)) {
-    const previousValue = previous?.[key] ?? null;
-    const currentNumber = parseNumeric(currentValue);
-    const previousNumber = parseNumeric(previousValue);
-    const absoluteChange = currentNumber != null && previousNumber != null
-      ? currentNumber - previousNumber
-      : null;
-    const percentChange = absoluteChange != null && previousNumber != null && previousNumber !== 0
-      ? (absoluteChange / Math.abs(previousNumber)) * 100
-      : null;
-
-    delta[key] = {
-      current: currentValue,
-      previous: previousValue,
-      absoluteChange,
-      percentChange,
-    };
-  }
-
-  return delta;
-}
-
-function summarizeEvidenceDelta(
-  delta: Record<string, {
-    current: string;
-    previous: string | null;
-    absoluteChange: number | null;
-    percentChange: number | null;
-  }>,
-): { hasMeaningfulChange: boolean; changedFields: string[] } {
-  const changedFields = Object.entries(delta)
-    .filter(([, value]) => isMeaningfulDelta(value.absoluteChange, value.percentChange))
-    .map(([key]) => key);
-
-  return {
-    hasMeaningfulChange: changedFields.length > 0,
-    changedFields,
-  };
-}
-
-function parseNumeric(value: string | null | undefined): number | null {
-  if (typeof value !== "string") return null;
-  const parsed = Number.parseFloat(value.replace(/,/g, ""));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function isMeaningfulDelta(absoluteChange: number | null, percentChange: number | null): boolean {
-  if (percentChange != null) {
-    return Math.abs(percentChange) >= MIN_MEANINGFUL_PERCENT_DELTA;
-  }
-  if (absoluteChange == null) return false;
-  if (absoluteChange != null && Math.abs(absoluteChange) >= MIN_MEANINGFUL_ABSOLUTE_DELTA) return true;
-  return false;
-}
-
 if (isMainModule()) {
   await runMinimalAgentLoop(observe, {
     intervalMs: 15 * 60_000,

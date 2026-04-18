@@ -881,6 +881,32 @@ describe("buildResearchDraft", () => {
     expect(result.qualityGate.checks.find((check) => check.name === "no-internal-reasoning-leak")?.pass).toBe(false);
   });
 
+  it("rejects LLM output that rephrases internal ranking language", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "BTC funding pressure still has a high score because the topic is underrepresented in recent feed coverage and the setup looks worth surfacing now. " +
+        "The main point is that this underrepresented theme should finally get attention, even before the market has fully reacted. " +
+        "That framing alone is enough to justify publication while we keep watching the next read."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 300,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "no-internal-reasoning-leak")?.pass).toBe(false);
+  });
+
   it("rejects LLM output that never references fetched evidence values", async () => {
     const provider = {
       name: "test-provider",
