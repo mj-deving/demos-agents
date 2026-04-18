@@ -155,6 +155,21 @@ const STABLECOIN_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string
   },
 ];
 
+const FUNDING_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
+  {
+    pattern: /\bnegative funding\b.{0,80}\b(?:prove|proves|means|guarantees|confirms)\b.{0,80}\b(?:downside|bearish|selloff|breakdown)\b/i,
+    detail: "treats negative funding alone as proof of a bearish outcome",
+  },
+  {
+    pattern: /\bnegative funding\b.{0,80}\b(?:guarantees|means|proves)\b.{0,80}\b(?:squeeze|bounce|reversal)\b/i,
+    detail: "treats negative funding alone as proof of a contrarian squeeze setup",
+  },
+  {
+    pattern: /\bfunding\b.{0,60}\b(?:by itself|alone)\b/i,
+    detail: "explicitly centers funding in isolation instead of relating it to price and positioning context",
+  },
+];
+
 export async function buildResearchDraft(
   opts: BuildResearchDraftOptions,
 ): Promise<ResearchDraftResult> {
@@ -503,6 +518,15 @@ function findFamilyBaselineProblem(
   opportunity: ResearchOpportunity,
 ): { detail: string } | null {
   if (opportunity.sourceProfile.family !== "stablecoin-supply") {
+    if (opportunity.sourceProfile.family === "funding-structure") {
+      for (const entry of FUNDING_BASELINE_SLIP_PATTERNS) {
+        if (entry.pattern.test(text)) {
+          return {
+            detail: entry.detail,
+          };
+        }
+      }
+    }
     return null;
   }
 

@@ -51,6 +51,25 @@ const STABLECOIN_SUPPLY_DOSSIER: ResearchFamilyDossier = {
   ],
 };
 
+const FUNDING_STRUCTURE_DOSSIER: ResearchFamilyDossier = {
+  family: "funding-structure",
+  baseline: [
+    "Funding and premium are positioning signals, not standalone direction calls.",
+    "Negative funding is not automatically bearish and not automatically contrarian bullish.",
+    "Funding without price and open-interest context is incomplete.",
+  ],
+  focus: [
+    "Focus on how funding, premium, and open interest line up with price behavior.",
+    "Explain whether the derivatives structure is confirming the move, fading it, or setting up a squeeze.",
+    "Treat a single funding print as evidence inside a positioning story, not as the whole thesis.",
+  ],
+  falseInferenceGuards: [
+    "Do not claim that negative funding by itself proves downside.",
+    "Do not claim that negative funding by itself guarantees a squeeze higher.",
+    "Do not ignore open interest or price context when interpreting funding and premium.",
+  ],
+};
+
 export function buildResearchBrief(
   opportunity: ResearchOpportunity,
   evidenceSummary: ResearchEvidenceSummary,
@@ -62,6 +81,10 @@ export function buildResearchBrief(
     return buildStablecoinSupplyBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   }
 
+  if (opportunity.sourceProfile.family === "funding-structure") {
+    return buildFundingStructureBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
+  }
+
   return {
     family: opportunity.sourceProfile.family,
     baselineContext: dossier.baseline,
@@ -70,6 +93,36 @@ export function buildResearchBrief(
     anomalySummary: "Focus on the strongest non-trivial change or mismatch in the fetched evidence.",
     allowedThesisSpace: "Use the evidence to form one concrete, externally legible thesis.",
     invalidationFocus: "State the next observable condition that would weaken the thesis.",
+  };
+}
+
+function buildFundingStructureBrief(
+  dossier: ResearchFamilyDossier,
+  evidenceSummary: ResearchEvidenceSummary,
+  supportingEvidenceSummaries: ResearchEvidenceSummary[],
+): ResearchBrief {
+  const fundingBps = findMetric("fundingRateBps", evidenceSummary, supportingEvidenceSummaries);
+  const markPrice = findMetric("markPrice", evidenceSummary, supportingEvidenceSummaries);
+  const spreadUsd = findMetric("markIndexSpreadUsd", evidenceSummary, supportingEvidenceSummaries);
+  const openInterest = findMetric("openInterest", evidenceSummary, supportingEvidenceSummaries)
+    ?? findMetric("openInterestContracts", evidenceSummary, supportingEvidenceSummaries);
+
+  const fundingValue = parseMetric(fundingBps);
+  const spreadValue = parseMetric(spreadUsd);
+  const fundingDirection = describeFundingDirection(fundingValue);
+  const spreadDirection = describeSpreadDirection(spreadValue);
+  const oiContext = openInterest
+    ? `Open interest sits around ${openInterest}, so positioning size has to be part of the interpretation.`
+    : "Open interest context is thin, so avoid overclaiming from funding alone.";
+
+  return {
+    family: "funding-structure",
+    baselineContext: dossier.baseline,
+    focusNow: dossier.focus,
+    falseInferenceGuards: dossier.falseInferenceGuards,
+    anomalySummary: `Funding is ${fundingDirection}${fundingBps ? ` (${fundingBps} bps)` : ""}, the mark/index spread is ${spreadDirection}${spreadUsd ? ` (${spreadUsd} USD)` : ""}, and ${oiContext}`,
+    allowedThesisSpace: `Write about positioning stress, confirmation failure, or squeeze setup only if the thesis is anchored in the relationship between funding, price${markPrice ? ` (${markPrice})` : ""}, and open interest.`,
+    invalidationFocus: "Invalidate with a clear normalization in funding/premium or a price move that breaks the positioning interpretation.",
   };
 }
 
@@ -118,6 +171,10 @@ function dossierForFamily(family: ResearchTopicFamily): ResearchFamilyDossier {
     return STABLECOIN_SUPPLY_DOSSIER;
   }
 
+  if (family === "funding-structure") {
+    return FUNDING_STRUCTURE_DOSSIER;
+  }
+
   return {
     ...GENERIC_DOSSIER,
     family,
@@ -152,4 +209,18 @@ function describeSupplyTrend(day: string | null, week: string | null, month: str
     month ? `${month}% 30d` : null,
   ].filter((value): value is string => value != null);
   return parts.length > 0 ? parts.join(", ") : "with no derived supply delta";
+}
+
+function describeFundingDirection(value: number | null): string {
+  if (value == null) return "unresolved";
+  if (value < 0) return "negative";
+  if (value > 0) return "positive";
+  return "flat";
+}
+
+function describeSpreadDirection(value: number | null): string {
+  if (value == null) return "unclear";
+  if (value < 0) return "discounted";
+  if (value > 0) return "trading above index";
+  return "flat to index";
 }

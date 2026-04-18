@@ -163,6 +163,20 @@ function makeSupportingEvidenceSummary(): ResearchEvidenceSummary {
   };
 }
 
+function makeFundingSupportingEvidenceSummary(): ResearchEvidenceSummary {
+  return {
+    source: "Binance Open Interest",
+    url: "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
+    fetchedAt: "2026-04-18T08:00:03.000Z",
+    values: {
+      openInterest: "105600",
+    },
+    derivedMetrics: {
+      openInterestContracts: "105600",
+    },
+  };
+}
+
 function makeStablecoinEvidenceSummary(): ResearchEvidenceSummary {
   return {
     source: "defillama-stablecoins-list",
@@ -254,6 +268,34 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.evidence.values.markPrice).toBe("67250.00");
     expect(result.promptPacket.input.evidence.derivedMetrics.fundingRateBps).toBe("-120");
     expect(result.promptPacket.input.evidence.supportingSources[0]?.source).toBe("Blockchain.com Ticker");
+  });
+
+  it("adds a family dossier brief for funding-structure topics", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Negative funding matters here because it is showing up alongside real positioning size and a still-firm price, which makes the setup a derivatives mismatch rather than an automatic trend call. " +
+        "Funding near -120 basis points with open interest around 105,600 means traders are paying for bearish positioning while spot remains elevated, so the real question is whether price starts to validate that stress or squeezes it out. " +
+        "The view weakens if funding normalizes without price damage or if price decisively breaks higher while positioning stays stretched."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      supportingEvidenceSummaries: [makeFundingSupportingEvidenceSummary()],
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.promptPacket.input.brief.family).toBe("funding-structure");
+    expect(result.promptPacket.input.brief.baselineContext[0]).toContain("positioning signals");
+    expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("negative funding by itself");
   });
 
   it("adds a family dossier brief for stablecoin supply topics", async () => {
@@ -392,6 +434,33 @@ describe("buildResearchDraft", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.qualityGate.checks.find((check) => check.name === "evidence-value-overlap")?.pass).toBe(true);
+  });
+
+  it("rejects funding drafts that treat negative funding alone as proof", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Negative funding by itself proves downside here, because traders are clearly positioned the right way and the market is only waiting to catch down to the derivatives signal. " +
+        "The negative funding print guarantees the next move is lower, so there is no need to weigh price structure or open interest context beyond the sign of the rate itself. " +
+        "Only a sudden reversal in funding would challenge that bearish call."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      supportingEvidenceSummaries: [makeFundingSupportingEvidenceSummary()],
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(false);
   });
 
   it("rejects stablecoin drafts that treat a normal peg as alpha", async () => {
