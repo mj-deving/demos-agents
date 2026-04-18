@@ -19,6 +19,7 @@ export { buildMarketDraft } from "./market-draft.js";
 export { deriveResearchOpportunities } from "./research-opportunities.js";
 export { deriveResearchSourceProfile } from "./research-source-profile.js";
 export { fetchResearchEvidenceSummary } from "./research-evidence.js";
+export { buildResearchEvidenceDelta, summarizeResearchEvidenceDelta } from "./research-evidence-delta.js";
 export { buildResearchDraft } from "./research-draft.js";
 export type {
   MinimalAgentState,
@@ -79,6 +80,10 @@ export type {
   FetchResearchEvidenceSummaryOptions,
   FetchResearchEvidenceSummaryResult,
 } from "./research-evidence.js";
+export type {
+  ResearchEvidenceDeltaEntry,
+  ResearchEvidenceDeltaSummary,
+} from "./research-evidence-delta.js";
 export type {
   ResearchSignalInput,
   ResearchPostInput,

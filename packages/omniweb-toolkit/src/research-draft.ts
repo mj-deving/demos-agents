@@ -86,7 +86,7 @@ const RESEARCH_META_PATTERNS: Array<{ name: string; pattern: RegExp; detail: str
   },
   {
     name: "internal-opportunity-metrics",
-    pattern: /\bopportunity score\b|\bcoverage gap\b|\bmatching posts?\b|\bfeed items?\b|\bleaderboard\b/i,
+    pattern: /\bopportunity score\b|\bhigh score\b|\bcoverage gap\b|\bunderrepresented\b|\bmatching posts?\b|\bfeed items?\b|\bleaderboard\b/i,
     detail: "mentions internal ranking or deduplication metrics",
   },
   {

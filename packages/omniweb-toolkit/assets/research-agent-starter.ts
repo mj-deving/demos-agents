@@ -1,9 +1,11 @@
 import { pathToFileURL } from "node:url";
 import {
   buildResearchDraft,
+  buildResearchEvidenceDelta,
   fetchResearchEvidenceSummary,
   deriveResearchOpportunities,
   runMinimalAgentLoop,
+  summarizeResearchEvidenceDelta,
   type MinimalObserveContext,
   type MinimalObserveResult,
 } from "omniweb-toolkit/agent";
@@ -46,8 +48,6 @@ interface ReadResult<T> {
 
 const PUBLISH_COOLDOWN_MS = 60 * 60 * 1000;
 const MAX_TOPIC_HISTORY = 5;
-const MIN_MEANINGFUL_PERCENT_DELTA = 1;
-const MIN_MEANINGFUL_ABSOLUTE_DELTA = 0.001;
 
 function signalTopic(signal: unknown): string | null {
   if (!signal || typeof signal !== "object") return null;
@@ -444,11 +444,11 @@ export async function observe(
   }
 
   const previousSnapshot = ctx.memory.state?.lastResearchSnapshot;
-  const evidenceDelta = buildEvidenceDelta(
+  const evidenceDelta = buildResearchEvidenceDelta(
     previousSnapshot?.topic === topic ? previousSnapshot.evidenceValues : null,
     evidenceSummaryResult.summary.values,
   );
-  const deltaSummary = summarizeEvidenceDelta(evidenceDelta);
+  const deltaSummary = summarizeResearchEvidenceDelta(evidenceDelta);
 
   if (previousSnapshot?.topic === topic && !deltaSummary.hasMeaningfulChange) {
     return {
@@ -704,77 +704,6 @@ function extractAvailableBalance(balance: unknown): number {
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   return String(error);
-}
-
-function buildEvidenceDelta(
-  previous: Record<string, string> | null | undefined,
-  current: Record<string, string>,
-): Record<string, {
-  current: string;
-  previous: string | null;
-  absoluteChange: number | null;
-  percentChange: number | null;
-}> {
-  const delta: Record<string, {
-    current: string;
-    previous: string | null;
-    absoluteChange: number | null;
-    percentChange: number | null;
-  }> = {};
-
-  for (const [key, currentValue] of Object.entries(current)) {
-    const previousValue = previous?.[key] ?? null;
-    const currentNumber = parseNumeric(currentValue);
-    const previousNumber = parseNumeric(previousValue);
-    const absoluteChange = currentNumber != null && previousNumber != null
-      ? currentNumber - previousNumber
-      : null;
-    const percentChange = absoluteChange != null && previousNumber != null && previousNumber !== 0
-      ? (absoluteChange / Math.abs(previousNumber)) * 100
-      : null;
-
-    delta[key] = {
-      current: currentValue,
-      previous: previousValue,
-      absoluteChange,
-      percentChange,
-    };
-  }
-
-  return delta;
-}
-
-function summarizeEvidenceDelta(
-  delta: Record<string, {
-    current: string;
-    previous: string | null;
-    absoluteChange: number | null;
-    percentChange: number | null;
-  }>,
-): { hasMeaningfulChange: boolean; changedFields: string[] } {
-  const changedFields = Object.entries(delta)
-    .filter(([, value]) => isMeaningfulDelta(value.absoluteChange, value.percentChange))
-    .map(([key]) => key);
-
-  return {
-    hasMeaningfulChange: changedFields.length > 0,
-    changedFields,
-  };
-}
-
-function parseNumeric(value: string | null | undefined): number | null {
-  if (typeof value !== "string") return null;
-  const parsed = Number.parseFloat(value.replace(/,/g, ""));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function isMeaningfulDelta(absoluteChange: number | null, percentChange: number | null): boolean {
-  if (percentChange != null) {
-    return Math.abs(percentChange) >= MIN_MEANINGFUL_PERCENT_DELTA;
-  }
-  if (absoluteChange == null) return false;
-  if (absoluteChange != null && Math.abs(absoluteChange) >= MIN_MEANINGFUL_ABSOLUTE_DELTA) return true;
-  return false;
 }
 
 if (isMainModule()) {
