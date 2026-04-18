@@ -61,6 +61,70 @@ describe("verifyPublishVisibility", () => {
     expect(getPostDetail).toHaveBeenCalledTimes(3);
   });
 
+  it("uses a category-scoped feed follow-up when generic feed window misses the post", async () => {
+    let now = 0;
+    const getFeed = vi.fn().mockImplementation(async ({ category }: { limit: number; category?: string }) => {
+      if (category === "ANALYSIS") {
+        return {
+          ok: true,
+          data: {
+            posts: [
+              { txHash: "tx-3", blockNumber: 91, category: "ANALYSIS", text: "stablecoin write proof" },
+            ],
+            meta: { lastBlock: 300 },
+          },
+        };
+      }
+
+      return {
+        ok: true,
+        data: {
+          posts: [],
+          meta: { lastBlock: 300 },
+        },
+      };
+    });
+    const getPostDetail = vi.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        post: {
+          txHash: "tx-3",
+          blockNumber: 91,
+          payload: { cat: "ANALYSIS" },
+        },
+      },
+    });
+
+    const result = await verifyPublishVisibility(
+      {
+        colony: { getFeed, getPostDetail },
+      },
+      "tx-3",
+      "stablecoin write proof",
+      {
+        timeoutMs: 1_000,
+        pollMs: 100,
+        limit: 25,
+        now: () => now,
+        sleep: async (ms) => { now += ms; },
+      },
+    );
+
+    expect(result).toMatchObject({
+      visible: true,
+      indexedVisible: true,
+      verificationPath: "feed",
+      feedScope: "category",
+      txHash: "tx-3",
+      observedCategory: "ANALYSIS",
+      observedBlockNumber: 91,
+    });
+    expect(getFeed).toHaveBeenCalledTimes(2);
+    expect(getFeed).toHaveBeenNthCalledWith(1, { limit: 25 });
+    expect(getFeed).toHaveBeenNthCalledWith(2, { limit: 25, category: "ANALYSIS" });
+    expect(getPostDetail).toHaveBeenCalledTimes(1);
+  });
+
   it("returns a chain-only result after the deadline if indexing never catches up", async () => {
     let now = 0;
     const result = await verifyPublishVisibility(

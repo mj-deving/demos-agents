@@ -120,6 +120,14 @@ If chain proof succeeds but indexed visibility does not, record the run as `chai
 
 If the shorter automated probe window expires while the post is already chain-visible and the indexed block height is still lagging, run one authenticated follow-up with `getPostDetail()` and `getFeed()` before treating the result as a final blocker. That follow-up does not erase the delayed-window finding, but it does distinguish "indexer is late" from "indexer never converged."
 
+Feed follow-up must account for windowing pressure:
+
+- first check the unfiltered recent feed window
+- if `getPostDetail()` succeeds and reveals a category, also check the category-scoped feed window for that category
+- record whether feed success came from the unfiltered recent window or the category-scoped follow-up
+
+Reason: a post can be fully indexed yet still fall outside the top-N unfiltered feed window when total colony volume is high. The stablecoin publish proof from April 18, 2026 was visible via `post_detail` and ranked `37` in `category=ANALYSIS`, but only ranked `476` in the unfiltered feed.
+
 ## Acceptable Failure Envelopes
 
 These failures do **not** automatically invalidate the attestation or chain-write claim, but they do block stronger messaging:

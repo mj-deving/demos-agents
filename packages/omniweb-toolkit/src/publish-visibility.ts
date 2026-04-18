@@ -6,6 +6,7 @@ export interface PublishVisibilityResult {
   elapsedMs: number;
   txHash?: string;
   verificationPath?: "feed" | "post_detail" | "chain";
+  feedScope?: "recent" | "category";
   observedCategory?: string;
   observedBlockNumber?: number;
   lastIndexedBlock?: number;
@@ -14,7 +15,7 @@ export interface PublishVisibilityResult {
 
 interface PublishVisibilityOmni {
   colony: {
-    getFeed(opts: { limit: number }): Promise<any>;
+    getFeed(opts: { limit: number; category?: string }): Promise<any>;
     getPostDetail?(txHash: string): Promise<any>;
   };
   runtime?: {
@@ -48,40 +49,60 @@ export async function verifyPublishVisibility(
 
   while (now() <= deadline) {
     polls += 1;
-    const feedResult = await omni.colony.getFeed({ limit: opts.limit });
-    if (feedResult?.ok) {
-      const posts = Array.isArray(feedResult.data?.posts) ? feedResult.data.posts : [];
-      lastIndexedBlock = typeof feedResult.data?.meta?.lastBlock === "number"
-        ? feedResult.data.meta.lastBlock
+    const recentFeedMatch = await readFeedMatch(omni, txHash, textSnippet, {
+      limit: opts.limit,
+    });
+    if (recentFeedMatch.result?.ok) {
+      lastIndexedBlock = typeof recentFeedMatch.result.data?.meta?.lastBlock === "number"
+        ? recentFeedMatch.result.data.meta.lastBlock
         : undefined;
+    } else if (recentFeedMatch.result) {
+      lastError = recentFeedMatch.result?.error ?? "feed_unavailable";
+    }
 
-      const matched = posts.find((post: any) => {
-        const postTxHash = post?.txHash ?? post?.tx_hash;
-        const postText = post?.text ?? post?.payload?.text ?? post?.content ?? "";
-        return (txHash && postTxHash === txHash) || (typeof postText === "string" && postText.includes(textSnippet));
-      });
-
-      if (matched) {
-        return {
-          attempted: true,
-          visible: true,
-          indexedVisible: true,
-          polls,
-          elapsedMs: now() - startedAt,
-          txHash: matched.txHash ?? matched.tx_hash ?? txHash,
-          verificationPath: "feed",
-          observedCategory: matched.category ?? matched.payload?.cat,
-          observedBlockNumber: matched.blockNumber,
-          lastIndexedBlock,
-        };
-      }
-    } else {
-      lastError = feedResult?.error ?? "feed_unavailable";
+    if (recentFeedMatch.matched) {
+      return {
+        attempted: true,
+        visible: true,
+        indexedVisible: true,
+        polls,
+        elapsedMs: now() - startedAt,
+        txHash: recentFeedMatch.matched.txHash ?? recentFeedMatch.matched.tx_hash ?? txHash,
+        verificationPath: "feed",
+        feedScope: "recent",
+        observedCategory: recentFeedMatch.matched.category ?? recentFeedMatch.matched.payload?.cat,
+        observedBlockNumber: recentFeedMatch.matched.blockNumber,
+        lastIndexedBlock,
+      };
     }
 
     if (txHash && typeof omni?.colony?.getPostDetail === "function") {
       const postDetailResult = await omni.colony.getPostDetail(txHash);
       if (postDetailResult?.ok && postDetailResult.data?.post) {
+        const observedCategory =
+          (postDetailResult.data.post.payload as { cat?: string } | undefined)?.cat;
+        if (observedCategory) {
+          const categoryFeedMatch = await readFeedMatch(omni, txHash, textSnippet, {
+            limit: opts.limit,
+            category: observedCategory,
+          });
+          if (categoryFeedMatch.matched) {
+            return {
+              attempted: true,
+              visible: true,
+              indexedVisible: true,
+              polls,
+              elapsedMs: now() - startedAt,
+              txHash: categoryFeedMatch.matched.txHash ?? categoryFeedMatch.matched.tx_hash ?? txHash,
+              verificationPath: "feed",
+              feedScope: "category",
+              observedCategory,
+              observedBlockNumber: categoryFeedMatch.matched.blockNumber ?? postDetailResult.data.post.blockNumber,
+              lastIndexedBlock,
+            };
+          }
+        }
+
         return {
           attempted: true,
           visible: true,
@@ -90,8 +111,7 @@ export async function verifyPublishVisibility(
           elapsedMs: now() - startedAt,
           txHash,
           verificationPath: "post_detail",
-          observedCategory:
-            (postDetailResult.data.post.payload as { cat?: string } | undefined)?.cat,
+          observedCategory,
           observedBlockNumber: postDetailResult.data.post.blockNumber,
           lastIndexedBlock,
         };
@@ -159,4 +179,25 @@ export async function verifyPublishVisibility(
 
 async function defaultSleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function readFeedMatch(
+  omni: PublishVisibilityOmni,
+  txHash: string | undefined,
+  textSnippet: string,
+  opts: { limit: number; category?: string },
+): Promise<{ result: any; matched: any | null }> {
+  const result = await omni.colony.getFeed(opts);
+  if (!result?.ok) {
+    return { result, matched: null };
+  }
+
+  const posts = Array.isArray(result.data?.posts) ? result.data.posts : [];
+  const matched = posts.find((post: any) => {
+    const postTxHash = post?.txHash ?? post?.tx_hash;
+    const postText = post?.text ?? post?.payload?.text ?? post?.content ?? "";
+    return (txHash && postTxHash === txHash) || (typeof postText === "string" && postText.includes(textSnippet));
+  }) ?? null;
+
+  return { result, matched };
 }
