@@ -76,7 +76,7 @@ describe("deriveResearchOpportunities", () => {
     const opportunities = deriveResearchOpportunities({
       signals: [
         { topic: "BTC Sentiment vs Funding", confidence: 76, direction: "bearish" },
-        { topic: "RWA Tokenization", confidence: 75, direction: "bullish" },
+        { topic: "USDT Supply ATH Stablecoin Inflation", confidence: 75, direction: "bullish" },
       ],
       posts: [],
       recentCoverageTopics: ["btc sentiment vs funding"],
@@ -84,7 +84,7 @@ describe("deriveResearchOpportunities", () => {
     });
 
     expect(opportunities).toHaveLength(2);
-    expect(opportunities[0].topic).toBe("rwa tokenization");
+    expect(opportunities[0].topic).toBe("usdt supply ath stablecoin inflation");
     expect(opportunities[1].topic).toBe("btc sentiment vs funding");
     expect(opportunities[0].score).toBeGreaterThan(opportunities[1].score);
   });
