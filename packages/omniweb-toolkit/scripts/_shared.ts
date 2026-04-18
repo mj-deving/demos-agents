@@ -75,17 +75,17 @@ export async function loadPackageExport<T>(
   exportName: string,
 ): Promise<T> {
   try {
-    const mod = await import(distPath);
+    const mod = await import(sourcePath);
     if (exportName in mod) {
       return mod[exportName as keyof typeof mod] as T;
     }
   } catch {
-    // Fall back to source during local development before build output exists.
+    // Fall back to built output when source import is unavailable.
   }
 
-  const mod = await import(sourcePath);
+  const mod = await import(distPath);
   if (!(exportName in mod)) {
-    throw new Error(`${exportName} export not found in ${distPath} or ${sourcePath}`);
+    throw new Error(`${exportName} export not found in ${sourcePath} or ${distPath}`);
   }
   return mod[exportName as keyof typeof mod] as T;
 }
