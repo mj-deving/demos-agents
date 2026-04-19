@@ -305,9 +305,7 @@ export async function observe(
           ).toFixed(3),
         ),
   };
-  const chosenOpportunity = opportunities[0] ?? null;
-  const topic = chosenOpportunity?.topic ?? null;
-  if (!topic) {
+  if (opportunities.length === 0) {
     return {
       kind: "skip",
       reason: "no_publishable_research_opportunity",
@@ -338,209 +336,435 @@ export async function observe(
     };
   }
 
-  const matchingFeedPosts = chosenOpportunity.matchingFeedPosts;
-  const matchedSignal = chosenOpportunity.matchedSignal;
-  const attestationPlan = chosenOpportunity.attestationPlan;
-  const sourceProfile = chosenOpportunity.sourceProfile;
-  const colonySubstrate = buildResearchColonySubstrate({
-    opportunity: chosenOpportunity,
-    allPosts: posts,
-  });
+  let deferredRepeatSkip: MinimalObserveResult<ResearchState> | null = null;
 
-  if (!sourceProfile.supported) {
-    return {
-      kind: "skip",
-      reason: "research_family_not_ready",
-      facts: {
-        topic,
-        researchFamily: sourceProfile.family,
-        sourceProfileReason: sourceProfile.reason,
-        signalCount: signalList.length,
-        feedCount: posts.length,
-        availableBalance,
-        opportunityKind: chosenOpportunity.kind,
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-          colonySubstrate,
-        },
-        promptPacket: {
-          objective: "Only prompt when the research topic maps to a supported evidence family with attestation-ready sources.",
+  for (const chosenOpportunity of opportunities) {
+    const topic = chosenOpportunity.topic;
+    const matchingFeedPosts = chosenOpportunity.matchingFeedPosts;
+    const matchedSignal = chosenOpportunity.matchedSignal;
+    const attestationPlan = chosenOpportunity.attestationPlan;
+    const sourceProfile = chosenOpportunity.sourceProfile;
+    const colonySubstrate = buildResearchColonySubstrate({
+      opportunity: chosenOpportunity,
+      allPosts: posts,
+    });
+
+    if (!sourceProfile.supported) {
+      return {
+        kind: "skip",
+        reason: "research_family_not_ready",
+        facts: {
           topic,
-          opportunityKind: chosenOpportunity.kind,
           researchFamily: sourceProfile.family,
           sourceProfileReason: sourceProfile.reason,
-          derivedMetrics,
-          readStatus,
-          result: "skip",
-        },
-        notes: [
-          ...attestationPlan.warnings,
-        ],
-      },
-      nextState: ctx.memory.state ?? {},
-    };
-  }
-
-  if (!attestationPlan.ready || !attestationPlan.primary) {
-    return {
-      kind: "skip",
-      reason: "attestation_plan_not_ready",
-      facts: {
-        topic,
-        researchFamily: sourceProfile.family,
-        signalCount: signalList.length,
-        feedCount: posts.length,
-        availableBalance,
-        opportunityKind: chosenOpportunity.kind,
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-          colonySubstrate,
-        },
-        promptPacket: {
-          objective: "Only publish when the claim has a viable primary plus supporting attestation plan.",
-          topic,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
           opportunityKind: chosenOpportunity.kind,
-          researchFamily: sourceProfile.family,
-          derivedMetrics,
-          readStatus,
-          result: "skip",
-          attestationPlanReady: attestationPlan.ready,
+          ...derivedMetrics,
+          ...readStatus,
         },
-        notes: attestationPlan.warnings,
-      },
-      nextState: ctx.memory.state ?? {},
-    };
-  }
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+          },
+          promptPacket: {
+            objective: "Only prompt when the research topic maps to a supported evidence family with attestation-ready sources.",
+            topic,
+            opportunityKind: chosenOpportunity.kind,
+            researchFamily: sourceProfile.family,
+            sourceProfileReason: sourceProfile.reason,
+            derivedMetrics,
+            readStatus,
+            result: "skip",
+          },
+          notes: [
+            ...attestationPlan.warnings,
+          ],
+        },
+        nextState: ctx.memory.state ?? {},
+      };
+    }
 
-  const evidenceReads = await Promise.allSettled([
-    fetchResearchEvidenceSummary({
-      source: attestationPlan.primary,
-      topic,
-    }),
-    ...attestationPlan.supporting.map((source) =>
+    if (!attestationPlan.ready || !attestationPlan.primary) {
+      return {
+        kind: "skip",
+        reason: "attestation_plan_not_ready",
+        facts: {
+          topic,
+          researchFamily: sourceProfile.family,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          ...derivedMetrics,
+          ...readStatus,
+        },
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+          },
+          promptPacket: {
+            objective: "Only publish when the claim has a viable primary plus supporting attestation plan.",
+            topic,
+            opportunityKind: chosenOpportunity.kind,
+            researchFamily: sourceProfile.family,
+            derivedMetrics,
+            readStatus,
+            result: "skip",
+            attestationPlanReady: attestationPlan.ready,
+          },
+          notes: attestationPlan.warnings,
+        },
+        nextState: ctx.memory.state ?? {},
+      };
+    }
+    const evidenceReads = await Promise.allSettled([
       fetchResearchEvidenceSummary({
-        source,
+        source: attestationPlan.primary,
         topic,
-      })),
-  ]);
-  const primaryEvidenceRead = evidenceReads[0];
-  const supportingEvidenceReads = evidenceReads.slice(1);
-  const prefetchedReadResults = evidenceReads.flatMap((entry) =>
-    entry.status === "fulfilled" ? [entry.value] : []);
-  const evidenceSummaryResult = primaryEvidenceRead?.status === "fulfilled"
-    ? primaryEvidenceRead.value
-    : {
-      ok: false as const,
-      reason: "fetch_failed" as const,
-      note: primaryEvidenceRead?.status === "rejected"
-        ? `Primary evidence fetch failed for ${attestationPlan.primary.name}: ${String(primaryEvidenceRead.reason)}`
-        : `Primary evidence fetch failed for ${attestationPlan.primary.name}.`,
-    };
-  const supportingEvidenceSummaries = supportingEvidenceReads.flatMap((entry) =>
-    entry.status === "fulfilled" && entry.value.ok ? [entry.value.summary] : []);
-  const supportingEvidenceNotes = supportingEvidenceReads.flatMap((entry, index) => {
-    const source = attestationPlan.supporting[index];
-    if (!source) return [];
-    if (entry.status === "rejected") {
-      return [`Supporting evidence fetch failed for ${source.name}: ${String(entry.reason)}`];
-    }
-    if (!entry.value.ok) {
-      return [`Supporting evidence fetch skipped for ${source.name}: ${entry.value.note}`];
-    }
-    return [];
-  });
-
-  if (!evidenceSummaryResult.ok) {
-    return {
-      kind: "skip",
-      reason: "evidence_summary_not_ready",
-      facts: {
-        topic,
-        researchFamily: sourceProfile.family,
-        signalCount: signalList.length,
-        feedCount: posts.length,
-        availableBalance,
-        opportunityKind: chosenOpportunity.kind,
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-          colonySubstrate,
-          evidenceSummary: null,
-          supportingEvidenceSummaries: [],
-        },
-        promptPacket: {
-          objective: "Only prompt from real fetched evidence, not just topic labels and source names.",
+      }),
+      ...attestationPlan.supporting.map((source) =>
+        fetchResearchEvidenceSummary({
+          source,
           topic,
-          opportunityKind: chosenOpportunity.kind,
+        })),
+    ]);
+    const primaryEvidenceRead = evidenceReads[0];
+    const supportingEvidenceReads = evidenceReads.slice(1);
+    const prefetchedReadResults = evidenceReads.flatMap((entry) =>
+      entry.status === "fulfilled" ? [entry.value] : []);
+    const evidenceSummaryResult = primaryEvidenceRead?.status === "fulfilled"
+      ? primaryEvidenceRead.value
+      : {
+        ok: false as const,
+        reason: "fetch_failed" as const,
+        note: primaryEvidenceRead?.status === "rejected"
+          ? `Primary evidence fetch failed for ${attestationPlan.primary.name}: ${String(primaryEvidenceRead.reason)}`
+          : `Primary evidence fetch failed for ${attestationPlan.primary.name}.`,
+      };
+    const supportingEvidenceSummaries = supportingEvidenceReads.flatMap((entry) =>
+      entry.status === "fulfilled" && entry.value.ok ? [entry.value.summary] : []);
+    const supportingEvidenceNotes = supportingEvidenceReads.flatMap((entry, index) => {
+      const source = attestationPlan.supporting[index];
+      if (!source) return [];
+      if (entry.status === "rejected") {
+        return [`Supporting evidence fetch failed for ${source.name}: ${String(entry.reason)}`];
+      }
+      if (!entry.value.ok) {
+        return [`Supporting evidence fetch skipped for ${source.name}: ${entry.value.note}`];
+      }
+      return [];
+    });
+
+    if (!evidenceSummaryResult.ok) {
+      return {
+        kind: "skip",
+        reason: "evidence_summary_not_ready",
+        facts: {
+          topic,
           researchFamily: sourceProfile.family,
-          derivedMetrics,
-          readStatus,
-          result: "skip",
-          attestationPlanReady: attestationPlan.ready,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          ...derivedMetrics,
+          ...readStatus,
         },
-        notes: [
-          evidenceSummaryResult.note,
-          ...supportingEvidenceNotes,
-          ...attestationPlan.warnings,
-        ],
-      },
-      nextState: ctx.memory.state ?? {},
-    };
-  }
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+            evidenceSummary: null,
+            supportingEvidenceSummaries: [],
+          },
+          promptPacket: {
+            objective: "Only prompt from real fetched evidence, not just topic labels and source names.",
+            topic,
+            opportunityKind: chosenOpportunity.kind,
+            researchFamily: sourceProfile.family,
+            derivedMetrics,
+            readStatus,
+            result: "skip",
+            attestationPlanReady: attestationPlan.ready,
+          },
+          notes: [
+            evidenceSummaryResult.note,
+            ...supportingEvidenceNotes,
+            ...attestationPlan.warnings,
+          ],
+        },
+        nextState: ctx.memory.state ?? {},
+      };
+    }
 
-  const previousSnapshot = ctx.memory.state?.lastResearchSnapshot;
-  const evidenceDelta = buildResearchEvidenceDelta(
-    previousSnapshot?.topic === topic ? previousSnapshot.evidenceValues : null,
-    evidenceSummaryResult.summary.values,
-  );
-  const selfHistory = buildResearchSelfHistory({
-    history: ctx.memory.state?.publishHistory ?? [],
-    topic,
-    family: sourceProfile.family,
-    now: ctx.cycle.startedAt,
-    currentEvidenceValues: evidenceSummaryResult.summary.values,
-  });
-  const deltaSummary = summarizeResearchEvidenceDelta(evidenceDelta);
+    const previousSnapshot = ctx.memory.state?.lastResearchSnapshot;
+    const evidenceDelta = buildResearchEvidenceDelta(
+      previousSnapshot?.topic === topic ? previousSnapshot.evidenceValues : null,
+      evidenceSummaryResult.summary.values,
+    );
+    const selfHistory = buildResearchSelfHistory({
+      history: ctx.memory.state?.publishHistory ?? [],
+      topic,
+      family: sourceProfile.family,
+      now: ctx.cycle.startedAt,
+      currentEvidenceValues: evidenceSummaryResult.summary.values,
+    });
+    const deltaSummary = summarizeResearchEvidenceDelta(evidenceDelta);
 
-  if (previousSnapshot?.topic === topic && !deltaSummary.hasMeaningfulChange) {
+    if (previousSnapshot?.topic === topic && !deltaSummary.hasMeaningfulChange) {
+      deferredRepeatSkip ??= {
+        kind: "skip",
+        reason: "values_within_normal_range",
+        facts: {
+          topic,
+          researchFamily: sourceProfile.family,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          ...derivedMetrics,
+          ...readStatus,
+        },
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+            evidenceSummary: evidenceSummaryResult.summary,
+            supportingEvidenceSummaries,
+            evidenceDelta,
+            selfHistory,
+          },
+          promptPacket: {
+            objective: "Skip when the same research topic has not moved meaningfully since the last cycle.",
+            topic,
+            opportunityKind: chosenOpportunity.kind,
+            researchFamily: sourceProfile.family,
+            derivedMetrics,
+            readStatus,
+            deltaSummary,
+            selfHistory,
+            result: "skip",
+          },
+        },
+        nextState: {
+          ...(ctx.memory.state ?? {}),
+          lastResearchSnapshot: {
+            topic,
+            observedAt: ctx.cycle.startedAt,
+            evidenceValues: evidenceSummaryResult.summary.values,
+            derivedMetrics,
+          },
+        },
+      };
+      continue;
+    }
+
+    if (selfHistory.skipSuggested) {
+      deferredRepeatSkip ??= {
+        kind: "skip",
+        reason: "recent_self_coverage_without_new_delta",
+        facts: {
+          topic,
+          researchFamily: sourceProfile.family,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          ...derivedMetrics,
+          ...readStatus,
+        },
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+            evidenceSummary: evidenceSummaryResult.summary,
+            supportingEvidenceSummaries,
+            evidenceDelta,
+            selfHistory,
+          },
+          promptPacket: {
+            objective: "Skip when the same family or topic was just covered and the evidence packet has not moved enough to justify repeating the thesis.",
+            topic,
+            opportunityKind: chosenOpportunity.kind,
+            researchFamily: sourceProfile.family,
+            derivedMetrics,
+            readStatus,
+            deltaSummary,
+            selfHistory,
+            result: "skip",
+          },
+        },
+        nextState: {
+          ...(ctx.memory.state ?? {}),
+          lastResearchSnapshot: {
+            topic,
+            observedAt: ctx.cycle.startedAt,
+            evidenceValues: evidenceSummaryResult.summary.values,
+            derivedMetrics,
+          },
+        },
+      };
+      continue;
+    }
+
+    const draft = await buildResearchDraft({
+      opportunity: chosenOpportunity,
+      feedCount: posts.length,
+      leaderboardCount: leaderboardAgents.length,
+      availableBalance,
+      colonySubstrate,
+      evidenceSummary: evidenceSummaryResult.summary,
+      supportingEvidenceSummaries,
+      selfHistory,
+      llmProvider: ctx.omni.runtime.llmProvider,
+      minTextLength: 300,
+    });
+
+    if (!draft.ok) {
+      return {
+        kind: "skip",
+        reason: draft.reason,
+        facts: {
+          topic,
+          researchFamily: sourceProfile.family,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          opportunityScore: chosenOpportunity.score,
+          ...derivedMetrics,
+          ...readStatus,
+        },
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+            evidenceSummary: evidenceSummaryResult.summary,
+            supportingEvidenceSummaries,
+            evidenceDelta,
+            selfHistory,
+          },
+          promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
+          notes: [
+            ...draft.notes,
+            ...supportingEvidenceNotes,
+            ...attestationPlan.warnings,
+          ],
+        },
+        nextState: ctx.memory.state ?? {},
+      };
+    }
+
+    const sourceMatch = await matchResearchDraftToPlan({
+      topic,
+      text: draft.text,
+      tags: draft.tags,
+      attestationPlan,
+      evidenceReads: prefetchedReadResults,
+    });
+
+    if (!sourceMatch.pass) {
+      return {
+        kind: "skip",
+        reason: "draft_source_match_failed",
+        facts: {
+          topic,
+          researchFamily: sourceProfile.family,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          opportunityScore: chosenOpportunity.score,
+          ...derivedMetrics,
+          ...readStatus,
+        },
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+            evidenceSummary: evidenceSummaryResult.summary,
+            supportingEvidenceSummaries,
+            evidenceDelta,
+            selfHistory,
+          },
+          promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
+          notes: [
+            `shared_source_match_failed: ${sourceMatch.reason}`,
+            ...draft.notes,
+            ...supportingEvidenceNotes,
+            ...attestationPlan.warnings,
+          ],
+        },
+        nextState: ctx.memory.state ?? {},
+      };
+    }
+
     return {
-      kind: "skip",
-      reason: "values_within_normal_range",
+      kind: "publish",
+      category: draft.category,
+      text: draft.text,
+      attestUrl: attestationPlan.primary.url,
+      tags: draft.tags,
+      confidence: draft.confidence,
       facts: {
         topic,
         researchFamily: sourceProfile.family,
@@ -548,6 +772,8 @@ export async function observe(
         feedCount: posts.length,
         availableBalance,
         opportunityKind: chosenOpportunity.kind,
+        opportunityScore: chosenOpportunity.score,
+        draftSource: draft.draftSource,
         ...derivedMetrics,
         ...readStatus,
       },
@@ -569,19 +795,35 @@ export async function observe(
           selfHistory,
         },
         promptPacket: {
-          objective: "Skip when the same research topic has not moved meaningfully since the last cycle.",
-          topic,
-          opportunityKind: chosenOpportunity.kind,
-          researchFamily: sourceProfile.family,
-          derivedMetrics,
-          readStatus,
-          deltaSummary,
-          selfHistory,
-          result: "skip",
+          ...draft.promptPacket,
+          category: draft.category,
+          draftText: draft.text,
+          qualityGate: draft.qualityGate,
+          primaryAttestUrl: attestationPlan.primary.url,
+          supportingAttestUrls: attestationPlan.supporting.map((candidate) => candidate.url),
         },
+        notes: [
+          "This starter now persists reduced raw inputs, selected evidence, the prompt packet, and the attestation plan for operator audit.",
+          ...supportingEvidenceNotes,
+          ...attestationPlan.warnings,
+        ],
       },
       nextState: {
-        ...(ctx.memory.state ?? {}),
+        lastCoverageTopic: topic,
+        lastPublishedAt: ctx.cycle.startedAt,
+        topicHistory: buildNextTopicHistory(ctx.memory.state?.topicHistory ?? [], {
+          topic,
+          publishedAt: ctx.cycle.startedAt,
+          opportunityKind: chosenOpportunity.kind,
+        }),
+        publishHistory: buildNextPublishHistory(ctx.memory.state?.publishHistory ?? [], {
+          topic,
+          family: sourceProfile.family,
+          publishedAt: ctx.cycle.startedAt,
+          opportunityKind: chosenOpportunity.kind,
+          textSnippet: snippetText(draft.text),
+          evidenceValues: evidenceSummaryResult.summary.values,
+        }),
         lastResearchSnapshot: {
           topic,
           observedAt: ctx.cycle.startedAt,
@@ -592,242 +834,34 @@ export async function observe(
     };
   }
 
-  if (selfHistory.skipSuggested) {
-    return {
-      kind: "skip",
-      reason: "recent_self_coverage_without_new_delta",
-      facts: {
-        topic,
-        researchFamily: sourceProfile.family,
-        signalCount: signalList.length,
-        feedCount: posts.length,
-        availableBalance,
-        opportunityKind: chosenOpportunity.kind,
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-          colonySubstrate,
-          evidenceSummary: evidenceSummaryResult.summary,
-          supportingEvidenceSummaries,
-          evidenceDelta,
-          selfHistory,
-        },
-        promptPacket: {
-          objective: "Skip when the same family or topic was just covered and the evidence packet has not moved enough to justify repeating the thesis.",
-          topic,
-          opportunityKind: chosenOpportunity.kind,
-          researchFamily: sourceProfile.family,
-          derivedMetrics,
-          readStatus,
-          deltaSummary,
-          selfHistory,
-          result: "skip",
-        },
-      },
-      nextState: {
-        ...(ctx.memory.state ?? {}),
-        lastResearchSnapshot: {
-          topic,
-          observedAt: ctx.cycle.startedAt,
-          evidenceValues: evidenceSummaryResult.summary.values,
-          derivedMetrics,
-        },
-      },
-    };
-  }
-
-  const draft = await buildResearchDraft({
-    opportunity: chosenOpportunity,
-    feedCount: posts.length,
-    leaderboardCount: leaderboardAgents.length,
-    availableBalance,
-    colonySubstrate,
-    evidenceSummary: evidenceSummaryResult.summary,
-    supportingEvidenceSummaries,
-    selfHistory,
-    llmProvider: ctx.omni.runtime.llmProvider,
-    minTextLength: 300,
-  });
-
-  if (!draft.ok) {
-    return {
-      kind: "skip",
-      reason: draft.reason,
-      facts: {
-        topic,
-        researchFamily: sourceProfile.family,
-        signalCount: signalList.length,
-        feedCount: posts.length,
-        availableBalance,
-        opportunityKind: chosenOpportunity.kind,
-        opportunityScore: chosenOpportunity.score,
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-          colonySubstrate,
-          evidenceSummary: evidenceSummaryResult.summary,
-          supportingEvidenceSummaries,
-          evidenceDelta,
-          selfHistory,
-        },
-        promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
-        notes: [
-          ...draft.notes,
-          ...supportingEvidenceNotes,
-          ...attestationPlan.warnings,
-        ],
-      },
-      nextState: ctx.memory.state ?? {},
-    };
-  }
-
-  const sourceMatch = await matchResearchDraftToPlan({
-    topic,
-    text: draft.text,
-    tags: draft.tags,
-    attestationPlan,
-    evidenceReads: prefetchedReadResults,
-  });
-
-  if (!sourceMatch.pass) {
-    return {
-      kind: "skip",
-      reason: "draft_source_match_failed",
-      facts: {
-        topic,
-        researchFamily: sourceProfile.family,
-        signalCount: signalList.length,
-        feedCount: posts.length,
-        availableBalance,
-        opportunityKind: chosenOpportunity.kind,
-        opportunityScore: chosenOpportunity.score,
-        ...derivedMetrics,
-        ...readStatus,
-      },
-      attestationPlan,
-      audit: {
-        inputs: {
-          feedSample,
-          signalSample,
-          leaderboardSample: leaderboardAgents.slice(0, 5),
-        },
-        selectedEvidence: {
-          matchedSignal,
-          feedMentions: matchingFeedPosts,
-          sourceProfile,
-          colonySubstrate,
-          evidenceSummary: evidenceSummaryResult.summary,
-          supportingEvidenceSummaries,
-          evidenceDelta,
-          selfHistory,
-        },
-        promptPacket: draft.promptPacket as unknown as Record<string, unknown>,
-        notes: [
-          `shared_source_match_failed: ${sourceMatch.reason}`,
-          ...draft.notes,
-          ...supportingEvidenceNotes,
-          ...attestationPlan.warnings,
-        ],
-      },
-      nextState: ctx.memory.state ?? {},
-    };
+  if (deferredRepeatSkip) {
+    return deferredRepeatSkip;
   }
 
   return {
-    kind: "publish",
-    category: draft.category,
-    text: draft.text,
-    attestUrl: attestationPlan.primary.url,
-    tags: draft.tags,
-    confidence: draft.confidence,
+    kind: "skip",
+    reason: "no_publishable_research_opportunity",
     facts: {
-      topic,
-      researchFamily: sourceProfile.family,
       signalCount: signalList.length,
       feedCount: posts.length,
       availableBalance,
-      opportunityKind: chosenOpportunity.kind,
-      opportunityScore: chosenOpportunity.score,
-      draftSource: draft.draftSource,
       ...derivedMetrics,
       ...readStatus,
     },
-    attestationPlan,
     audit: {
       inputs: {
         feedSample,
         signalSample,
         leaderboardSample: leaderboardAgents.slice(0, 5),
       },
-      selectedEvidence: {
-        matchedSignal,
-        feedMentions: matchingFeedPosts,
-        sourceProfile,
-        colonySubstrate,
-        evidenceSummary: evidenceSummaryResult.summary,
-        supportingEvidenceSummaries,
-        evidenceDelta,
-        selfHistory,
-      },
       promptPacket: {
-        ...draft.promptPacket,
-        category: draft.category,
-        draftText: draft.text,
-        qualityGate: draft.qualityGate,
-        primaryAttestUrl: attestationPlan.primary.url,
-        supportingAttestUrls: attestationPlan.supporting.map((candidate) => candidate.url),
-      },
-      notes: [
-        "This starter now persists reduced raw inputs, selected evidence, the prompt packet, and the attestation plan for operator audit.",
-        ...supportingEvidenceNotes,
-        ...attestationPlan.warnings,
-      ],
-    },
-    nextState: {
-      lastCoverageTopic: topic,
-      lastPublishedAt: ctx.cycle.startedAt,
-      topicHistory: buildNextTopicHistory(ctx.memory.state?.topicHistory ?? [], {
-        topic,
-        publishedAt: ctx.cycle.startedAt,
-        opportunityKind: chosenOpportunity.kind,
-      }),
-      publishHistory: buildNextPublishHistory(ctx.memory.state?.publishHistory ?? [], {
-        topic,
-        family: sourceProfile.family,
-        publishedAt: ctx.cycle.startedAt,
-        opportunityKind: chosenOpportunity.kind,
-        textSnippet: snippetText(draft.text),
-        evidenceValues: evidenceSummaryResult.summary.values,
-      }),
-      lastResearchSnapshot: {
-        topic,
-        observedAt: ctx.cycle.startedAt,
-        evidenceValues: evidenceSummaryResult.summary.values,
+        objective: "Find a publishable research opportunity grounded in current signals, feed drift, and attestation viability.",
         derivedMetrics,
+        readStatus,
+        result: "skip",
       },
     },
+    nextState: ctx.memory.state ?? {},
   };
 }
 
