@@ -809,6 +809,31 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("normal peg");
   });
 
+  it("allows stablecoin drafts to treat the peg as background context and reject automatic risk-on claims", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "USDT supply is still expanding, but the peg near 1.00 is background context rather than the thesis and stablecoin issuance does not by itself prove a risk-on extension for crypto beta. " +
+        "The relevant change is that circulating supply keeps accelerating versus the prior week, which makes this a liquidity-routing question instead of a simple bullish-fuel story. " +
+        "The read weakens if supply growth cools materially or if the broader market context stops supporting that liquidity interpretation."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeStablecoinOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeStablecoinEvidenceSummary(),
+      supportingEvidenceSummaries: [makeStablecoinSupportingEvidenceSummary()],
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+  });
+
   it("adds bounded linked themes and domain context when colony substrate implies them", async () => {
     const provider = {
       name: "test-provider",
