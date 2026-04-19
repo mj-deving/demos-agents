@@ -337,7 +337,7 @@ function makeVixOpportunity(): ResearchOpportunity {
 function makeNetworkOpportunity(): ResearchOpportunity {
   const sourceProfile: ResearchSourceProfile = {
     family: "network-activity",
-    topic: "btc on-chain network stress and mempool congestion",
+    topic: "btc on-chain network activity and transaction density",
     asset: { asset: "bitcoin", symbol: "BTC" },
     supported: true,
     reason: null,
@@ -347,19 +347,19 @@ function makeNetworkOpportunity(): ResearchOpportunity {
   };
   return {
     kind: "coverage_gap",
-    topic: "btc on-chain network stress and mempool congestion",
+    topic: "btc on-chain network activity and transaction density",
     score: 86,
     rationale: "Network-activity topic is not covered in the recent feed.",
     sourceProfile,
     matchedSignal: {
-      topic: "btc on-chain network stress and mempool congestion",
+      topic: "btc on-chain network activity and transaction density",
       confidence: 75,
       direction: "alert",
     },
     matchingFeedPosts: [],
     lastSeenAt: null,
     attestationPlan: {
-      topic: "btc on-chain network stress and mempool congestion",
+      topic: "btc on-chain network activity and transaction density",
       agent: "sentinel",
       catalogPath: "/tmp/catalog.json",
       ready: true,
@@ -931,9 +931,9 @@ describe("buildResearchDraft", () => {
     const provider = {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
-        "Bitcoin's on-chain stress looks more like congestion than clean adoption because 412,338 transactions are running through just 144 blocks, which leaves throughput density near 2,863 transactions per block while hashrate stays elevated and spot sits around 77,201 dollars. " +
-        "That matters because activity this compressed can reflect speculative churn or fee pressure rather than healthy demand, so the right question is whether the load persists, cools, or broadens into a cleaner usage pattern instead of treating price alone as proof. " +
-        "The thesis weakens if transaction density drops quickly and the rest of the network picture normalizes, suggesting the spike was temporary noise rather than a durable condition."
+        "Bitcoin's network activity is elevated in the latest window: 412,338 transactions across 144 blocks leaves density near 2,863 transactions per block while hashrate stays elevated and spot sits around 77,201 dollars. " +
+        "That does not tell us whether the flow is adoption, congestion, or churn on its own, but it does show activity is concentrated enough to watch for persistence versus normalization in the next window. " +
+        "The read weakens if transaction density drops quickly and the rest of the network picture normalizes, because then the activity spike was not persistent."
       ),
     };
 

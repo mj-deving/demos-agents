@@ -48,13 +48,19 @@ const NETWORK_TERMS = [
   "on-chain",
   "onchain",
   "network",
-  "mempool",
-  "fees",
   "whale",
   "miner",
   "hashrate",
   "addresses",
   "bridging",
+];
+
+const UNSUPPORTED_NETWORK_SPECIFIC_TERMS = [
+  "mempool",
+  "congestion",
+  "fees",
+  "fee spike",
+  "fee pressure",
 ];
 
 const ETF_TERMS = [
@@ -177,6 +183,10 @@ export function deriveResearchSourceProfile(topic: string): ResearchSourceProfil
       supportingSourceIds: ids.slice(1),
       expectedMetrics: ["markPrice", "indexPrice", "lastFundingRate", "openInterest", "priceChangePercent7d"],
     };
+  }
+
+  if (asset && containsAny(normalized, UNSUPPORTED_NETWORK_SPECIFIC_TERMS)) {
+    return unsupportedProfile(topic, asset, "network_metrics_too_coarse_for_topic");
   }
 
   if (asset && containsAny(normalized, NETWORK_TERMS)) {

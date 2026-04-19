@@ -232,6 +232,10 @@ const NETWORK_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }>
     pattern: /\b(?:network stress|network load|congestion|throughput density|on-chain stress)\b.{0,80}\b(?:prove|proves|means|shows|confirms)\b.{0,60}\b(?:demand is healthy|healthy demand|adoption|bullish|price strength)\b/i,
     detail: "treats network stress or congestion itself as proof of healthy demand, adoption, or a bullish outcome",
   },
+  {
+    pattern: /\b(?:clean adoption|speculative churn|durable demand|short-lived usage bursts|demand quality)\b/i,
+    detail: "classifies network activity quality without packet-level evidence for that distinction",
+  },
 ];
 
 const VIX_CREDIT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
@@ -629,7 +633,7 @@ function buildResearchAnalysisAngle(opportunity: ResearchOpportunity): string {
   }
 
   if (topic.includes("on-chain") || topic.includes("network") || topic.includes("mempool") || topic.includes("hashrate") || topic.includes("addresses")) {
-    return "Explain whether the latest on-chain activity reflects real usage, congestion, stress, or speculative churn, and what would invalidate that read.";
+    return "Explain whether the latest on-chain activity reflects real usage, temporary throughput pressure, or speculative churn, and what would invalidate that read.";
   }
 
   if (topic.includes("vix") || topic.includes("credit") || topic.includes("recession")) {

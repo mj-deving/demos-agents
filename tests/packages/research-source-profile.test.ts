@@ -47,7 +47,7 @@ describe("deriveResearchSourceProfile", () => {
   });
 
   it("maps on-chain activity topics to the network evidence family", () => {
-    const profile = deriveResearchSourceProfile("BTC on-chain network stress and mempool congestion");
+    const profile = deriveResearchSourceProfile("BTC on-chain network activity and transaction density");
 
     expect(profile.family).toBe("network-activity");
     expect(profile.supported).toBe(true);
@@ -60,6 +60,14 @@ describe("deriveResearchSourceProfile", () => {
       "priceUsd",
       "transactionsPerBlock24h",
     ]);
+  });
+
+  it("keeps mempool-specific network topics unsupported when the packet lacks mempool metrics", () => {
+    const profile = deriveResearchSourceProfile("BTC mempool congestion and fee pressure");
+
+    expect(profile.family).toBe("unsupported");
+    expect(profile.supported).toBe(false);
+    expect(profile.reason).toBe("network_metrics_too_coarse_for_topic");
   });
 
   it("maps vix-credit topics without needing asset detection", () => {
