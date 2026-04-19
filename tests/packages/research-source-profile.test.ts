@@ -20,6 +20,20 @@ describe("deriveResearchSourceProfile", () => {
     expect(profile.supportingSourceIds).toContain("coingecko-2a7ea372");
   });
 
+  it("maps divergence topics to a dedicated oracle-divergence family when the signal carries divergence context", () => {
+    const profile = deriveResearchSourceProfile("BTC sentiment vs reality", {
+      divergence: {
+        direction: "bullish",
+        reasoning: "Spot still looks firmer than the colony read suggests.",
+      },
+    });
+
+    expect(profile.family).toBe("oracle-divergence");
+    expect(profile.supported).toBe(true);
+    expect(profile.primarySourceIds).toEqual(["coingecko-42ff8c85"]);
+    expect(profile.supportingSourceIds).toEqual(["coingecko-2a7ea372"]);
+  });
+
   it("flags ETF flow topics as unsupported until the registry grows a matching family", () => {
     const profile = deriveResearchSourceProfile("BTC ETF flows");
 

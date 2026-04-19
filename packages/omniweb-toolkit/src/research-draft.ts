@@ -181,6 +181,33 @@ const FUNDING_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }>
   },
 ];
 
+const ORACLE_DIVERGENCE_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
+  {
+    pattern: /\b(?:divergence|mismatch|disconnect)\b.{0,80}\b(?:proves|means|shows|confirms)\b.{0,80}\b(?:market is wrong|market's wrong|sentiment is wrong|colony is wrong)\b/i,
+    detail: "treats a divergence as proof that one side is objectively wrong rather than describing the mismatch",
+  },
+  {
+    pattern: /\b(?:divergence|mismatch|disconnect)\b.{0,80}\b(?:guarantees|must|inevitably|has to)\b.{0,80}\b(?:reverse|reversion|snapback|mean reversion|catch up)\b/i,
+    detail: "treats a divergence as guaranteeing a reversal or mean reversion",
+  },
+  {
+    pattern: /\b(?:market|price)\b.{0,80}\b(?:will have to|must)\b.{0,40}\b(?:catch up|revert|snap back)\b/i,
+    detail: "turns mismatch language into an inevitable market adjustment claim",
+  },
+  {
+    pattern: /\bedge\b.{0,40}\b(?:divergence|mismatch|dislocation)\b|\b(?:divergence|mismatch|dislocation)\b.{0,40}\bedge\b/i,
+    detail: "describes a sentiment-price mismatch as a tradeable edge rather than a descriptive dislocation",
+  },
+  {
+    pattern: /\b(?:high|elevated)\s+severity\b.{0,60}\b(?:means|proves|confirms|guarantees)\b/i,
+    detail: "treats divergence severity as proof of an outcome even though severity is an internal grading",
+  },
+  {
+    pattern: /\b(?:\d+|multiple|several)\s+agents?\s+agree\b.{0,80}\b(?:means|proves|confirms|strong signal)\b/i,
+    detail: "treats agent count as evidence of independent agreement rather than correlated sentiment",
+  },
+];
+
 const SPOT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
   {
     pattern: /\b(?:price|bitcoin|btc)\b.{0,50}\b(?:up|gained|rallied|climbed)\b.{0,60}\b(?:therefore|so|which means|that means)\b.{0,40}\b(?:bullish|constructive|uptrend)\b/i,
@@ -390,6 +417,12 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
       "If the brief includes a previous coverage delta, use it to say what is actually new this cycle or why the agent should not just restate the old take.",
       "If linked themes or domain context are present, use them only to situate the thesis and keep the connection evidence-backed and bounded.",
       "Use the analysis angle explicitly. If the topic is about divergence or sentiment mismatch, say what is diverging from what instead of defaulting to generic trend commentary.",
+      ...(opts.opportunity.sourceProfile.family === "oracle-divergence"
+        ? [
+            "Treat the API's oracle label as sentiment metadata, not as verified external ground truth.",
+            "Do not describe the setup as an edge, recommendation, calibrated probability, or proof that many agents are independently right.",
+          ]
+        : []),
       "Use the research brief as doctrine. Treat baseline context as background, anomaly summary as the reason this cycle matters, and false-inference guards as hard constraints.",
       "When describing colony sentiment, use natural phrases like 'the bearish read in colony signals', 'the bullish read', or 'mixed positioning' rather than clunky constructions.",
       "End in plain language. Do not use mirrored rhetorical constructions or clever symmetry in the closing sentence.",
@@ -612,6 +645,10 @@ function buildResearchAnalysisAngle(opportunity: ResearchOpportunity): string {
   const topic = opportunity.topic.toLowerCase();
   const sentimentRead = describeSignalRead(opportunity);
 
+  if (opportunity.sourceProfile.family === "oracle-divergence") {
+    return `Explain what is mismatched between ${sentimentRead} and the observed price/range evidence, whether that mismatch is widening or resolving, and what would bring the two back into alignment. Treat it as an open dislocation, not as proof that either side is right.`;
+  }
+
   if (topic.includes("divergence") || topic.includes("sentiment")) {
     return `Explain whether ${sentimentRead} is being confirmed or contradicted by the observed price, range, and volume evidence. Name the mismatch directly.`;
   }
@@ -673,6 +710,17 @@ function findFamilyBaselineProblem(
 ): { detail: string } | null {
   if (opportunity.sourceProfile.family === "funding-structure") {
     for (const entry of FUNDING_BASELINE_SLIP_PATTERNS) {
+      if (entry.pattern.test(text)) {
+        return {
+          detail: entry.detail,
+        };
+      }
+    }
+    return null;
+  }
+
+  if (opportunity.sourceProfile.family === "oracle-divergence") {
+    for (const entry of ORACLE_DIVERGENCE_BASELINE_SLIP_PATTERNS) {
       if (entry.pattern.test(text)) {
         return {
           detail: entry.detail,

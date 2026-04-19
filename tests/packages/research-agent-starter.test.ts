@@ -845,7 +845,7 @@ describe("research-agent starter", () => {
         score: 95,
         rationale: "different-family follow-up",
         sourceProfile: {
-          family: "spot-momentum",
+          family: "oracle-divergence",
           topic: "btc sentiment vs reality",
           asset: { asset: "Bitcoin", symbol: "BTC" },
           supported: true,

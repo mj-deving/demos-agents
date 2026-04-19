@@ -120,7 +120,9 @@ export function deriveResearchOpportunities(
     const confidence = signal.confidence ?? 0;
     if (confidence < minConfidence) continue;
 
-    const sourceProfile = deriveResearchSourceProfile(topic);
+    const sourceProfile = deriveResearchSourceProfile(topic, {
+      divergence: signal.divergence ?? null,
+    });
     if (!sourceProfile.supported) continue;
 
     const matchingFeedPosts = opts.posts.filter((post) => includesNormalized(post.text, topic));

@@ -82,6 +82,28 @@ const FUNDING_STRUCTURE_DOSSIER: ResearchFamilyDossier = {
   ],
 };
 
+const ORACLE_DIVERGENCE_DOSSIER: ResearchFamilyDossier = {
+  family: "oracle-divergence",
+  baseline: [
+    "This family inherits the API word 'oracle', but the packet is aggregated agent sentiment, not a verified external oracle feed.",
+    "A divergence is a mismatch between colony sentiment and observed market behavior, not proof that either side is objectively wrong.",
+    "Agent consensus may repeat correlated model errors rather than independent agreement.",
+    "Divergence severity is an internal grading, not a calibrated probability or validated signal strength.",
+  ],
+  focus: [
+    "Focus on what exactly is mismatched: sentiment direction, confidence, and the observed price/range behavior.",
+    "Explain whether the mismatch is widening, stabilizing, or beginning to resolve when the packet supports that read.",
+    "Frame the thesis as an open question worth watching, not as a directional call.",
+  ],
+  falseInferenceGuards: [
+    "Do not claim that a divergence proves the market is wrong.",
+    "Do not claim that a divergence guarantees mean reversion or a reversal.",
+    "Do not treat divergence severity as a confidence level or probability.",
+    "Do not treat agent count as evidence of independent agreement unless model diversity is known.",
+    "Do not describe the divergence as a tradeable edge or immediate alpha.",
+  ],
+};
+
 const SPOT_MOMENTUM_DOSSIER: ResearchFamilyDossier = {
   family: "spot-momentum",
   baseline: [
@@ -178,6 +200,8 @@ export function buildResearchBrief(
     baseBrief = buildStablecoinSupplyBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   } else if (opportunity.sourceProfile.family === "funding-structure") {
     baseBrief = buildFundingStructureBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
+  } else if (opportunity.sourceProfile.family === "oracle-divergence") {
+    baseBrief = buildOracleDivergenceBrief(opportunity, dossier, evidenceSummary, supportingEvidenceSummaries);
   } else if (opportunity.sourceProfile.family === "network-activity") {
     baseBrief = buildNetworkActivityBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   } else if (opportunity.sourceProfile.family === "spot-momentum") {
@@ -356,6 +380,35 @@ function buildSpotMomentumBrief(
   };
 }
 
+function buildOracleDivergenceBrief(
+  opportunity: ResearchOpportunity,
+  dossier: ResearchFamilyDossier,
+  evidenceSummary: ResearchEvidenceSummary,
+  supportingEvidenceSummaries: ResearchEvidenceSummary[],
+): CoreResearchBrief {
+  const currentPrice = findMetric("currentPriceUsd", evidenceSummary, supportingEvidenceSummaries);
+  const high7d = findMetric("high7d", evidenceSummary, supportingEvidenceSummaries);
+  const low7d = findMetric("low7d", evidenceSummary, supportingEvidenceSummaries);
+  const change7d = findMetric("priceChangePercent7d", evidenceSummary, supportingEvidenceSummaries);
+  const rangeLocation = describeRangeLocation(currentPrice, low7d, high7d);
+  const divergenceDirection = opportunity.matchedSignal.divergence?.direction ?? null;
+  const divergenceReasoning = opportunity.matchedSignal.divergence?.reasoning ?? null;
+  const signalDirection = opportunity.matchedSignal.direction ?? "unresolved";
+  const mismatchRead = divergenceDirection
+    ? `colony signal leans ${signalDirection} while the surfaced counter-read leans ${divergenceDirection}`
+    : `colony signal still leans ${signalDirection} but the market-facing read remains unresolved`;
+
+  return {
+    family: "oracle-divergence",
+    baselineContext: dossier.baseline,
+    focusNow: dossier.focus,
+    falseInferenceGuards: dossier.falseInferenceGuards,
+    anomalySummary: `${mismatchRead}, with spot${currentPrice ? ` at ${currentPrice}` : ""}${change7d ? `, ${change7d}% from the 7d start` : ""}${rangeLocation ? ` and sitting in the ${rangeLocation} of the observed range` : ""}.${divergenceReasoning ? ` The surfaced counter-read is: ${divergenceReasoning}` : ""} Treat the API's oracle label as sentiment metadata, not as verified external truth.`,
+    allowedThesisSpace: "Write about whether the sentiment-vs-market mismatch is widening, stabilizing, or starting to resolve. Keep the claim on descriptive dislocation and open uncertainty, not on guaranteed reversion, calibrated odds, or proof that one side must capitulate.",
+    invalidationFocus: "Invalidate with a clear alignment between colony sentiment and market behavior, such as price/range action moving back into line with the original signal or the mismatch simply fading out.",
+  };
+}
+
 function buildFundingStructureBrief(
   dossier: ResearchFamilyDossier,
   evidenceSummary: ResearchEvidenceSummary,
@@ -462,6 +515,10 @@ function dossierForFamily(family: ResearchTopicFamily): ResearchFamilyDossier {
 
   if (family === "spot-momentum") {
     return SPOT_MOMENTUM_DOSSIER;
+  }
+
+  if (family === "oracle-divergence") {
+    return ORACLE_DIVERGENCE_DOSSIER;
   }
 
   if (family === "network-activity") {

@@ -3,6 +3,7 @@ import { inferAssetAlias } from "../../../src/toolkit/chain/asset-helpers.js";
 export type ResearchTopicFamily =
   | "funding-structure"
   | "etf-flows"
+  | "oracle-divergence"
   | "spot-momentum"
   | "network-activity"
   | "stablecoin-supply"
@@ -34,7 +35,6 @@ const FUNDING_TERMS = [
 const SPOT_TERMS = [
   "price",
   "momentum",
-  "sentiment",
   "volatility",
   "trading",
   "volume",
@@ -42,6 +42,15 @@ const SPOT_TERMS = [
   "selloff",
   "bounce",
   "reversal",
+];
+
+const ORACLE_DIVERGENCE_TERMS = [
+  "divergence",
+  "mismatch",
+  "disconnect",
+  "vs reality",
+  "sentiment vs reality",
+  "sentiment divergence",
 ];
 
 const NETWORK_TERMS = [
@@ -112,9 +121,21 @@ function stablecoinSourceIdsFor(symbol: string): string[] {
   return [];
 }
 
-export function deriveResearchSourceProfile(topic: string): ResearchSourceProfile {
+export interface DeriveResearchSourceProfileOptions {
+  divergence?: {
+    agent?: string | null;
+    direction?: string | null;
+    reasoning?: string | null;
+  } | null;
+}
+
+export function deriveResearchSourceProfile(
+  topic: string,
+  opts: DeriveResearchSourceProfileOptions = {},
+): ResearchSourceProfile {
   const normalized = topic.trim().toLowerCase();
   const asset = inferAssetAlias(topic);
+  const hasDivergenceContext = opts.divergence != null || containsAny(normalized, ORACLE_DIVERGENCE_TERMS);
 
   if (containsAny(normalized, VIX_CREDIT_TERMS) && containsAny(normalized, ["vix", "credit", "recession"])) {
     return {
@@ -216,6 +237,19 @@ export function deriveResearchSourceProfile(topic: string): ResearchSourceProfil
         "priceUsd",
         "supplyChangePct7d",
       ],
+    };
+  }
+
+  if (asset && hasDivergenceContext) {
+    return {
+      family: "oracle-divergence",
+      topic,
+      asset,
+      supported: true,
+      reason: null,
+      primarySourceIds: ["coingecko-42ff8c85"],
+      supportingSourceIds: ["coingecko-2a7ea372"],
+      expectedMetrics: ["currentPriceUsd", "priceChangePercent7d", "high7d", "low7d", "latestVolumeUsd"],
     };
   }
 

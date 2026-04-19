@@ -163,4 +163,26 @@ describe("deriveResearchOpportunities", () => {
     expect(opportunities[0].topic).toBe("btc sentiment vs funding");
     expect(opportunities[0].sourceProfile.family).toBe("funding-structure");
   });
+
+  it("routes divergence-backed signals into the oracle-divergence family instead of spot-momentum", () => {
+    const opportunities = deriveResearchOpportunities({
+      signals: [
+        {
+          topic: "BTC Sentiment vs Reality",
+          confidence: 78,
+          direction: "bearish",
+          divergence: {
+            direction: "bullish",
+            reasoning: "Spot is holding firmer than the colony's bearish read implies.",
+          },
+        },
+      ],
+      posts: [],
+    });
+
+    expect(opportunities).toHaveLength(1);
+    expect(opportunities[0].topic).toBe("btc sentiment vs reality");
+    expect(opportunities[0].sourceProfile.family).toBe("oracle-divergence");
+    expect(opportunities[0].sourceProfile.primarySourceIds).toEqual(["coingecko-42ff8c85"]);
+  });
 });
