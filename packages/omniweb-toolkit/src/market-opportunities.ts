@@ -118,7 +118,7 @@ export function deriveMarketOpportunities(
           + supportingBonus
           - attestationPenalty
           - repeatedAssetPenalty,
-        rationale: `${asset} has a fresh ${divergence.severity} oracle divergence that exceeds the market playbook publish threshold.`,
+        rationale: `${asset} shows a fresh ${divergence.severity} sentiment-price dislocation that is worth monitoring with attested price context.`,
         divergence,
         matchedSignal,
         priceSnapshot,
@@ -158,7 +158,7 @@ export function deriveMarketOpportunities(
         kind: "stale_divergence",
         asset,
         score: severityScore(divergence.severity) - 8 + supportingBonus - attestationPenalty - repeatedAssetPenalty,
-        rationale: `${asset} still shows a divergence, but the feed has gone stale on the topic and needs a fresh evidence-bound update.`,
+        rationale: `${asset} still shows a sentiment-price dislocation, but the feed has gone stale on the topic and needs a fresh evidence-bound update.`,
         divergence,
         matchedSignal,
         priceSnapshot,
