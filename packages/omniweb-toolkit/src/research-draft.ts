@@ -3,6 +3,7 @@ import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.j
 import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prompt.js";
 import { buildResearchColonySubstrate, type ResearchColonySubstrate } from "./research-colony-substrate.js";
 import { classifyResearchEvidenceSemanticClass, type ResearchEvidenceSummary } from "./research-evidence.js";
+import { getResearchTopicFamilyContract } from "./research-family-contracts.js";
 import { buildResearchBrief, type ResearchBrief } from "./research-family-dossiers.js";
 import type { ResearchOpportunity } from "./research-opportunities.js";
 import type { ResearchSelfHistorySummary } from "./research-self-history.js";
@@ -144,108 +145,6 @@ const RESEARCH_STYLE_PATTERNS: Array<{ name: string; pattern: RegExp; detail: st
     name: "mirrored-rhetorical-close",
     pattern: /\b[A-Za-z-]+\s+lagging\s+[A-Za-z-]+\s+rather than\s+[A-Za-z-]+\s+lagging\s+[A-Za-z-]+\b/i,
     detail: "uses mirrored rhetorical phrasing instead of a plain market conclusion",
-  },
-];
-
-const STABLECOIN_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
-  {
-    pattern: /\b(?:still|sits|holding|staying|exactly|right at|near|around)\s+\$?1(?:\.0+)?\b/i,
-    detail: "treats the normal 1.00 peg as the thesis instead of background context",
-  },
-  {
-    pattern: /\bwithout (?:any )?peg deviation means\b/i,
-    detail: "turns a normal peg sanity check into the main causal claim",
-  },
-  {
-    pattern: /\b(?:still\s+sitting|staying|holding|exactly|right at|near|around)\s+(?:exactly\s+)?\$?1(?:\.0+)?\b.{0,80}\b(?:prove|proves|means|constructive|healthy|bullish|signal|safe)\b/i,
-    detail: "uses a normal peg to prove health, bullishness, or the main market signal",
-  },
-  {
-    pattern: /\bpeg\s+(?:staying|holding|remaining|sitting)\s+(?:at\s+)?\$?1(?:\.0+)?\b.{0,80}\b(?:mean|means|proves|shows)\b/i,
-    detail: "treats peg stability itself as the key causal conclusion",
-  },
-];
-
-const FUNDING_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
-  {
-    pattern: /\bnegative funding\b.{0,80}\b(?:prove|proves|means|guarantees|confirms)\b.{0,80}\b(?:downside|bearish|selloff|breakdown)\b/i,
-    detail: "treats negative funding alone as proof of a bearish outcome",
-  },
-  {
-    pattern: /\bnegative funding\b.{0,80}\b(?:guarantees|means|proves)\b.{0,80}\b(?:squeeze|bounce|reversal)\b/i,
-    detail: "treats negative funding alone as proof of a contrarian squeeze setup",
-  },
-  {
-    pattern: /\bfunding\b.{0,60}\b(?:by itself|alone)\b/i,
-    detail: "explicitly centers funding in isolation instead of relating it to price and positioning context",
-  },
-];
-
-const SPOT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
-  {
-    pattern: /\b(?:price|bitcoin|btc)\b.{0,50}\b(?:up|gained|rallied|climbed)\b.{0,60}\b(?:therefore|so|which means|that means)\b.{0,40}\b(?:bullish|constructive|uptrend)\b/i,
-    detail: "treats a raw upward move as the thesis without explaining the range or signal context",
-  },
-  {
-    pattern: /\b(?:price|bitcoin|btc)\b.{0,50}\b(?:down|fell|dropped|sold off)\b.{0,60}\b(?:therefore|so|which means|that means)\b.{0,40}\b(?:bearish|breakdown|downtrend)\b/i,
-    detail: "treats a raw downward move as the thesis without explaining the range or signal context",
-  },
-  {
-    pattern: /\brange[- ]bound indecision\b|\bprice keeps oscillating between support and resistance\b/i,
-    detail: "falls back to generic range commentary instead of stating where price sits in the range and why that matters",
-  },
-];
-
-const ETF_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
-  {
-    pattern: /\bpositive net flow\b.{0,80}\b(?:proves|means|shows|confirms)\b.{0,60}\b(?:broad|strong|durable)\s+institutional demand\b/i,
-    detail: "treats positive aggregate flow alone as proof of broad institutional demand",
-  },
-  {
-    pattern: /\btotal holdings\b.{0,80}\b(?:prove|proves|show|shows|mean|means)\b.{0,60}\b(?:fresh|new)\s+(?:demand|buying)\b/i,
-    detail: "uses total holdings alone as the fresh signal instead of current flow behavior",
-  },
-  {
-    pattern: /\b(?:inflows?|net flows?)\b.{0,80}\b(?:therefore|so|which means|that means)\b.{0,60}\b(?:institutions are bullish|institutions are buying aggressively)\b/i,
-    detail: "jumps from flow direction straight to institutional conviction without breadth or concentration context",
-  },
-];
-
-const NETWORK_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
-  {
-    pattern: /\b(?:more|higher|rising|surging)\s+(?:transactions|on-chain activity|network activity|blocks)\b.{0,80}\b(?:means|proves|shows|confirms)\b.{0,60}\b(?:bullish|adoption|strong demand)\b/i,
-    detail: "treats raw network activity as automatic proof of adoption, demand, or a bullish outcome",
-  },
-  {
-    pattern: /\bhashrate\b.{0,80}\b(?:means|proves|shows|confirms)\b.{0,60}\b(?:bullish|healthy|safe|strong)\b/i,
-    detail: "treats hashrate alone as proof of network health or bullish price implications",
-  },
-  {
-    pattern: /\bon-chain\b.{0,60}\b(?:activity|usage)\b.{0,80}\b(?:therefore|so|which means|that means)\b.{0,60}\b(?:bullish|constructive)\b/i,
-    detail: "jumps from generic on-chain activity straight to a market conclusion without explaining the mechanism",
-  },
-  {
-    pattern: /\bprice\b.{0,40}\b(?:absorb(?:s|ing|ed)?|reject(?:s|ing|ed)?|validat(?:es|ing|ed)?)\b.{0,40}\b(?:load|congestion|network activity|throughput)\b|\b(?:load|congestion|network activity|throughput)\b.{0,40}\b(?:absorb(?:ed)?|reject(?:ed)?|validat(?:ed)?)\b.{0,40}\bby price\b|\b(?:market|price)\b.{0,40}\bvalidat(?:es|ing|ed)?\b.{0,40}\b(?:congestion|network stress|network load|throughput)\b/i,
-    detail: "claims that price action directly confirms or rejects network load without evidence for that mechanism",
-  },
-  {
-    pattern: /\b(?:network stress|network load|congestion|throughput density|on-chain stress)\b.{0,80}\b(?:prove|proves|means|shows|confirms)\b.{0,60}\b(?:demand is healthy|healthy demand|adoption|bullish|price strength)\b/i,
-    detail: "treats network stress or congestion itself as proof of healthy demand, adoption, or a bullish outcome",
-  },
-];
-
-const VIX_CREDIT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
-  {
-    pattern: /\b(?:high|elevated|spiking)\s+vix\b.{0,80}\b(?:means|proves|guarantees|confirms)\b.{0,60}\b(?:crash|recession|panic|meltdown)\b/i,
-    detail: "treats a VIX level or spike by itself as proof of a crash or recession outcome",
-  },
-  {
-    pattern: /\bcredit spread\b/i,
-    detail: "describes the bill/note spread as a literal credit spread instead of a Treasury rates backdrop",
-  },
-  {
-    pattern: /\bvix\b.{0,60}\b(?:alone|by itself)\b/i,
-    detail: "explicitly centers VIX in isolation instead of relating it to the rates backdrop and session move",
   },
 ];
 
@@ -671,66 +570,12 @@ function findFamilyBaselineProblem(
   text: string,
   opportunity: ResearchOpportunity,
 ): { detail: string } | null {
-  if (opportunity.sourceProfile.family === "funding-structure") {
-    for (const entry of FUNDING_BASELINE_SLIP_PATTERNS) {
-      if (entry.pattern.test(text)) {
-        return {
-          detail: entry.detail,
-        };
-      }
-    }
+  if (opportunity.sourceProfile.family === "unsupported") {
     return null;
   }
 
-  if (opportunity.sourceProfile.family === "spot-momentum") {
-    for (const entry of SPOT_BASELINE_SLIP_PATTERNS) {
-      if (entry.pattern.test(text)) {
-        return {
-          detail: entry.detail,
-        };
-      }
-    }
-    return null;
-  }
-
-  if (opportunity.sourceProfile.family === "etf-flows") {
-    for (const entry of ETF_BASELINE_SLIP_PATTERNS) {
-      if (entry.pattern.test(text)) {
-        return {
-          detail: entry.detail,
-        };
-      }
-    }
-    return null;
-  }
-
-  if (opportunity.sourceProfile.family === "network-activity") {
-    for (const entry of NETWORK_BASELINE_SLIP_PATTERNS) {
-      if (entry.pattern.test(text)) {
-        return {
-          detail: entry.detail,
-        };
-      }
-    }
-    return null;
-  }
-
-  if (opportunity.sourceProfile.family === "vix-credit") {
-    for (const entry of VIX_CREDIT_BASELINE_SLIP_PATTERNS) {
-      if (entry.pattern.test(text)) {
-        return {
-          detail: entry.detail,
-        };
-      }
-    }
-    return null;
-  }
-
-  if (opportunity.sourceProfile.family !== "stablecoin-supply") {
-    return null;
-  }
-
-  for (const entry of STABLECOIN_BASELINE_SLIP_PATTERNS) {
+  const contract = getResearchTopicFamilyContract(opportunity.sourceProfile.family);
+  for (const entry of contract.quality.slipPatterns) {
     if (entry.pattern.test(text)) {
       return {
         detail: entry.detail,

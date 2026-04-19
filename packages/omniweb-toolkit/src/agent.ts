@@ -27,7 +27,10 @@ export { buildResearchColonySubstrate } from "./research-colony-substrate.js";
 export { fetchResearchEvidenceSummary } from "./research-evidence.js";
 export { buildResearchSelfHistory } from "./research-self-history.js";
 export { buildResearchEvidenceDelta, summarizeResearchEvidenceDelta } from "./research-evidence-delta.js";
-export { defineResearchTopicFamilyContract } from "./research-family-contracts.js";
+export {
+  defineResearchTopicFamilyContract,
+  getResearchTopicFamilyContract,
+} from "./research-family-contracts.js";
 export { buildResearchDraft } from "./research-draft.js";
 export { toPreflightCandidates } from "./minimal-attestation-plan.js";
 export { matchResearchDraftToPlan } from "./research-source-match.js";

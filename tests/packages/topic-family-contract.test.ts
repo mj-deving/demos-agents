@@ -4,7 +4,10 @@ import {
   defineTopicFamilyContract,
   getTopicFamilyContract,
 } from "../../packages/omniweb-toolkit/src/topic-family-contract.js";
-import { defineResearchTopicFamilyContract } from "../../packages/omniweb-toolkit/src/research-family-contracts.js";
+import {
+  defineResearchTopicFamilyContract,
+  getResearchTopicFamilyContract,
+} from "../../packages/omniweb-toolkit/src/research-family-contracts.js";
 
 describe("topic-family contract foundation", () => {
   it("builds a registry from typed family contracts", () => {
@@ -141,5 +144,16 @@ describe("topic-family contract foundation", () => {
     });
 
     expect(contract.family).toBe("funding-structure");
+  });
+
+  it("exposes contract-backed brief doctrine and slip patterns for shipped research families", () => {
+    const contract = getResearchTopicFamilyContract("network-activity");
+
+    expect(contract.promptDoctrine.baseline[0]).toContain("High on-chain activity is context");
+    expect(contract.claimBounds.blocked[0]).toContain("more transactions by themselves");
+    expect(contract.researchBrief.allowedThesisSpace).toContain("descriptively about network conditions");
+    expect(contract.quality.slipPatterns.some((entry) => entry.pattern.test(
+      "price action validates the network load",
+    ))).toBe(true);
   });
 });
