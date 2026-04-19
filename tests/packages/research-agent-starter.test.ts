@@ -406,6 +406,107 @@ describe("research-agent starter", () => {
     });
   });
 
+  it("falls through to the next ranked opportunity when the top topic is a same-topic no-delta repeat", async () => {
+    globalThis.fetch = vi.fn().mockImplementation(async () =>
+      new Response(
+        JSON.stringify({
+          markPrice: "67250.00",
+          indexPrice: "67245.12",
+          lastFundingRate: "-0.012",
+          interestRate: "0.0001",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const omni = makeOmni();
+    omni.colony.getSignals = async () => ({
+      ok: true,
+      data: [
+        {
+          shortTopic: "BTC Funding Rate Contrarian",
+          text: "Derivatives positioning looks more bearish than spot action currently justifies.",
+          confidence: 80,
+          direction: "bearish",
+          keyInsight: "Funding is rolling over while the colony still has mixed conviction on whether spot can absorb it.",
+          agentCount: 4,
+          totalAgents: 4,
+          tags: ["BTC", "funding", "sentiment"],
+          assets: ["BTC"],
+        },
+        {
+          shortTopic: "BTC Funding Persistence",
+          text: "The market may still be underpricing how persistent the funding stress is.",
+          confidence: 74,
+          direction: "bearish",
+          keyInsight: "The newer debate is whether the same derivatives stress is persisting despite spot resilience.",
+          agentCount: 3,
+          totalAgents: 3,
+          tags: ["BTC", "funding"],
+          assets: ["BTC"],
+        },
+      ],
+    });
+    omni.runtime.llmProvider.complete = async () =>
+      "Funding persistence is the fresher angle because the colony is no longer arguing about whether bearish pressure exists, but whether it is fading or sticking even as spot tries to hold up. " +
+      "With mark price still near 67,250 dollars and funding at roughly -0.012, the same derivatives stress remains visible, but the live question has moved to persistence rather than first detection. " +
+      "The thesis weakens if funding normalizes quickly while price keeps holding, because that would mean the earlier stress signal is finally resolving instead of lingering.";
+
+    const result = await observe({
+      omni,
+      cycle: {
+        id: "cycle-5c",
+        iteration: 3,
+        startedAt: "2026-04-18T12:30:00.000Z",
+        stateDir: "/tmp/research-starter-test",
+        dryRun: true,
+      },
+      memory: {
+        state: {
+          lastResearchSnapshot: {
+            topic: "btc funding rate contrarian",
+            observedAt: "2026-04-18T12:00:00.000Z",
+            evidenceValues: {
+              markPrice: "67250.00",
+              indexPrice: "67245.12",
+              lastFundingRate: "-0.012",
+              interestRate: "0.0001",
+            },
+            derivedMetrics: {
+              highConfidenceSignalCount: 1,
+              coverageGapCount: 1,
+              contradictionCount: 0,
+              staleTopicCount: 0,
+              feedCoverageRatio: 0,
+            },
+          },
+          publishHistory: [
+            {
+              topic: "btc funding rate contrarian",
+              family: "funding-structure",
+              publishedAt: "2026-04-18T12:00:00.000Z",
+              opportunityKind: "coverage_gap",
+              textSnippet: "Earlier contrarian funding take.",
+              evidenceValues: {
+                markPrice: "67250.00",
+                indexPrice: "67245.12",
+                lastFundingRate: "-0.012",
+                interestRate: "0.0001",
+              },
+            },
+          ],
+        },
+        lastCycle: null,
+      },
+    });
+
+    expect(result.kind).toBe("publish");
+    if (result.kind !== "publish") throw new Error("expected publish");
+    expect(result.text).toContain("67,250");
+    expect((result.audit?.selectedEvidence as { matchedSignal?: { shortTopic?: string | null } }).matchedSignal?.shortTopic)
+      .toBe("BTC Funding Persistence");
+  });
+
   it("publishes BTC ETF flow topics through the dedicated ETF evidence family", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(
