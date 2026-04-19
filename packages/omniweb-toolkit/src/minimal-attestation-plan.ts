@@ -219,6 +219,24 @@ export function buildMinimalAttestationPlanFromUrls(
   };
 }
 
+export function getPrimaryAttestationCandidate(
+  plan: MinimalAttestationPlan | null | undefined,
+): MinimalAttestationCandidate | null {
+  return plan?.primary ?? null;
+}
+
+export function getPrimaryAttestationSourceName(
+  plan: MinimalAttestationPlan | null | undefined,
+): string | null {
+  return getPrimaryAttestationCandidate(plan)?.name ?? null;
+}
+
+export function getPrimaryAttestUrl(
+  plan: MinimalAttestationPlan | null | undefined,
+): string | null {
+  return getPrimaryAttestationCandidate(plan)?.url ?? null;
+}
+
 function selectFallbackCandidates(
   topic: string,
   sourceView: ReturnType<typeof loadAgentSourceView>,

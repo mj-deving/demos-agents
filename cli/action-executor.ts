@@ -3,6 +3,7 @@ import { reactToPost } from "../src/toolkit/tools/react.js";
 import type { ColonyDatabase } from "../src/toolkit/colony/schema.js";
 import { recordInteraction } from "../src/toolkit/colony/intelligence.js";
 import { getPostVerificationGate } from "../src/toolkit/colony/attestation-status.js";
+import type { PublishInput, PublishOptions, PublishResult } from "../src/actions/publish-pipeline.js";
 
 export interface ActionExecutionResult {
   executed: Array<{
@@ -65,6 +66,12 @@ export interface ActionExecutorDeps {
     publishHivePost(post: { text: string; category: string; replyTo?: string }): Promise<{ txHash: string }>;
     transferDem(to: string, amount: number): Promise<{ txHash: string }>;
   };
+  /** Optional attested publish path for legacy callers. If absent, REPLY/PUBLISH fail closed. */
+  attestAndPublish?: (
+    input: PublishInput,
+    attestUrl?: string,
+    opts?: PublishOptions,
+  ) => Promise<PublishResult>;
   /** LLM provider for generating post text from evidence */
   generateText?: (action: StrategyAction) => Promise<string>;
   /** Dry run mode — log but don't execute */
@@ -93,6 +100,11 @@ function inferCategory(action: StrategyAction): string {
 function clampTipAmount(amount: unknown): number {
   if (typeof amount !== "number" || !Number.isFinite(amount)) return 1;
   return Math.min(10, Math.max(1, amount));
+}
+
+function getAttestUrl(action: StrategyAction): string | undefined {
+  const value = action.metadata?.attestUrl;
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
 /** Max tip API fallback (direct transfer) attempts per session to prevent unlimited unvalidated spending. */
@@ -195,12 +207,33 @@ export async function executeStrategyActions(
         }
 
         case "REPLY": {
+          if (!deps.attestAndPublish) {
+            result.skipped.push({ action, reason: "attested publish path required for REPLY" });
+            deps.observe("warning", "REPLY skipped: legacy executor has no attested publish path", {
+              source: "action-executor:reply-attestation",
+              actionType: action.type,
+              target: action.target,
+            });
+            break;
+          }
+          const attestUrl = getAttestUrl(action);
+          if (!attestUrl) {
+            result.skipped.push({ action, reason: "missing attestUrl for REPLY" });
+            deps.observe("warning", "REPLY skipped: missing attestUrl", {
+              source: "action-executor:reply-attestation",
+              actionType: action.type,
+              target: action.target,
+            });
+            break;
+          }
           const text = await deps.generateText!(action);
-          const publishResult = await deps.bridge.publishHivePost({
+          const publishResult = await deps.attestAndPublish({
             text,
             category: "discussion",
+            tags: [],
+            confidence: 70,
             replyTo: action.target,
-          });
+          }, attestUrl);
           result.executed.push({ action, success: true, txHash: publishResult.txHash });
           deps.observe("insight", `Strategy REPLY executed for ${action.target ?? "new thread"}`, {
             actionType: action.type,
@@ -222,11 +255,32 @@ export async function executeStrategyActions(
         }
 
         case "PUBLISH": {
+          if (!deps.attestAndPublish) {
+            result.skipped.push({ action, reason: "attested publish path required for PUBLISH" });
+            deps.observe("warning", "PUBLISH skipped: legacy executor has no attested publish path", {
+              source: "action-executor:publish-attestation",
+              actionType: action.type,
+              target: action.target,
+            });
+            break;
+          }
+          const attestUrl = getAttestUrl(action);
+          if (!attestUrl) {
+            result.skipped.push({ action, reason: "missing attestUrl for PUBLISH" });
+            deps.observe("warning", "PUBLISH skipped: missing attestUrl", {
+              source: "action-executor:publish-attestation",
+              actionType: action.type,
+              target: action.target,
+            });
+            break;
+          }
           const text = await deps.generateText!(action);
-          const publishResult = await deps.bridge.publishHivePost({
+          const publishResult = await deps.attestAndPublish({
             text,
             category: inferCategory(action),
-          });
+            tags: [],
+            confidence: 70,
+          }, attestUrl);
           result.executed.push({ action, success: true, txHash: publishResult.txHash });
           deps.observe("insight", "Strategy PUBLISH executed", {
             actionType: action.type,

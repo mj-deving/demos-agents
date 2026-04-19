@@ -22,6 +22,7 @@ function createDeps(overrides: Partial<ActionExecutorDeps> = {}): ActionExecutor
       publishHivePost: vi.fn().mockResolvedValue({ txHash: "0xpost" }),
       transferDem: vi.fn().mockResolvedValue({ txHash: "0xtip" }),
     },
+    attestAndPublish: vi.fn().mockResolvedValue({ txHash: "0xattested-post" }),
     generateText: vi.fn().mockResolvedValue("generated text"),
     dryRun: false,
     observe: vi.fn(),
@@ -46,36 +47,49 @@ describe("executeStrategyActions", () => {
     expect(result.skipped).toEqual([]);
   });
 
-  it("routes REPLY actions through generateText and publishHivePost", async () => {
+  it("routes REPLY actions through generateText and attestAndPublish when attestUrl is present", async () => {
     const deps = createDeps();
-    const action = makeAction({ type: "REPLY", target: "0xparent" });
+    const action = makeAction({
+      type: "REPLY",
+      target: "0xparent",
+      metadata: { attestUrl: "https://example.test/reply.json" },
+    });
 
     const result = await executeStrategyActions([action], deps);
 
     expect(deps.generateText).toHaveBeenCalledWith(action);
-    expect(deps.bridge.publishHivePost).toHaveBeenCalledWith({
+    expect(deps.attestAndPublish).toHaveBeenCalledWith({
       text: "generated text",
       category: "discussion",
+      tags: [],
+      confidence: 70,
       replyTo: "0xparent",
-    });
+    }, "https://example.test/reply.json");
+    expect(deps.bridge.publishHivePost).not.toHaveBeenCalled();
     expect(result.executed).toEqual([
-      { action, success: true, txHash: "0xpost" },
+      { action, success: true, txHash: "0xattested-post" },
     ]);
   });
 
-  it("routes PUBLISH actions through generateText and publishHivePost", async () => {
+  it("routes PUBLISH actions through generateText and attestAndPublish when attestUrl is present", async () => {
     const deps = createDeps();
-    const action = makeAction({ type: "PUBLISH" });
+    const action = makeAction({
+      type: "PUBLISH",
+      metadata: { attestUrl: "https://example.test/publish.json" },
+    });
 
     const result = await executeStrategyActions([action], deps);
 
     expect(deps.generateText).toHaveBeenCalledWith(action);
-    expect(deps.bridge.publishHivePost).toHaveBeenCalledWith({
+    expect(deps.attestAndPublish).toHaveBeenCalledWith({
       text: "generated text",
       category: "analysis",
-    });
+      tags: [],
+      confidence: 70,
+    }, "https://example.test/publish.json");
+    expect(deps.bridge.publishHivePost).not.toHaveBeenCalled();
     expect(result.executed).toEqual([
-      { action, success: true, txHash: "0xpost" },
+      { action, success: true, txHash: "0xattested-post" },
     ]);
   });
 
@@ -229,6 +243,72 @@ describe("executeStrategyActions", () => {
     ]);
   });
 
+  it("fails closed on REPLY when no attested publish path is wired", async () => {
+    const deps = createDeps({ attestAndPublish: undefined });
+    const action = makeAction({
+      type: "REPLY",
+      target: "0xparent",
+      metadata: { attestUrl: "https://example.test/reply.json" },
+    });
+
+    const result = await executeStrategyActions([action], deps);
+
+    expect(deps.generateText).not.toHaveBeenCalled();
+    expect(deps.bridge.publishHivePost).not.toHaveBeenCalled();
+    expect(result.executed).toEqual([]);
+    expect(result.skipped).toEqual([
+      { action, reason: "attested publish path required for REPLY" },
+    ]);
+  });
+
+  it("fails closed on PUBLISH when no attested publish path is wired", async () => {
+    const deps = createDeps({ attestAndPublish: undefined });
+    const action = makeAction({
+      type: "PUBLISH",
+      metadata: { attestUrl: "https://example.test/publish.json" },
+    });
+
+    const result = await executeStrategyActions([action], deps);
+
+    expect(deps.generateText).not.toHaveBeenCalled();
+    expect(deps.bridge.publishHivePost).not.toHaveBeenCalled();
+    expect(result.executed).toEqual([]);
+    expect(result.skipped).toEqual([
+      { action, reason: "attested publish path required for PUBLISH" },
+    ]);
+  });
+
+  it("fails closed on PUBLISH when attestUrl is missing", async () => {
+    const deps = createDeps();
+    const action = makeAction({ type: "PUBLISH" });
+
+    const result = await executeStrategyActions([action], deps);
+
+    expect(deps.generateText).not.toHaveBeenCalled();
+    expect(deps.attestAndPublish).not.toHaveBeenCalled();
+    expect(result.executed).toEqual([]);
+    expect(result.skipped).toEqual([
+      { action, reason: "missing attestUrl for PUBLISH" },
+    ]);
+  });
+
+  it("fails closed on REPLY when attestUrl is missing", async () => {
+    const deps = createDeps();
+    const action = makeAction({
+      type: "REPLY",
+      target: "0xparent",
+    });
+
+    const result = await executeStrategyActions([action], deps);
+
+    expect(deps.generateText).not.toHaveBeenCalled();
+    expect(deps.attestAndPublish).not.toHaveBeenCalled();
+    expect(result.executed).toEqual([]);
+    expect(result.skipped).toEqual([
+      { action, reason: "missing attestUrl for REPLY" },
+    ]);
+  });
+
   it("continues after a failed action and executes subsequent actions", async () => {
     const deps = createDeps({
       bridge: {
@@ -239,7 +319,11 @@ describe("executeStrategyActions", () => {
     });
     const actions = [
       makeAction({ type: "ENGAGE", target: "0xfail" }),
-      makeAction({ type: "PUBLISH", reason: "second action" }),
+      makeAction({
+        type: "PUBLISH",
+        reason: "second action",
+        metadata: { attestUrl: "https://example.test/publish.json" },
+      }),
       makeAction({ type: "TIP", target: "demos1tippee", metadata: { amount: 2 } }),
     ];
 
@@ -248,12 +332,13 @@ describe("executeStrategyActions", () => {
     // ENGAGE fails (reaction API error), PUBLISH succeeds, TIP skipped (API returns 500 = hard denial)
     expect(result.executed).toEqual([
       { action: actions[0], success: false, error: "Reaction API returned 500" },
-      { action: actions[1], success: true, txHash: "0xpost" },
+      { action: actions[1], success: true, txHash: "0xattested-post" },
     ]);
     expect(result.skipped).toEqual([
       { action: actions[2], reason: "Tip API rejected: status 500" },
     ]);
-    expect(deps.bridge.publishHivePost).toHaveBeenCalledTimes(1);
+    expect(deps.attestAndPublish).toHaveBeenCalledTimes(1);
+    expect(deps.bridge.publishHivePost).not.toHaveBeenCalled();
     expect(deps.bridge.transferDem).not.toHaveBeenCalled();
   });
 

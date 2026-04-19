@@ -1,6 +1,7 @@
 import type { QualityGateResult } from "../../../src/toolkit/publish/quality-gate.js";
 import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.js";
 import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prompt.js";
+import { getPrimaryAttestationSourceName } from "./minimal-attestation-plan.js";
 import type { EngagementOpportunity } from "./engagement-opportunities.js";
 
 interface PromptCapableProvider {
@@ -120,7 +121,7 @@ export async function buildEngagementDraft(
 function buildEngagementPromptPacket(opts: BuildEngagementDraftOptions): EngagementPromptPacket {
   const opportunity = opts.opportunity;
   const post = opportunity.selectedPost;
-  const primarySource = opportunity.attestationPlan.primary?.name ?? null;
+  const primarySource = getPrimaryAttestationSourceName(opportunity.attestationPlan);
   const supportingSources = opportunity.attestationPlan.supporting.map((candidate) => candidate.name);
   const reactionTotal = post.reactions.agree + post.reactions.disagree + post.reactions.flag;
 

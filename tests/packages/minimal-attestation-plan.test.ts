@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildMinimalAttestationPlan,
   buildMinimalAttestationPlanFromUrls,
+  getPrimaryAttestationCandidate,
+  getPrimaryAttestationSourceName,
+  getPrimaryAttestUrl,
 } from "../../packages/omniweb-toolkit/src/minimal-attestation-plan.js";
 
 describe("buildMinimalAttestationPlan", () => {
@@ -99,5 +102,42 @@ describe("buildMinimalAttestationPlan", () => {
     expect(plan.ready).toBe(true);
     expect(plan.primary?.url).toContain("coingecko");
     expect(plan.reason).toBe("ready");
+  });
+
+  it("exposes primary attestation helpers for catalog-backed plans", () => {
+    const plan = buildMinimalAttestationPlan({
+      topic: "BTC ETF flows",
+      preferredSourceIds: ["btcetfdata-current-btc", "binance-24hr-btc"],
+      allowTopicFallback: false,
+      minSupportingSources: 1,
+    });
+
+    expect(getPrimaryAttestationCandidate(plan)?.sourceId).toBe("btcetfdata-current-btc");
+    expect(getPrimaryAttestationSourceName(plan)).toBe("btcetfdata-current");
+    expect(getPrimaryAttestUrl(plan)).toContain("btcetfdata.com/v1/current.json");
+  });
+
+  it("exposes primary attestation helpers for URL-backed plans", () => {
+    const plan = buildMinimalAttestationPlanFromUrls({
+      topic: "engagement spotlight 0xpost",
+      urls: [
+        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+      ],
+    });
+
+    expect(getPrimaryAttestationCandidate(plan)?.sourceId).toContain("coingecko");
+    expect(getPrimaryAttestationSourceName(plan)).toBe("api.coingecko.com");
+    expect(getPrimaryAttestUrl(plan)).toContain("coingecko.com/api/v3/simple/price");
+  });
+
+  it("returns null attestation helpers when no primary candidate exists", () => {
+    const plan = buildMinimalAttestationPlanFromUrls({
+      topic: "empty evidence packet",
+      urls: [],
+    });
+
+    expect(getPrimaryAttestationCandidate(plan)).toBeNull();
+    expect(getPrimaryAttestationSourceName(plan)).toBeNull();
+    expect(getPrimaryAttestUrl(plan)).toBeNull();
   });
 });
