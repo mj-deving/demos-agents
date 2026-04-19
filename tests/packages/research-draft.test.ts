@@ -136,7 +136,7 @@ function makeStablecoinOpportunity(): ResearchOpportunity {
 function makeSpotOpportunity(): ResearchOpportunity {
   const sourceProfile: ResearchSourceProfile = {
     family: "spot-momentum",
-    topic: "btc sentiment divergence bear",
+    topic: "btc price momentum reversal",
     asset: { asset: "bitcoin", symbol: "BTC" },
     supported: true,
     reason: null,
@@ -146,19 +146,19 @@ function makeSpotOpportunity(): ResearchOpportunity {
   };
   return {
     kind: "coverage_gap",
-    topic: "btc sentiment divergence bear",
+    topic: "btc price momentum reversal",
     score: 91,
-    rationale: "High-confidence divergence signal is not covered in the recent feed.",
+    rationale: "High-confidence spot momentum signal is not covered in the recent feed.",
     sourceProfile,
     matchedSignal: {
-      topic: "btc sentiment divergence bear",
+      topic: "btc price momentum reversal",
       confidence: 73,
       direction: "bearish",
     },
     matchingFeedPosts: [],
     lastSeenAt: null,
     attestationPlan: {
-      topic: "btc sentiment divergence bear",
+      topic: "btc price momentum reversal",
       agent: "sentinel",
       catalogPath: "/tmp/catalog.json",
       ready: true,
@@ -189,6 +189,75 @@ function makeSpotOpportunity(): ResearchOpportunity {
           tlsnSafe: false,
           url: "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT",
           score: 12,
+        },
+      ],
+      fallbacks: [],
+      warnings: [],
+    },
+  };
+}
+
+function makeOracleOpportunity(): ResearchOpportunity {
+  const sourceProfile: ResearchSourceProfile = {
+    family: "oracle-divergence",
+    topic: "btc sentiment vs reality",
+    asset: { asset: "bitcoin", symbol: "BTC" },
+    supported: true,
+    reason: null,
+    primarySourceIds: ["coingecko-42ff8c85"],
+    supportingSourceIds: ["coingecko-2a7ea372"],
+    expectedMetrics: ["currentPriceUsd", "priceChangePercent7d", "high7d", "low7d", "latestVolumeUsd"],
+  };
+  return {
+    kind: "coverage_gap",
+    topic: "btc sentiment vs reality",
+    score: 94,
+    rationale: "High-confidence divergence signal is not covered in the recent feed.",
+    sourceProfile,
+    matchedSignal: {
+      topic: "btc sentiment vs reality",
+      confidence: 74,
+      direction: "bearish",
+      divergence: {
+        agent: "0xagent4",
+        direction: "bullish",
+        reasoning: "Spot still looks firmer than the colony's bearish read implies.",
+      },
+    },
+    matchingFeedPosts: [],
+    lastSeenAt: null,
+    attestationPlan: {
+      topic: "btc sentiment vs reality",
+      agent: "sentinel",
+      catalogPath: "/tmp/catalog.json",
+      ready: true,
+      reason: "ready",
+      primary: {
+        sourceId: "coingecko-42ff8c85",
+        name: "CoinGecko Market Chart",
+        provider: "coingecko",
+        status: "active",
+        trustTier: "established",
+        responseFormat: "json",
+        ratingOverall: 83,
+        dahrSafe: true,
+        tlsnSafe: true,
+        url: "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7",
+        score: 18,
+      },
+      supporting: [
+        {
+          sourceId: "coingecko-2a7ea372",
+          name: "CoinGecko Simple Price",
+          provider: "coingecko",
+          status: "active",
+          trustTier: "established",
+          responseFormat: "json",
+          ratingOverall: 78,
+          dahrSafe: true,
+          tlsnSafe: true,
+          url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+          score: 14,
         },
       ],
       fallbacks: [],
@@ -872,6 +941,33 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("price being up by itself");
   });
 
+  it("adds a family dossier brief for oracle-divergence topics", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "The colony still leans bearish, but bitcoin near 76,991 dollars in the upper third of its weekly range leaves a real mismatch between sentiment and the observed tape. " +
+        "That matters because the gap is still descriptive rather than resolved: price has not confirmed the bearish read, but the divergence also does not prove the market must snap higher from here. " +
+        "The thesis weakens if price starts aligning with the bearish signal through a clean range break lower, or if the mismatch simply fades as sentiment and tape converge."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOracleOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeSpotEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.promptPacket.input.brief.family).toBe("oracle-divergence");
+    expect(result.promptPacket.input.brief.baselineContext[0]).toContain("mismatch between colony sentiment");
+    expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("market is wrong");
+  });
+
   it("adds a family dossier brief for ETF flow topics", async () => {
     const provider = {
       name: "test-provider",
@@ -1302,6 +1398,32 @@ describe("buildResearchDraft", () => {
     if (result.ok) throw new Error("expected failure");
     expect(result.reason).toBe("draft_quality_gate_failed");
     expect(result.qualityGate.checks.find((check) => check.name === "research-angle-grounding")?.pass).toBe(false);
+  });
+
+  it("rejects oracle-divergence drafts that claim the market must mean-revert", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "The divergence proves the market is wrong because bitcoin is still holding near 76,991 dollars while the colony leans bearish. " +
+        "That mismatch means price has to catch up higher and a snapback is basically inevitable from here. " +
+        "Only a temporary wobble would interrupt the reversion."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOracleOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeSpotEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(false);
   });
 
   it("rejects awkward colony-sentiment phrasing even when the numbers overlap", async () => {

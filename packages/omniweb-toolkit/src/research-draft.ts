@@ -181,6 +181,21 @@ const FUNDING_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }>
   },
 ];
 
+const ORACLE_DIVERGENCE_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
+  {
+    pattern: /\b(?:divergence|mismatch|disconnect)\b.{0,80}\b(?:proves|means|shows|confirms)\b.{0,80}\b(?:market is wrong|market's wrong|sentiment is wrong|colony is wrong)\b/i,
+    detail: "treats a divergence as proof that one side is objectively wrong rather than describing the mismatch",
+  },
+  {
+    pattern: /\b(?:divergence|mismatch|disconnect)\b.{0,80}\b(?:guarantees|must|inevitably|has to)\b.{0,80}\b(?:reverse|reversion|snapback|mean reversion|catch up)\b/i,
+    detail: "treats a divergence as guaranteeing a reversal or mean reversion",
+  },
+  {
+    pattern: /\b(?:market|price)\b.{0,80}\b(?:will have to|must)\b.{0,40}\b(?:catch up|revert|snap back)\b/i,
+    detail: "turns mismatch language into an inevitable market adjustment claim",
+  },
+];
+
 const SPOT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
   {
     pattern: /\b(?:price|bitcoin|btc)\b.{0,50}\b(?:up|gained|rallied|climbed)\b.{0,60}\b(?:therefore|so|which means|that means)\b.{0,40}\b(?:bullish|constructive|uptrend)\b/i,
@@ -612,6 +627,10 @@ function buildResearchAnalysisAngle(opportunity: ResearchOpportunity): string {
   const topic = opportunity.topic.toLowerCase();
   const sentimentRead = describeSignalRead(opportunity);
 
+  if (opportunity.sourceProfile.family === "oracle-divergence") {
+    return `Explain what is mismatched between ${sentimentRead} and the observed price/range evidence, whether that mismatch is widening or resolving, and what would bring the two back into alignment.`;
+  }
+
   if (topic.includes("divergence") || topic.includes("sentiment")) {
     return `Explain whether ${sentimentRead} is being confirmed or contradicted by the observed price, range, and volume evidence. Name the mismatch directly.`;
   }
@@ -673,6 +692,17 @@ function findFamilyBaselineProblem(
 ): { detail: string } | null {
   if (opportunity.sourceProfile.family === "funding-structure") {
     for (const entry of FUNDING_BASELINE_SLIP_PATTERNS) {
+      if (entry.pattern.test(text)) {
+        return {
+          detail: entry.detail,
+        };
+      }
+    }
+    return null;
+  }
+
+  if (opportunity.sourceProfile.family === "oracle-divergence") {
+    for (const entry of ORACLE_DIVERGENCE_BASELINE_SLIP_PATTERNS) {
       if (entry.pattern.test(text)) {
         return {
           detail: entry.detail,
