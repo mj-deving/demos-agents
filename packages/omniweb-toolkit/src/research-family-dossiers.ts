@@ -104,17 +104,18 @@ const SPOT_MOMENTUM_DOSSIER: ResearchFamilyDossier = {
 const ETF_FLOWS_DOSSIER: ResearchFamilyDossier = {
   family: "etf-flows",
   baseline: [
-    "One positive or negative ETF flow print is context, not a complete institutional-demand thesis by itself.",
-    "Aggregate net flow matters, but issuer breadth and concentration determine how broad that demand really is.",
+    "One positive or negative ETF flow print is context, not a complete ETF-demand thesis by itself.",
+    "Aggregate net flow and issuer mix matter, but positive-vs-negative issuer counts are not AUM-weighted breadth.",
     "Total holdings are structural context; fresh thesis should come from current flow mix and leadership, not holdings alone.",
   ],
   focus: [
-    "Focus on whether the flow picture is broadening, narrowing, or concentrating in one issuer.",
-    "Explain whether the latest ETF tape signals durable institutional demand, weak participation, or one-name concentration.",
+    "Focus on whether the flow picture is concentrated, mixed, or spreading across issuers on a simple count basis.",
+    "Explain whether the latest ETF tape shows one-name concentration, mixed participation, or issuer-count support without overstating that as broad demand.",
     "Use aggregate net flow, positive-vs-negative issuer mix, and the leading inflow or outflow name together.",
   ],
   falseInferenceGuards: [
     "Do not claim that positive net flow alone proves broad institutional demand.",
+    "Do not describe positive-vs-negative issuer counts as AUM-weighted breadth.",
     "Do not treat total holdings by themselves as a fresh bullish signal.",
     "Do not ignore issuer concentration when one fund is carrying the tape.",
   ],
@@ -276,7 +277,7 @@ function buildEtfFlowsBrief(
   const largestOutflowTicker = findMetric("largestOutflowTicker", evidenceSummary, supportingEvidenceSummaries);
   const netFlowDirection = findMetric("netFlowDirection", evidenceSummary, supportingEvidenceSummaries);
 
-  const breadthSummary = [
+  const issuerMixSummary = [
     positiveIssuerCount ? `${positiveIssuerCount} positive issuer(s)` : null,
     negativeIssuerCount ? `${negativeIssuerCount} negative issuer(s)` : null,
   ].filter((value): value is string => value != null).join(" vs ");
@@ -292,9 +293,9 @@ function buildEtfFlowsBrief(
     baselineContext: dossier.baseline,
     focusNow: dossier.focus,
     falseInferenceGuards: dossier.falseInferenceGuards,
-    anomalySummary: `ETF holdings sit around ${totalHoldingsBtc ?? "an unresolved total"} BTC, aggregate flow is ${netFlowDirection ?? "unclear"}${netFlowBtc ? ` at ${netFlowBtc} BTC` : ""}, issuer breadth reads ${breadthSummary || "unclear"}, and ${concentrationSummary}.`,
-    allowedThesisSpace: "Write about broad institutional demand only if the aggregate flow, issuer breadth, and leadership all point in the same direction. Otherwise, frame the tape as concentrated, mixed, or weakening demand.",
-    invalidationFocus: "Invalidate with a flip in net flow, a collapse in breadth, or a reversal in the issuer that is currently leading the tape.",
+    anomalySummary: `ETF holdings sit around ${totalHoldingsBtc ?? "an unresolved total"} BTC, aggregate flow is ${netFlowDirection ?? "unclear"}${netFlowBtc ? ` at ${netFlowBtc} BTC` : ""}, issuer mix reads ${issuerMixSummary || "unclear"}, and ${concentrationSummary}.`,
+    allowedThesisSpace: "Write about concentration, mixed participation, or simple issuer-count support. Do not upgrade issuer counts into AUM-weighted breadth or broad institutional-demand claims.",
+    invalidationFocus: "Invalidate with a flip in net flow, a meaningful shift in issuer mix, or a reversal in the issuer that is currently leading the tape.",
   };
 }
 

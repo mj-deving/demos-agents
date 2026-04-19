@@ -899,6 +899,30 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("positive net flow alone");
   });
 
+  it("allows ETF drafts to disclaim breadth claims explicitly", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Net ETF flow is positive at 609.21 BTC, but issuer counts do not prove breadth because the tape is still being carried by a narrow leadership set rather than AUM-weighted participation across the complex. " +
+        "IBIT is doing the real lifting with a 1,088.13 BTC inflow while FBTC is still leaking 478.92 BTC, so the flow picture is supportive but concentrated instead of broad institutional demand. " +
+        "That view weakens if the net flow flips negative or if the current leader stops carrying the tape."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeEtfOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEtfEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+  });
+
   it("adds a family dossier brief for vix-credit topics", async () => {
     const provider = {
       name: "test-provider",
@@ -1259,6 +1283,32 @@ describe("buildResearchDraft", () => {
         "Positive net flow of 609.21 BTC proves broad institutional demand is strong again, so the whole ETF complex is clearly back in accumulation mode. " +
         "The holdings base near 984,687 BTC just reinforces that conclusion and means institutions are buying aggressively across the board. " +
         "Only a turn to outright net outflows would challenge that bullish call."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeEtfOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEtfEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(false);
+  });
+
+  it("rejects ETF drafts that turn issuer counts into weighted breadth", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Three ETF issuers green today proves breadth is broadening across the complex, so participation is clearly expanding beyond one fund. " +
+        "That issuer count confirms broad demand is taking over rather than concentration driving the tape. " +
+        "Only a sudden collapse in the green-issuer count would weaken that read."
       ),
     };
 

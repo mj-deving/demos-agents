@@ -202,6 +202,10 @@ const ETF_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
     detail: "treats positive aggregate flow alone as proof of broad institutional demand",
   },
   {
+    pattern: /\b(?:positiveIssuerCount|negativeIssuerCount|issuer count|issuer counts|issuers?\s+green|issuers?\s+positive)\b(?!.{0,40}\b(?:do|does)\s+not\b).{0,40}\b(?:(?:is|are)\b.{0,12})?(?:prove|proves|means|shows|confirms)\b.{0,60}\b(?:breadth|broad participation|broad demand)\b/i,
+    detail: "treats simple issuer counts as proof of weighted breadth or broad participation",
+  },
+  {
     pattern: /\btotal holdings\b.{0,80}\b(?:prove|proves|show|shows|mean|means)\b.{0,60}\b(?:fresh|new)\s+(?:demand|buying)\b/i,
     detail: "uses total holdings alone as the fresh signal instead of current flow behavior",
   },
@@ -621,7 +625,7 @@ function buildResearchAnalysisAngle(opportunity: ResearchOpportunity): string {
   }
 
   if (topic.includes("etf") || topic.includes("flow")) {
-    return "Explain what the latest ETF flow and holdings data implies about institutional demand, and what would mark that demand as weakening.";
+    return "Explain what the latest ETF flow and holdings data says about issuer mix, concentration, and leadership, and what would weaken that read.";
   }
 
   if (topic.includes("stablecoin") || topic.includes("usdt") || topic.includes("usdc") || topic.includes("peg")) {
