@@ -211,6 +211,21 @@ const ETF_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
   },
 ];
 
+const NETWORK_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
+  {
+    pattern: /\b(?:more|higher|rising|surging)\s+(?:transactions|on-chain activity|network activity|blocks)\b.{0,80}\b(?:means|proves|shows|confirms)\b.{0,60}\b(?:bullish|adoption|strong demand)\b/i,
+    detail: "treats raw network activity as automatic proof of adoption, demand, or a bullish outcome",
+  },
+  {
+    pattern: /\bhashrate\b.{0,80}\b(?:means|proves|shows|confirms)\b.{0,60}\b(?:bullish|healthy|safe|strong)\b/i,
+    detail: "treats hashrate alone as proof of network health or bullish price implications",
+  },
+  {
+    pattern: /\bon-chain\b.{0,60}\b(?:activity|usage)\b.{0,80}\b(?:therefore|so|which means|that means)\b.{0,60}\b(?:bullish|constructive)\b/i,
+    detail: "jumps from generic on-chain activity straight to a market conclusion without explaining the mechanism",
+  },
+];
+
 const VIX_CREDIT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
   {
     pattern: /\b(?:high|elevated|spiking)\s+vix\b.{0,80}\b(?:means|proves|guarantees|confirms)\b.{0,60}\b(?:crash|recession|panic|meltdown)\b/i,
@@ -561,14 +576,14 @@ function checkSemanticEvidenceGrounding(
   if (primaryClass === "metadata") {
     return {
       pass: false,
-      detail: "primary evidence is metadata-shaped (search/result-count style) rather than market, macro, or liquidity evidence",
+      detail: "primary evidence is metadata-shaped (search/result-count style) rather than market, macro, liquidity, or network evidence",
     };
   }
 
   if (primaryClass === "generic") {
     return {
       pass: false,
-      detail: "primary evidence could not be classified as market, macro, or liquidity evidence",
+      detail: "primary evidence could not be classified as market, macro, liquidity, or network evidence",
     };
   }
 
@@ -603,6 +618,10 @@ function buildResearchAnalysisAngle(opportunity: ResearchOpportunity): string {
 
   if (topic.includes("stablecoin") || topic.includes("usdt") || topic.includes("usdc") || topic.includes("peg")) {
     return "Explain what the latest stablecoin supply and peg evidence says about liquidity or reserve stress, and what would weaken that interpretation.";
+  }
+
+  if (topic.includes("on-chain") || topic.includes("network") || topic.includes("mempool") || topic.includes("hashrate") || topic.includes("addresses")) {
+    return "Explain whether the latest on-chain activity reflects real usage, congestion, stress, or speculative churn, and what would invalidate that read.";
   }
 
   if (topic.includes("vix") || topic.includes("credit") || topic.includes("recession")) {
@@ -668,6 +687,17 @@ function findFamilyBaselineProblem(
 
   if (opportunity.sourceProfile.family === "etf-flows") {
     for (const entry of ETF_BASELINE_SLIP_PATTERNS) {
+      if (entry.pattern.test(text)) {
+        return {
+          detail: entry.detail,
+        };
+      }
+    }
+    return null;
+  }
+
+  if (opportunity.sourceProfile.family === "network-activity") {
+    for (const entry of NETWORK_BASELINE_SLIP_PATTERNS) {
       if (entry.pattern.test(text)) {
         return {
           detail: entry.detail,

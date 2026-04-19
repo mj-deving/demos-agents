@@ -399,6 +399,46 @@ describe("fetchResearchEvidenceSummary", () => {
     });
   });
 
+  it("extracts network metrics and semantic class from blockchair stats", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            blocks: 144,
+            transactions: 412338,
+            hashrate_24h: 623451112.45,
+            difficulty: 987654321.12,
+            market_price_usd: 77201.14,
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const result = await fetchResearchEvidenceSummary({
+      source: makeSource("https://api.blockchair.com/bitcoin/stats", {
+        sourceId: "blockchair-btc-stats",
+        name: "blockchair-bitcoin-stats",
+        provider: "blockchair",
+      }),
+      topic: "BTC on-chain network stress and mempool congestion",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.summary.values).toEqual({
+      blockCount24h: "144",
+      transactionCount24h: "412338",
+      hashrate24h: "623451112.45",
+      difficulty: "987654321.12",
+      priceUsd: "77201.14",
+    });
+    expect(result.summary.derivedMetrics).toEqual({
+      transactionsPerBlock24h: "2863.46",
+    });
+    expect(result.summary.semanticClass).toBe("network");
+  });
+
   it("fails when no usable numeric values are present", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(

@@ -334,6 +334,70 @@ function makeVixOpportunity(): ResearchOpportunity {
   };
 }
 
+function makeNetworkOpportunity(): ResearchOpportunity {
+  const sourceProfile: ResearchSourceProfile = {
+    family: "network-activity",
+    topic: "btc on-chain network stress and mempool congestion",
+    asset: { asset: "bitcoin", symbol: "BTC" },
+    supported: true,
+    reason: null,
+    primarySourceIds: ["blockchair-btc-stats"],
+    supportingSourceIds: ["coingecko-2a7ea372"],
+    expectedMetrics: ["blockCount24h", "transactionCount24h", "hashrate24h", "priceUsd", "transactionsPerBlock24h"],
+  };
+  return {
+    kind: "coverage_gap",
+    topic: "btc on-chain network stress and mempool congestion",
+    score: 86,
+    rationale: "Network-activity topic is not covered in the recent feed.",
+    sourceProfile,
+    matchedSignal: {
+      topic: "btc on-chain network stress and mempool congestion",
+      confidence: 75,
+      direction: "alert",
+    },
+    matchingFeedPosts: [],
+    lastSeenAt: null,
+    attestationPlan: {
+      topic: "btc on-chain network stress and mempool congestion",
+      agent: "sentinel",
+      catalogPath: "/tmp/catalog.json",
+      ready: true,
+      reason: "ready",
+      primary: {
+        sourceId: "blockchair-btc-stats",
+        name: "blockchair-bitcoin-stats",
+        provider: "blockchair",
+        status: "active",
+        trustTier: "established",
+        responseFormat: "json",
+        ratingOverall: 76,
+        dahrSafe: true,
+        tlsnSafe: true,
+        url: "https://api.blockchair.com/bitcoin/stats",
+        score: 15,
+      },
+      supporting: [
+        {
+          sourceId: "coingecko-2a7ea372",
+          name: "coingecko-simple",
+          provider: "coingecko",
+          status: "active",
+          trustTier: "established",
+          responseFormat: "json",
+          ratingOverall: 78,
+          dahrSafe: true,
+          tlsnSafe: true,
+          url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+          score: 14,
+        },
+      ],
+      fallbacks: [],
+      warnings: [],
+    },
+  };
+}
+
 function makeEvidenceSummary(): ResearchEvidenceSummary {
   return {
     source: "Binance Futures Premium Index",
@@ -555,6 +619,25 @@ function makeTreasurySupportingEvidenceSummary(): ResearchEvidenceSummary {
     derivedMetrics: {
       billNoteSpreadBps: "61",
     },
+  };
+}
+
+function makeNetworkEvidenceSummary(): ResearchEvidenceSummary {
+  return {
+    source: "blockchair-bitcoin-stats",
+    url: "https://api.blockchair.com/bitcoin/stats",
+    fetchedAt: "2026-04-19T10:00:00.000Z",
+    values: {
+      blockCount24h: "144",
+      transactionCount24h: "412338",
+      hashrate24h: "623451112.45",
+      difficulty: "987654321.12",
+      priceUsd: "77201.14",
+    },
+    derivedMetrics: {
+      transactionsPerBlock24h: "2863.46",
+    },
+    semanticClass: "network",
   };
 }
 
@@ -842,6 +925,35 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.family).toBe("vix-credit");
     expect(result.promptPacket.input.brief.baselineContext[0]).toContain("VIX level is context");
     expect(result.promptPacket.input.brief.falseInferenceGuards[1]).toContain("credit spread");
+  });
+
+  it("adds a family dossier brief for network-activity topics", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Bitcoin's on-chain stress looks more like congestion than clean adoption because 412,338 transactions are being forced through just 144 blocks, which leaves throughput density near 2,863 transactions per block while price holds around 77,201 dollars. " +
+        "That matters because activity this compressed can reflect speculative churn or fee pressure rather than healthy demand, and the market read should depend on whether price absorbs that load or starts rejecting it. " +
+        "The thesis weakens if transaction density cools quickly without any market stress signal or if price keeps advancing while the network load normalizes."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeNetworkOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeNetworkEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.promptPacket.input.brief.family).toBe("network-activity");
+    expect(result.promptPacket.input.brief.baselineContext[0]).toContain("High on-chain activity is context");
+    expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("more transactions by themselves");
+    expect(result.qualityGate.checks.find((check) => check.name === "semantic-evidence-grounding")?.pass).toBe(true);
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(true);
   });
 
   it("accepts LLM output only when it clears the quality gate", async () => {

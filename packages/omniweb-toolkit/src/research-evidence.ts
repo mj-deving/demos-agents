@@ -46,6 +46,7 @@ type ResearchEvidenceSourceKind =
   | "coingecko-market-chart"
   | "coingecko-simple-price"
   | "btcetfdata-current"
+  | "blockchair-stats"
   | "defillama-stablecoins"
   | "treasury-interest-rates"
   | "cboe-vix-history"
@@ -55,6 +56,7 @@ export type ResearchEvidenceSemanticClass =
   | "market"
   | "macro"
   | "liquidity"
+  | "network"
   | "metadata"
   | "generic";
 
@@ -139,6 +141,10 @@ export function classifyResearchEvidenceSemanticClass(
 
   if (sourceKind === "defillama-stablecoins") {
     return "liquidity";
+  }
+
+  if (sourceKind === "blockchair-stats") {
+    return "network";
   }
 
   const keys = Object.keys(values).concat(Object.keys(derivedMetrics)).map((key) => key.toLowerCase());
@@ -280,6 +286,13 @@ function extractResearchEvidenceValues(
     }
   }
 
+  if (sourceKind === "blockchair-stats") {
+    const networkValues = extractBlockchairStatsValues(payload);
+    if (Object.keys(networkValues).length > 0) {
+      return networkValues;
+    }
+  }
+
   if (sourceKind === "defillama-stablecoins") {
     const stablecoinValues = extractDefiLlamaStablecoinValues(payload, topic);
     if (Object.keys(stablecoinValues).length > 0) {
@@ -366,6 +379,15 @@ function isDefiLlamaStablecoinsUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     return parsed.hostname === "stablecoins.llama.fi" && parsed.pathname === "/stablecoins";
+  } catch {
+    return false;
+  }
+}
+
+function isBlockchairStatsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === "api.blockchair.com" && parsed.pathname.endsWith("/stats");
   } catch {
     return false;
   }
@@ -543,6 +565,24 @@ function extractDefiLlamaStablecoinValues(payload: unknown, topic?: string): Rec
   });
 }
 
+function extractBlockchairStatsValues(payload: unknown): Record<string, string> {
+  const stats = isRecord(payload) && isRecord(payload.data)
+    ? payload.data
+    : payload;
+
+  if (!isRecord(stats)) {
+    return {};
+  }
+
+  return compactMetrics({
+    blockCount24h: normalizeScalarValue(stats.blocks),
+    transactionCount24h: normalizeScalarValue(stats.transactions),
+    hashrate24h: normalizeScalarValue(stats.hashrate_24h),
+    difficulty: normalizeScalarValue(stats.difficulty),
+    priceUsd: normalizeScalarValue(stats.market_price_usd),
+  });
+}
+
 function extractTreasuryInterestRateValues(payload: unknown): Record<string, string> {
   if (!isRecord(payload) || !Array.isArray(payload.data)) {
     return {};
@@ -621,6 +661,10 @@ function deriveResearchMetrics(
 
   if (sourceKind === "coingecko-simple-price") {
     return deriveCoinGeckoSimplePriceMetrics(values);
+  }
+
+  if (sourceKind === "blockchair-stats") {
+    return deriveBlockchairStatsMetrics(values);
   }
 
   if (sourceKind === "defillama-stablecoins") {
@@ -703,6 +747,18 @@ function deriveCoinGeckoSimplePriceMetrics(values: Record<string, string>): Reco
   });
 }
 
+function deriveBlockchairStatsMetrics(values: Record<string, string>): Record<string, string> {
+  const blockCount = parseNumber(values.blockCount24h);
+  const txCount = parseNumber(values.transactionCount24h);
+  const txPerBlock = blockCount != null && txCount != null && blockCount !== 0
+    ? String(Number((txCount / blockCount).toFixed(2)))
+    : null;
+
+  return compactMetrics({
+    transactionsPerBlock24h: txPerBlock,
+  });
+}
+
 function deriveStablecoinSupplyMetrics(values: Record<string, string>, topic?: string): Record<string, string> {
   return compactMetrics({
     supplyChangePct1d: percentChange(values.circulatingUsd, values.circulatingPrevDayUsd),
@@ -759,6 +815,10 @@ function classifyResearchEvidenceSource(source: MinimalAttestationCandidate): Re
     return "defillama-stablecoins";
   }
 
+  if (sourceId.startsWith("blockchair-") || provider === "blockchair") {
+    return "blockchair-stats";
+  }
+
   if (sourceId.startsWith("btcetfdata-current") || provider === "btcetfdata") {
     return "btcetfdata-current";
   }
@@ -783,6 +843,7 @@ function classifyResearchEvidenceSource(source: MinimalAttestationCandidate): Re
   if (isCboeVixUrl(source.url)) return "cboe-vix-history";
   if (isTreasuryRatesUrl(source.url)) return "treasury-interest-rates";
   if (isDefiLlamaStablecoinsUrl(source.url)) return "defillama-stablecoins";
+  if (isBlockchairStatsUrl(source.url)) return "blockchair-stats";
   if (isBtcEtfDataCurrentUrl(source.url)) return "btcetfdata-current";
   if (isCoinGeckoMarketChartUrl(source.url)) return "coingecko-market-chart";
   if (isCoinGeckoSimplePriceUrl(source.url)) return "coingecko-simple-price";

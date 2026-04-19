@@ -120,6 +120,25 @@ const ETF_FLOWS_DOSSIER: ResearchFamilyDossier = {
   ],
 };
 
+const NETWORK_ACTIVITY_DOSSIER: ResearchFamilyDossier = {
+  family: "network-activity",
+  baseline: [
+    "High on-chain activity is context, not an automatic bullish thesis.",
+    "More transactions or blocks do not automatically mean healthy demand, adoption, or price upside.",
+    "Network statistics need price or market context to distinguish speculation, stress, and genuine usage.",
+  ],
+  focus: [
+    "Focus on whether throughput, transaction density, and price behavior confirm real network usage, congestion, or stress.",
+    "Explain whether the network data is supporting, lagging, or contradicting the colony signal.",
+    "Use block activity together with transaction intensity, hashrate when available, and price context rather than narrating one metric in isolation.",
+  ],
+  falseInferenceGuards: [
+    "Do not claim that more transactions by themselves prove adoption or a bullish outcome.",
+    "Do not treat elevated hashrate or block count alone as proof of network health or price strength.",
+    "Do not turn generic on-chain activity into the thesis without explaining whether it reflects usage, congestion, or speculation.",
+  ],
+};
+
 const VIX_CREDIT_DOSSIER: ResearchFamilyDossier = {
   family: "vix-credit",
   baseline: [
@@ -159,6 +178,8 @@ export function buildResearchBrief(
     baseBrief = buildStablecoinSupplyBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   } else if (opportunity.sourceProfile.family === "funding-structure") {
     baseBrief = buildFundingStructureBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
+  } else if (opportunity.sourceProfile.family === "network-activity") {
+    baseBrief = buildNetworkActivityBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   } else if (opportunity.sourceProfile.family === "spot-momentum") {
     baseBrief = buildSpotMomentumBrief(dossier, evidenceSummary, supportingEvidenceSummaries);
   } else if (opportunity.sourceProfile.family === "etf-flows") {
@@ -365,6 +386,35 @@ function buildFundingStructureBrief(
   };
 }
 
+function buildNetworkActivityBrief(
+  dossier: ResearchFamilyDossier,
+  evidenceSummary: ResearchEvidenceSummary,
+  supportingEvidenceSummaries: ResearchEvidenceSummary[],
+): CoreResearchBrief {
+  const blockCount = findMetric("blockCount24h", evidenceSummary, supportingEvidenceSummaries);
+  const transactionCount = findMetric("transactionCount24h", evidenceSummary, supportingEvidenceSummaries);
+  const txPerBlock = findMetric("transactionsPerBlock24h", evidenceSummary, supportingEvidenceSummaries);
+  const hashrate = findMetric("hashrate24h", evidenceSummary, supportingEvidenceSummaries);
+  const priceUsd = findMetric("priceUsd", evidenceSummary, supportingEvidenceSummaries);
+
+  const densityRead = txPerBlock
+    ? `roughly ${txPerBlock} transactions per block`
+    : "unclear transaction density";
+  const hashrateRead = hashrate
+    ? `hashrate is running near ${hashrate}`
+    : "hashrate context is unresolved";
+
+  return {
+    family: "network-activity",
+    baselineContext: dossier.baseline,
+    focusNow: dossier.focus,
+    falseInferenceGuards: dossier.falseInferenceGuards,
+    anomalySummary: `Network activity shows${blockCount ? ` ${blockCount} blocks` : " an unresolved block count"} and${transactionCount ? ` ${transactionCount} transactions` : " unresolved transaction flow"} over the observed window, ${densityRead}, ${hashrateRead}${priceUsd ? `, with spot around ${priceUsd}` : ""}.`,
+    allowedThesisSpace: "Write about whether on-chain activity looks like genuine usage, congestion, stress, or speculative churn only when the activity metrics line up with price or market context.",
+    invalidationFocus: "Invalidate with a reversal in transaction density, a collapse in activity without market follow-through, or price action that clearly contradicts the claimed network interpretation.",
+  };
+}
+
 function buildStablecoinSupplyBrief(
   dossier: ResearchFamilyDossier,
   evidenceSummary: ResearchEvidenceSummary,
@@ -412,6 +462,10 @@ function dossierForFamily(family: ResearchTopicFamily): ResearchFamilyDossier {
 
   if (family === "spot-momentum") {
     return SPOT_MOMENTUM_DOSSIER;
+  }
+
+  if (family === "network-activity") {
+    return NETWORK_ACTIVITY_DOSSIER;
   }
 
   if (family === "vix-credit") {

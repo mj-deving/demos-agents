@@ -46,6 +46,22 @@ describe("deriveResearchSourceProfile", () => {
     expect(profile.supportingSourceIds).toContain("coingecko-2a7ea372");
   });
 
+  it("maps on-chain activity topics to the network evidence family", () => {
+    const profile = deriveResearchSourceProfile("BTC on-chain network stress and mempool congestion");
+
+    expect(profile.family).toBe("network-activity");
+    expect(profile.supported).toBe(true);
+    expect(profile.primarySourceIds).toEqual(["blockchair-btc-stats"]);
+    expect(profile.supportingSourceIds).toContain("coingecko-2a7ea372");
+    expect(profile.expectedMetrics).toEqual([
+      "blockCount24h",
+      "transactionCount24h",
+      "hashrate24h",
+      "priceUsd",
+      "transactionsPerBlock24h",
+    ]);
+  });
+
   it("maps vix-credit topics without needing asset detection", () => {
     const profile = deriveResearchSourceProfile("VIX Credit Stress Signal");
 

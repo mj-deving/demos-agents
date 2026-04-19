@@ -192,7 +192,7 @@ export function deriveResearchSourceProfile(topic: string): ResearchSourceProfil
       reason: null,
       primarySourceIds: ids.slice(0, 1),
       supportingSourceIds: ids.slice(1),
-      expectedMetrics: ["blockCount24h", "transactionCount24h", "mempoolTransactionCount", "priceUsd"],
+      expectedMetrics: ["blockCount24h", "transactionCount24h", "hashrate24h", "priceUsd", "transactionsPerBlock24h"],
     };
   }
 
