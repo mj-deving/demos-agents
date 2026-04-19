@@ -786,8 +786,8 @@ describe("buildResearchDraft", () => {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
         "USDT supply is expanding faster than usual, which matters more than the peg because the relevant signal is issuance speed rather than whether a dollar stablecoin still looks like a dollar. " +
-        "The evidence shows 1.79 percent growth over thirty days and 1.26 percent over seven days, so the question is whether the market is absorbing new dollar liquidity cleanly or starting to choke on it. " +
-        "The read weakens if supply growth cools materially or if the broader market stops absorbing fresh issuance."
+        "The evidence shows 1.79 percent growth over thirty days and 1.26 percent over seven days, so the question is whether liquidity conditions are broadening or crowding rather than pretending the peg itself is the signal. " +
+        "The read weakens if supply growth cools materially or if the broader market context stops supporting that liquidity interpretation."
       ),
     };
 
@@ -809,13 +809,38 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("normal peg");
   });
 
+  it("allows stablecoin drafts to treat the peg as background context and reject automatic risk-on claims", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "USDT supply is still expanding, but the peg near 1.00 is background context rather than the thesis and stablecoin issuance does not by itself prove a risk-on extension for crypto beta. " +
+        "The relevant change is that circulating supply keeps accelerating versus the prior week, which makes this a liquidity-routing question instead of a simple bullish-fuel story. " +
+        "The read weakens if supply growth cools materially or if the broader market context stops supporting that liquidity interpretation."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeStablecoinOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeStablecoinEvidenceSummary(),
+      supportingEvidenceSummaries: [makeStablecoinSupportingEvidenceSummary()],
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+  });
+
   it("adds bounded linked themes and domain context when colony substrate implies them", async () => {
     const provider = {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
-        "USDT supply near 186.6 billion dollars is becoming a BTC absorption question rather than a peg story because the 1.79 percent 30-day expansion is still outrunning the 1.26 percent weekly pace while the colony is explicitly debating whether risk can absorb the new dollar liquidity cleanly. " +
+        "USDT supply near 186.6 billion dollars is becoming a liquidity-routing question rather than a peg story because the 1.79 percent 30-day expansion is still outrunning the 1.26 percent weekly pace while the colony is explicitly debating where fresh dollar liquidity is going. " +
         "The relevant spillover is the split between crypto beta and tokenized-treasury parking: a flat 1.00 peg keeps stress in the background, but it does not remove the possibility that fresh dollar supply rotates into RWA yield instead of extending the BTC bid. " +
-        "The thesis weakens if supply growth cools back below the current monthly trend or if the next absorption read fails to turn the same issuance into follow-through for majors."
+        "The thesis weakens if supply growth cools back below the current monthly trend or if the next routing read stops pointing toward the same spillover paths."
       ),
     };
 
@@ -835,11 +860,11 @@ describe("buildResearchDraft", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.promptPacket.input.brief.linkedThemes.map((theme) => theme.key)).toEqual([
       "dollar-liquidity",
-      "btc-absorption",
+      "liquidity-routing",
       "rwa-rotation",
     ]);
     expect(result.promptPacket.input.brief.domainContext[0]).toContain("Dollar liquidity");
-    expect(result.promptPacket.input.brief.domainContext[1]).toContain("BTC absorption");
+    expect(result.promptPacket.input.brief.domainContext[1]).toContain("Liquidity routing");
     expect(result.promptPacket.input.brief.substrateSummary).toContain("4 agent take");
     expect(result.promptPacket.input.brief.previousCoverageDelta).toBeNull();
     expect(result.promptPacket.constraints.join(" ")).toContain("linked themes or domain context");

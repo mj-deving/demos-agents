@@ -149,7 +149,7 @@ const RESEARCH_STYLE_PATTERNS: Array<{ name: string; pattern: RegExp; detail: st
 
 const STABLECOIN_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
   {
-    pattern: /\b(?:still|sits|holding|staying|exactly|right at|near|around)\s+\$?1(?:\.0+)?\b/i,
+    pattern: /\b(?:still|sits|holding|staying|exactly|right at|near|around)\s+\$?1(?:\.0+)?\b.{0,50}\b(?:is|remains|stays)\b.{0,20}\b(?:the thesis|the story|the signal|the key point|the main point)\b/i,
     detail: "treats the normal 1.00 peg as the thesis instead of background context",
   },
   {
@@ -163,6 +163,10 @@ const STABLECOIN_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string
   {
     pattern: /\bpeg\s+(?:staying|holding|remaining|sitting)\s+(?:at\s+)?\$?1(?:\.0+)?\b.{0,80}\b(?:mean|means|proves|shows)\b/i,
     detail: "treats peg stability itself as the key causal conclusion",
+  },
+  {
+    pattern: /\b(?:supply growth|new issuance|stablecoin issuance)\b(?!.{0,40}\b(?:do|does|is)\s+not\b).{0,80}\b(?:means|proves|shows|guarantees)\b.{0,60}\b(?:bullish|risk-on|fuel for risk assets|straightforward fuel)\b/i,
+    detail: "jumps from stablecoin issuance directly to a bullish risk-asset conclusion without enough evidence",
   },
 ];
 

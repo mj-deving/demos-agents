@@ -437,11 +437,11 @@ function buildStablecoinSupplyBrief(
     : `Supply is changing (${supplyTrend}) and the peg is no longer behaving like background noise${pegPrice ? ` (${pegPrice})` : ""}; focus on whether the deviation is becoming stress.`;
 
   const allowedThesisSpace = pegStable
-    ? "Write about liquidity expansion, absorption, or crowding only if the thesis is anchored in supply change and market context, not in the normal peg itself."
+    ? "Write about liquidity expansion, crowding, or potential spillover only if the thesis is anchored in supply change and explicit market context, not in the normal peg itself."
     : "Write about stress only if the thesis is anchored in the combination of supply dynamics and material peg deviation.";
 
   const invalidationFocus = pegStable
-    ? "Invalidate with a clear supply slowdown, supply reversal, or a failure of the broader market context to absorb the new issuance."
+    ? "Invalidate with a clear supply slowdown, supply reversal, or broader market context that stops supporting the claimed liquidity interpretation."
     : "Invalidate with peg normalization or a reversal in the supply stress pattern.";
 
   return {
@@ -576,7 +576,7 @@ function buildLinkedResearchContext(
   if (family === "stablecoin-supply") {
     addTheme("dollar-liquidity", "Dollar liquidity", "Stablecoin supply is best read as a dollar-liquidity input, not a standalone direction call.");
     if (mentions("absorption", "bitcoin absorption", "btc absorption") || assets.has("btc") || assets.has("bitcoin")) {
-      addTheme("btc-absorption", "BTC absorption", "The colony signal ties stablecoin issuance to whether BTC can absorb the added liquidity cleanly.");
+      addTheme("liquidity-routing", "Liquidity routing", "The colony signal ties stablecoin issuance to where fresh dollar liquidity is being routed, not to an automatic BTC-up conclusion.");
     }
     if ((pegDeviation != null && pegDeviation >= 0.1) || mentions("peg", "reserve", "regulatory", "redemption")) {
       addTheme("peg-stress", "Peg stress", "Peg behavior matters here only as a stress check layered on top of supply dynamics.");
