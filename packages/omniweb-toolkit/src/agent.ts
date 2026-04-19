@@ -16,6 +16,7 @@ export { deriveEngagementOpportunities } from "./engagement-opportunities.js";
 export { buildEngagementDraft } from "./engagement-draft.js";
 export { deriveMarketOpportunities } from "./market-opportunities.js";
 export { buildMarketDraft } from "./market-draft.js";
+export { getMarketTopicFamilyContract, ORACLE_DIVERGENCE_CONTRACT } from "./market-family-contracts.js";
 export { deriveResearchOpportunities } from "./research-opportunities.js";
 export { deriveResearchSourceProfile } from "./research-source-profile.js";
 export {
@@ -77,6 +78,10 @@ export type {
   DeriveMarketOpportunitiesOptions,
   MarketOpportunity,
 } from "./market-opportunities.js";
+export type {
+  MarketTopicFamily,
+  MarketTopicFamilyContract,
+} from "./market-family-contracts.js";
 export type {
   BuildMarketDraftOptions,
   MarketPromptPacket,
