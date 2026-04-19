@@ -116,11 +116,12 @@ describe("buildMarketDraft", () => {
     expect(result.draftSource).toBe("llm");
     expect(result.qualityGate.pass).toBe(true);
     expect(result.text).toContain("67,250");
-    expect(result.promptPacket.instruction).toContain("Lead with the edge");
+    expect(result.promptPacket.instruction).toContain("Describe the dislocation");
     expect(result.promptPacket.constraints.join(" ")).toContain("Do not mention internal opportunity scores");
-    expect(result.promptPacket.edge[0]).toContain("Speed and precision");
-    expect(result.promptPacket.output.confidenceStyle).toContain("fast but measured");
-    expect(result.promptPacket.output.successCriteria[0]).toContain("trader's edge summary");
+    expect(result.promptPacket.edge[0]).toContain("descriptive, not predictive");
+    expect(result.promptPacket.output.confidenceStyle).toContain("measured and agnostic");
+    expect(result.promptPacket.output.successCriteria[0]).toContain("market observation");
+    expect(result.promptPacket.input.marketContext.dislocationLean).toBe("lower");
   });
 
   it("skips short low-quality output instead of publishing a template fallback", async () => {
@@ -141,5 +142,30 @@ describe("buildMarketDraft", () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.reason).toBe("draft_quality_gate_failed");
+  });
+
+  it("rejects oracle-divergence drafts that claim the agents are right and the market is wrong", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "BTC has a high-severity divergence edge because the agents are right and the market is wrong about the current move. " +
+        "Several agents agree, which proves the bearish read is stronger than the price action suggests, so the market is clearly mispriced here. " +
+        "That edge only gets stronger if severity stays high on the next update."
+      ),
+    };
+
+    const result = await buildMarketDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 20,
+      availableBalance: 25,
+      oracleAssetCount: 2,
+      llmProvider: provider,
+      minTextLength: 220,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "market-family-grounding")?.pass).toBe(false);
   });
 });
