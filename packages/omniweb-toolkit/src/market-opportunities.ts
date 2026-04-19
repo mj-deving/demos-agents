@@ -60,6 +60,7 @@ export interface MarketOpportunity {
   rationale: string;
   divergence: MarketOracleDivergenceInput | null;
   matchedSignal: MarketSignalInput | null;
+  relatedSignals: MarketSignalInput[];
   priceSnapshot: MarketPriceInput | null;
   matchingFeedPosts: MarketPostInput[];
   lastSeenAt: number | null;
@@ -98,6 +99,7 @@ export function deriveMarketOpportunities(
 
     const divergence = selectBestDivergence(opts.divergences, asset);
     const matchedSignal = selectSignal(opts.signals, asset);
+    const relatedSignals = selectRelatedSignals(opts.signals, asset);
     const priceSnapshot = selectPrice(opts.prices, asset);
     const matchingFeedPosts = opts.posts.filter((post) => mentionsAsset(post.text, asset));
     const lastSeenAt = matchingFeedPosts.reduce<number | null>((latest, post) => {
@@ -118,9 +120,10 @@ export function deriveMarketOpportunities(
           + supportingBonus
           - attestationPenalty
           - repeatedAssetPenalty,
-        rationale: `${asset} has a fresh ${divergence.severity} oracle divergence that exceeds the market playbook publish threshold.`,
+        rationale: `${asset} shows a fresh ${divergence.severity} sentiment-price dislocation that is worth monitoring with attested price context.`,
         divergence,
         matchedSignal,
+        relatedSignals,
         priceSnapshot,
         matchingFeedPosts,
         lastSeenAt,
@@ -145,6 +148,7 @@ export function deriveMarketOpportunities(
         rationale: `${asset} signal direction and live 24h price change are pulling in opposite directions, creating a publishable mismatch.`,
         divergence,
         matchedSignal,
+        relatedSignals,
         priceSnapshot,
         matchingFeedPosts,
         lastSeenAt,
@@ -158,9 +162,10 @@ export function deriveMarketOpportunities(
         kind: "stale_divergence",
         asset,
         score: severityScore(divergence.severity) - 8 + supportingBonus - attestationPenalty - repeatedAssetPenalty,
-        rationale: `${asset} still shows a divergence, but the feed has gone stale on the topic and needs a fresh evidence-bound update.`,
+        rationale: `${asset} still shows a sentiment-price dislocation, but the feed has gone stale on the topic and needs a fresh evidence-bound update.`,
         divergence,
         matchedSignal,
+        relatedSignals,
         priceSnapshot,
         matchingFeedPosts,
         lastSeenAt,
@@ -211,10 +216,15 @@ function selectBestDivergence(
 }
 
 function selectSignal(signals: MarketSignalInput[], asset: string): MarketSignalInput | null {
-  const matches = signals.filter((signal) => signalMatchesAsset(signal, asset));
+  const matches = selectRelatedSignals(signals, asset);
   if (matches.length === 0) return null;
-  matches.sort((left, right) => (right.confidence ?? 0) - (left.confidence ?? 0));
   return matches[0];
+}
+
+function selectRelatedSignals(signals: MarketSignalInput[], asset: string): MarketSignalInput[] {
+  const matches = signals.filter((signal) => signalMatchesAsset(signal, asset));
+  matches.sort((left, right) => (right.confidence ?? 0) - (left.confidence ?? 0));
+  return matches;
 }
 
 function selectPrice(prices: MarketPriceInput[], asset: string): MarketPriceInput | null {

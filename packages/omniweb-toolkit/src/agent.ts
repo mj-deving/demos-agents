@@ -16,8 +16,15 @@ export { deriveEngagementOpportunities } from "./engagement-opportunities.js";
 export { buildEngagementDraft } from "./engagement-draft.js";
 export { deriveMarketOpportunities } from "./market-opportunities.js";
 export { buildMarketDraft } from "./market-draft.js";
+export { buildMarketColonySubstrate } from "./market-colony-substrate.js";
+export { getMarketTopicFamilyContract, ORACLE_DIVERGENCE_CONTRACT } from "./market-family-contracts.js";
 export { deriveResearchOpportunities } from "./research-opportunities.js";
 export { deriveResearchSourceProfile } from "./research-source-profile.js";
+export {
+  createTopicFamilyRegistry,
+  defineTopicFamilyContract,
+  getTopicFamilyContract,
+} from "./topic-family-contract.js";
 export { buildResearchColonySubstrate } from "./research-colony-substrate.js";
 export { fetchResearchEvidenceSummary } from "./research-evidence.js";
 export { buildResearchSelfHistory } from "./research-self-history.js";
@@ -73,12 +80,23 @@ export type {
   MarketOpportunity,
 } from "./market-opportunities.js";
 export type {
+  MarketTopicFamily,
+  MarketTopicFamilyContract,
+} from "./market-family-contracts.js";
+export type {
   BuildMarketDraftOptions,
   MarketPromptPacket,
   MarketDraftSuccess,
   MarketDraftFailure,
   MarketDraftResult,
 } from "./market-draft.js";
+export type {
+  MarketColonySignalSummary,
+  MarketColonySignalTake,
+  MarketRecentContextPost,
+  MarketColonySubstrate,
+  BuildMarketColonySubstrateOptions,
+} from "./market-colony-substrate.js";
 export type {
   ResearchEvidenceSummary,
   FetchResearchEvidenceSummaryOptions,
@@ -120,6 +138,21 @@ export type {
   ResearchTopicFamily,
   ResearchSourceProfile,
 } from "./research-source-profile.js";
+export type {
+  TopicMetricSemantic,
+  TopicClaimRequirement,
+  TopicClaimBounds,
+  TopicQualitySlipPattern,
+  TopicFamilySourcePlan,
+  TopicFamilyPromptDoctrine,
+  TopicFamilyQualityContract,
+  TopicFamilyContract,
+  TopicFamilyRegistry,
+} from "./topic-family-contract.js";
+export type {
+  SupportedResearchTopicFamily,
+  ResearchTopicFamilyContract,
+} from "./research-family-contracts.js";
 export type {
   BuildResearchDraftOptions,
   ResearchPromptPacket,
