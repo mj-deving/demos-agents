@@ -232,6 +232,10 @@ const NETWORK_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }>
     pattern: /\b(?:network stress|network load|congestion|throughput density|on-chain stress)\b.{0,80}\b(?:prove|proves|means|shows|confirms)\b.{0,60}\b(?:demand is healthy|healthy demand|adoption|bullish|price strength)\b/i,
     detail: "treats network stress or congestion itself as proof of healthy demand, adoption, or a bullish outcome",
   },
+  {
+    pattern: /\b(?:clean adoption|speculative churn|durable demand|short-lived usage bursts|demand quality)\b/i,
+    detail: "classifies network activity quality without packet-level evidence for that distinction",
+  },
 ];
 
 const VIX_CREDIT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [

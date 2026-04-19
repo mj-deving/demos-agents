@@ -931,9 +931,9 @@ describe("buildResearchDraft", () => {
     const provider = {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
-        "Bitcoin's on-chain activity looks more like temporary throughput pressure than clean adoption because 412,338 transactions are running through just 144 blocks, which leaves density near 2,863 transactions per block while hashrate stays elevated and spot sits around 77,201 dollars. " +
-        "That matters because activity this compressed can reflect speculative churn or short-lived usage bursts rather than durable demand, so the right question is whether the pressure persists, cools, or broadens into a cleaner usage pattern instead of treating price alone as proof. " +
-        "The thesis weakens if transaction density drops quickly and the rest of the network picture normalizes, suggesting the spike was temporary noise rather than a durable condition."
+        "Bitcoin's network activity is elevated in the latest window: 412,338 transactions across 144 blocks leaves density near 2,863 transactions per block while hashrate stays elevated and spot sits around 77,201 dollars. " +
+        "That does not tell us whether the flow is adoption, congestion, or churn on its own, but it does show activity is concentrated enough to watch for persistence versus normalization in the next window. " +
+        "The read weakens if transaction density drops quickly and the rest of the network picture normalizes, because then the activity spike was not persistent."
       ),
     };
 
