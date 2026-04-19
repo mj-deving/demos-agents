@@ -11,6 +11,7 @@ import {
   summarizeResearchEvidenceDelta,
   type MinimalObserveContext,
   type MinimalObserveResult,
+  type ResearchOpportunity,
   type ResearchPostInput,
   type ResearchPublishHistoryEntry,
   type ResearchSignalInput,
@@ -52,6 +53,13 @@ interface ReadResult<T> {
 }
 
 const MAX_TOPIC_HISTORY = 5;
+const RESEARCH_FRONTIER_SIZE = 4;
+
+interface RankedResearchOpportunity extends ResearchOpportunity {
+  portfolioScore: number;
+  portfolioReasons: string[];
+  rawRank: number;
+}
 
 function signalTopic(signal: unknown): string | null {
   if (!signal || typeof signal !== "object") return null;
@@ -82,6 +90,152 @@ function signalBoolean(signal: unknown, key: string): boolean | null {
   if (!signal || typeof signal !== "object") return null;
   const candidate = (signal as Record<string, unknown>)[key];
   return typeof candidate === "boolean" ? candidate : null;
+}
+
+function normalizeTopic(value: string | null | undefined): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function parseTimestamp(value: string | null | undefined): number | null {
+  if (typeof value !== "string" || value.length === 0) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function latestSignalTimestamp(opportunity: ResearchOpportunity): number | null {
+  return (opportunity.matchedSignal.sourcePostData ?? []).reduce<number | null>((latest, post) => {
+    if (typeof post.timestamp !== "number") return latest;
+    return latest == null || post.timestamp > latest ? post.timestamp : latest;
+  }, null);
+}
+
+function computePortfolioFreshnessBonus(opportunity: ResearchOpportunity, nowMs: number): number {
+  const freshest = latestSignalTimestamp(opportunity);
+  if (freshest == null) return 0;
+  const ageMs = Math.max(0, nowMs - freshest);
+  if (ageMs <= 6 * 60 * 60 * 1000) return 4;
+  if (ageMs <= 24 * 60 * 60 * 1000) return 2;
+  return 0;
+}
+
+function computePortfolioRichnessBonus(opportunity: ResearchOpportunity): number {
+  const signal = opportunity.matchedSignal;
+  const sourcePostCount = Math.min(signal.sourcePostData?.length ?? 0, 3);
+  const crossReferenceCount = Math.min(signal.crossReferences?.length ?? 0, 2);
+  const reactionTotal = signal.reactionSummary
+    ? signal.reactionSummary.totalAgrees + signal.reactionSummary.totalDisagrees + signal.reactionSummary.totalFlags
+    : 0;
+  const agentBonus = (signal.agentCount ?? 0) >= 5
+    ? 2
+    : (signal.agentCount ?? 0) >= 3
+      ? 1
+      : 0;
+
+  return sourcePostCount
+    + crossReferenceCount
+    + agentBonus
+    + (signal.keyInsight ? 1 : 0)
+    + (signal.divergence ? 1 : 0)
+    + (reactionTotal >= 3 ? 1 : 0);
+}
+
+export function buildResearchOpportunityFrontier(
+  opportunities: ResearchOpportunity[],
+  state: ResearchState | null | undefined,
+  now: string | number | Date = Date.now(),
+): RankedResearchOpportunity[] {
+  const nowMsRaw = typeof now === "string" ? Date.parse(now) : now instanceof Date ? now.getTime() : now;
+  const nowMs = Number.isFinite(nowMsRaw) ? nowMsRaw : Date.now();
+  const recentTopics = new Set<string>();
+  const recentFamilies = new Set<string>();
+
+  for (const entry of state?.topicHistory ?? []) {
+    const normalized = normalizeTopic(entry.topic);
+    if (normalized) recentTopics.add(normalized);
+  }
+
+  for (const entry of state?.publishHistory ?? []) {
+    const topic = normalizeTopic(entry.topic);
+    const family = normalizeTopic(entry.family);
+    if (topic) recentTopics.add(topic);
+    if (family) recentFamilies.add(family);
+  }
+
+  const mostRecentPublish = (state?.publishHistory ?? []).reduce<ResearchPublishHistoryEntry | null>((latest, entry) => {
+    if (!latest) return entry;
+    const latestTs = parseTimestamp(latest.publishedAt);
+    const currentTs = parseTimestamp(entry.publishedAt);
+    if (currentTs == null) return latest;
+    if (latestTs == null || currentTs > latestTs) return entry;
+    return latest;
+  }, null);
+  const mostRecentFamily = normalizeTopic(mostRecentPublish?.family);
+
+  return opportunities
+    .map((opportunity, index) => {
+      const topic = normalizeTopic(opportunity.topic);
+      const family = normalizeTopic(opportunity.sourceProfile.family);
+      const reasons: string[] = [];
+      let portfolioScore = opportunity.score;
+
+      if (topic && !recentTopics.has(topic)) {
+        portfolioScore += 6;
+        reasons.push("novel_topic");
+      }
+
+      if (family && !recentFamilies.has(family)) {
+        portfolioScore += 5;
+        reasons.push("family_diversity");
+      } else if (family && family === mostRecentFamily) {
+        portfolioScore -= 4;
+        reasons.push("recent_family_penalty");
+      }
+
+      const freshnessBonus = computePortfolioFreshnessBonus(opportunity, nowMs);
+      if (freshnessBonus > 0) {
+        portfolioScore += freshnessBonus;
+        reasons.push("fresh_evidence");
+      }
+
+      const richnessBonus = computePortfolioRichnessBonus(opportunity);
+      if (richnessBonus > 0) {
+        portfolioScore += Math.min(richnessBonus, 5);
+        reasons.push("rich_substrate");
+      }
+
+      if (opportunity.kind === "contradiction") {
+        portfolioScore += 2;
+        reasons.push("contradiction_priority");
+      } else if (opportunity.kind === "stale_topic") {
+        portfolioScore -= 2;
+        reasons.push("stale_topic_penalty");
+      }
+
+      return {
+        ...opportunity,
+        portfolioScore,
+        portfolioReasons: reasons,
+        rawRank: index + 1,
+      };
+    })
+    .sort((left, right) =>
+      right.portfolioScore - left.portfolioScore
+      || right.score - left.score
+      || left.rawRank - right.rawRank);
+}
+
+function summarizeOpportunityFrontier(frontier: RankedResearchOpportunity[]): Array<Record<string, unknown>> {
+  return frontier.slice(0, RESEARCH_FRONTIER_SIZE).map((opportunity) => ({
+    topic: opportunity.topic,
+    kind: opportunity.kind,
+    rawRank: opportunity.rawRank,
+    score: opportunity.score,
+    portfolioScore: opportunity.portfolioScore,
+    portfolioReasons: opportunity.portfolioReasons,
+    family: opportunity.sourceProfile.family,
+  }));
 }
 
 function postText(post: unknown): string {
@@ -290,6 +444,11 @@ export async function observe(
       .map((entry) => entry.family)
       .filter((family): family is string => typeof family === "string" && family.length > 0),
   });
+  const opportunityFrontier = buildResearchOpportunityFrontier(
+    opportunities,
+    ctx.memory.state,
+    ctx.cycle.startedAt,
+  );
   const derivedMetrics = {
     highConfidenceSignalCount: highConfidenceSignals.length,
     coverageGapCount: opportunities.filter((opportunity) => opportunity.kind === "coverage_gap").length,
@@ -328,6 +487,7 @@ export async function observe(
         promptPacket: {
           objective: "Find a publishable research opportunity grounded in current signals, feed drift, and attestation viability.",
           derivedMetrics,
+          opportunityFrontier: summarizeOpportunityFrontier(opportunityFrontier),
           readStatus,
           result: "skip",
         },
@@ -338,7 +498,7 @@ export async function observe(
 
   let deferredRepeatSkip: MinimalObserveResult<ResearchState> | null = null;
 
-  for (const chosenOpportunity of opportunities) {
+  for (const chosenOpportunity of opportunityFrontier) {
     const topic = chosenOpportunity.topic;
     const matchingFeedPosts = chosenOpportunity.matchingFeedPosts;
     const matchedSignal = chosenOpportunity.matchedSignal;
@@ -384,6 +544,7 @@ export async function observe(
             researchFamily: sourceProfile.family,
             sourceProfileReason: sourceProfile.reason,
             derivedMetrics,
+            opportunityFrontier: summarizeOpportunityFrontier(opportunityFrontier),
             readStatus,
             result: "skip",
           },
@@ -428,6 +589,7 @@ export async function observe(
             opportunityKind: chosenOpportunity.kind,
             researchFamily: sourceProfile.family,
             derivedMetrics,
+            opportunityFrontier: summarizeOpportunityFrontier(opportunityFrontier),
             readStatus,
             result: "skip",
             attestationPlanReady: attestationPlan.ready,
@@ -773,6 +935,7 @@ export async function observe(
         availableBalance,
         opportunityKind: chosenOpportunity.kind,
         opportunityScore: chosenOpportunity.score,
+        portfolioScore: chosenOpportunity.portfolioScore,
         draftSource: draft.draftSource,
         ...derivedMetrics,
         ...readStatus,
@@ -799,6 +962,7 @@ export async function observe(
           category: draft.category,
           draftText: draft.text,
           qualityGate: draft.qualityGate,
+          opportunityFrontier: summarizeOpportunityFrontier(opportunityFrontier),
           primaryAttestUrl: attestationPlan.primary.url,
           supportingAttestUrls: attestationPlan.supporting.map((candidate) => candidate.url),
         },
@@ -857,6 +1021,7 @@ export async function observe(
       promptPacket: {
         objective: "Find a publishable research opportunity grounded in current signals, feed drift, and attestation viability.",
         derivedMetrics,
+        opportunityFrontier: summarizeOpportunityFrontier(opportunityFrontier),
         readStatus,
         result: "skip",
       },

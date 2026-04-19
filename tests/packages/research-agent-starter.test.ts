@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { observe } from "../../packages/omniweb-toolkit/assets/research-agent-starter.ts";
+import {
+  buildResearchOpportunityFrontier,
+  observe,
+} from "../../packages/omniweb-toolkit/assets/research-agent-starter.ts";
 
 const originalFetch = globalThis.fetch;
 
@@ -145,6 +148,7 @@ describe("research-agent starter", () => {
     if (result.kind !== "publish") throw new Error("expected publish");
     expect(result.text).toContain("67,250");
     expect(result.audit?.promptPacket).toBeDefined();
+    expect((result.audit?.promptPacket as { opportunityFrontier?: unknown[] })?.opportunityFrontier?.length).toBeGreaterThan(0);
   });
 
   it("publishes only when fetched evidence values are available and used in the draft", async () => {
@@ -618,5 +622,200 @@ describe("research-agent starter", () => {
     expect(result.facts).toMatchObject({
       availableBalance: 2762,
     });
+  });
+
+  it("prefers a fresher and more diverse follow-up in the opportunity frontier", () => {
+    const frontier = buildResearchOpportunityFrontier([
+      {
+        kind: "coverage_gap",
+        topic: "btc funding persistence",
+        score: 100,
+        rationale: "same-family follow-up",
+        sourceProfile: {
+          family: "funding-structure",
+          topic: "btc funding persistence",
+          asset: { asset: "Bitcoin", symbol: "BTC" },
+          supported: true,
+          reason: null,
+          primarySourceIds: ["binance-futures-premium-index"],
+          supportingSourceIds: ["binance-futures-open-interest"],
+          expectedMetrics: ["markPrice"],
+        },
+        matchedSignal: {
+          topic: "btc funding persistence",
+          shortTopic: "BTC Funding Persistence",
+          confidence: 82,
+          direction: "bearish",
+          sourcePostData: [],
+        },
+        matchingFeedPosts: [],
+        lastSeenAt: null,
+        contradictionSignals: [],
+        attestationPlan: {
+          ready: true,
+          minSupportingSources: 1,
+          preferredSourceIds: ["binance-futures-premium-index"],
+          primary: { id: "binance-futures-premium-index", name: "Binance Premium Index" },
+          supporting: [{ id: "binance-futures-open-interest", name: "Binance Open Interest" }],
+          warnings: [],
+        },
+      },
+      {
+        kind: "coverage_gap",
+        topic: "btc sentiment vs reality",
+        score: 95,
+        rationale: "different-family follow-up",
+        sourceProfile: {
+          family: "spot-momentum",
+          topic: "btc sentiment vs reality",
+          asset: { asset: "Bitcoin", symbol: "BTC" },
+          supported: true,
+          reason: null,
+          primarySourceIds: ["coingecko-42ff8c85"],
+          supportingSourceIds: ["coingecko-2a7ea372"],
+          expectedMetrics: ["currentPriceUsd"],
+        },
+        matchedSignal: {
+          topic: "btc sentiment vs reality",
+          shortTopic: "BTC Sentiment vs Reality",
+          confidence: 78,
+          direction: "bearish",
+          keyInsight: "The colony is split between narrative calm and actual spot weakness.",
+          agentCount: 5,
+          sourcePostData: [
+            {
+              txHash: "0xsig3",
+              author: "0xagent3",
+              text: "Spot is rolling over faster than sentiment acknowledges.",
+              category: "ANALYSIS",
+              timestamp: Date.UTC(2026, 3, 19, 6, 30, 0),
+              confidence: 81,
+              assets: ["BTC"],
+              dissents: false,
+              reactions: { agree: 3, disagree: 0, flag: 0 },
+            },
+          ],
+          crossReferences: [
+            {
+              type: "cross_asset",
+              description: "Risk appetite is weakening across majors.",
+              assets: ["BTC", "ETH"],
+            },
+          ],
+          reactionSummary: {
+            totalAgrees: 3,
+            totalDisagrees: 0,
+            totalFlags: 0,
+          },
+          divergence: {
+            agent: "0xagent4",
+            direction: "bullish",
+            reasoning: "Sentiment has not broken enough to confirm a trend change.",
+          },
+        },
+        matchingFeedPosts: [],
+        lastSeenAt: null,
+        contradictionSignals: [],
+        attestationPlan: {
+          ready: true,
+          minSupportingSources: 1,
+          preferredSourceIds: ["coingecko-42ff8c85"],
+          primary: { id: "coingecko-42ff8c85", name: "CoinGecko Price" },
+          supporting: [{ id: "coingecko-2a7ea372", name: "CoinGecko Market Chart" }],
+          warnings: [],
+        },
+      },
+    ], {
+      publishHistory: [
+        {
+          topic: "btc funding previous take",
+          family: "funding-structure",
+          publishedAt: "2026-04-19T05:30:00.000Z",
+          opportunityKind: "coverage_gap",
+          textSnippet: "Earlier funding take.",
+          evidenceValues: {
+            markPrice: "67250.00",
+          },
+        },
+      ],
+      topicHistory: [
+        {
+          topic: "btc funding previous take",
+          publishedAt: "2026-04-19T05:30:00.000Z",
+          opportunityKind: "coverage_gap",
+        },
+      ],
+    }, "2026-04-19T08:00:00.000Z");
+
+    expect(frontier[0]?.topic).toBe("btc sentiment vs reality");
+    expect(frontier[0]?.portfolioReasons).toContain("family_diversity");
+    expect(frontier[0]?.portfolioReasons).toContain("fresh_evidence");
+    expect(frontier[0]?.portfolioReasons).toContain("rich_substrate");
+    expect(frontier[1]?.portfolioReasons).toContain("recent_family_penalty");
+  });
+
+  it("does not truncate the executable opportunity ranking to the reported frontier size", () => {
+    const opportunities = Array.from({ length: 5 }, (_, index) => ({
+      kind: "coverage_gap" as const,
+      topic: `btc topic ${index + 1}`,
+      score: 100 - index,
+      rationale: `topic ${index + 1}`,
+      sourceProfile: {
+        family: index < 4 ? "funding-structure" : "spot-momentum",
+        topic: `btc topic ${index + 1}`,
+        asset: { asset: "Bitcoin", symbol: "BTC" },
+        supported: true,
+        reason: null,
+        primarySourceIds: ["coingecko-42ff8c85"],
+        supportingSourceIds: ["coingecko-2a7ea372"],
+        expectedMetrics: ["currentPriceUsd"],
+      },
+      matchedSignal: {
+        topic: `btc topic ${index + 1}`,
+        shortTopic: `BTC Topic ${index + 1}`,
+        confidence: 80 - index,
+        direction: "bearish",
+        sourcePostData: index === 4
+          ? [{
+              txHash: "0xlate",
+              author: "0xagent5",
+              text: "Late candidate still has live signal support.",
+              category: "ANALYSIS",
+              timestamp: Date.UTC(2026, 3, 19, 7, 55, 0),
+              confidence: 77,
+              assets: ["BTC"],
+              dissents: false,
+              reactions: { agree: 2, disagree: 0, flag: 0 },
+            }]
+          : [],
+      },
+      matchingFeedPosts: [],
+      lastSeenAt: null,
+      contradictionSignals: [],
+      attestationPlan: {
+        ready: true,
+        minSupportingSources: 1,
+        preferredSourceIds: ["coingecko-42ff8c85"],
+        primary: { id: "coingecko-42ff8c85", name: "CoinGecko Price" },
+        supporting: [{ id: "coingecko-2a7ea372", name: "CoinGecko Market Chart" }],
+        warnings: [],
+      },
+    }));
+
+    const frontier = buildResearchOpportunityFrontier(opportunities, {
+      publishHistory: [
+        {
+          topic: "btc topic 0",
+          family: "funding-structure",
+          publishedAt: "2026-04-19T07:30:00.000Z",
+          opportunityKind: "coverage_gap",
+          textSnippet: "Earlier funding slice.",
+          evidenceValues: { markPrice: "67250.00" },
+        },
+      ],
+    }, "2026-04-19T08:00:00.000Z");
+
+    expect(frontier).toHaveLength(5);
+    expect(frontier[4]?.topic).toBe("btc topic 4");
   });
 });
