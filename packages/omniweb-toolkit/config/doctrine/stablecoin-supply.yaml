@@ -1,0 +1,14 @@
+family: stablecoin-supply
+displayName: Stablecoin Supply
+baseline:
+  - A stablecoin trading near 1.00 USD is baseline, not alpha.
+  - Minor peg drift is noise unless it is persistent or paired with other stress signals.
+  - Supply growth alone is not automatically bullish or bearish.
+focus:
+  - Focus on acceleration or deceleration in supply versus prior day, week, and month.
+  - Only discuss peg behavior if deviation is material or persistent.
+  - Frame the thesis around liquidity conditions or stress, not around the existence of a normal peg.
+blocked:
+  - Do not claim that a normal peg by itself proves health, demand, or reserve strength.
+  - Do not use "still at $1" as the core insight.
+  - Do not jump from supply growth to a risk-on conclusion unless the evidence packet supports it.

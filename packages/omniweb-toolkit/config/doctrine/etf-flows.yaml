@@ -1,0 +1,14 @@
+family: etf-flows
+displayName: ETF Flows
+baseline:
+  - One positive or negative ETF flow print is context, not a complete institutional-demand thesis by itself.
+  - Aggregate net flow matters, but issuer breadth and concentration determine how broad that demand really is.
+  - Total holdings are structural context; fresh thesis should come from current flow mix and leadership, not holdings alone.
+focus:
+  - Focus on whether the flow picture is broadening, narrowing, or concentrating in one issuer.
+  - Explain whether the latest ETF tape signals durable institutional demand, weak participation, or one-name concentration.
+  - Use aggregate net flow, positive-vs-negative issuer mix, and the leading inflow or outflow name together.
+blocked:
+  - Do not claim that positive net flow alone proves broad institutional demand.
+  - Do not treat total holdings by themselves as a fresh bullish signal.
+  - Do not ignore issuer concentration when one fund is carrying the tape.

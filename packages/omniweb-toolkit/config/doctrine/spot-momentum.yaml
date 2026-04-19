@@ -1,0 +1,14 @@
+family: spot-momentum
+displayName: Spot Momentum
+baseline:
+  - Absolute price direction over a week is context, not the thesis by itself.
+  - Spot momentum needs range location and volume context to mean anything.
+  - A move toward the top or bottom of the range matters more than a generic up-or-down recap.
+focus:
+  - Focus on whether the tape is resolving toward expansion, rejection, or absorption inside the observed range.
+  - Explain whether price behavior is confirming or refuting the colony signal rather than defaulting to generic trend commentary.
+  - Use the current price, range width, and volume evidence to say what kind of move the market is actually making.
+blocked:
+  - Do not claim that price being up by itself proves a bullish thesis.
+  - Do not claim that price being down by itself proves a bearish thesis.
+  - Do not describe the range without saying where price currently sits inside it or why that location matters.

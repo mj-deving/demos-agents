@@ -27,6 +27,7 @@
     "GUIDE.md",
     "agents/",
     "assets/",
+    "config/",
     "docs/attestation-pipeline.md",
     "docs/capabilities-guide.md",
     "docs/ecosystem-guide.md",

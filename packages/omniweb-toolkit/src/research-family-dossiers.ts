@@ -1,15 +1,9 @@
 import type { ResearchEvidenceSummary } from "./research-evidence.js";
 import type { ResearchColonySubstrate } from "./research-colony-substrate.js";
+import { dossierForFamily, type ResearchFamilyDossier } from "./research-family-doctrine.js";
 import type { ResearchOpportunity } from "./research-opportunities.js";
 import type { ResearchTopicFamily } from "./research-source-profile.js";
 import type { ResearchSelfHistorySummary } from "./research-self-history.js";
-
-export interface ResearchFamilyDossier {
-  family: ResearchTopicFamily;
-  baseline: string[];
-  focus: string[];
-  falseInferenceGuards: string[];
-}
 
 export interface ResearchBrief {
   family: ResearchTopicFamily;
@@ -30,133 +24,6 @@ export interface ResearchBrief {
 }
 
 type CoreResearchBrief = Omit<ResearchBrief, "linkedThemes" | "domainContext" | "substrateSummary" | "previousCoverageDelta">;
-
-const GENERIC_DOSSIER: ResearchFamilyDossier = {
-  family: "unsupported",
-  baseline: [
-    "Use the fetched evidence as the center of gravity for the post.",
-  ],
-  focus: [
-    "Explain what changed or what is mismatched in the evidence.",
-  ],
-  falseInferenceGuards: [
-    "Do not turn internal workflow or default invariants into the thesis.",
-  ],
-};
-
-const STABLECOIN_SUPPLY_DOSSIER: ResearchFamilyDossier = {
-  family: "stablecoin-supply",
-  baseline: [
-    "A stablecoin trading near 1.00 USD is baseline, not alpha.",
-    "Minor peg drift is noise unless it is persistent or paired with other stress signals.",
-    "Supply growth alone is not automatically bullish or bearish.",
-  ],
-  focus: [
-    "Focus on acceleration or deceleration in supply versus prior day, week, and month.",
-    "Only discuss peg behavior if deviation is material or persistent.",
-    "Frame the thesis around liquidity conditions or stress, not around the existence of a normal peg.",
-  ],
-  falseInferenceGuards: [
-    "Do not claim that a normal peg by itself proves health, demand, or reserve strength.",
-    "Do not use 'still at $1' as the core insight.",
-    "Do not jump from supply growth to a risk-on conclusion unless the evidence packet supports it.",
-  ],
-};
-
-const FUNDING_STRUCTURE_DOSSIER: ResearchFamilyDossier = {
-  family: "funding-structure",
-  baseline: [
-    "Funding and premium are positioning signals, not standalone direction calls.",
-    "Negative funding is not automatically bearish and not automatically contrarian bullish.",
-    "Funding without price and open-interest context is incomplete.",
-  ],
-  focus: [
-    "Focus on how funding, premium, and open interest line up with price behavior.",
-    "Explain whether the derivatives structure is confirming the move, fading it, or setting up a squeeze.",
-    "Treat a single funding print as evidence inside a positioning story, not as the whole thesis.",
-  ],
-  falseInferenceGuards: [
-    "Do not claim that negative funding by itself proves downside.",
-    "Do not claim that negative funding by itself guarantees a squeeze higher.",
-    "Do not ignore open interest or price context when interpreting funding and premium.",
-  ],
-};
-
-const SPOT_MOMENTUM_DOSSIER: ResearchFamilyDossier = {
-  family: "spot-momentum",
-  baseline: [
-    "Absolute price direction over a week is context, not the thesis by itself.",
-    "Spot momentum needs range location and volume context to mean anything.",
-    "A move toward the top or bottom of the range matters more than a generic up-or-down recap.",
-  ],
-  focus: [
-    "Focus on whether the tape is resolving toward expansion, rejection, or absorption inside the observed range.",
-    "Explain whether price behavior is confirming or refuting the colony signal rather than defaulting to generic trend commentary.",
-    "Use the current price, range width, and volume evidence to say what kind of move the market is actually making.",
-  ],
-  falseInferenceGuards: [
-    "Do not claim that price being up by itself proves a bullish thesis.",
-    "Do not claim that price being down by itself proves a bearish thesis.",
-    "Do not describe the range without saying where price currently sits inside it or why that location matters.",
-  ],
-};
-
-const ETF_FLOWS_DOSSIER: ResearchFamilyDossier = {
-  family: "etf-flows",
-  baseline: [
-    "One positive or negative ETF flow print is context, not a complete institutional-demand thesis by itself.",
-    "Aggregate net flow matters, but issuer breadth and concentration determine how broad that demand really is.",
-    "Total holdings are structural context; fresh thesis should come from current flow mix and leadership, not holdings alone.",
-  ],
-  focus: [
-    "Focus on whether the flow picture is broadening, narrowing, or concentrating in one issuer.",
-    "Explain whether the latest ETF tape signals durable institutional demand, weak participation, or one-name concentration.",
-    "Use aggregate net flow, positive-vs-negative issuer mix, and the leading inflow or outflow name together.",
-  ],
-  falseInferenceGuards: [
-    "Do not claim that positive net flow alone proves broad institutional demand.",
-    "Do not treat total holdings by themselves as a fresh bullish signal.",
-    "Do not ignore issuer concentration when one fund is carrying the tape.",
-  ],
-};
-
-const NETWORK_ACTIVITY_DOSSIER: ResearchFamilyDossier = {
-  family: "network-activity",
-  baseline: [
-    "High on-chain activity is context, not an automatic bullish thesis.",
-    "More transactions or blocks do not automatically mean healthy demand, adoption, or price upside.",
-    "Network statistics need price or market context to distinguish speculation, stress, and genuine usage.",
-  ],
-  focus: [
-    "Focus on whether throughput, transaction density, and price behavior confirm real network usage, congestion, or stress.",
-    "Explain whether the network data is supporting, lagging, or contradicting the colony signal.",
-    "Use block activity together with transaction intensity, hashrate when available, and price context rather than narrating one metric in isolation.",
-  ],
-  falseInferenceGuards: [
-    "Do not claim that more transactions by themselves prove adoption or a bullish outcome.",
-    "Do not treat elevated hashrate or block count alone as proof of network health or price strength.",
-    "Do not turn generic on-chain activity into the thesis without explaining whether it reflects usage, congestion, or speculation.",
-  ],
-};
-
-const VIX_CREDIT_DOSSIER: ResearchFamilyDossier = {
-  family: "vix-credit",
-  baseline: [
-    "An elevated VIX level is context, not a complete stress thesis by itself.",
-    "One volatility spike is not automatically a recession or credit event.",
-    "The Treasury bill/note spread is a short-rate backdrop signal, not a literal corporate credit spread.",
-  ],
-  focus: [
-    "Focus on whether volatility is repricing faster than the rates backdrop would justify, or whether the rates backdrop is already signaling stress that volatility still understates.",
-    "Use the VIX close, session change, intraday range, and bill-vs-note rate spread together instead of narrating any one number in isolation.",
-    "Explain whether the latest tape implies real stress, fading panic, or a gap between macro fear pricing and the rates backdrop.",
-  ],
-  falseInferenceGuards: [
-    "Do not claim that a high VIX level by itself guarantees a crash or recession.",
-    "Do not describe the bill/note spread as if it were a corporate credit spread.",
-    "Do not treat one VIX session move as a regime shift without explaining the rates backdrop or the size of the move.",
-  ],
-};
 
 export function buildResearchBrief(
   opportunity: ResearchOpportunity,
@@ -452,37 +319,6 @@ function buildStablecoinSupplyBrief(
     anomalySummary,
     allowedThesisSpace,
     invalidationFocus,
-  };
-}
-
-function dossierForFamily(family: ResearchTopicFamily): ResearchFamilyDossier {
-  if (family === "etf-flows") {
-    return ETF_FLOWS_DOSSIER;
-  }
-
-  if (family === "spot-momentum") {
-    return SPOT_MOMENTUM_DOSSIER;
-  }
-
-  if (family === "network-activity") {
-    return NETWORK_ACTIVITY_DOSSIER;
-  }
-
-  if (family === "vix-credit") {
-    return VIX_CREDIT_DOSSIER;
-  }
-
-  if (family === "stablecoin-supply") {
-    return STABLECOIN_SUPPLY_DOSSIER;
-  }
-
-  if (family === "funding-structure") {
-    return FUNDING_STRUCTURE_DOSSIER;
-  }
-
-  return {
-    ...GENERIC_DOSSIER,
-    family,
   };
 }
 

@@ -1,0 +1,14 @@
+family: vix-credit
+displayName: VIX Credit
+baseline:
+  - An elevated VIX level is context, not a complete stress thesis by itself.
+  - One volatility spike is not automatically a recession or credit event.
+  - The Treasury bill/note spread is a short-rate backdrop signal, not a literal corporate credit spread.
+focus:
+  - Focus on whether volatility is repricing faster than the rates backdrop would justify, or whether the rates backdrop is already signaling stress that volatility still understates.
+  - Use the VIX close, session change, intraday range, and bill-vs-note rate spread together instead of narrating any one number in isolation.
+  - Explain whether the latest tape implies real stress, fading panic, or a gap between macro fear pricing and the rates backdrop.
+blocked:
+  - Do not claim that a high VIX level by itself guarantees a crash or recession.
+  - Do not describe the bill/note spread as if it were a corporate credit spread.
+  - Do not treat one VIX session move as a regime shift without explaining the rates backdrop or the size of the move.

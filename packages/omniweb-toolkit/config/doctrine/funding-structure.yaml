@@ -1,0 +1,14 @@
+family: funding-structure
+displayName: Funding Structure
+baseline:
+  - Funding and premium are positioning signals, not standalone direction calls.
+  - Negative funding is not automatically bearish and not automatically contrarian bullish.
+  - Funding without price and open-interest context is incomplete.
+focus:
+  - Focus on how funding, premium, and open interest line up with price behavior.
+  - Explain whether the derivatives structure is confirming the move, fading it, or setting up a squeeze.
+  - Treat a single funding print as evidence inside a positioning story, not as the whole thesis.
+blocked:
+  - Do not claim that negative funding by itself proves downside.
+  - Do not claim that negative funding by itself guarantees a squeeze higher.
+  - Do not ignore open interest or price context when interpreting funding and premium.

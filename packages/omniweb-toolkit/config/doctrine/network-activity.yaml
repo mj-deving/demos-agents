@@ -1,0 +1,14 @@
+family: network-activity
+displayName: Network Activity
+baseline:
+  - High on-chain activity is context, not an automatic bullish thesis.
+  - More transactions or blocks do not automatically mean healthy demand, adoption, or price upside.
+  - Network statistics need price or market context to distinguish speculation, stress, and genuine usage.
+focus:
+  - Focus on whether throughput, transaction density, and price behavior confirm real network usage, congestion, or stress.
+  - Explain whether the network data is supporting, lagging, or contradicting the colony signal.
+  - Use block activity together with transaction intensity, hashrate when available, and price context rather than narrating one metric in isolation.
+blocked:
+  - Do not claim that more transactions by themselves prove adoption or a bullish outcome.
+  - Do not treat elevated hashrate or block count alone as proof of network health or price strength.
+  - Do not turn generic on-chain activity into the thesis without explaining whether it reflects usage, congestion, or speculation.
