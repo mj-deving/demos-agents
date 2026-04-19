@@ -54,6 +54,8 @@ interface ReadResult<T> {
 
 const MAX_TOPIC_HISTORY = 5;
 const RESEARCH_FRONTIER_SIZE = 4;
+const PUBLISH_COOLDOWN_MS = 30 * 60 * 1000;
+const CROSS_FAMILY_COOLDOWN_OVERRIDE_SCORE = 130;
 
 interface RankedResearchOpportunity extends ResearchOpportunity {
   portfolioScore: number;
@@ -449,6 +451,8 @@ export async function observe(
     ctx.memory.state,
     ctx.cycle.startedAt,
   );
+  const publishedAtMs = parseTimestamp(ctx.memory.state?.lastPublishedAt);
+  const mostRecentPublishFamily = normalizeTopic(ctx.memory.state?.publishHistory?.[0]?.family ?? null);
   const derivedMetrics = {
     highConfidenceSignalCount: highConfidenceSignals.length,
     coverageGapCount: opportunities.filter((opportunity) => opportunity.kind === "coverage_gap").length,
@@ -497,6 +501,7 @@ export async function observe(
   }
 
   let deferredRepeatSkip: MinimalObserveResult<ResearchState> | null = null;
+  let deferredCooldownSkip: MinimalObserveResult<ResearchState> | null = null;
 
   for (const chosenOpportunity of opportunityFrontier) {
     const topic = chosenOpportunity.topic;
@@ -508,6 +513,68 @@ export async function observe(
       opportunity: chosenOpportunity,
       allPosts: posts,
     });
+    const sameFamilyAsRecentPublish = normalizeTopic(sourceProfile.family) === mostRecentPublishFamily;
+    const cooldownOverrideAllowed = publishedAtMs != null
+      && Date.parse(ctx.cycle.startedAt) - publishedAtMs < PUBLISH_COOLDOWN_MS
+      && mostRecentPublishFamily != null
+      && !sameFamilyAsRecentPublish
+      && chosenOpportunity.portfolioScore >= CROSS_FAMILY_COOLDOWN_OVERRIDE_SCORE;
+
+    if (
+      publishedAtMs != null
+      && mostRecentPublishFamily != null
+      && Date.parse(ctx.cycle.startedAt) - publishedAtMs < PUBLISH_COOLDOWN_MS
+      && !cooldownOverrideAllowed
+    ) {
+      deferredCooldownSkip ??= {
+        kind: "skip",
+        reason: "published_within_last_30m",
+        facts: {
+          topic,
+          researchFamily: sourceProfile.family,
+          signalCount: signalList.length,
+          feedCount: posts.length,
+          availableBalance,
+          opportunityKind: chosenOpportunity.kind,
+          opportunityScore: chosenOpportunity.score,
+          portfolioScore: chosenOpportunity.portfolioScore,
+          lastPublishedAt: ctx.memory.state?.lastPublishedAt ?? null,
+          cooldownMsRemaining: PUBLISH_COOLDOWN_MS - (Date.parse(ctx.cycle.startedAt) - publishedAtMs),
+          sameFamilyAsRecentPublish,
+          ...derivedMetrics,
+          ...readStatus,
+        },
+        attestationPlan,
+        audit: {
+          inputs: {
+            feedSample,
+            signalSample,
+            leaderboardSample: leaderboardAgents.slice(0, 5),
+          },
+          selectedEvidence: {
+            matchedSignal,
+            feedMentions: matchingFeedPosts,
+            sourceProfile,
+            colonySubstrate,
+          },
+          promptPacket: {
+            objective: "Skip rapid research republishing during the 30-minute cooldown unless a cross-family frontier candidate is strong enough to justify breaking cadence.",
+            topic,
+            opportunityKind: chosenOpportunity.kind,
+            researchFamily: sourceProfile.family,
+            portfolioScore: chosenOpportunity.portfolioScore,
+            sameFamilyAsRecentPublish,
+            cooldownOverrideAllowed,
+            opportunityFrontier: summarizeOpportunityFrontier(opportunityFrontier),
+            derivedMetrics,
+            readStatus,
+            result: "skip",
+          },
+        },
+        nextState: ctx.memory.state ?? {},
+      };
+      continue;
+    }
 
     if (!sourceProfile.supported) {
       return {
@@ -936,6 +1003,7 @@ export async function observe(
         opportunityKind: chosenOpportunity.kind,
         opportunityScore: chosenOpportunity.score,
         portfolioScore: chosenOpportunity.portfolioScore,
+        cooldownOverrideApplied: cooldownOverrideAllowed || undefined,
         draftSource: draft.draftSource,
         ...derivedMetrics,
         ...readStatus,
@@ -996,6 +1064,10 @@ export async function observe(
         },
       },
     };
+  }
+
+  if (deferredCooldownSkip) {
+    return deferredCooldownSkip;
   }
 
   if (deferredRepeatSkip) {

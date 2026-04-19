@@ -410,6 +410,185 @@ describe("research-agent starter", () => {
     });
   });
 
+  it("skips a rapid same-family follow-up during the research cooldown", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          markPrice: "67250.00",
+          indexPrice: "67245.12",
+          lastFundingRate: "-0.012",
+          interestRate: "0.0001",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const omni = makeOmni();
+    const provider = vi.fn().mockResolvedValue("This should not be called while cooldown is active for the same family.");
+    omni.runtime.llmProvider.complete = provider;
+
+    const result = await observe({
+      omni,
+      cycle: {
+        id: "cycle-5bb",
+        iteration: 2,
+        startedAt: "2026-04-18T10:50:00.000Z",
+        stateDir: "/tmp/research-starter-test",
+        dryRun: true,
+      },
+      memory: {
+        state: {
+          lastPublishedAt: "2026-04-18T10:30:00.000Z",
+          publishHistory: [
+            {
+              topic: "btc funding previous take",
+              family: "funding-structure",
+              publishedAt: "2026-04-18T10:30:00.000Z",
+              opportunityKind: "coverage_gap",
+              textSnippet: "Earlier funding take.",
+              evidenceValues: {
+                markPrice: "67250.00",
+                indexPrice: "67245.12",
+                lastFundingRate: "-0.012",
+                interestRate: "0.0001",
+              },
+            },
+          ],
+        },
+        lastCycle: null,
+      },
+    });
+
+    expect(result.kind).toBe("skip");
+    if (result.kind !== "skip") throw new Error("expected skip");
+    expect(result.reason).toBe("published_within_last_30m");
+    expect(provider).not.toHaveBeenCalled();
+    expect(result.facts).toMatchObject({
+      researchFamily: "funding-structure",
+      sameFamilyAsRecentPublish: true,
+    });
+  });
+
+  it("allows a strong cross-family follow-up to break the research cooldown", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            IBIT: {
+              ticker: "IBIT",
+              dt: "2026-04-16",
+              holdings: 799151.0369,
+              change: 1088.1268,
+              note: null,
+              update_ts: "2026-04-18T07:00:02",
+              error: false,
+            },
+            FBTC: {
+              ticker: "FBTC",
+              dt: "2026-04-16",
+              holdings: 185536.41,
+              change: -478.92,
+              note: null,
+              update_ts: "2026-04-18T07:30:01",
+              error: false,
+            },
+          },
+          batch_ts: "2026-04-18T08:00:02",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ) as typeof fetch;
+
+    const omni = makeOmni();
+    omni.colony.getSignals = async () => ({
+      ok: true,
+      data: [
+        {
+          shortTopic: "BTC ETF Flows",
+          text: "ETF absorption is still stronger than the feed is pricing.",
+          confidence: 90,
+          direction: "bullish",
+          keyInsight: "The newer angle is sustained institutional absorption despite mixed feed attention.",
+          agentCount: 5,
+          totalAgents: 5,
+          tags: ["BTC", "ETF", "flows"],
+          assets: ["BTC"],
+          sourcePostData: [
+            {
+              txHash: "0xetf1",
+              author: "0xagent1",
+              text: "IBIT is still leading the inflow complex.",
+              cat: "ANALYSIS",
+              timestamp: Date.UTC(2026, 3, 18, 7, 30, 0),
+              confidence: 86,
+              reactions: { agree: 2, disagree: 0, flag: 0 },
+              dissents: false,
+            },
+          ],
+          crossReferences: [
+            {
+              type: "cross_asset",
+              description: "BTC spot strength is still being supported by ETF demand.",
+              assets: ["BTC"],
+            },
+          ],
+          reactionSummary: {
+            totalAgrees: 3,
+            totalDisagrees: 0,
+            totalFlags: 0,
+          },
+          divergence: {
+            agent: "0xagent2",
+            direction: "bearish",
+            reasoning: "Spot demand could still fade if the ETF bid slows.",
+          },
+        },
+      ],
+    });
+    omni.runtime.llmProvider.complete = async () =>
+      "BTC ETF demand is still stronger than the feed is pricing because total holdings remain above 984,687 BTC while the aggregate daily flow is still roughly 609.21 BTC. " +
+      "IBIT is still carrying the positive side of the tape, which makes the flow picture stronger than a casual headline skim would suggest. " +
+      "A decisive flip to net outflows would weaken the thesis, but the current packet still points to absorption rather than release.";
+
+    const result = await observe({
+      omni,
+      cycle: {
+        id: "cycle-5bc",
+        iteration: 2,
+        startedAt: "2026-04-18T10:50:00.000Z",
+        stateDir: "/tmp/research-starter-test",
+        dryRun: true,
+      },
+      memory: {
+        state: {
+          lastPublishedAt: "2026-04-18T10:30:00.000Z",
+          publishHistory: [
+            {
+              topic: "btc funding previous take",
+              family: "funding-structure",
+              publishedAt: "2026-04-18T10:30:00.000Z",
+              opportunityKind: "coverage_gap",
+              textSnippet: "Earlier funding take.",
+              evidenceValues: {
+                markPrice: "67250.00",
+              },
+            },
+          ],
+        },
+        lastCycle: null,
+      },
+    });
+
+    expect(result.kind).toBe("publish");
+    if (result.kind !== "publish") throw new Error("expected publish");
+    expect(result.facts).toMatchObject({
+      researchFamily: "etf-flows",
+      cooldownOverrideApplied: true,
+    });
+    expect((result.audit?.promptPacket as { opportunityFrontier?: Array<{ topic: string; portfolioScore: number }> }).opportunityFrontier?.[0]?.topic)
+      .toBe("btc etf flows");
+  });
+
   it("falls through to the next ranked opportunity when the top topic is a same-topic no-delta repeat", async () => {
     globalThis.fetch = vi.fn().mockImplementation(async () =>
       new Response(
