@@ -104,7 +104,14 @@ describe("minimal agent runtime", () => {
         publish: vi.fn().mockResolvedValue({
           ok: true,
           data: { txHash: "0xabc" },
-          provenance: { path: "local", latencyMs: 20 },
+          provenance: {
+            path: "local",
+            latencyMs: 20,
+            attestation: {
+              txHash: "0xattest",
+              responseHash: "0xresponse",
+            },
+          },
         }),
         getFeed: vi.fn().mockResolvedValue({
           ok: true,
@@ -116,6 +123,7 @@ describe("minimal agent runtime", () => {
                   cat: "ANALYSIS",
                   text: "Coverage gap is narrowing.",
                 },
+                score: 80,
                 blockNumber: 321,
               },
             ],
@@ -186,15 +194,22 @@ describe("minimal agent runtime", () => {
     });
     expect(record.outcome.status).toBe("published");
     expect(record.outcome.txHash).toBe("0xabc");
+    expect(record.outcome.attestationTxHash).toBe("0xattest");
+    expect(record.outcome.attestationResponseHash).toBe("0xresponse");
     expect(record.outcome.verification?.indexedVisible).toBe(true);
     expect(record.outcome.verification?.verificationPath).toBe("feed");
+    expect(record.outcome.verification?.observedScore).toBe(80);
     expect(record.memoryAfter.state).toEqual({ lastTopic: "coverage-gap" });
 
     const latest = await readJson(resolve(stateDir, "runs", "latest.json"));
     const summary = await readFile(resolve(stateDir, "runs", "2023-11-14", "cycle-publish.md"), "utf-8");
     expect(latest.decision.audit.inputs.signals[0].topic).toBe("coverage-gap");
+    expect(latest.outcome.attestationTxHash).toBe("0xattest");
     expect(summary).toContain("AuditSections: inputs, selectedEvidence, promptPacket");
     expect(summary).toContain("AttestationPlan: ready (ready)");
+    expect(summary).toContain("AttestationTxHash: 0xattest");
+    expect(summary).toContain("AttestationResponseHash: 0xresponse");
+    expect(summary).toContain("ObservedScore: 80");
   });
 
   it("supports dry-run publishes without spending or calling publish()", async () => {

@@ -25,9 +25,12 @@ export interface MinimalCycleSummary {
   decisionKind: MinimalObserveResult["kind"];
   status: MinimalCycleStatus;
   txHash?: string;
+  attestationTxHash?: string;
+  attestationResponseHash?: string;
   verificationPath?: PublishVisibilityResult["verificationPath"];
   visible?: boolean;
   indexedVisible?: boolean;
+  observedScore?: number;
   errorStage?: MinimalErrorStage;
   errorMessage?: string;
 }
@@ -138,6 +141,8 @@ export interface MinimalCycleRecord<TState extends MinimalAgentState = MinimalAg
   outcome: {
     status: MinimalCycleStatus;
     txHash?: string;
+    attestationTxHash?: string;
+    attestationResponseHash?: string;
     demSpendEstimate?: number;
     verification?: PublishVisibilityResult;
     publishResult?: ToolResult<PublishResult>;
@@ -353,6 +358,8 @@ export async function runMinimalAgentCycle<TState extends MinimalAgentState = Mi
   }
 
   const txHash = publishResult.data?.txHash;
+  const attestationTxHash = publishResult.provenance.attestation?.txHash;
+  const attestationResponseHash = publishResult.provenance.attestation?.responseHash;
   let verification: PublishVisibilityResult | undefined;
   try {
     verification = await verifyPublishVisibility(
@@ -387,6 +394,8 @@ export async function runMinimalAgentCycle<TState extends MinimalAgentState = Mi
     outcome: {
       status: decision.kind === "publish" ? "published" : "replied",
       txHash,
+      attestationTxHash,
+      attestationResponseHash,
       demSpendEstimate: 1,
       publishResult,
       verification,
@@ -586,9 +595,12 @@ function summarizeCycleFields<TState extends MinimalAgentState>(args: {
     decisionKind: args.decision.kind,
     status: args.outcome.status,
     txHash: args.outcome.txHash,
+    attestationTxHash: args.outcome.attestationTxHash,
+    attestationResponseHash: args.outcome.attestationResponseHash,
     verificationPath: args.outcome.verification?.verificationPath,
     visible: args.outcome.verification?.visible,
     indexedVisible: args.outcome.verification?.indexedVisible,
+    observedScore: args.outcome.verification?.observedScore,
     errorStage: args.outcome.error?.stage,
     errorMessage: args.outcome.error?.message,
   };
@@ -622,11 +634,22 @@ function renderCycleSummary<TState extends MinimalAgentState>(
     lines.push(`- TxHash: ${record.outcome.txHash}`);
   }
 
+  if (record.outcome.attestationTxHash) {
+    lines.push(`- AttestationTxHash: ${record.outcome.attestationTxHash}`);
+  }
+
+  if (record.outcome.attestationResponseHash) {
+    lines.push(`- AttestationResponseHash: ${record.outcome.attestationResponseHash}`);
+  }
+
   if (record.outcome.verification) {
     lines.push(`- Visible: ${record.outcome.verification.visible}`);
     lines.push(`- IndexedVisible: ${record.outcome.verification.indexedVisible}`);
     lines.push(`- VerificationPath: ${record.outcome.verification.verificationPath ?? "none"}`);
     lines.push(`- VerificationPolls: ${record.outcome.verification.polls}`);
+    if (typeof record.outcome.verification.observedScore === "number") {
+      lines.push(`- ObservedScore: ${record.outcome.verification.observedScore}`);
+    }
     if (record.outcome.verification.error) {
       lines.push(`- VerificationNote: ${record.outcome.verification.error}`);
     }

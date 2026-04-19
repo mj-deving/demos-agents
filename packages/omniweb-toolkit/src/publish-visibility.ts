@@ -9,6 +9,7 @@ export interface PublishVisibilityResult {
   feedScope?: "recent" | "category";
   observedCategory?: string;
   observedBlockNumber?: number;
+  observedScore?: number;
   lastIndexedBlock?: number;
   error?: string;
 }
@@ -72,6 +73,7 @@ export async function verifyPublishVisibility(
         feedScope: "recent",
         observedCategory: recentFeedMatch.matched.category ?? recentFeedMatch.matched.payload?.cat,
         observedBlockNumber: recentFeedMatch.matched.blockNumber,
+        observedScore: typeof recentFeedMatch.matched.score === "number" ? recentFeedMatch.matched.score : undefined,
         lastIndexedBlock,
       };
     }
@@ -98,6 +100,9 @@ export async function verifyPublishVisibility(
               feedScope: "category",
               observedCategory,
               observedBlockNumber: categoryFeedMatch.matched.blockNumber ?? postDetailResult.data.post.blockNumber,
+              observedScore: typeof categoryFeedMatch.matched.score === "number"
+                ? categoryFeedMatch.matched.score
+                : undefined,
               lastIndexedBlock,
             };
           }
