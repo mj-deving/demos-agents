@@ -24,6 +24,26 @@ function makeOpportunity(): MarketOpportunity {
       direction: "bearish",
       assets: ["BTC"],
     },
+    relatedSignals: [
+      {
+        topic: "BTC funding setup",
+        confidence: 76,
+        direction: "bearish",
+        assets: ["BTC"],
+      },
+      {
+        topic: "BTC dominance rollover",
+        confidence: 68,
+        direction: "bearish",
+        assets: ["BTC"],
+      },
+      {
+        topic: "BTC breakout squeeze",
+        confidence: 61,
+        direction: "bullish",
+        assets: ["BTC"],
+      },
+    ],
     priceSnapshot: {
       ticker: "BTC",
       priceUsd: 67250,
@@ -122,6 +142,9 @@ describe("buildMarketDraft", () => {
     expect(result.promptPacket.output.confidenceStyle).toContain("measured and agnostic");
     expect(result.promptPacket.output.successCriteria[0]).toContain("market observation");
     expect(result.promptPacket.input.marketContext.dislocationLean).toBe("lower");
+    expect(result.promptPacket.input.marketContext.substrateSummary).toContain("related signal(s)");
+    expect(result.promptPacket.input.colonyContext.supportingSignals).toHaveLength(2);
+    expect(result.promptPacket.input.colonyContext.conflictingSignals).toHaveLength(1);
   });
 
   it("skips short low-quality output instead of publishing a template fallback", async () => {

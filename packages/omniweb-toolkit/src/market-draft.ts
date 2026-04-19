@@ -1,6 +1,7 @@
 import type { QualityGateResult } from "../../../src/toolkit/publish/quality-gate.js";
 import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.js";
 import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prompt.js";
+import { buildMarketColonySubstrate, type MarketColonySubstrate } from "./market-colony-substrate.js";
 import { getMarketTopicFamilyContract } from "./market-family-contracts.js";
 import type { MarketOpportunity } from "./market-opportunities.js";
 
@@ -19,6 +20,7 @@ export interface BuildMarketDraftOptions {
   feedCount: number;
   availableBalance: number;
   oracleAssetCount: number;
+  colonySubstrate?: MarketColonySubstrate;
   llmProvider?: PromptCapableProvider | null;
   minTextLength?: number;
 }
@@ -46,6 +48,13 @@ export interface MarketPromptInput {
     lastSeenAt: string | null;
     matchingPostCount: number;
     dislocationLean: "higher" | "lower" | null;
+    substrateSummary: string | null;
+  };
+  colonyContext: {
+    signalSummary: MarketColonySubstrate["signalSummary"];
+    supportingSignals: MarketColonySubstrate["supportingSignals"];
+    conflictingSignals: MarketColonySubstrate["conflictingSignals"];
+    recentRelatedPosts: MarketColonySubstrate["recentRelatedPosts"];
   };
   evidence: {
     primarySourceName: string | null;
@@ -126,6 +135,9 @@ function buildMarketPromptPacket(opts: BuildMarketDraftOptions): MarketPromptPac
   const oracleContract = getMarketTopicFamilyContract("oracle-divergence");
   const primarySource = opportunity.attestationPlan.primary?.name ?? null;
   const supportingSources = opportunity.attestationPlan.supporting.map((candidate) => candidate.name);
+  const colonySubstrate = opts.colonySubstrate ?? buildMarketColonySubstrate({
+    opportunity,
+  });
 
   return {
     archetype: "market-analyst",
@@ -160,6 +172,13 @@ function buildMarketPromptPacket(opts: BuildMarketDraftOptions): MarketPromptPac
         matchingPostCount: opportunity.matchingFeedPosts.length,
         lastSeenAt: opportunity.lastSeenAt == null ? null : new Date(opportunity.lastSeenAt).toISOString(),
         dislocationLean: opportunity.recommendedDirection,
+        substrateSummary: summarizeMarketColonySubstrate(colonySubstrate),
+      },
+      colonyContext: {
+        signalSummary: colonySubstrate.signalSummary,
+        supportingSignals: colonySubstrate.supportingSignals,
+        conflictingSignals: colonySubstrate.conflictingSignals,
+        recentRelatedPosts: colonySubstrate.recentRelatedPosts,
       },
       evidence: {
         primarySourceName: primarySource,
@@ -171,6 +190,9 @@ function buildMarketPromptPacket(opts: BuildMarketDraftOptions): MarketPromptPac
       "Use only the packet data; do not invent prices, percentages, or market structure.",
       "Reference the concrete divergence severity and price move when they are present.",
       "Include the specific market values that make the dislocation concrete.",
+      "Use the colony substrate to say whether the colony read is clustered, split, or already partially covered, instead of flattening the setup into price commentary alone.",
+      "If supporting or conflicting colony signals exist, synthesize them into the observation rather than listing them mechanically.",
+      "If recent related posts exist, use them to explain whether this is a fresh observation or a follow-up on an already live colony theme.",
       "Do not mention internal opportunity scores, rationale text, feed counts, or balance/context bookkeeping.",
       "Explain why the dislocation is worth watching and what would confirm or weaken it from the evidence.",
       "Keep the tone measured and conviction-calibrated; market analysis should never sound certain.",
@@ -229,6 +251,27 @@ function clampConfidence(opportunity: MarketOpportunity): number {
 
 function normalizeDraftText(text: string): string {
   return text.replace(/\s+/g, " ").replace(/^Claim:\s*/i, "").trim();
+}
+
+function summarizeMarketColonySubstrate(
+  colonySubstrate: MarketColonySubstrate,
+): string | null {
+  const parts = [
+    colonySubstrate.signalSummary.relatedSignalCount > 0
+      ? `${colonySubstrate.signalSummary.relatedSignalCount} related signal(s) on ${colonySubstrate.signalSummary.asset}`
+      : null,
+    colonySubstrate.supportingSignals.length > 0
+      ? `${colonySubstrate.supportingSignals.length} supporting signal(s)`
+      : null,
+    colonySubstrate.conflictingSignals.length > 0
+      ? `${colonySubstrate.conflictingSignals.length} conflicting signal(s)`
+      : "no explicit conflicting signal is surfaced",
+    colonySubstrate.recentRelatedPosts.length > 0
+      ? `${colonySubstrate.recentRelatedPosts.length} recent related post(s)`
+      : null,
+  ].filter((value): value is string => value != null);
+
+  return parts.length > 0 ? parts.join("; ") : null;
 }
 
 function checkMarketDraftQuality(

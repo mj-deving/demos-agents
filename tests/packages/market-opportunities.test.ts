@@ -39,6 +39,7 @@ describe("deriveMarketOpportunities", () => {
     expect(opportunities[0]?.kind).toBe("oracle_divergence");
     expect(opportunities[0]?.asset).toBe("BTC");
     expect(opportunities[0]?.attestationPlan.ready).toBe(true);
+    expect(opportunities[0]?.relatedSignals).toHaveLength(1);
   });
 
   it("detects signal-price mismatches when direction and price move conflict", () => {
@@ -66,6 +67,7 @@ describe("deriveMarketOpportunities", () => {
 
     expect(opportunities[0]?.kind).toBe("signal_price_mismatch");
     expect(opportunities[0]?.recommendedDirection).toBe("higher");
+    expect(opportunities[0]?.relatedSignals).toHaveLength(1);
   });
 
   it("penalizes recently covered assets", () => {
@@ -119,5 +121,6 @@ describe("deriveMarketOpportunities", () => {
     });
 
     expect(opportunities[0]?.asset).toBe("ETH");
+    expect(opportunities[0]?.relatedSignals[0]?.topic).toBe("ETH setup");
   });
 });

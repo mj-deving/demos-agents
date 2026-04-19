@@ -16,6 +16,7 @@ export { deriveEngagementOpportunities } from "./engagement-opportunities.js";
 export { buildEngagementDraft } from "./engagement-draft.js";
 export { deriveMarketOpportunities } from "./market-opportunities.js";
 export { buildMarketDraft } from "./market-draft.js";
+export { buildMarketColonySubstrate } from "./market-colony-substrate.js";
 export { getMarketTopicFamilyContract, ORACLE_DIVERGENCE_CONTRACT } from "./market-family-contracts.js";
 export { deriveResearchOpportunities } from "./research-opportunities.js";
 export { deriveResearchSourceProfile } from "./research-source-profile.js";
@@ -89,6 +90,13 @@ export type {
   MarketDraftFailure,
   MarketDraftResult,
 } from "./market-draft.js";
+export type {
+  MarketColonySignalSummary,
+  MarketColonySignalTake,
+  MarketRecentContextPost,
+  MarketColonySubstrate,
+  BuildMarketColonySubstrateOptions,
+} from "./market-colony-substrate.js";
 export type {
   ResearchEvidenceSummary,
   FetchResearchEvidenceSummaryOptions,
