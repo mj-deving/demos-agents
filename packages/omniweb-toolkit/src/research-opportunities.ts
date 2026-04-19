@@ -132,7 +132,7 @@ export function deriveResearchOpportunities(
     const attestationPlan = buildMinimalAttestationPlan({
       topic,
       agent: "sentinel",
-      minSupportingSources: Math.min(1, sourceProfile.supportingSourceIds.length),
+      minSupportingSources: 0,
       preferredSourceIds: [
         ...sourceProfile.primarySourceIds,
         ...sourceProfile.supportingSourceIds,

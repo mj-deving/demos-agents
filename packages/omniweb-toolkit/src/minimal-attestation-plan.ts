@@ -64,7 +64,7 @@ export interface BuildMinimalAttestationPlanFromUrlsOptions {
 
 const DEFAULT_AGENT: AgentName = "sentinel";
 const DEFAULT_MAX_CANDIDATES = 5;
-const DEFAULT_MIN_SUPPORTING_SOURCES = 1;
+const DEFAULT_MIN_SUPPORTING_SOURCES = 0;
 
 export function buildMinimalAttestationPlan(
   opts: BuildMinimalAttestationPlanOptions,

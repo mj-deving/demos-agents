@@ -5,6 +5,19 @@ import {
 } from "../../packages/omniweb-toolkit/src/minimal-attestation-plan.js";
 
 describe("buildMinimalAttestationPlan", () => {
+  it("defaults to a primary-source-ready plan when a valid attestation target exists", () => {
+    const plan = buildMinimalAttestationPlan({
+      topic: "BTC Sentiment vs Funding",
+      preferredSourceIds: ["binance-futures-btc"],
+      allowTopicFallback: false,
+    });
+
+    expect(plan.ready).toBe(true);
+    expect(plan.reason).toBe("ready");
+    expect(plan.primary?.sourceId).toBe("binance-futures-btc");
+    expect(plan.supporting).toHaveLength(0);
+  });
+
   it("falls back through asset-aware topic variants when the raw topic does not match catalog tags directly", () => {
     const plan = buildMinimalAttestationPlan({
       topic: "BTC Sentiment vs Funding",
@@ -81,7 +94,6 @@ describe("buildMinimalAttestationPlan", () => {
       urls: [
         "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
       ],
-      minSupportingSources: 0,
     });
 
     expect(plan.ready).toBe(true);

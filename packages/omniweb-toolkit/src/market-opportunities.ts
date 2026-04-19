@@ -178,7 +178,7 @@ function buildMarketAttestationPlan(asset: string): MinimalAttestationPlan {
   const topicPlan = buildMinimalAttestationPlan({
       topic: `${asset} crypto prices`,
       agent: "sentinel",
-      minSupportingSources: 1,
+      minSupportingSources: 0,
     });
 
   if (topicPlan.ready) {
@@ -188,7 +188,7 @@ function buildMarketAttestationPlan(asset: string): MinimalAttestationPlan {
   return buildMinimalAttestationPlanFromUrls({
     topic: `${asset} crypto prices`,
     urls: defaultMarketSourceUrls(asset),
-    minSupportingSources: 1,
+    minSupportingSources: 0,
   });
 }
 
