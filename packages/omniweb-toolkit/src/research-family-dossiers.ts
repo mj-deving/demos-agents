@@ -410,8 +410,8 @@ function buildNetworkActivityBrief(
     focusNow: dossier.focus,
     falseInferenceGuards: dossier.falseInferenceGuards,
     anomalySummary: `Network activity shows${blockCount ? ` ${blockCount} blocks` : " an unresolved block count"} and${transactionCount ? ` ${transactionCount} transactions` : " unresolved transaction flow"} over the observed window, ${densityRead}, ${hashrateRead}${priceUsd ? `, with spot around ${priceUsd}` : ""}.`,
-    allowedThesisSpace: "Write about whether on-chain activity looks like genuine usage, congestion, stress, or speculative churn only when the activity metrics line up with price or market context.",
-    invalidationFocus: "Invalidate with a reversal in transaction density, a collapse in activity without market follow-through, or price action that clearly contradicts the claimed network interpretation.",
+    allowedThesisSpace: "Write about whether on-chain activity looks like genuine usage, congestion, stress, or speculative churn. Use spot price only as context; do not treat price behavior by itself as proof that the network load is being confirmed or rejected.",
+    invalidationFocus: "Invalidate with a reversal in transaction density, a collapse in activity, or fresh evidence that the observed load was temporary noise rather than a durable network condition.",
   };
 }
 

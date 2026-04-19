@@ -224,6 +224,14 @@ const NETWORK_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }>
     pattern: /\bon-chain\b.{0,60}\b(?:activity|usage)\b.{0,80}\b(?:therefore|so|which means|that means)\b.{0,60}\b(?:bullish|constructive)\b/i,
     detail: "jumps from generic on-chain activity straight to a market conclusion without explaining the mechanism",
   },
+  {
+    pattern: /\bprice\b.{0,40}\b(?:absorb(?:s|ing|ed)?|reject(?:s|ing|ed)?|validat(?:es|ing|ed)?)\b.{0,40}\b(?:load|congestion|network activity|throughput)\b|\b(?:load|congestion|network activity|throughput)\b.{0,40}\b(?:absorb(?:ed)?|reject(?:ed)?|validat(?:ed)?)\b.{0,40}\bby price\b|\b(?:market|price)\b.{0,40}\bvalidat(?:es|ing|ed)?\b.{0,40}\b(?:congestion|network stress|network load|throughput)\b/i,
+    detail: "claims that price action directly confirms or rejects network load without evidence for that mechanism",
+  },
+  {
+    pattern: /\b(?:network stress|network load|congestion|throughput density|on-chain stress)\b.{0,80}\b(?:prove|proves|means|shows|confirms)\b.{0,60}\b(?:demand is healthy|healthy demand|adoption|bullish|price strength)\b/i,
+    detail: "treats network stress or congestion itself as proof of healthy demand, adoption, or a bullish outcome",
+  },
 ];
 
 const VIX_CREDIT_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [

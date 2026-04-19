@@ -931,9 +931,9 @@ describe("buildResearchDraft", () => {
     const provider = {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
-        "Bitcoin's on-chain stress looks more like congestion than clean adoption because 412,338 transactions are being forced through just 144 blocks, which leaves throughput density near 2,863 transactions per block while price holds around 77,201 dollars. " +
-        "That matters because activity this compressed can reflect speculative churn or fee pressure rather than healthy demand, and the market read should depend on whether price absorbs that load or starts rejecting it. " +
-        "The thesis weakens if transaction density cools quickly without any market stress signal or if price keeps advancing while the network load normalizes."
+        "Bitcoin's on-chain stress looks more like congestion than clean adoption because 412,338 transactions are running through just 144 blocks, which leaves throughput density near 2,863 transactions per block while hashrate stays elevated and spot sits around 77,201 dollars. " +
+        "That matters because activity this compressed can reflect speculative churn or fee pressure rather than healthy demand, so the right question is whether the load persists, cools, or broadens into a cleaner usage pattern instead of treating price alone as proof. " +
+        "The thesis weakens if transaction density drops quickly and the rest of the network picture normalizes, suggesting the spike was temporary noise rather than a durable condition."
       ),
     };
 
@@ -954,6 +954,32 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("more transactions by themselves");
     expect(result.qualityGate.checks.find((check) => check.name === "semantic-evidence-grounding")?.pass).toBe(true);
     expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(true);
+  });
+
+  it("rejects network drafts that pretend price action proves network load is being absorbed", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Bitcoin network activity is clearly bullish because price is absorbing that load while throughput density stays high. " +
+        "The market is validating the congestion signal directly, so the network stress itself proves demand is healthy. " +
+        "As long as price keeps absorbing the load, the thesis holds."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeNetworkOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeNetworkEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 220,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+    expect(result.qualityGate.checks.find((check) => check.name === "family-dossier-grounding")?.pass).toBe(false);
   });
 
   it("accepts LLM output only when it clears the quality gate", async () => {
