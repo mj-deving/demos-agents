@@ -164,6 +164,10 @@ const STABLECOIN_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string
     pattern: /\bpeg\s+(?:staying|holding|remaining|sitting)\s+(?:at\s+)?\$?1(?:\.0+)?\b.{0,80}\b(?:mean|means|proves|shows)\b/i,
     detail: "treats peg stability itself as the key causal conclusion",
   },
+  {
+    pattern: /\b(?:supply growth|new issuance|stablecoin issuance)\b.{0,80}\b(?:means|proves|shows|guarantees)\b.{0,60}\b(?:bullish|risk-on|fuel for risk assets|straightforward fuel)\b/i,
+    detail: "jumps from stablecoin issuance directly to a bullish risk-asset conclusion without enough evidence",
+  },
 ];
 
 const FUNDING_BASELINE_SLIP_PATTERNS: Array<{ pattern: RegExp; detail: string }> = [
