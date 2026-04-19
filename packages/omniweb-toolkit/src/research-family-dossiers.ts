@@ -72,13 +72,14 @@ const FUNDING_STRUCTURE_DOSSIER: ResearchFamilyDossier = {
   ],
   focus: [
     "Focus on how funding, premium, and open interest line up with price behavior.",
-    "Explain whether the derivatives structure is confirming the move, fading it, or setting up a squeeze.",
+    "Explain whether the derivatives structure is confirming the move, fading it, or showing crowded positioning that still needs follow-through.",
     "Treat a single funding print as evidence inside a positioning story, not as the whole thesis.",
   ],
   falseInferenceGuards: [
     "Do not claim that negative funding by itself proves downside.",
     "Do not claim that negative funding by itself guarantees a squeeze higher.",
     "Do not ignore open interest or price context when interpreting funding and premium.",
+    "Do not call a squeeze setup without open-interest change or liquidation context.",
   ],
 };
 
@@ -86,18 +87,19 @@ const SPOT_MOMENTUM_DOSSIER: ResearchFamilyDossier = {
   family: "spot-momentum",
   baseline: [
     "Absolute price direction over a week is context, not the thesis by itself.",
-    "Spot momentum needs range location and volume context to mean anything.",
+    "Spot momentum needs range location first; the latest volume print is only secondary context.",
     "A move toward the top or bottom of the range matters more than a generic up-or-down recap.",
   ],
   focus: [
     "Focus on whether the tape is resolving toward expansion, rejection, or absorption inside the observed range.",
-    "Explain whether price behavior is confirming or refuting the colony signal rather than defaulting to generic trend commentary.",
-    "Use the current price, range width, and volume evidence to say what kind of move the market is actually making.",
+    "Explain whether price behavior is aligning with or pushing against the colony signal rather than defaulting to generic trend commentary.",
+    "Use the current price and range width as the core evidence, and treat the latest volume print as bounded context rather than proof of order flow.",
   ],
   falseInferenceGuards: [
     "Do not claim that price being up by itself proves a bullish thesis.",
     "Do not claim that price being down by itself proves a bearish thesis.",
     "Do not describe the range without saying where price currently sits inside it or why that location matters.",
+    "Do not treat the latest volume print as proof that the tape is confirming or rejecting the signal.",
   ],
 };
 
@@ -144,12 +146,12 @@ const VIX_CREDIT_DOSSIER: ResearchFamilyDossier = {
   baseline: [
     "An elevated VIX level is context, not a complete stress thesis by itself.",
     "One volatility spike is not automatically a recession or credit event.",
-    "The Treasury bill/note spread is a short-rate backdrop signal, not a literal corporate credit spread.",
+    "This family compares volatility to a Treasury term-spread backdrop, not to literal corporate credit spreads.",
   ],
   focus: [
     "Focus on whether volatility is repricing faster than the rates backdrop would justify, or whether the rates backdrop is already signaling stress that volatility still understates.",
     "Use the VIX close, session change, intraday range, and bill-vs-note rate spread together instead of narrating any one number in isolation.",
-    "Explain whether the latest tape implies real stress, fading panic, or a gap between macro fear pricing and the rates backdrop.",
+    "Explain whether the latest tape implies real stress, fading panic, or a gap between volatility pricing and the Treasury rates backdrop.",
   ],
   falseInferenceGuards: [
     "Do not claim that a high VIX level by itself guarantees a crash or recession.",
@@ -351,7 +353,7 @@ function buildSpotMomentumBrief(
     focusNow: dossier.focus,
     falseInferenceGuards: dossier.falseInferenceGuards,
     anomalySummary: `Spot is ${change7d ? `${change7d}% from the 7d starting level` : "moving without a clear 7d delta"}, with current price${currentPrice ? ` at ${currentPrice}` : ""}${rangeLocation ? ` sitting in the ${rangeLocation} of the 7d range` : ""}${rangeWidth ? ` across a ${rangeWidth} USD band` : ""}${volume ? ` on ${volume} of latest volume` : ""}.`,
-    allowedThesisSpace: `Write about whether the tape is confirming, rejecting, or absorbing the colony signal by relating the current price${startPrice ? ` to the ${startPrice} starting level` : ""}, the range${high7d && low7d ? ` from ${low7d} to ${high7d}` : ""}, and the latest volume context.`,
+    allowedThesisSpace: `Write about whether the tape is aligning with, fading, or pushing against the colony signal by relating the current price${startPrice ? ` to the ${startPrice} starting level` : ""} and the range${high7d && low7d ? ` from ${low7d} to ${high7d}` : ""}; use the latest volume print only as secondary context.`,
     invalidationFocus: "Invalidate with a clear move that breaks the current range interpretation, such as losing reclaimed support or cleanly expanding through resistance.",
   };
 }
@@ -381,7 +383,7 @@ function buildFundingStructureBrief(
     focusNow: dossier.focus,
     falseInferenceGuards: dossier.falseInferenceGuards,
     anomalySummary: `Funding is ${fundingDirection}${fundingBps ? ` (${fundingBps} bps)` : ""}, the mark/index spread is ${spreadDirection}${spreadUsd ? ` (${spreadUsd} USD)` : ""}, and ${oiContext}`,
-    allowedThesisSpace: `Write about positioning stress, confirmation failure, or squeeze setup only if the thesis is anchored in the relationship between funding, price${markPrice ? ` (${markPrice})` : ""}, and open interest.`,
+    allowedThesisSpace: `Write about positioning stress, confirmation failure, or crowded positioning only if the thesis is anchored in the relationship between funding, price${markPrice ? ` (${markPrice})` : ""}, and open interest.`,
     invalidationFocus: "Invalidate with a clear normalization in funding/premium or a price move that breaks the positioning interpretation.",
   };
 }

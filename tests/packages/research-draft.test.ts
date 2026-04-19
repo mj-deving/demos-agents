@@ -758,7 +758,7 @@ describe("buildResearchDraft", () => {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
         "Negative funding matters here because it is showing up alongside real positioning size and a still-firm price, which makes the setup a derivatives mismatch rather than an automatic trend call. " +
-        "Funding near -120 basis points with open interest around 105,600 means traders are paying for bearish positioning while spot remains elevated, so the real question is whether price starts to validate that stress or squeezes it out. " +
+        "Funding near -120 basis points with open interest around 105,600 means traders are paying for bearish positioning while spot remains elevated, so the real question is whether price starts to follow that stress or keeps resisting it. " +
         "The view weakens if funding normalizes without price damage or if price decisively breaks higher while positioning stays stretched."
       ),
     };
@@ -779,6 +779,31 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.family).toBe("funding-structure");
     expect(result.promptPacket.input.brief.baselineContext[0]).toContain("positioning signals");
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("negative funding by itself");
+  });
+
+  it("allows funding drafts to mention squeeze risk when the claim stays qualified", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Negative funding near -120 basis points is still only a positioning clue, not the thesis by itself, but combined with open interest around 105,600 it keeps squeeze risk on the table rather than resolving the direction cleanly. " +
+        "The important point is that the mark-price premium remains narrow while spot still holds near 67,250 dollars, which means the structure is crowded without yet proving who has control. " +
+        "That read weakens if funding normalizes or if open interest starts rolling over without any further pressure in price."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeEvidenceSummary(),
+      supportingEvidenceSummaries: [makeFundingSupportingEvidenceSummary()],
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
   });
 
   it("adds a family dossier brief for stablecoin supply topics", async () => {
@@ -850,8 +875,8 @@ describe("buildResearchDraft", () => {
       name: "test-provider",
       complete: vi.fn().mockResolvedValue(
         "The bearish read in colony signals is being contradicted by the tape because bitcoin is up 5.8% over the week at 76,991 dollars and the mismatch is that price is still trading in the upper third of a 7,279-dollar range rather than breaking down. " +
-        "That matters because price has rebuilt toward the weekly high on heavy volume instead of validating the bearish signal, which makes the live question one of resistance absorption rather than momentum failure. " +
-        "The thesis weakens if bitcoin loses the weekly starting level and slips back into the lower half of the range on rising volume."
+        "That matters because price has rebuilt toward the weekly high instead of resolving lower, while the latest volume print only adds secondary context rather than settling the signal by itself. " +
+        "The thesis weakens if bitcoin loses the weekly starting level and slips back into the lower half of the range while the rebound stalls out."
       ),
     };
 
@@ -870,6 +895,55 @@ describe("buildResearchDraft", () => {
     expect(result.promptPacket.input.brief.family).toBe("spot-momentum");
     expect(result.promptPacket.input.brief.baselineContext[0]).toContain("Absolute price direction");
     expect(result.promptPacket.input.brief.falseInferenceGuards[0]).toContain("price being up by itself");
+  });
+
+  it("rejects spot drafts that use the latest volume print as proof", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "Bitcoin is sitting in the upper third of the weekly range and the latest volume print proves the tape is confirming the bullish signal. " +
+        "Price is still near the recent highs, so the move looks validated rather than contested. " +
+        "The thesis only breaks if the range fails outright."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeSpotOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeSpotEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 220,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.reason).toBe("draft_quality_gate_failed");
+  });
+
+  it("accepts divergence drafts that use alignment wording from the prompt", async () => {
+    const provider = {
+      name: "test-provider",
+      complete: vi.fn().mockResolvedValue(
+        "The bearish read in colony signals is pushing against a price structure that is still holding in the upper part of the weekly range, so the real issue is unresolved alignment rather than a clean directional break. " +
+        "Bitcoin is still near 76,991 dollars and the seven-day move is not aligning with the caution embedded in the signal, which keeps the mismatch live without needing generic divergence jargon. " +
+        "That tension weakens if price finally starts aligning with the bearish read or if the signal itself stops pointing lower."
+      ),
+    };
+
+    const result = await buildResearchDraft({
+      opportunity: makeSpotOpportunity(),
+      feedCount: 30,
+      leaderboardCount: 10,
+      availableBalance: 25,
+      evidenceSummary: makeSpotEvidenceSummary(),
+      llmProvider: provider,
+      minTextLength: 260,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
   });
 
   it("adds a family dossier brief for ETF flow topics", async () => {
