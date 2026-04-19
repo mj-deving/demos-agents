@@ -1,6 +1,7 @@
 import type { QualityGateResult } from "../../../src/toolkit/publish/quality-gate.js";
 import { checkPublishQuality } from "../../../src/toolkit/publish/quality-gate.js";
 import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prompt.js";
+import { getPrimaryAttestationSourceName } from "./minimal-attestation-plan.js";
 import { getMarketTopicFamilyContract } from "./market-family-contracts.js";
 import type { MarketOpportunity } from "./market-opportunities.js";
 
@@ -124,7 +125,7 @@ export async function buildMarketDraft(
 function buildMarketPromptPacket(opts: BuildMarketDraftOptions): MarketPromptPacket {
   const opportunity = opts.opportunity;
   const oracleContract = getMarketTopicFamilyContract("oracle-divergence");
-  const primarySource = opportunity.attestationPlan.primary?.name ?? null;
+  const primarySource = getPrimaryAttestationSourceName(opportunity.attestationPlan);
   const supportingSources = opportunity.attestationPlan.supporting.map((candidate) => candidate.name);
 
   return {

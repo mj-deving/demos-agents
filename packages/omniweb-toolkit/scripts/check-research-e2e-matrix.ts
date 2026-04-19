@@ -114,6 +114,22 @@ const outputPath = getOptionalArg("--out");
 const verifyTimeoutMs = getPositiveInt("--verify-timeout-ms", 45_000);
 const verifyPollMs = getPositiveInt("--verify-poll-ms", 5_000);
 const verifyLimit = getPositiveInt("--verify-limit", 50);
+
+const getPrimaryAttestUrl = await loadPackageExport<
+  (plan: { primary?: { url?: string | null } | null } | null | undefined) => string | null
+>(
+  "../dist/agent.js",
+  "../src/agent.ts",
+  "getPrimaryAttestUrl",
+);
+
+const getPrimaryAttestationCandidate = await loadPackageExport<
+  <T extends { primary?: unknown } | null | undefined>(plan: T) => T extends { primary?: infer U } ? Exclude<U, undefined> | null : null
+>(
+  "../dist/agent.js",
+  "../src/agent.ts",
+  "getPrimaryAttestationCandidate",
+);
 const stateDir = getOptionalArg("--state-dir");
 const allowInsecureUrls = args.includes("--allow-insecure");
 
@@ -236,7 +252,8 @@ for (const family of SUPPORTED_FAMILIES) {
     continue;
   }
 
-  if (!opportunity.attestationPlan.ready || !opportunity.attestationPlan.primary) {
+  const primaryAttestationCandidate = getPrimaryAttestationCandidate(opportunity.attestationPlan);
+  if (!opportunity.attestationPlan.ready || !primaryAttestationCandidate) {
     familyResults.push({
       family,
       status: "attestation_plan_not_ready",
@@ -250,7 +267,7 @@ for (const family of SUPPORTED_FAMILIES) {
   }
 
   const evidenceReads = await Promise.allSettled([
-    fetchResearchEvidenceSummary({ source: opportunity.attestationPlan.primary, topic: opportunity.topic }),
+    fetchResearchEvidenceSummary({ source: primaryAttestationCandidate, topic: opportunity.topic }),
     ...opportunity.attestationPlan.supporting.map((source) =>
       fetchResearchEvidenceSummary({ source, topic: opportunity.topic })),
   ]);
@@ -359,10 +376,20 @@ for (const family of SUPPORTED_FAMILIES) {
   };
 
   if (broadcastFamily === family) {
+    const attestUrl = getPrimaryAttestUrl(opportunity.attestationPlan);
+    if (!attestUrl) {
+      readyResult.status = "publish_failed";
+      readyResult.publish = {
+        error: { message: "missing_primary_attest_url" },
+        provenance: null,
+      };
+      familyResults.push(readyResult);
+      continue;
+    }
     const publishResult = await omni.colony.publish({
       text: draft.text,
       category: draft.category,
-      attestUrl: opportunity.attestationPlan.primary.url,
+      attestUrl,
       confidence: draft.confidence,
     });
 

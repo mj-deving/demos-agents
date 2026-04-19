@@ -4,6 +4,7 @@ import type { PublishResult, ToolResult } from "../../../src/toolkit/types.js";
 import { connect } from "./connect.js";
 import type { ConnectOptions, OmniWeb } from "./colony.js";
 import type { MinimalAttestationPlan } from "./minimal-attestation-plan.js";
+import { getPrimaryAttestUrl } from "./minimal-attestation-plan.js";
 import type { PublishVisibilityResult } from "./publish-visibility.js";
 import { verifyPublishVisibility } from "./publish-visibility.js";
 
@@ -745,7 +746,7 @@ function validateAttestationDecision<TState extends MinimalAgentState>(
       return `placeholder_attest_url:${decision.attestUrl}`;
     }
 
-    const plannedUrl = plan?.primary?.url;
+    const plannedUrl = getPrimaryAttestUrl(plan);
     if (plannedUrl && plannedUrl !== decision.attestUrl) {
       return `attest_url_mismatch:${decision.attestUrl}`;
     }

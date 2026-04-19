@@ -12,6 +12,9 @@ export {
 } from "./minimal-agent.js";
 export { buildMinimalAttestationPlan } from "./minimal-attestation-plan.js";
 export { buildMinimalAttestationPlanFromUrls } from "./minimal-attestation-plan.js";
+export { getPrimaryAttestationCandidate } from "./minimal-attestation-plan.js";
+export { getPrimaryAttestationSourceName } from "./minimal-attestation-plan.js";
+export { getPrimaryAttestUrl } from "./minimal-attestation-plan.js";
 export { deriveEngagementOpportunities } from "./engagement-opportunities.js";
 export { buildEngagementDraft } from "./engagement-draft.js";
 export { deriveMarketOpportunities } from "./market-opportunities.js";

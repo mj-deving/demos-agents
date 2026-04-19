@@ -4,6 +4,7 @@ import { renderColonyPromptPacket, type ColonyPromptPacket } from "./colony-prom
 import { buildResearchColonySubstrate, type ResearchColonySubstrate } from "./research-colony-substrate.js";
 import { classifyResearchEvidenceSemanticClass, type ResearchEvidenceSummary } from "./research-evidence.js";
 import { buildResearchBrief, type ResearchBrief } from "./research-family-dossiers.js";
+import { getPrimaryAttestationSourceName } from "./minimal-attestation-plan.js";
 import type { ResearchOpportunity } from "./research-opportunities.js";
 import type { ResearchSelfHistorySummary } from "./research-self-history.js";
 
@@ -310,7 +311,7 @@ function buildResearchPromptPacket(opts: BuildResearchDraftOptions): ResearchPro
     opportunity: opts.opportunity,
     allPosts: opts.opportunity.matchingFeedPosts,
   });
-  const primarySource = opts.opportunity.attestationPlan.primary?.name ?? null;
+  const primarySource = getPrimaryAttestationSourceName(opts.opportunity.attestationPlan);
   const supportingSources = opts.opportunity.attestationPlan.supporting.map((candidate) => candidate.name);
   const supportingEvidenceSummaries = opts.supportingEvidenceSummaries ?? [];
   const analysisAngle = buildResearchAnalysisAngle(opts.opportunity);
